@@ -540,6 +540,9 @@ def main():
     df_main.to_csv(main_path, index=False)
     df_sentiment.to_csv(sentiment_path, index=False)
 
+    # 8. Push to Google Sheets
+    push_to_google_sheets(df_main, df_sentiment)
+
     print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
     print(f"✓ Saved {sentiment_path} — {len(df_sentiment)} indicators")
     print(f"✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
@@ -552,3 +555,61 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ─────────────────────────────────────────────
+# GOOGLE SHEETS EXPORT
+# ─────────────────────────────────────────────
+
+SPREADSHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
+
+def push_to_google_sheets(df_main, df_sentiment):
+    """
+    Push market_data and sentiment_data dataframes to Google Sheets.
+    Credentials are read from the GOOGLE_CREDENTIALS environment variable
+    (set as a GitHub Actions secret containing the service account JSON).
+    """
+    import json
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+
+    creds_json = os.environ.get("GOOGLE_CREDENTIALS", "")
+    if not creds_json:
+        print("  WARNING: GOOGLE_CREDENTIALS not set — skipping Sheets export.")
+        return
+
+    creds_dict = json.loads(creds_json)
+    creds = Credentials.from_service_account_info(
+        creds_dict,
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    service = build("sheets", "v4", credentials=creds)
+    sheets  = service.spreadsheets()
+
+    def df_to_values(df):
+        """Convert dataframe to list-of-lists for Sheets API, replacing NaN with empty string."""
+        header = df.columns.tolist()
+        rows   = df.fillna("").astype(str).values.tolist()
+        return [header] + rows
+
+    def write_sheet(tab_name, values):
+        """Clear tab and write values."""
+        # Clear existing content
+        sheets.values().clear(
+            spreadsheetId=SPREADSHEET_ID,
+            range=f"{tab_name}!A1:ZZ10000"
+        ).execute()
+
+        # Write new data
+        sheets.values().update(
+            spreadsheetId=SPREADSHEET_ID,
+            range=f"{tab_name}!A1",
+            valueInputOption="RAW",
+            body={"values": values}
+        ).execute()
+        print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
+
+    print("\nPushing data to Google Sheets...")
+    write_sheet("market_data",    df_to_values(df_main))
+    write_sheet("sentiment_data", df_to_values(df_sentiment))
+    print("✓ Google Sheets export complete.")
