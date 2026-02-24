@@ -65,7 +65,7 @@ EQUITY_ETF = [
     ("EWY",       "South Korea ETF",                "Asia",          "Equity ETF",     None),
     ("EWT",       "Taiwan ETF",                     "Asia",          "Equity ETF",     None),
     ("NDIA.L",    "India ETF",                      "Asia",          "Equity ETF",     "GBP"),
-    ("EWJ",       "Japan (TOPIX proxy) ETF",        "Asia",          "Equity ETF",     None),  # USD-listed, tracks MSCI Japan
+    ("EWJ",       "Japan (TOPIX proxy) ETF",        "Asia",          "Equity ETF",     None),
 ]
 
 SECTOR_ETF = [
@@ -152,13 +152,13 @@ PENCE_TICKERS = {
 
 # ─────────────────────────────────────────────
 # FRED SERIES DEFINITIONS
+# UK 2Y Gilt removed (FRED series retired/invalid)
+# China 10Y CGB removed (FRED series retired/invalid)
 # ─────────────────────────────────────────────
 FRED_YIELDS = {
-    "UK 2Y Gilt Yield":       "IUDSGT02",          # corrected series ID
     "UK 10Y Gilt Yield":      "IRLTLT01GBM156N",
     "Germany 10Y Bund Yield": "IRLTLT01DEM156N",
     "Japan 10Y JGB Yield":    "IRLTLT01JPM156N",
-    "China 10Y CGB Yield":    "CHNGDPNQD",         # Lagged proxy — known gap
 }
 
 FRED_SENTIMENT = {
@@ -166,7 +166,7 @@ FRED_SENTIMENT = {
     "Conference Board Consumer Conf": "CSCICP03USM665S",
     "US Business Confidence":         "BSCICP03USM665S",
     "Euro Area Consumer Confidence":  "CSCICP03EZM665S",
-    "US ISM Manufacturing PMI":       "NAPM",
+    "US ISM Manufacturing PMI":       "NAPMPI",
 }
 
 # ─────────────────────────────────────────────
@@ -187,11 +187,7 @@ PERIODS = {
 }
 
 def calc_return(series, period_key, is_yield=False):
-    """Calculate return or change for a given period key.
-
-    Series index must be tz-aware UTC with microsecond resolution
-    (as normalised by fetch_yf_history / fetch_fred_series).
-    """
+    """Calculate return or change for a given period key."""
     if series is None or series.empty:
         return np.nan
 
@@ -203,8 +199,6 @@ def calc_return(series, period_key, is_yield=False):
         days = PERIODS[period_key]
         target_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-    # Cast target_date to pandas Timestamp with matching resolution so
-    # searchsorted never triggers the np_datetime convert_reso ValueError.
     try:
         ts = pd.Timestamp(target_date).tz_convert("UTC").as_unit("us")
     except Exception:
@@ -213,7 +207,6 @@ def calc_return(series, period_key, is_yield=False):
     try:
         idx = series.index.searchsorted(ts, side="left")
     except Exception:
-        # Fallback: compare as plain dates
         target_d = target_date.date()
         dates = series.index.date
         idx = next((i for i, d in enumerate(dates) if d >= target_d), len(series))
@@ -234,10 +227,7 @@ def calc_return(series, period_key, is_yield=False):
 
 
 def fetch_yf_history(ticker, retries=3):
-    """Fetch full price history from yfinance with retry logic.
-    Returns a Series with a tz-aware UTC index normalised to microsecond
-    resolution to avoid pandas np_datetime convert_reso errors.
-    """
+    """Fetch full price history from yfinance with retry logic."""
     for attempt in range(retries):
         try:
             t = yf.Ticker(ticker)
@@ -245,15 +235,11 @@ def fetch_yf_history(ticker, retries=3):
             if hist is not None and not hist.empty:
                 hist = hist[~hist.index.duplicated(keep="first")]
                 series = hist["Close"]
-                # Normalise index: ensure UTC, then cast to microseconds.
-                # yfinance sometimes returns nanosecond-resolution timestamps
-                # which cause ValueError in pandas searchsorted comparisons.
                 idx = series.index
                 if idx.tzinfo is None:
                     idx = idx.tz_localize("UTC")
                 else:
                     idx = idx.tz_convert("UTC")
-                # Cast to microsecond precision to avoid lossless-conversion errors
                 idx = idx.astype("datetime64[us, UTC]")
                 series.index = idx
                 return series
@@ -312,13 +298,9 @@ def build_fx_cache():
 
 
 def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache):
-    """
-    Convert a local currency % return to USD % return.
-    local_return_pct: already computed % return in local currency
-    ccy: 3-letter currency code
-    """
+    """Convert a local currency % return to USD % return."""
     if ccy is None or pd.isna(local_return_pct):
-        return local_return_pct  # Already USD or no data
+        return local_return_pct
 
     if ccy not in fx_cache:
         return np.nan
@@ -329,14 +311,11 @@ def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache):
     if pd.isna(fx_return):
         return np.nan
 
-    # For CCY/USD pairs (GBP, EUR): fx_return is already % change in USD value of the currency
-    # For USD/FCY pairs (JPY, CNY etc.): a rise means USD strengthened → negative for USD investor
     if ccy in FCY_PER_USD:
-        fx_usd_return = -fx_return  # Invert: if USD/JPY rises, JPY weakened
+        fx_usd_return = -fx_return
     else:
         fx_usd_return = fx_return
 
-    # Combine: (1 + local_return) * (1 + fx_return) - 1
     combined = (1 + local_return_pct / 100) * (1 + fx_usd_return / 100) - 1
     return round(combined * 100, 2)
 
@@ -369,7 +348,6 @@ def collect_yf_assets(fx_cache):
             rows.append(row)
             continue
 
-        # Pence to pounds adjustment
         if ticker in PENCE_TICKERS:
             series = series / 100
 
@@ -392,7 +370,7 @@ def collect_yf_assets(fx_cache):
                 row[f"USD {pk}"] = usd_adjusted_return(local_ret, local_ccy, pk, fx_cache)
 
         rows.append(row)
-        time.sleep(0.3)  # Rate limiting
+        time.sleep(0.3)
 
     return rows
 
@@ -460,7 +438,6 @@ def build_calculated_fields(df):
     print("\nCalculating ratio fields...")
 
     def safe_ratio_return(num_ticker, den_ticker, period_key):
-        """Return % change in ratio of two tickers."""
         num_row = df[df["Symbol"] == num_ticker]
         den_row = df[df["Symbol"] == den_ticker]
         if num_row.empty or den_row.empty:
@@ -472,7 +449,6 @@ def build_calculated_fields(df):
         d = den_row[col].values[0]
         if pd.isna(n) or pd.isna(d) or (1 + d / 100) == 0:
             return np.nan
-        # Relative return: (1+n)/(1+d) - 1
         return round(((1 + n / 100) / (1 + d / 100) - 1) * 100, 2)
 
     ratios = [
@@ -492,69 +468,10 @@ def build_calculated_fields(df):
         }
         for pk in PERIODS:
             row[f"Local {pk}"] = safe_ratio_return(num, den, pk)
-            row[f"USD {pk}"] = np.nan  # Ratios not FX-adjusted
+            row[f"USD {pk}"] = np.nan
         ratio_rows.append(row)
 
     return ratio_rows
-
-
-# ─────────────────────────────────────────────
-# ENTRY POINT
-# ─────────────────────────────────────────────
-
-def main():
-    print("=" * 60)
-    print(f"Market Dashboard Data Fetch — {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
-    print("=" * 60)
-
-    os.makedirs("data", exist_ok=True)
-
-    # 1. FX cache
-    fx_cache = build_fx_cache()
-
-    # 2. yfinance assets
-    yf_rows = collect_yf_assets(fx_cache)
-
-    # 3. FRED yields
-    fred_yield_rows = collect_fred_yields()
-
-    # 4. Build main dataframe
-    # Normalise columns — yield rows use bps columns, others use % columns
-    all_rows = yf_rows + fred_yield_rows
-
-    df_main = pd.DataFrame(all_rows)
-
-    # 5. Calculated ratio fields (need df_main to exist first)
-    ratio_rows = build_calculated_fields(df_main)
-    df_ratios = pd.DataFrame(ratio_rows)
-    df_main = pd.concat([df_main, df_ratios], ignore_index=True)
-
-    # 6. Sentiment surveys (separate file, different schema)
-    sentiment_rows = collect_fred_sentiment()
-    df_sentiment = pd.DataFrame(sentiment_rows)
-
-    # 7. Save outputs
-    main_path = "data/market_data.csv"
-    sentiment_path = "data/sentiment_data.csv"
-
-    df_main.to_csv(main_path, index=False)
-    df_sentiment.to_csv(sentiment_path, index=False)
-
-    # 8. Push to Google Sheets
-    push_to_google_sheets(df_main, df_sentiment)
-
-    print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
-    print(f"✓ Saved {sentiment_path} — {len(df_sentiment)} indicators")
-    print(f"✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
-
-    # Print summary
-    print("\n--- Asset class breakdown ---")
-    if "Asset Class" in df_main.columns:
-        print(df_main["Asset Class"].value_counts().to_string())
-
-
-if __name__ == "__main__":
-    main()
 
 
 # ─────────────────────────────────────────────
@@ -584,23 +501,21 @@ def push_to_google_sheets(df_main, df_sentiment):
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
     )
     service = build("sheets", "v4", credentials=creds)
-    sheets  = service.spreadsheets()
+    sheets = service.spreadsheets()
 
     def df_to_values(df):
         """Convert dataframe to list-of-lists for Sheets API, replacing NaN with empty string."""
         header = df.columns.tolist()
-        rows   = df.fillna("").astype(str).values.tolist()
+        rows = df.fillna("").astype(str).values.tolist()
         return [header] + rows
 
     def write_sheet(tab_name, values):
         """Clear tab and write values."""
-        # Clear existing content
         sheets.values().clear(
             spreadsheetId=SPREADSHEET_ID,
             range=f"{tab_name}!A1:ZZ10000"
         ).execute()
 
-        # Write new data
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
             range=f"{tab_name}!A1",
@@ -613,3 +528,59 @@ def push_to_google_sheets(df_main, df_sentiment):
     write_sheet("market_data",    df_to_values(df_main))
     write_sheet("sentiment_data", df_to_values(df_sentiment))
     print("✓ Google Sheets export complete.")
+
+
+# ─────────────────────────────────────────────
+# ENTRY POINT
+# ─────────────────────────────────────────────
+
+def main():
+    print("=" * 60)
+    print(f"Market Dashboard Data Fetch — {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
+    print("=" * 60)
+
+    os.makedirs("data", exist_ok=True)
+
+    # 1. FX cache
+    fx_cache = build_fx_cache()
+
+    # 2. yfinance assets
+    yf_rows = collect_yf_assets(fx_cache)
+
+    # 3. FRED yields
+    fred_yield_rows = collect_fred_yields()
+
+    # 4. Build main dataframe
+    all_rows = yf_rows + fred_yield_rows
+    df_main = pd.DataFrame(all_rows)
+
+    # 5. Calculated ratio fields (need df_main to exist first)
+    ratio_rows = build_calculated_fields(df_main)
+    df_ratios = pd.DataFrame(ratio_rows)
+    df_main = pd.concat([df_main, df_ratios], ignore_index=True)
+
+    # 6. Sentiment surveys (separate file, different schema)
+    sentiment_rows = collect_fred_sentiment()
+    df_sentiment = pd.DataFrame(sentiment_rows)
+
+    # 7. Save outputs
+    main_path = "data/market_data.csv"
+    sentiment_path = "data/sentiment_data.csv"
+
+    df_main.to_csv(main_path, index=False)
+    df_sentiment.to_csv(sentiment_path, index=False)
+
+    # 8. Push to Google Sheets
+    push_to_google_sheets(df_main, df_sentiment)
+
+    print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
+    print(f"✓ Saved {sentiment_path} — {len(df_sentiment)} indicators")
+    print(f"✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
+
+    print("\n--- Asset class breakdown ---")
+    if "Asset Class" in df_main.columns:
+        print(df_main["Asset Class"].value_counts().to_string())
+
+
+if __name__ == "__main__":
+    main()
