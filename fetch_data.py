@@ -53,6 +53,13 @@ def fetch_asset_history(symbol, periods):
                 prev = hist['Close'].iloc[-2] if len(hist) > 1 else None
             else:
                 period_start_date = end - timedelta(days=period_days)
+                
+                # Convert to match the index timezone
+                if hist.index.tzinfo is not None:
+                    period_start_date = period_start_date.astimezone(hist.index.tzinfo)
+                else:
+                    period_start_date = period_start_date.replace(tzinfo=None)
+                
                 prev_idx = hist.index.searchsorted(period_start_date, side='left')
                 if prev_idx >= len(hist):
                     return np.nan
