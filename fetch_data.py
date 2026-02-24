@@ -55,8 +55,9 @@ def fetch_asset_history(symbol, periods):
                 period_start_date = end - timedelta(days=period_days)
                 
                 # Convert to match the index timezone
-                if hist.index.tzinfo is not None:
-                    period_start_date = period_start_date.astimezone(hist.index.tzinfo)
+                tz = hist.index.tz  # use .tz not .tzinfo for pandas DatetimeIndex
+                if tz is not None:
+                    period_start_date = pd.Timestamp(period_start_date).tz_convert(tz)
                 else:
                     period_start_date = period_start_date.replace(tzinfo=None)
                 
