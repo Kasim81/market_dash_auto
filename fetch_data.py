@@ -65,25 +65,23 @@ EQUITY_ETF = [
     ("EWY",       "South Korea ETF",                "Asia",          "Equity ETF",     None),
     ("EWT",       "Taiwan ETF",                     "Asia",          "Equity ETF",     None),
     ("NDIA.L",    "India ETF",                      "Asia",          "Equity ETF",     "GBP"),
-    ("TPX.L",     "TOPIX ETF",                      "Asia",          "Equity ETF",     "GBP"),
+    ("EWJ",       "Japan (TOPIX proxy) ETF",        "Asia",          "Equity ETF",     None),  # USD-listed, tracks MSCI Japan
 ]
 
 SECTOR_ETF = [
-    ("XLES.L",    "Sector: Energy",                 "Global",        "Equity Sector",  "GBP"),
-    ("XLBS.L",    "Sector: Materials",              "Global",        "Equity Sector",  "GBP"),
-    ("XLKI.L",    "Sector: Industrials",            "Global",        "Equity Sector",  "GBP"),
-    ("XLYS.L",    "Sector: Consumer Discretionary", "Global",        "Equity Sector",  "GBP"),
-    ("XLPS.L",    "Sector: Consumer Staples",       "Global",        "Equity Sector",  "GBP"),
-    ("XLVS.L",    "Sector: Healthcare",             "Global",        "Equity Sector",  "GBP"),
-    ("XLFS.L",    "Sector: Financials",             "Global",        "Equity Sector",  "GBP"),
-    ("XLKS.L",    "Sector: Technology",             "Global",        "Equity Sector",  "GBP"),
-    ("XLUS.L",    "Sector: Utilities",              "Global",        "Equity Sector",  "GBP"),
-    ("XLRES.L",   "Sector: Real Estate",            "Global",        "Equity Sector",  "GBP"),
-    ("XLCS.L",    "Sector: Communication Services", "Global",        "Equity Sector",  "GBP"),
-    ("IWFG.L",    "MSCI World Growth ETF",          "Global",        "Equity Factor",  "GBP"),
+    ("XLE",       "Sector: Energy",                 "Global",        "Equity Sector",  None),
+    ("XLB",       "Sector: Materials",              "Global",        "Equity Sector",  None),
+    ("XLI",       "Sector: Industrials",            "Global",        "Equity Sector",  None),
+    ("XLY",       "Sector: Consumer Discretionary", "Global",        "Equity Sector",  None),
+    ("XLP",       "Sector: Consumer Staples",       "Global",        "Equity Sector",  None),
+    ("XLV",       "Sector: Healthcare",             "Global",        "Equity Sector",  None),
+    ("XLF",       "Sector: Financials",             "Global",        "Equity Sector",  None),
+    ("XLK",       "Sector: Technology",             "Global",        "Equity Sector",  None),
+    ("XLU",       "Sector: Utilities",              "Global",        "Equity Sector",  None),
+    ("XLRE",      "Sector: Real Estate",            "Global",        "Equity Sector",  None),
+    ("XLC",       "Sector: Communication Services", "Global",        "Equity Sector",  None),
+    ("IWF",       "US Growth ETF (Russell 1000)",   "North America", "Equity Factor",  None),
     ("IWFV.L",    "MSCI World Value ETF",           "Global",        "Equity Factor",  "GBP"),
-    ("XLY",       "US Consumer Discretionary ETF",  "North America", "Equity Sector",  None),
-    ("XLP",       "US Consumer Staples ETF",        "North America", "Equity Sector",  None),
 ]
 
 FIXED_INCOME_ETF = [
@@ -94,7 +92,7 @@ FIXED_INCOME_ETF = [
     ("IGLT.L",    "UK Gilts ETF",                   "UK",            "Fixed Income ETF", "GBP"),
     ("IGLS.L",    "UK Short Gilts ETF",             "UK",            "Fixed Income ETF", "GBP"),
     ("EXX6.DE",   "German Bunds ETF",               "Europe",        "Fixed Income ETF", "EUR"),
-    ("IBJP.L",    "Japanese Govt Bonds ETF",        "Asia",          "Fixed Income ETF", "GBP"),
+    ("IGOV",      "Intl Govt Bonds ETF",            "Global",        "Fixed Income ETF", None),
     ("CNYB.L",    "Chinese Govt Bonds ETF",         "Asia",          "Fixed Income ETF", "GBP"),
 ]
 
@@ -105,10 +103,8 @@ COMMODITY = [
     ("CL=F",      "WTI Crude Oil",                  "Global",        "Commodity Energy", None),
     ("HG=F",      "Copper",                         "Global",        "Commodity Metal",  None),
     ("ALI=F",     "Aluminium",                      "Global",        "Commodity Metal",  None),
-    ("SI=F",      "Silver",                         "Global",        "Commodity Metal",  None),
     ("CT=F",      "Cotton",                         "Global",        "Commodity Soft",   None),
     ("KC=F",      "Coffee",                         "Global",        "Commodity Soft",   None),
-    ("LBS=F",     "Lumber",                         "Global",        "Commodity Other",  None),
     ("CMOD.L",    "Bloomberg Commodity ETF",        "Global",        "Commodity ETF",    "GBP"),
 ]
 
@@ -148,23 +144,21 @@ YIELD_TICKERS = {t[0] for t in YIELD_YF}
 
 # Tickers priced in pence on LSE (divide by 100 for GBP)
 PENCE_TICKERS = {
-    "IWDA.L", "VFEM.L", "NDIA.L", "TPX.L",
-    "XLES.L", "XLBS.L", "XLKI.L", "XLYS.L", "XLPS.L",
-    "XLVS.L", "XLFS.L", "XLKS.L", "XLUS.L", "XLRES.L", "XLCS.L",
-    "IWFG.L", "IWFV.L",
+    "IWDA.L", "VFEM.L", "NDIA.L",
+    "IWFV.L",
     "AGGG.L", "SLXX.L", "IHYU.L", "VDET.L", "IGLT.L", "IGLS.L",
-    "IBJP.L", "CNYB.L", "CMOD.L",
+    "CNYB.L", "CMOD.L",
 }
 
 # ─────────────────────────────────────────────
 # FRED SERIES DEFINITIONS
 # ─────────────────────────────────────────────
 FRED_YIELDS = {
-    "UK 2Y Gilt Yield":       "IUDSGT2Y",         # BoE 2Y gilt
+    "UK 2Y Gilt Yield":       "IUDSGT02",          # corrected series ID
     "UK 10Y Gilt Yield":      "IRLTLT01GBM156N",
     "Germany 10Y Bund Yield": "IRLTLT01DEM156N",
     "Japan 10Y JGB Yield":    "IRLTLT01JPM156N",
-    "China 10Y CGB Yield":    "CHNGDPNQD",        # Lagged proxy
+    "China 10Y CGB Yield":    "CHNGDPNQD",         # Lagged proxy — known gap
 }
 
 FRED_SENTIMENT = {
@@ -482,11 +476,11 @@ def build_calculated_fields(df):
         return round(((1 + n / 100) / (1 + d / 100) - 1) * 100, 2)
 
     ratios = [
-        ("XLYS.L", "XLPS.L", "Cyclicals vs Defensives (Global)", "Global", "Sentiment Ratio"),
-        ("XLY",    "XLP",    "Cyclicals vs Defensives (US)",     "North America", "Sentiment Ratio"),
-        ("IHYU.L", "SLXX.L", "HY vs IG Credit (proxy)",          "Global", "Sentiment Ratio"),
-        ("^FTMC",  "^FTSE",  "Small Cap vs Large Cap (UK)",       "UK",     "Sentiment Ratio"),
-        ("IWFG.L", "IWFV.L", "Growth vs Value (Global)",          "Global", "Sentiment Ratio"),
+        ("XLY",    "XLP",    "Cyclicals vs Defensives (US/Global proxy)", "Global",        "Sentiment Ratio"),
+        ("XLF",    "XLU",    "Financials vs Utilities",                   "Global",        "Sentiment Ratio"),
+        ("IHYU.L", "SLXX.L", "HY vs IG Credit (proxy)",                  "Global",        "Sentiment Ratio"),
+        ("^FTMC",  "^FTSE",  "Small Cap vs Large Cap (UK)",               "UK",            "Sentiment Ratio"),
+        ("IWF",    "IWFV.L", "Growth vs Value (proxy)",                   "Global",        "Sentiment Ratio"),
     ]
 
     ratio_rows = []
