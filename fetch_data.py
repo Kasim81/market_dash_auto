@@ -193,26 +193,37 @@ PERIODS = {
 }
 
 def calc_return(series, period_key, is_yield=False):
-    """Calculate return or change for a given period key."""
+    """Calculate return or change for a given period key.
+
+    Series index must be tz-aware UTC with microsecond resolution
+    (as normalised by fetch_yf_history / fetch_fred_series).
+    """
     if series is None or series.empty:
         return np.nan
 
-    end = datetime.now(timezone.utc)
     last_val = series.iloc[-1]
 
     if period_key == "Perf YTD":
         target_date = get_ytd_start()
     else:
         days = PERIODS[period_key]
-        target_date = end - timedelta(days=days)
+        target_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-    # Align timezone
-    if series.index.tzinfo is not None:
-        target_date = target_date.astimezone(series.index.tzinfo)
-    else:
-        target_date = target_date.replace(tzinfo=None)
+    # Cast target_date to pandas Timestamp with matching resolution so
+    # searchsorted never triggers the np_datetime convert_reso ValueError.
+    try:
+        ts = pd.Timestamp(target_date).tz_convert("UTC").as_unit("us")
+    except Exception:
+        ts = pd.Timestamp(target_date, tz="UTC")
 
-    idx = series.index.searchsorted(target_date, side="left")
+    try:
+        idx = series.index.searchsorted(ts, side="left")
+    except Exception:
+        # Fallback: compare as plain dates
+        target_d = target_date.date()
+        dates = series.index.date
+        idx = next((i for i, d in enumerate(dates) if d >= target_d), len(series))
+
     if idx >= len(series):
         return np.nan
     start_val = series.iloc[idx]
@@ -221,7 +232,6 @@ def calc_return(series, period_key, is_yield=False):
         return np.nan
 
     if is_yield:
-        # Return in basis points
         return round((last_val - start_val) * 100, 1)
     else:
         if start_val == 0:
@@ -230,14 +240,29 @@ def calc_return(series, period_key, is_yield=False):
 
 
 def fetch_yf_history(ticker, retries=3):
-    """Fetch full price history from yfinance with retry logic."""
+    """Fetch full price history from yfinance with retry logic.
+    Returns a Series with a tz-aware UTC index normalised to microsecond
+    resolution to avoid pandas np_datetime convert_reso errors.
+    """
     for attempt in range(retries):
         try:
             t = yf.Ticker(ticker)
             hist = t.history(period="max")
             if hist is not None and not hist.empty:
                 hist = hist[~hist.index.duplicated(keep="first")]
-                return hist["Close"]
+                series = hist["Close"]
+                # Normalise index: ensure UTC, then cast to microseconds.
+                # yfinance sometimes returns nanosecond-resolution timestamps
+                # which cause ValueError in pandas searchsorted comparisons.
+                idx = series.index
+                if idx.tzinfo is None:
+                    idx = idx.tz_localize("UTC")
+                else:
+                    idx = idx.tz_convert("UTC")
+                # Cast to microsecond precision to avoid lossless-conversion errors
+                idx = idx.astype("datetime64[us, UTC]")
+                series.index = idx
+                return series
         except Exception as e:
             print(f"  [{ticker}] attempt {attempt+1} failed: {e}")
             time.sleep(2)
@@ -264,7 +289,7 @@ def fetch_fred_series(series_id, retries=3):
             if not obs:
                 return None
             df = pd.DataFrame(obs)[["date", "value"]]
-            df["date"] = pd.to_datetime(df["date"], utc=True)
+            df["date"] = pd.to_datetime(df["date"], utc=True).astype("datetime64[us, UTC]")
             df["value"] = pd.to_numeric(df["value"], errors="coerce")
             df = df.dropna().set_index("date")["value"]
             return df
