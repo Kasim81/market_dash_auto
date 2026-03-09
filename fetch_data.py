@@ -584,3 +584,22 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ============================================================
+# PHASE A INTEGRATION — add these lines at the very end of
+# fetch_data.py, after the existing push_to_google_sheets() call
+# ============================================================
+#
+# This is wrapped in a broad try/except so that if Phase A
+# fails for any reason, it CANNOT affect the existing pipeline.
+# The daily market_data and sentiment_data outputs are already
+# committed before this code runs.
+#
+# PASTE THIS BLOCK at the bottom of fetch_data.py:
+
+try:
+    from fetch_macro_us_fred import run_phase_a
+    run_phase_a()
+except Exception as _phase_a_err:
+    print(f"[Phase A] Non-fatal import/run error: {_phase_a_err}")
+    print("[Phase A] Existing pipeline outputs are unaffected")
