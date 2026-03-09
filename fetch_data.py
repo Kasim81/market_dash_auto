@@ -603,3 +603,21 @@ try:
 except Exception as _phase_a_err:
     print(f"[Phase A] Non-fatal import/run error: {_phase_a_err}")
     print("[Phase A] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# HISTORICAL SERIES INTEGRATION
+# Add these lines at the very end of fetch_data.py, after the
+# existing Phase A block (or after push_to_google_sheets() if
+# Phase A hasn't been deployed yet).
+#
+# The historical build runs AFTER the existing daily snapshot
+# is already committed and pushed, so any failure here cannot
+# affect market_data.csv, sentiment_data.csv, or their tabs.
+# ============================================================
+
+try:
+    from fetch_hist import run_hist
+    run_hist()
+except Exception as _hist_err:
+    print(f"[Hist] Non-fatal import/run error: {_hist_err}")
+    print("[Hist] Existing pipeline outputs are unaffected")
