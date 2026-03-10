@@ -648,3 +648,17 @@ try:
 except Exception as _hist_err:
     print(f"[Hist] Non-fatal import/run error: {_hist_err}")
     print("[Hist] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# PHASE C — INTERNATIONAL MACRO INDICATORS
+# Fetches OECD + IMF macro data for 11 major economies.
+# Outputs: data/macro_intl.csv, data/macro_intl_hist.csv
+#          Google Sheets tabs: macro_intl, macro_intl_hist
+# ============================================================
+
+try:
+    from fetch_macro_international import run_phase_c
+    run_phase_c()
+except Exception as _phase_c_err:
+    print(f"[Phase C] Non-fatal import/run error: {_phase_c_err}")
+    print("[Phase C] Existing pipeline outputs are unaffected")
