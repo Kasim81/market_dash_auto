@@ -118,21 +118,21 @@ EQUITY_ETFS = [
 ]
 
 SECTOR_ETFS = [
-    ("XLE",  "Energy",                   "North America", "Sector ETF",    "USD"),
-    ("XLB",  "Materials",                "North America", "Sector ETF",    "USD"),
-    ("XLI",  "Industrials",              "North America", "Sector ETF",    "USD"),
-    ("XLY",  "Consumer Discretionary",  "North America", "Sector ETF",    "USD"),
-    ("XLP",  "Consumer Staples",        "North America", "Sector ETF",    "USD"),
-    ("XLV",  "Healthcare",              "North America", "Sector ETF",    "USD"),
-    ("XLF",  "Financials",              "North America", "Sector ETF",    "USD"),
-    ("XLK",  "Technology",              "North America", "Sector ETF",    "USD"),
-    ("XLU",  "Utilities",               "North America", "Sector ETF",    "USD"),
-    ("XLRE", "Real Estate",             "North America", "Sector ETF",    "USD"),
-    ("XLC",  "Communication Services",  "North America", "Sector ETF",    "USD"),
+    ("XLE",  "Energy",                   "US",            "Sector ETF",    "USD"),
+    ("XLB",  "Materials",                "US",            "Sector ETF",    "USD"),
+    ("XLI",  "Industrials",              "US",            "Sector ETF",    "USD"),
+    ("XLY",  "Consumer Discretionary",  "US",            "Sector ETF",    "USD"),
+    ("XLP",  "Consumer Staples",        "US",            "Sector ETF",    "USD"),
+    ("XLV",  "Healthcare",              "US",            "Sector ETF",    "USD"),
+    ("XLF",  "Financials",              "US",            "Sector ETF",    "USD"),
+    ("XLK",  "Technology",              "US",            "Sector ETF",    "USD"),
+    ("XLU",  "Utilities",               "US",            "Sector ETF",    "USD"),
+    ("XLRE", "Real Estate",             "US",            "Sector ETF",    "USD"),
+    ("XLC",  "Communication Services",  "US",            "Sector ETF",    "USD"),
 ]
 
 STYLE_ETFS = [
-    ("IWF",    "US Growth ETF",          "North America", "Style ETF",     "USD"),
+    ("IWF",    "US Growth ETF",          "US",            "Style ETF",     "USD"),
     ("IWFV.L", "MSCI World Value ETF",   "Global",        "Style ETF",     "GBP"),
 ]
 
@@ -172,23 +172,24 @@ FX_PAIRS = [
 ]
 
 VOL_CRYPTO = [
-    ("^VIX",    "VIX",                  "Global",        "Volatility",    "USD"),
+    ("^VIX",    "VIX",                  "US",            "Volatility",    "USD"),
     ("BTC-USD", "Bitcoin",              "Global",        "Crypto",        "USD"),
     ("ETH-USD", "Ethereum",             "Global",        "Crypto",        "USD"),
 ]
 
 YIELD_INSTRUMENTS = [
-    ("^IRX",    "US 2Y Treasury Yield", "North America", "Yield",         "USD"),
-    ("^FVX",    "US 5Y Treasury Yield", "North America", "Yield",         "USD"),
-    ("^TNX",    "US 10Y Treasury Yield","North America", "Yield",         "USD"),
-    ("^TYX",    "US 30Y Treasury Yield","North America", "Yield",         "USD"),
+    ("^IRX",    "US 3-Month T-Bill",    "US",            "Yield",         "USD"),
+    ("^FVX",    "US 5Y Treasury Yield", "US",            "Yield",         "USD"),
+    ("^TNX",    "US 10Y Treasury Yield","US",            "Yield",         "USD"),
+    ("^TYX",    "US 30Y Treasury Yield","US",            "Yield",         "USD"),
 ]
 
 # FRED yields (fetched via FRED, not yfinance)
 FRED_YIELDS = {
-    "IRLTLT01GBM156N": ("UK 10Y Gilt Yield",     "UK",     "Yield", "GBP"),
-    "IRLTLT01DEM156N": ("Germany 10Y Bund Yield", "Europe", "Yield", "EUR"),
-    "IRLTLT01JPM156N": ("Japan 10Y JGB Yield",    "Japan",  "Yield", "JPY"),
+    "DGS2":              ("US 2Y Treasury Yield",  "US",     "Yield", "USD"),
+    "IRLTLT01GBM156N":   ("UK 10Y Gilt Yield",     "UK",     "Yield", "GBP"),
+    "IRLTLT01DEM156N":   ("Germany 10Y Bund Yield", "Europe", "Yield", "EUR"),
+    "IRLTLT01JPM156N":   ("Japan 10Y JGB Yield",    "Japan",  "Yield", "JPY"),
 }
 
 # Ratio definitions (calculated from instrument prices — appended after fetch)
@@ -252,6 +253,35 @@ FRED_MACRO_US = {
     "DFII5":        "US 5Y Real Rate (TIPS)",
     "BAMLH0A0HYM2": "US HY Credit Spread OAS",
     "BAMLC0A0CM":   "US IG Credit Spread OAS",
+}
+
+# Category metadata for macro_us_hist columns (used for metadata header rows)
+FRED_MACRO_US_CATEGORIES = {
+    "T10Y2Y":       "Growth / Monetary",
+    "T10Y3M":       "Growth / Monetary",
+    "M2SL":         "Monetary",
+    "USSLIND":      "Growth",
+    "PERMIT":       "Growth",
+    "IC4WSA":       "Growth",
+    "PAYEMS":       "Growth",
+    "UNRATE":       "Growth",
+    "INDPRO":       "Growth",
+    "RSXFS":        "Growth",
+    "DRTSCILM":     "Financial Conditions",
+    "NFCI":         "Financial Conditions",
+    "CPIAUCSL":     "Inflation",
+    "CPILFESL":     "Inflation",
+    "PCEPILFE":     "Inflation",
+    "PPIACO":       "Inflation",
+    "T5YIE":        "Inflation",
+    "T10YIE":       "Inflation",
+    "T5YIFR":       "Inflation",
+    "MICH":         "Inflation",
+    "FEDFUNDS":     "Monetary",
+    "DFII10":       "Monetary",
+    "DFII5":        "Monetary",
+    "BAMLH0A0HYM2": "Financial Conditions",
+    "BAMLC0A0CM":   "Financial Conditions",
 }
 
 # ---------------------------------------------------------------------------
@@ -728,39 +758,119 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
 # SAVE CSV
 # ---------------------------------------------------------------------------
 
-def save_csv(df: pd.DataFrame, path: str, label: str) -> None:
-    """Save DataFrame to CSV; skip write if content unchanged."""
+def build_market_meta_prefix(df: pd.DataFrame) -> list:
+    """
+    Build 4 metadata rows (Name, Region, Asset Class, Currency) for market_data_hist.
+    Each row has the label in column 0, then one value per DataFrame column.
+    For _Local columns the original instrument currency is used;
+    for _USD columns 'USD' is used regardless of instrument.
+    """
+    # Build lookup: base_ticker -> (name, region, asset_class, local_currency)
+    meta = {}
+    for ticker, name, region, asset_class, currency in ALL_YFINANCE:
+        meta[ticker] = (name, region, asset_class, currency)
+    for series_id, (name, region, asset_class, currency) in FRED_YIELDS.items():
+        meta[series_id] = (name, region, asset_class, currency)
+    for ratio_id, ratio_name, num, den in RATIO_DEFS:
+        # Inherit region/asset_class from numerator if available
+        num_meta = meta.get(num, ("", "Global", "Ratio", "Ratio"))
+        meta[ratio_id] = (ratio_name, num_meta[1], "Ratio", "Ratio")
+
+    name_row        = ["Name"]
+    region_row      = ["Region"]
+    asset_class_row = ["Asset Class"]
+    currency_row    = ["Currency"]
+
+    for col in df.columns:
+        if col == "Date":
+            name_row.append("")
+            region_row.append("")
+            asset_class_row.append("")
+            currency_row.append("")
+            continue
+
+        if col.endswith("_Local"):
+            base = col[:-6]
+            is_usd = False
+        elif col.endswith("_USD"):
+            base = col[:-4]
+            is_usd = True
+        else:
+            base = col
+            is_usd = False
+
+        m = meta.get(base, (base, "", "", ""))
+        name_row.append(m[0])
+        region_row.append(m[1])
+        asset_class_row.append(m[2])
+        currency_row.append("USD" if is_usd else m[3])
+
+    return [name_row, region_row, asset_class_row, currency_row]
+
+
+def build_macro_meta_prefix(df: pd.DataFrame) -> list:
+    """
+    Build 2 metadata rows (Name, Category) for macro_us_hist.
+    Column names are FRED series IDs; looked up in FRED_MACRO_US and
+    FRED_MACRO_US_CATEGORIES.
+    """
+    name_row     = ["Name"]
+    category_row = ["Category"]
+
+    for col in df.columns:
+        if col == "Date":
+            name_row.append("")
+            category_row.append("")
+            continue
+        name_row.append(FRED_MACRO_US.get(col, col))
+        category_row.append(FRED_MACRO_US_CATEGORIES.get(col, ""))
+
+    return [name_row, category_row]
+
+
+def save_csv(df: pd.DataFrame, path: str, label: str,
+             prefix_rows: list = None) -> None:
+    """
+    Save DataFrame to CSV.
+    If prefix_rows is provided, those rows are written before the header+data
+    so metadata (Name, Region, etc.) appears at the top of the file.
+    Read back with pd.read_csv(path, header=len(prefix_rows)) to skip them.
+    """
     if df.empty:
         print(f"  [{label}] Empty — skipping CSV write")
         return
 
     os.makedirs("data", exist_ok=True)
 
-    if os.path.exists(path):
-        try:
-            existing = pd.read_csv(path, nrows=5)
-            new_head = df.head(5)
-            if existing.shape == new_head.shape and existing.equals(
-                    new_head.reset_index(drop=True)):
-                # Only check first rows; write anyway for last-row updates
-                pass
-        except Exception:
-            pass
+    if prefix_rows:
+        import csv, io
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="\n").writerows(prefix_rows)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(buf.getvalue())
+            df.to_csv(f, index=False)
+    else:
+        df.to_csv(path, index=False)
 
-    df.to_csv(path, index=False)
-    print(f"  [{label}] Written {len(df):,} rows × {len(df.columns)} cols to {path}")
+    n_meta = len(prefix_rows) if prefix_rows else 0
+    print(f"  [{label}] Written {n_meta} metadata rows + {len(df):,} data rows "
+          f"× {len(df.columns)} cols to {path}")
 
 
 # ---------------------------------------------------------------------------
 # PUSH TO GOOGLE SHEETS
 # ---------------------------------------------------------------------------
 
-def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str) -> None:
+def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
+                      prefix_rows: list = None) -> None:
     """
     Push a DataFrame to a named Google Sheets tab.
     Creates tab if it doesn't exist; overwrites existing content.
     Converts NaN to empty string for clean display.
     Never touches market_data or sentiment_data tabs.
+
+    If prefix_rows is provided, those rows are prepended before the header+data
+    so metadata (Name, Region, etc.) appears at the top of the sheet.
     """
     if not GOOGLE_CREDENTIALS_JSON:
         print(f"  [{label}] GOOGLE_CREDENTIALS not set — skipping Sheets push")
@@ -816,7 +926,7 @@ def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str) -> None:
             for row in data_rows
         ]
 
-        values = [header] + data_rows
+        values = (prefix_rows if prefix_rows else []) + [header] + data_rows
 
         # Write in batches of 10,000 rows to avoid Sheets API payload limits
         BATCH_SIZE = 10_000
@@ -872,13 +982,19 @@ def run_hist() -> None:
 
         # --- market_data_hist ---------------------------------------------
         market_df = build_market_hist_df(market_spine)
-        save_csv(market_df, MARKET_HIST_CSV, "market_data_hist")
-        push_df_to_sheets(market_df, MARKET_HIST_TAB, "market_data_hist")
+        market_meta = build_market_meta_prefix(market_df)
+        save_csv(market_df, MARKET_HIST_CSV, "market_data_hist",
+                 prefix_rows=market_meta)
+        push_df_to_sheets(market_df, MARKET_HIST_TAB, "market_data_hist",
+                          prefix_rows=market_meta)
 
         # --- macro_us_hist ------------------------------------------------
         macro_df = build_macro_hist_df(macro_spine)
-        save_csv(macro_df, MACRO_HIST_CSV, "macro_us_hist")
-        push_df_to_sheets(macro_df, MACRO_HIST_TAB, "macro_us_hist")
+        macro_meta = build_macro_meta_prefix(macro_df)
+        save_csv(macro_df, MACRO_HIST_CSV, "macro_us_hist",
+                 prefix_rows=macro_meta)
+        push_df_to_sheets(macro_df, MACRO_HIST_TAB, "macro_us_hist",
+                          prefix_rows=macro_meta)
 
         elapsed = round(time.time() - start_ts, 1)
         print(f"\nHistorical build completed in {elapsed}s")
