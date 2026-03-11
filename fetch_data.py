@@ -69,19 +69,19 @@ EQUITY_ETF = [
 ]
 
 SECTOR_ETF = [
-    ("XLE",       "Sector: Energy",                 "Global",        "Equity Sector",  None),
-    ("XLB",       "Sector: Materials",              "Global",        "Equity Sector",  None),
-    ("XLI",       "Sector: Industrials",            "Global",        "Equity Sector",  None),
-    ("XLY",       "Sector: Consumer Discretionary", "Global",        "Equity Sector",  None),
-    ("XLP",       "Sector: Consumer Staples",       "Global",        "Equity Sector",  None),
-    ("XLV",       "Sector: Healthcare",             "Global",        "Equity Sector",  None),
-    ("XLF",       "Sector: Financials",             "Global",        "Equity Sector",  None),
-    ("XLK",       "Sector: Technology",             "Global",        "Equity Sector",  None),
-    ("XLU",       "Sector: Utilities",              "Global",        "Equity Sector",  None),
-    ("XLRE",      "Sector: Real Estate",            "Global",        "Equity Sector",  None),
-    ("XLC",       "Sector: Communication Services", "Global",        "Equity Sector",  None),
-    ("IWF",       "US Growth ETF (Russell 1000)",   "North America", "Equity Factor",  None),
-    ("IWFV.L",    "MSCI World Value ETF",           "Global",        "Equity Factor",  "GBP"),
+    ("XLE",       "Sector: Energy",                 "US",            "Sector ETF",     None),
+    ("XLB",       "Sector: Materials",              "US",            "Sector ETF",     None),
+    ("XLI",       "Sector: Industrials",            "US",            "Sector ETF",     None),
+    ("XLY",       "Sector: Consumer Discretionary", "US",            "Sector ETF",     None),
+    ("XLP",       "Sector: Consumer Staples",       "US",            "Sector ETF",     None),
+    ("XLV",       "Sector: Healthcare",             "US",            "Sector ETF",     None),
+    ("XLF",       "Sector: Financials",             "US",            "Sector ETF",     None),
+    ("XLK",       "Sector: Technology",             "US",            "Sector ETF",     None),
+    ("XLU",       "Sector: Utilities",              "US",            "Sector ETF",     None),
+    ("XLRE",      "Sector: Real Estate",            "US",            "Sector ETF",     None),
+    ("XLC",       "Sector: Communication Services", "US",            "Sector ETF",     None),
+    ("IWF",       "US Growth ETF (Russell 1000)",   "US",            "Style ETF",      None),
+    ("IWFV.L",    "MSCI World Value ETF",           "Global",        "Style ETF",      "GBP"),
 ]
 
 FIXED_INCOME_ETF = [
@@ -120,17 +120,17 @@ FX_ASSETS = [
 ]
 
 VOLATILITY = [
-    ("^VIX",      "VIX (US Equity Vol)",           "Global",        "Volatility",       None),
+    ("^VIX",      "VIX (US Equity Vol)",           "US",            "Volatility",       None),
     ("BTC-USD",   "Bitcoin",                       "Global",        "Crypto",           None),
     ("ETH-USD",   "Ethereum",                      "Global",        "Crypto",           None),
 ]
 
 # Yield tickers from yfinance (reported as basis points / 100, handled separately)
 YIELD_YF = [
-    ("^IRX",      "US 2Y Treasury Yield",          "North America", "Yield",            None),
-    ("^FVX",      "US 5Y Treasury Yield",          "North America", "Yield",            None),
-    ("^TNX",      "US 10Y Treasury Yield",         "North America", "Yield",            None),
-    ("^TYX",      "US 30Y Treasury Yield",         "North America", "Yield",            None),
+    ("^IRX",      "US 3-Month T-Bill",             "US",            "Yield",            None),
+    ("^FVX",      "US 5Y Treasury Yield",          "US",            "Yield",            None),
+    ("^TNX",      "US 10Y Treasury Yield",         "US",            "Yield",            None),
+    ("^TYX",      "US 30Y Treasury Yield",         "US",            "Yield",            None),
 ]
 
 # All yfinance-sourced assets (yields handled separately below)
@@ -141,6 +141,10 @@ ALL_YF_ASSETS = (
 
 # Tickers treated as yields (show level + bps change, no USD conversion)
 YIELD_TICKERS = {t[0] for t in YIELD_YF}
+
+# Tickers that show absolute level change in points (not % change, not bps)
+# VIX is already a volatility index expressed in points — % change is misleading
+LEVEL_CHANGE_TICKERS = {"^VIX"}
 
 # Tickers priced in pence on LSE (divide by 100 for GBP)
 PENCE_TICKERS = {
@@ -156,6 +160,7 @@ PENCE_TICKERS = {
 # China 10Y CGB removed (FRED series retired/invalid)
 # ─────────────────────────────────────────────
 FRED_YIELDS = {
+    "US 2Y Treasury Yield":   "DGS2",
     "UK 10Y Gilt Yield":      "IRLTLT01GBM156N",
     "Germany 10Y Bund Yield": "IRLTLT01DEM156N",
     "Japan 10Y JGB Yield":    "IRLTLT01JPM156N",
@@ -186,7 +191,7 @@ PERIODS = {
     "Perf 1Y":  365,
 }
 
-def calc_return(series, period_key, is_yield=False):
+def calc_return(series, period_key, is_yield=False, is_level=False):
     """Calculate return or change for a given period key."""
     if series is None or series.empty:
         return np.nan
@@ -220,6 +225,8 @@ def calc_return(series, period_key, is_yield=False):
 
     if is_yield:
         return round((last_val - start_val) * 100, 1)
+    elif is_level:
+        return round(last_val - start_val, 2)
     else:
         if start_val == 0:
             return np.nan
@@ -330,6 +337,7 @@ def collect_yf_assets(fx_cache):
     for asset in all_assets:
         ticker, name, region, asset_class, local_ccy = asset
         is_yield = ticker in YIELD_TICKERS
+        is_level = ticker in LEVEL_CHANGE_TICKERS
 
         print(f"  {ticker} ({name})...")
         series = fetch_yf_history(ticker)
@@ -362,12 +370,13 @@ def collect_yf_assets(fx_cache):
         }
 
         for pk in PERIODS:
-            local_ret = calc_return(series, pk, is_yield=is_yield)
+            local_ret = calc_return(series, pk, is_yield=is_yield, is_level=is_level)
             if is_yield:
                 row[f"Local {pk} (bps)"] = local_ret
             else:
                 row[f"Local {pk}"] = local_ret
-                row[f"USD {pk}"] = usd_adjusted_return(local_ret, local_ccy, pk, fx_cache)
+                # Level-change tickers (e.g. VIX) are USD-denominated; no FX compounding
+                row[f"USD {pk}"] = local_ret if is_level else usd_adjusted_return(local_ret, local_ccy, pk, fx_cache)
 
         rows.append(row)
         time.sleep(0.3)
@@ -384,8 +393,9 @@ def collect_fred_yields():
         print(f"  {series_id} ({name})...")
         series = fetch_fred_series(series_id)
 
+        region = "US" if series_id == "DGS2" else "Sovereign"
         row = {
-            "Symbol": series_id, "Name": name, "Region": "Sovereign",
+            "Symbol": series_id, "Name": name, "Region": region,
             "Asset Class": "Yield", "Currency": "Local",
             "Last Price": np.nan, "Last Date": np.nan,
         }
@@ -524,6 +534,23 @@ def push_to_google_sheets(df_main, df_sentiment):
         ).execute()
         print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
 
+    # Delete the duplicate "Market Data" (space) tab if it exists.
+    # This tab is not created by any code in this repo but keeps reappearing
+    # (likely from a Google Apps Script or legacy manual tab). Deleting it here
+    # ensures it is cleaned up on every daily run.
+    try:
+        meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
+        for sheet in meta.get("sheets", []):
+            if sheet["properties"]["title"] == "Market Data":
+                sheets.batchUpdate(
+                    spreadsheetId=SPREADSHEET_ID,
+                    body={"requests": [{"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}]}
+                ).execute()
+                print("  Deleted duplicate 'Market Data' tab")
+                break
+    except Exception as e:
+        print(f"  WARNING: Could not check/delete 'Market Data' tab: {e}")
+
     print("\nPushing data to Google Sheets...")
     write_sheet("market_data",    df_to_values(df_main))
     write_sheet("sentiment_data", df_to_values(df_sentiment))
@@ -621,3 +648,17 @@ try:
 except Exception as _hist_err:
     print(f"[Hist] Non-fatal import/run error: {_hist_err}")
     print("[Hist] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# PHASE C — INTERNATIONAL MACRO INDICATORS
+# Fetches OECD + IMF macro data for 11 major economies.
+# Outputs: data/macro_intl.csv, data/macro_intl_hist.csv
+#          Google Sheets tabs: macro_intl, macro_intl_hist
+# ============================================================
+
+try:
+    from fetch_macro_international import run_phase_c
+    run_phase_c()
+except Exception as _phase_c_err:
+    print(f"[Phase C] Non-fatal import/run error: {_phase_c_err}")
+    print("[Phase C] Existing pipeline outputs are unaffected")
