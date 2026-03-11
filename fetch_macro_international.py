@@ -804,21 +804,21 @@ def _get_sheets_service():
 
 
 def _ensure_tab(sheets, tab_name: str) -> None:
-    meta     = sheets.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
+    meta     = sheets.get(spreadsheetId=SHEET_ID).execute()
     existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
     if tab_name not in existing:
         body = {"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-        sheets.spreadsheets().batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
+        sheets.batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
         print(f"[Phase C] Created tab '{tab_name}'")
     else:
         print(f"[Phase C] Tab '{tab_name}' exists — will overwrite")
 
 
 def _write_tab(sheets, tab_name: str, values: list) -> None:
-    sheets.spreadsheets().values().clear(
+    sheets.values().clear(
         spreadsheetId=SHEET_ID, range=f"{tab_name}!A:ZZ"
     ).execute()
-    sheets.spreadsheets().values().update(
+    sheets.values().update(
         spreadsheetId=SHEET_ID,
         range=f"{tab_name}!A1",
         valueInputOption="RAW",
