@@ -6,20 +6,22 @@ Market Dashboard Expansion
 
 WHAT THIS MODULE DOES
 ---------------------
-Fetches macro indicators for 11 major economies from two free public APIs:
+Fetches macro indicators for 11 major economies from three free public APIs:
 
-  OECD Statistics SDMX-JSON API (stats.oecd.org — no key required):
-    · Composite Leading Indicator (CLI)   — monthly
-    · CPI Headline YoY %                  — monthly
-    · Unemployment Rate                   — monthly
-    · Short-term Interest Rate (3M)       — monthly
+  OECD Data Explorer REST API (sdmx.oecd.org — no key required, CSV format):
+    · Composite Leading Indicator (CLI)   — monthly, DF_CLI dataflow
+    · Unemployment Rate                   — monthly, DF_IALFS_UNE_M dataflow
+    · Short-term Interest Rate (3M)       — monthly, DF_FINMARK dataflow
+
+  World Bank Open Data API (api.worldbank.org — no key required):
+    · CPI Headline YoY %                  — annual (FP.CPI.TOTL.ZG)
 
   IMF DataMapper REST API (imf.org — no key required):
-    · Real GDP Growth % (annual WEO)      — annual
+    · Real GDP Growth % (annual WEO)      — annual, includes projections
 
 Countries: AUS, CAN, CHE, CHN, DEU, EA19, FRA, GBR, ITA, JPN, USA
-  Note: EA19 = Eurozone 19-country aggregate (OECD code).
-  Note: CHN is included in OECD CLI/CPI where available; IMF covers all indicators.
+  Note: CHN and EA19 have partial coverage (absent from OECD LFS unemployment).
+  Note: EA19 = Eurozone; World Bank equivalent code is EMU.
 
 Outputs:
   data/macro_intl.csv          — snapshot (latest + prior + change per country×indicator)
@@ -33,9 +35,19 @@ DESIGN PRINCIPLES
 · Safe to call from fetch_data.py at end via run_phase_c().
 · All errors caught internally — existing pipeline tabs never touched on failure.
 · Per-indicator try/except so one API failure doesn't kill the rest.
-· Conservative rate limiting: 1.5s between OECD calls, 1.0s between IMF calls.
+· OECD rate limit: 20 calls/hour. Module makes at most 6 OECD calls per run
+  (3 snapshot + 3 history), well within budget.
 · Exponential backoff on 429 / 5xx: 2s → 4s → 8s → 16s → 32s.
-· History reuses snapshot OECD call data for most-recent values (no duplicate fetch).
+· IMF DataMapper returns full history in one call (snapshot = history).
+
+API MIGRATION NOTE (OECD)
+--------------------------
+The legacy stats.oecd.org SDMX-JSON API was deprecated in June/July 2024.
+This module uses the new sdmx.oecd.org REST API with format=csv.
+New dataflow IDs:
+  CLI:          OECD.SDD.STES,DSD_STES@DF_CLI,4.1
+  Unemployment: OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0
+  Rates:        OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0
 
 USAGE
 -----
@@ -48,25 +60,10 @@ Called from fetch_data.py (add at the very end, after existing Phase blocks):
         run_phase_c()
     except Exception as e:
         print(f"[Phase C] Non-fatal error: {e}")
-
-OECD API NOTES
---------------
-Base URL:  https://stats.oecd.org/SDMX-JSON/data/{dataset}/{key}/OECD
-Format:    sdmx-json (SDMX-JSON 1.0)
-Rate limit: Not officially published. 1.5s delay is conservative and safe.
-Datasets used:
-  MEI_CLI  — Main Economic Indicators: Composite Leading Indicators
-  MEI      — Main Economic Indicators (CPI, Unemployment, Short-term rates)
-  MEI_FIN  — Main Economic Indicators: Financial (fallback for rates)
-
-IMF DataMapper API NOTES
-------------------------
-Base URL: https://www.imf.org/external/datamapper/api/v1/{indicator}
-Returns:  All countries, all years in a single JSON response (annual WEO data).
-No authentication required. Includes forward projections for current/next year.
 """
 
-import csv
+import csv as csv_module
+import io
 import os
 import time
 import json
@@ -91,17 +88,18 @@ HIST_TAB     = "macro_intl_hist"
 SNAPSHOT_CSV = "data/macro_intl.csv"
 HIST_CSV     = "data/macro_intl_hist.csv"
 
-# History start floor (Friday spine begins here)
-HIST_START   = "2000-01-01"
+HIST_START   = "2000-01-01"   # history floor for Friday spine
 
 # API base URLs
-OECD_BASE = "https://stats.oecd.org/SDMX-JSON/data"
+OECD_BASE = "https://sdmx.oecd.org/public/rest/data"   # new OECD API
+WB_BASE   = "https://api.worldbank.org/v2/country"
 IMF_BASE  = "https://www.imf.org/external/datamapper/api/v1"
 
-# Rate limiting
-OECD_DELAY      = 1.5   # seconds between OECD requests
-IMF_DELAY       = 1.0   # seconds between IMF requests
-BACKOFF_BASE    = 2     # seconds for first backoff wait
+# Rate limits / delays
+OECD_DELAY      = 4.0   # seconds between OECD calls (max 20/hour = 1 per 3min; 4s is safe)
+WB_DELAY        = 1.0   # seconds between World Bank calls
+IMF_DELAY       = 1.0   # seconds between IMF calls
+BACKOFF_BASE    = 2     # seconds for first backoff
 BACKOFF_RETRIES = 5
 
 
@@ -124,32 +122,51 @@ COUNTRY_META = {
     "USA":  ("United States",   "North America"),
 }
 
-# Joined with "+" for OECD API key strings (order matches dict insertion order)
-OECD_COUNTRY_STR = "+".join(COUNTRY_META.keys())
-
 # IMF DataMapper country codes → our OECD-aligned codes
+# IMF uses 3-letter ISO codes for countries; XM for Euro Area
 IMF_CODE_MAP = {
-    "AU": "AUS",
-    "CA": "CAN",
-    "CH": "CHE",
-    "CN": "CHN",
-    "DE": "DEU",
-    "XM": "EA19",   # Euro Area in IMF DataMapper
-    "FR": "FRA",
-    "GB": "GBR",
-    "IT": "ITA",
-    "JP": "JPN",
-    "US": "USA",
+    "AUS": "AUS",
+    "CAN": "CAN",
+    "CHE": "CHE",
+    "CHN": "CHN",
+    "DEU": "DEU",
+    "XM":  "EA19",   # IMF uses "XM" for Euro Area (not 3-letter)
+    "FRA": "FRA",
+    "GBR": "GBR",
+    "ITA": "ITA",
+    "JPN": "JPN",
+    "USA": "USA",
 }
 
+# World Bank country codes → our codes
+# World Bank uses ISO Alpha-3; EMU for Euro Area
+WB_CODE_MAP = {
+    "AUS": "AUS",
+    "CAN": "CAN",
+    "CHE": "CHE",
+    "CHN": "CHN",
+    "DEU": "DEU",
+    "EMU": "EA19",   # World Bank EMU = Euro Area
+    "FRA": "FRA",
+    "GBR": "GBR",
+    "ITA": "ITA",
+    "JPN": "JPN",
+    "USA": "USA",
+}
+# Semicolon-separated for World Bank URL
+WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
+
 
 # ---------------------------------------------------------------------------
-# OECD INDICATOR DEFINITIONS
+# OECD INDICATOR DEFINITIONS  (new sdmx.oecd.org API)
 # ---------------------------------------------------------------------------
-# Each entry: col (short column suffix used in CSV headers), name (display),
-#             category, units, notes, dataset (OECD dataset ID), key (series key).
-# Key format: {SUBJECT}.{LOCATION_LIST}.{[MEASURE.]FREQUENCY}
-# The exact dimension count varies by dataset; LOCATION is always present.
+# Keys are confirmed from OECD Data Explorer documented examples.
+# OECD CSV response columns: REF_AREA, TIME_PERIOD, OBS_VALUE (among others).
+# Note: CHN and EA19 are absent from LFS unemployment (OECD members only).
+
+OECD_COUNTRIES_CLI  = "AUS+CAN+CHE+CHN+DEU+EA19+FRA+GBR+ITA+JPN+USA"
+OECD_COUNTRIES_LFS  = "AUS+CAN+CHE+DEU+FRA+GBR+ITA+JPN+USA"    # no CHN/EA19
+OECD_COUNTRIES_FIN  = "AUS+CAN+CHE+DEU+EA19+FRA+GBR+ITA+JPN+USA"  # no CHN
 
 OECD_INDICATORS = [
     {
@@ -161,32 +178,21 @@ OECD_INDICATORS = [
             "Above 100 and rising = above-trend expansion; "
             "below 100 and falling = below-trend slowdown"
         ),
-        "dataset":  "MEI_CLI",
-        "key":      f"LOLITOAA.{OECD_COUNTRY_STR}.M",
-    },
-    {
-        "col":      "CPI",
-        "name":     "CPI Headline YoY %",
-        "category": "Inflation",
-        "units":    "% change year-on-year (SA)",
-        "notes":    (
-            "All-items CPI, annual growth rate. "
-            ">2% = above DM central bank targets; >5% = high-inflation regime"
-        ),
-        "dataset":  "MEI",
-        "key":      f"CPALTT01.{OECD_COUNTRY_STR}.GY.M",
+        "dataflow": "OECD.SDD.STES,DSD_STES@DF_CLI,4.1",
+        "key":      f"{OECD_COUNTRIES_CLI}.M.LI...AA.IX..H",
     },
     {
         "col":      "UNEMPLOYMENT",
         "name":     "Unemployment Rate",
         "category": "Labour Market",
-        "units":    "% of labour force (SA)",
+        "units":    "% of labour force (SA, total, age 15+)",
         "notes":    (
-            "Seasonally adjusted total unemployment rate. "
-            "Sustained rise = labour market deterioration signal"
+            "Seasonally adjusted total unemployment. "
+            "Sustained rise = labour market deterioration signal. "
+            "CHN and EA19 not available in OECD LFS."
         ),
-        "dataset":  "MEI",
-        "key":      f"UNRTOT.{OECD_COUNTRY_STR}.STSA.M",
+        "dataflow": "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0",
+        "key":      f"{OECD_COUNTRIES_LFS}..PT_LF_SUB._Z.Y._T.Y_GE15..M",
     },
     {
         "col":      "RATE_3M",
@@ -194,11 +200,30 @@ OECD_INDICATORS = [
         "category": "Monetary Policy",
         "units":    "% per annum",
         "notes":    (
-            "3-month interbank rate; proxy for central bank policy rate trajectory. "
-            "Rising = tightening cycle; falling = easing"
+            "3-month interbank/Treasury bill rate; proxy for policy rate trajectory. "
+            "Rising = tightening cycle; falling = easing. CHN not available."
         ),
-        "dataset":  "MEI",
-        "key":      f"IR3TIB01.{OECD_COUNTRY_STR}.ST.M",
+        "dataflow": "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",
+        "key":      f"{OECD_COUNTRIES_FIN}.M.IRST.PA.....",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# WORLD BANK INDICATOR DEFINITIONS
+# ---------------------------------------------------------------------------
+
+WB_INDICATORS = [
+    {
+        "col":      "CPI",
+        "name":     "CPI Headline YoY %",
+        "category": "Inflation",
+        "units":    "% change year-on-year (annual average)",
+        "notes":    (
+            "World Bank / ILO annual average CPI inflation. "
+            ">2% = above DM central bank targets; >5% = high-inflation regime"
+        ),
+        "wb_id":    "FP.CPI.TOTL.ZG",
     },
 ]
 
@@ -206,8 +231,6 @@ OECD_INDICATORS = [
 # ---------------------------------------------------------------------------
 # IMF INDICATOR DEFINITIONS
 # ---------------------------------------------------------------------------
-# IMF DataMapper returns all countries and all years in a single API call,
-# so one fetch covers both snapshot and full history.
 
 IMF_INDICATORS = [
     {
@@ -216,9 +239,8 @@ IMF_INDICATORS = [
         "category": "Growth",
         "units":    "% change year-on-year, constant prices",
         "notes":    (
-            "IMF World Economic Outlook projections. "
-            "Includes forward estimates for current and next year. "
-            "Negative = recession-year contraction"
+            "IMF World Economic Outlook; includes forward projections "
+            "for current and next year. Negative = recession-year contraction"
         ),
         "series":   "NGDP_RPCH",
     },
@@ -229,17 +251,22 @@ IMF_INDICATORS = [
 # HTTP HELPER
 # ---------------------------------------------------------------------------
 
-def _fetch_with_backoff(url: str, params: dict = None, label: str = "") -> dict | None:
+def _fetch_with_backoff(
+    url: str,
+    params: dict = None,
+    label: str = "",
+    accept_csv: bool = False,
+) -> dict | str | None:
     """
-    Generic HTTP GET with exponential backoff on 429 / 5xx responses.
-    Returns parsed JSON dict on success, or None on failure.
+    Generic HTTP GET with exponential backoff on 429 / 5xx.
+    Returns parsed JSON dict (or raw text if accept_csv=True), or None on failure.
     """
     for attempt in range(BACKOFF_RETRIES):
         try:
             resp = requests.get(url, params=params, timeout=30)
 
             if resp.status_code == 200:
-                return resp.json()
+                return resp.text if accept_csv else resp.json()
 
             elif resp.status_code in (429, 503):
                 wait = BACKOFF_BASE ** (attempt + 1)
@@ -263,7 +290,7 @@ def _fetch_with_backoff(url: str, params: dict = None, label: str = "") -> dict 
 
         except requests.exceptions.Timeout:
             wait = BACKOFF_BASE ** (attempt + 1)
-            print(f"  [{label}] Timeout. Backing off {wait}s (attempt {attempt + 1}/{BACKOFF_RETRIES})")
+            print(f"  [{label}] Timeout. Backing off {wait}s")
             time.sleep(wait)
 
         except requests.exceptions.RequestException as e:
@@ -275,77 +302,110 @@ def _fetch_with_backoff(url: str, params: dict = None, label: str = "") -> dict 
 
 
 # ---------------------------------------------------------------------------
-# OECD SDMX-JSON PARSER
+# OECD CSV PARSER  (new sdmx.oecd.org, format=csv)
 # ---------------------------------------------------------------------------
 
-def _parse_oecd_sdmx(data: dict) -> dict:
+def _parse_oecd_csv(text: str, label: str = "") -> dict:
     """
-    Parse an OECD SDMX-JSON response (stats.oecd.org format).
+    Parse OECD REST API CSV response (format=csv).
 
-    Locates the LOCATION dimension dynamically, so it handles any dataset
-    regardless of how many series dimensions it has (MEI_CLI has 3,
-    MEI has 4, etc.).
+    The new OECD API prepends 2 metadata rows (STRUCTURE, STRUCTURE_ID rows)
+    before the actual CSV header. This parser finds the header line dynamically
+    by looking for the REF_AREA column, then uses pandas to read the data.
 
     Returns:
-        {location_code: [(period_str, float_value), ...]}
-        Each list is sorted ascending by period string.
+        {country_code: [(period_str, float_value), ...]} sorted ascending.
     """
+    if not text or not text.strip():
+        print(f"  [{label}] Empty CSV response")
+        return {}
+
+    try:
+        lines = text.strip().splitlines()
+
+        # Find the actual CSV header row (contains REF_AREA)
+        header_idx = None
+        for i, line in enumerate(lines):
+            if "REF_AREA" in line.upper():
+                header_idx = i
+                break
+
+        if header_idx is None:
+            print(f"  [{label}] REF_AREA column not found in CSV. First line: {lines[0][:120]}")
+            return {}
+
+        csv_text = "\n".join(lines[header_idx:])
+        df = pd.read_csv(io.StringIO(csv_text), dtype=str)
+
+        # Find required columns (case-insensitive, handles extra whitespace)
+        col_upper = {c.strip().upper(): c for c in df.columns}
+        ref_col  = col_upper.get("REF_AREA")
+        time_col = col_upper.get("TIME_PERIOD")
+        val_col  = col_upper.get("OBS_VALUE")
+
+        if not all([ref_col, time_col, val_col]):
+            print(
+                f"  [{label}] Missing required CSV columns. "
+                f"Found: {list(df.columns)[:10]}"
+            )
+            return {}
+
+        results = {}
+        for _, row in df.iterrows():
+            country = str(row[ref_col]).strip()
+            period  = str(row[time_col]).strip()
+            raw_val = str(row[val_col]).strip()
+            if not raw_val or raw_val.upper() in ("NAN", "NA", "N/A", ""):
+                continue
+            try:
+                val = float(raw_val)
+            except ValueError:
+                continue
+            results.setdefault(country, []).append((period, val))
+
+        for k in results:
+            results[k].sort(key=lambda x: x[0])
+
+        print(f"    → {len(results)} countries parsed from CSV")
+        return results
+
+    except Exception as e:
+        print(f"  [{label}] CSV parse error: {e}")
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# WORLD BANK JSON PARSER
+# ---------------------------------------------------------------------------
+
+def _parse_worldbank(data: list, label: str = "") -> dict:
+    """
+    Parse World Bank API response [pagination_metadata, [observations]].
+
+    Returns:
+        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
+    """
+    if not data or len(data) < 2 or not data[1]:
+        print(f"  [{label}] Empty or unexpected World Bank response")
+        return {}
+
     results = {}
-
-    if not data or "dataSets" not in data or not data["dataSets"]:
-        return results
-
-    structure   = data.get("structure", {})
-    dims        = structure.get("dimensions", {})
-    series_dims = dims.get("series", [])
-    obs_dims    = dims.get("observation", [])
-
-    # Find the LOCATION dimension's position in the series dimensions list
-    loc_dim_pos = None
-    loc_id_list = []
-    for i, dim in enumerate(series_dims):
-        if dim.get("id") == "LOCATION":
-            loc_dim_pos = i
-            loc_id_list = [v["id"] for v in dim.get("values", [])]
-            break
-
-    if loc_dim_pos is None:
-        print("  [OECD parser] LOCATION dimension not found in response")
-        return results
-
-    # Build list of time period strings from observation dimensions
-    time_ids = []
-    for dim in obs_dims:
-        if dim.get("id") == "TIME_PERIOD":
-            time_ids = [v["id"] for v in dim.get("values", [])]
-            break
-
-    # Iterate series, accumulate observations per location
-    dataset = data["dataSets"][0]
-    for series_key, series_obj in dataset.get("series", {}).items():
-        parts = series_key.split(":")
-        if len(parts) <= loc_dim_pos:
+    for obs in data[1]:
+        val = obs.get("value")
+        if val is None:
             continue
-
-        loc_idx = int(parts[loc_dim_pos])
-        if loc_idx >= len(loc_id_list):
+        # World Bank uses ISO 3-letter codes in countryiso3code
+        iso3 = obs.get("countryiso3code", "")
+        our_code = WB_CODE_MAP.get(iso3)
+        if not our_code:
             continue
-        loc_code = loc_id_list[loc_idx]
+        yr  = str(obs.get("date", ""))
+        results.setdefault(our_code, []).append((yr, float(val)))
 
-        for obs_idx_str, obs_vals in series_obj.get("observations", {}).items():
-            val = obs_vals[0] if obs_vals else None
-            if val is None:
-                continue
-            obs_idx = int(obs_idx_str)
-            period  = time_ids[obs_idx] if obs_idx < len(time_ids) else None
-            if not period:
-                continue
-            results.setdefault(loc_code, []).append((period, float(val)))
+    for k in results:
+        results[k].sort(key=lambda x: x[0])
 
-    # Sort each location's series ascending by period string
-    for loc in results:
-        results[loc].sort(key=lambda x: x[0])
-
+    print(f"    → {len(results)} countries parsed from World Bank")
     return results
 
 
@@ -353,13 +413,13 @@ def _parse_oecd_sdmx(data: dict) -> dict:
 # IMF DATAMAPPER PARSER
 # ---------------------------------------------------------------------------
 
-def _parse_imf_datamapper(data: dict, indicator: str) -> dict:
+def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
     """
-    Parse an IMF DataMapper response.
+    Parse IMF DataMapper response.
+    IMF uses 3-letter ISO codes for countries and "XM" for Euro Area.
 
     Returns:
-        {our_country_code: [(year_str, float_value), ...]}
-        Each list is sorted ascending by year string.
+        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
     """
     results = {}
     values  = data.get("values", {}).get(indicator, {})
@@ -368,17 +428,16 @@ def _parse_imf_datamapper(data: dict, indicator: str) -> dict:
         our_code = IMF_CODE_MAP.get(imf_code)
         if not our_code or not year_data:
             continue
-
         obs_list = []
         for yr, val in year_data.items():
             try:
                 obs_list.append((str(yr), float(val)))
             except (TypeError, ValueError):
                 pass
-
         obs_list.sort(key=lambda x: x[0])
         results[our_code] = obs_list
 
+    print(f"    → {len(results)} countries parsed from IMF")
     return results
 
 
@@ -388,48 +447,86 @@ def _parse_imf_datamapper(data: dict, indicator: str) -> dict:
 
 def fetch_oecd_snapshot(indic: dict) -> dict:
     """
-    Fetch the last 3 observations for an OECD indicator (all countries).
-
-    Returns:
-        {country_code: [(period_str, value), ...]} or {} on failure.
+    Fetch last 3 observations for one OECD indicator (format=csv).
+    Returns {country_code: [(period, val), ...]} or {} on failure.
     """
-    url    = f"{OECD_BASE}/{indic['dataset']}/{indic['key']}/OECD"
-    params = {"format": "sdmx-json", "lastNObservations": 3}
-    label  = f"OECD/{indic['col']}"
+    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
+    label = f"OECD/{indic['col']}"
+    print(f"  Fetching {label}...")
 
-    print(f"  Fetching {label} (dataset: {indic['dataset']})...")
-    data   = _fetch_with_backoff(url, params=params, label=label)
-
-    if data is None:
+    text  = _fetch_with_backoff(
+        url,
+        params={"format": "csv", "lastNObservations": 3},
+        label=label,
+        accept_csv=True,
+    )
+    if text is None:
         print(f"    → No response for {label}")
         return {}
-
-    parsed = _parse_oecd_sdmx(data)
-    print(f"    → {len(parsed)} countries returned for {indic['col']}")
-    return parsed
+    return _parse_oecd_csv(text, label=label)
 
 
 def fetch_oecd_history(indic: dict) -> dict:
     """
-    Fetch full history (from HIST_START) for an OECD indicator (all countries).
-
-    Returns:
-        {country_code: [(period_str, value), ...]} or {} on failure.
+    Fetch full history (from HIST_START) for one OECD indicator (format=csv).
+    Returns {country_code: [(period, val), ...]} or {} on failure.
     """
-    url    = f"{OECD_BASE}/{indic['dataset']}/{indic['key']}/OECD"
-    params = {"format": "sdmx-json", "startPeriod": HIST_START[:4]}  # e.g. "2000"
-    label  = f"OECD/{indic['col']}/hist"
+    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
+    label = f"OECD/{indic['col']}/hist"
+    print(f"  Fetching {label}...")
 
-    print(f"  Fetching {label} (from {HIST_START[:4]})...")
-    data   = _fetch_with_backoff(url, params=params, label=label)
-
-    if data is None:
+    text  = _fetch_with_backoff(
+        url,
+        params={"format": "csv", "startPeriod": HIST_START[:7]},  # "2000-01"
+        label=label,
+        accept_csv=True,
+    )
+    if text is None:
         print(f"    → No response for {label}")
         return {}
+    return _parse_oecd_csv(text, label=label)
 
-    parsed = _parse_oecd_sdmx(data)
-    print(f"    → {len(parsed)} countries returned for {indic['col']} history")
-    return parsed
+
+# ---------------------------------------------------------------------------
+# WORLD BANK DATA FETCHERS
+# ---------------------------------------------------------------------------
+
+def fetch_wb_snapshot(indic: dict) -> dict:
+    """
+    Fetch last 5 annual observations from World Bank for one indicator.
+    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
+    """
+    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
+    label = f"WB/{indic['col']}"
+    print(f"  Fetching {label}...")
+
+    data  = _fetch_with_backoff(
+        url,
+        params={"format": "json", "mrv": 5, "per_page": 200},
+        label=label,
+    )
+    if data is None:
+        return {}
+    return _parse_worldbank(data, label=label)
+
+
+def fetch_wb_history(indic: dict) -> dict:
+    """
+    Fetch full history from 2000 from World Bank for one indicator.
+    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
+    """
+    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
+    label = f"WB/{indic['col']}/hist"
+    print(f"  Fetching {label}...")
+
+    data  = _fetch_with_backoff(
+        url,
+        params={"format": "json", "date": "2000:2025", "per_page": 1000},
+        label=label,
+    )
+    if data is None:
+        return {}
+    return _parse_worldbank(data, label=label)
 
 
 # ---------------------------------------------------------------------------
@@ -438,25 +535,18 @@ def fetch_oecd_history(indic: dict) -> dict:
 
 def fetch_imf_indicator(indic: dict) -> dict:
     """
-    Fetch all years for an IMF DataMapper indicator.
-    One call returns the complete time series for all countries.
-
-    Returns:
-        {country_code: [(year_str, value), ...]} or {} on failure.
+    Fetch full history for one IMF DataMapper indicator (all years, all countries).
+    One API call returns everything — snapshot and history come from the same response.
+    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
     """
     url   = f"{IMF_BASE}/{indic['series']}"
     label = f"IMF/{indic['col']}"
+    print(f"  Fetching {label}...")
 
-    print(f"  Fetching {label} (series: {indic['series']})...")
     data  = _fetch_with_backoff(url, label=label)
-
     if data is None:
-        print(f"    → No response for {label}")
         return {}
-
-    parsed = _parse_imf_datamapper(data, indic["series"])
-    print(f"    → {len(parsed)} countries returned for {indic['col']}")
-    return parsed
+    return _parse_imf_datamapper(data, indic["series"], label=label)
 
 
 # ---------------------------------------------------------------------------
@@ -465,6 +555,7 @@ def fetch_imf_indicator(indic: dict) -> dict:
 
 def build_snapshot(
     oecd_results: dict,   # {col: {country_code: [(period, val), ...]}}
+    wb_results:   dict,   # {col: {country_code: [(year, val), ...]}}
     imf_results:  dict,   # {col: {country_code: [(year, val), ...]}}
 ) -> pd.DataFrame:
     """
@@ -515,6 +606,7 @@ def build_snapshot(
                 })
 
     _add_rows(OECD_INDICATORS, oecd_results, "OECD", "Monthly")
+    _add_rows(WB_INDICATORS,   wb_results,   "World Bank", "Annual")
     _add_rows(IMF_INDICATORS,  imf_results,  "IMF",  "Annual")
 
     df = pd.DataFrame(rows)
@@ -529,7 +621,6 @@ def build_snapshot(
 
 def _last_friday_on_or_before(d: date) -> date:
     """Return the most recent Friday on or before date d."""
-    # weekday(): Mon=0 … Fri=4 … Sun=6
     offset = (d.weekday() - 4) % 7   # days since last Friday (0 if d IS Friday)
     return d - timedelta(days=offset)
 
@@ -544,9 +635,8 @@ def _build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
 
 def _monthly_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
     """
-    Convert OECD monthly series {country: [(period_str, val), ...]} to a DataFrame.
-    Period strings are "YYYY-MM"; each is mapped to the last day of that month.
-    Returns a DataFrame indexed by date, columns = f"{country}_{col_prefix}".
+    Convert OECD monthly series {country: [("YYYY-MM", val), ...]} to a DataFrame.
+    Each period is mapped to the last day of that month.
     """
     frames = []
     for country, obs in series_dict.items():
@@ -555,7 +645,6 @@ def _monthly_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
         dates, vals = [], []
         for period, val in obs:
             try:
-                # "YYYY-MM" → last day of month
                 dt = datetime.strptime(period[:7] + "-01", "%Y-%m-%d")
                 if dt.month == 12:
                     eom = dt.replace(day=31)
@@ -576,9 +665,8 @@ def _monthly_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
 
 def _annual_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
     """
-    Convert IMF annual series {country: [(year_str, val), ...]} to a DataFrame.
+    Convert annual series {country: [("YYYY", val), ...]} to a DataFrame.
     Each year is mapped to Dec 31 of that year.
-    Returns a DataFrame indexed by date, columns = f"{country}_{col_prefix}".
     """
     frames = []
     for country, obs in series_dict.items():
@@ -601,18 +689,13 @@ def _annual_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
 
 
 def build_history(
-    oecd_hist: dict,   # {col: {country_code: [(period, val), ...]}}
-    imf_hist:  dict,   # {col: {country_code: [(year, val), ...]}}
+    oecd_hist: dict,
+    wb_hist:   dict,
+    imf_hist:  dict,
 ) -> pd.DataFrame:
     """
     Build the weekly Friday-spine history DataFrame.
-
-    Rows:    Every Friday from HIST_START to today.
-    Columns: {country}_{indicator_col} for all indicators and countries.
-
-    Monthly OECD data is forward-filled to cover all Fridays until the next
-    data point arrives. Annual IMF data is forward-filled across all Fridays
-    within each calendar year.
+    Monthly OECD data and annual WB/IMF data are forward-filled onto the spine.
     """
     today = date.today()
     spine = _build_friday_spine(HIST_START, today)
@@ -622,19 +705,19 @@ def build_history(
     def _merge(raw_df: pd.DataFrame) -> None:
         if raw_df.empty:
             return
-        # Combine spine and data dates, forward-fill, reindex back to spine only
         combined = raw_df.reindex(spine.union(raw_df.index)).sort_index()
         combined = combined.ffill().reindex(spine)
         for col in combined.columns:
             hist[col] = combined[col]
 
     for indic in OECD_INDICATORS:
-        col = indic["col"]
-        _merge(_monthly_to_frame(oecd_hist.get(col, {}), col))
+        _merge(_monthly_to_frame(oecd_hist.get(indic["col"], {}), indic["col"]))
+
+    for indic in WB_INDICATORS:
+        _merge(_annual_to_frame(wb_hist.get(indic["col"], {}), indic["col"]))
 
     for indic in IMF_INDICATORS:
-        col = indic["col"]
-        _merge(_annual_to_frame(imf_hist.get(col, {}), col))
+        _merge(_annual_to_frame(imf_hist.get(indic["col"], {}), indic["col"]))
 
     print(f"\n[Phase C] History: {len(hist)} rows × {len(hist.columns)} data columns")
     return hist
@@ -646,24 +729,22 @@ def build_history(
 
 def _build_hist_metadata(columns: list) -> list:
     """
-    Build 2 metadata prefix rows for macro_intl_hist (matches macro_us_hist pattern):
-      Row 0: Indicator full name
-      Row 1: Country name
-
-    columns: list of column names like "AUS_CLI", "EA19_RATE_3M", "CHN_GDP_GROWTH"
+    Build 2 metadata prefix rows (Indicator name, Country name).
+    Matches the format used in macro_us_hist and market_data_hist.
     """
-    col_name_map     = {i["col"]: i["name"] for i in OECD_INDICATORS + IMF_INDICATORS}
-    country_name_map = {k: v[0] for k, v in COUNTRY_META.items()}
+    all_indics     = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS
+    col_name_map   = {i["col"]: i["name"] for i in all_indics}
+    country_map    = {k: v[0] for k, v in COUNTRY_META.items()}
 
     row_indicator = ["Indicator"]
     row_country   = ["Country"]
 
     for col in columns:
-        # Split on first "_" only: "EA19_GDP_GROWTH" → ["EA19", "GDP_GROWTH"]
+        # "EA19_GDP_GROWTH".split("_", 1) → ["EA19", "GDP_GROWTH"]
         parts = col.split("_", 1)
         if len(parts) == 2:
             row_indicator.append(col_name_map.get(parts[1], parts[1]))
-            row_country.append(country_name_map.get(parts[0], parts[0]))
+            row_country.append(country_map.get(parts[0], parts[0]))
         else:
             row_indicator.append(col)
             row_country.append(col)
@@ -676,40 +757,33 @@ def _build_hist_metadata(columns: list) -> list:
 # ---------------------------------------------------------------------------
 
 def save_snapshot_csv(df: pd.DataFrame) -> None:
-    """Save snapshot DataFrame to data/macro_intl.csv."""
     os.makedirs("data", exist_ok=True)
-
     if os.path.exists(SNAPSHOT_CSV):
         try:
             existing = pd.read_csv(SNAPSHOT_CSV)
-            cols = ["Country", "Indicator", "Latest Value", "Prior Value", "Change", "Last Period"]
+            cols = ["Country", "Indicator", "Latest Value", "Prior Value",
+                    "Change", "Last Period"]
             if existing[cols].equals(df[cols]):
                 print(f"[Phase C] Snapshot CSV unchanged — skipping write")
                 return
         except Exception:
-            pass  # On any comparison error just overwrite
-
+            pass
     df.to_csv(SNAPSHOT_CSV, index=False)
     print(f"[Phase C] Written {len(df)} rows to {SNAPSHOT_CSV}")
 
 
 def save_hist_csv(df: pd.DataFrame) -> None:
     """
-    Save history DataFrame to data/macro_intl_hist.csv.
-    Writes 2 metadata prefix rows before the header + data rows
-    (matches the macro_us_hist.csv format).
+    Save history DataFrame with 2 metadata prefix rows (matches macro_us_hist format).
     """
     os.makedirs("data", exist_ok=True)
-
     columns   = list(df.columns)
     meta_rows = _build_hist_metadata(columns)
 
-    # Write metadata rows using csv module (handles commas in indicator names)
     with open(HIST_CSV, "w", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv_module.writer(f)
         writer.writerows(meta_rows)
 
-    # Append pandas data (header + rows) — index is the Date column
     df.to_csv(HIST_CSV, mode="a", date_format="%Y-%m-%d",
               float_format="%.4f", na_rep="")
 
@@ -717,11 +791,10 @@ def save_hist_csv(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
-# GOOGLE SHEETS HELPERS
+# GOOGLE SHEETS
 # ---------------------------------------------------------------------------
 
 def _get_sheets_service():
-    """Build and return an authenticated Google Sheets service object."""
     creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
     creds = Credentials.from_service_account_info(
         creds_dict,
@@ -731,7 +804,6 @@ def _get_sheets_service():
 
 
 def _ensure_tab(sheets, tab_name: str) -> None:
-    """Create the named tab if it doesn't already exist."""
     meta     = sheets.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
     existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
     if tab_name not in existing:
@@ -743,10 +815,8 @@ def _ensure_tab(sheets, tab_name: str) -> None:
 
 
 def _write_tab(sheets, tab_name: str, values: list) -> None:
-    """Clear existing content and write new values to a tab."""
     sheets.spreadsheets().values().clear(
-        spreadsheetId=SHEET_ID,
-        range=f"{tab_name}!A:ZZ"
+        spreadsheetId=SHEET_ID, range=f"{tab_name}!A:ZZ"
     ).execute()
     sheets.spreadsheets().values().update(
         spreadsheetId=SHEET_ID,
@@ -757,12 +827,7 @@ def _write_tab(sheets, tab_name: str, values: list) -> None:
     print(f"[Phase C] Written {len(values)} rows to '{tab_name}' tab")
 
 
-# ---------------------------------------------------------------------------
-# PUSH TO GOOGLE SHEETS
-# ---------------------------------------------------------------------------
-
 def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
-    """Push snapshot DataFrame to the 'macro_intl' Google Sheets tab."""
     if not GOOGLE_CREDENTIALS_JSON:
         print("[Phase C] GOOGLE_CREDENTIALS not set — skipping snapshot Sheets push")
         return
@@ -776,13 +841,12 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
         data_rows = df.fillna("").astype(str).values.tolist()
         _write_tab(sheets, SNAPSHOT_TAB, [header] + data_rows)
     except json.JSONDecodeError as e:
-        print(f"[Phase C] GOOGLE_CREDENTIALS parse error: {e} — skipping snapshot push")
+        print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:
-        print(f"[Phase C] Snapshot Sheets push failed: {e} — skipping")
+        print(f"[Phase C] Snapshot Sheets push failed: {e}")
 
 
 def push_hist_to_sheets(df: pd.DataFrame) -> None:
-    """Push history DataFrame to the 'macro_intl_hist' Google Sheets tab."""
     if not GOOGLE_CREDENTIALS_JSON:
         print("[Phase C] GOOGLE_CREDENTIALS not set — skipping hist Sheets push")
         return
@@ -813,9 +877,9 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
         _write_tab(sheets, HIST_TAB, meta_rows + [header] + data_rows)
 
     except json.JSONDecodeError as e:
-        print(f"[Phase C] GOOGLE_CREDENTIALS parse error: {e} — skipping hist push")
+        print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:
-        print(f"[Phase C] Hist Sheets push failed: {e} — skipping")
+        print(f"[Phase C] Hist Sheets push failed: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -835,7 +899,7 @@ def run_phase_c() -> None:
 
     try:
         # ------------------------------------------------------------------
-        # SNAPSHOT: fetch last 3 observations per OECD indicator
+        # SNAPSHOT: OECD (last 3 observations per indicator)
         # ------------------------------------------------------------------
         print("\n[Snapshot] Fetching OECD indicators...")
         oecd_snap = {}
@@ -849,8 +913,20 @@ def run_phase_c() -> None:
                 time.sleep(OECD_DELAY)
 
         # ------------------------------------------------------------------
-        # SNAPSHOT: fetch IMF indicators (each call returns full history,
-        #           so this doubles as the history fetch for IMF series)
+        # SNAPSHOT: World Bank
+        # ------------------------------------------------------------------
+        print("\n[Snapshot] Fetching World Bank indicators...")
+        wb_snap = {}
+        for i, indic in enumerate(WB_INDICATORS):
+            try:
+                time.sleep(WB_DELAY)
+                wb_snap[indic["col"]] = fetch_wb_snapshot(indic)
+            except Exception as e:
+                print(f"  [Phase C] WB {indic['col']} snapshot failed: {e}")
+                wb_snap[indic["col"]] = {}
+
+        # ------------------------------------------------------------------
+        # SNAPSHOT: IMF (returns full history — reused for hist tab)
         # ------------------------------------------------------------------
         print("\n[Snapshot] Fetching IMF indicators...")
         imf_data = {}
@@ -865,13 +941,13 @@ def run_phase_c() -> None:
         # ------------------------------------------------------------------
         # Build and save snapshot
         # ------------------------------------------------------------------
-        snap_df = build_snapshot(oecd_snap, imf_data)
+        snap_df = build_snapshot(oecd_snap, wb_snap, imf_data)
         if not snap_df.empty:
             save_snapshot_csv(snap_df)
             push_snapshot_to_sheets(snap_df)
 
         # ------------------------------------------------------------------
-        # HISTORY: fetch full OECD history (separate calls with startPeriod)
+        # HISTORY: OECD full history (separate calls with startPeriod)
         # ------------------------------------------------------------------
         print("\n[History] Fetching OECD full history (from 2000)...")
         oecd_hist = {}
@@ -884,14 +960,27 @@ def run_phase_c() -> None:
             if i < len(OECD_INDICATORS) - 1:
                 time.sleep(OECD_DELAY)
 
-        # IMF DataMapper already returned the full history in the snapshot call
+        # ------------------------------------------------------------------
+        # HISTORY: World Bank (full date range in one call)
+        # ------------------------------------------------------------------
+        print("\n[History] Fetching World Bank full history (from 2000)...")
+        wb_hist = {}
+        for i, indic in enumerate(WB_INDICATORS):
+            try:
+                time.sleep(WB_DELAY)
+                wb_hist[indic["col"]] = fetch_wb_history(indic)
+            except Exception as e:
+                print(f"  [Phase C] WB {indic['col']} history failed: {e}")
+                wb_hist[indic["col"]] = {}
+
+        # IMF DataMapper returns all years in the snapshot call — reuse it
         print("\n[History] Reusing IMF data (DataMapper returns all years in one call)...")
         imf_hist = imf_data
 
         # ------------------------------------------------------------------
         # Build and save history
         # ------------------------------------------------------------------
-        hist_df = build_history(oecd_hist, imf_hist)
+        hist_df = build_history(oecd_hist, wb_hist, imf_hist)
         if not hist_df.empty:
             save_hist_csv(hist_df)
             push_hist_to_sheets(hist_df)
