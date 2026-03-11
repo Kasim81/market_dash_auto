@@ -662,3 +662,17 @@ try:
 except Exception as _phase_c_err:
     print(f"[Phase C] Non-fatal import/run error: {_phase_c_err}")
     print("[Phase C] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# PHASE B — SURVEY & CREDIT CONDITION INDICATORS
+# Fetches SLOOS detail, UMich sub-indices, Regional Fed surveys
+# Outputs: data/macro_surveys.csv, data/macro_surveys_hist.csv
+#          Google Sheets tabs: macro_surveys, macro_surveys_hist
+# ============================================================
+
+try:
+    from fetch_macro_surveys import run_phase_b
+    run_phase_b()
+except Exception as _phase_b_err:
+    print(f"[Phase B] Non-fatal import/run error: {_phase_b_err}")
+    print("[Phase B] Existing pipeline outputs are unaffected")
