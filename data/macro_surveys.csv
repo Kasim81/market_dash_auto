@@ -1,0 +1,11 @@
+Series ID,Indicator,Category,Subcategory,Units,Latest Value,Prior Value,Change,Last Date,Source,Notes,Fetched At
+DRTSCIS,"SLOOS: Net Tightening — C&I Loans, Small Firms",Credit Conditions,SLOOS,Net Percent,8.9,8.3,0.6,2026-01-01,FRED,Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle.,2026-03-12 06:42 UTC
+DRTSCLCC,SLOOS: Net Tightening — Credit Card Loans,Credit Conditions,SLOOS,Net Percent,0.0,4.2,-4.2,2026-01-01,FRED,Consumer credit availability. Tightening leads consumer spending slowdown.,2026-03-12 06:42 UTC
+DRTSCLNG,SLOOS: Net Tightening — Consumer Loans (Non-Credit Card),Credit Conditions,SLOOS,Net Percent,,,,,FRED,"Auto, student and personal loans. Broadens consumer credit picture.",2026-03-12 06:43 UTC
+DRTSCRE,SLOOS: Net Tightening — Commercial Real Estate,Credit Conditions,SLOOS,Net Percent,,,,,FRED,CRE credit cycle; leads commercial property stress by 2-4 quarters.,2026-03-12 06:43 UTC
+UMCSI,UMich: Index of Current Economic Conditions,Survey,Consumer Sentiment,Index (1966 Q1 = 100),,,,,FRED,Reflects assessment of present situation. Divergence from expectations = inflection signal.,2026-03-12 06:43 UTC
+UMCSE,UMich: Index of Consumer Expectations,Survey,Consumer Sentiment,Index (1966 Q1 = 100),,,,,FRED,Forward-looking sub-index. Fed Reserve conference board uses this in composite LEI.,2026-03-12 06:43 UTC
+GACDISA066MSFRBPHI,Philadelphia Fed: Mfg Business Conditions (General Activity),Survey,Regional Fed,Diffusion Index,,,,,FRED,One of the earliest monthly US mfg surveys. Positive = expansion; leads ISM by ~1 week.,2026-03-12 06:43 UTC
+GACDISA066MSFRBNY,Empire State (NY Fed): Mfg Business Conditions (General Activity),Survey,Regional Fed,Diffusion Index,7.1,7.7,-0.6,2026-02-01,FRED,First regional Fed mfg survey released each month. Closely watched ISM preview.,2026-03-12 06:43 UTC
+GACDISA066MSFRBRIC,Richmond Fed: Mfg Business Conditions (Composite Index),Survey,Regional Fed,Diffusion Index,,,,,FRED,"Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV.",2026-03-12 06:43 UTC
+GACDISA066MSFRBKC,Kansas City Fed: Mfg Business Conditions (Composite Index),Survey,Regional Fed,Diffusion Index,,,,,FRED,"Tenth Federal Reserve District. Covers OK, KS, NE, CO, WY, NM, MO.",2026-03-12 06:43 UTC
