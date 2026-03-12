@@ -76,7 +76,7 @@ MARKET_HIST_CSV         = "data/market_data_hist.csv"
 MACRO_HIST_CSV          = "data/macro_us_hist.csv"
 
 # Historical start floors
-MARKET_HIST_START       = "2000-01-01"   # yfinance data; Fridays from 2000-01-07
+MARKET_HIST_START       = "1990-01-01"   # yfinance data; ETF columns NaN before launch date
 MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this far
 
 # Rate limit delays
@@ -224,65 +224,14 @@ ALL_YFINANCE = (
 )
 
 # ---------------------------------------------------------------------------
-# FRED MACRO SERIES (same 25 as fetch_macro_us_fred.py)
+# FRED MACRO SERIES — imported from fetch_macro_us_fred.py (single source of truth)
 # ---------------------------------------------------------------------------
 
-FRED_MACRO_US = {
-    "T10Y2Y":       "US Yield Curve 10Y-2Y Spread",
-    "T10Y3M":       "US Yield Curve 10Y-3M Spread",
-    "M2SL":         "US M2 Money Supply",
-    "USSLIND":      "US Conference Board LEI",
-    "PERMIT":       "US Building Permits (SAAR)",
-    "IC4WSA":       "US Initial Jobless Claims 4-Week Avg",
-    "PAYEMS":       "US Nonfarm Payrolls",
-    "UNRATE":       "US Unemployment Rate",
-    "INDPRO":       "US Industrial Production",
-    "RSXFS":        "US Retail Sales ex-Autos",
-    "DRTSCILM":     "US SLOOS Net Tightening (C&I Large Firms)",
-    "NFCI":         "Chicago Fed NFCI",
-    "CPIAUCSL":     "US CPI Headline",
-    "CPILFESL":     "US Core CPI",
-    "PCEPILFE":     "US Core PCE Deflator",
-    "PPIACO":       "US PPI All Commodities",
-    "T5YIE":        "US TIPS 5Y Breakeven",
-    "T10YIE":       "US TIPS 10Y Breakeven",
-    "T5YIFR":       "US 5Y5Y Forward Inflation",
-    "MICH":         "UMich Consumer Inflation Expectations",
-    "FEDFUNDS":     "US Federal Funds Rate",
-    "DFII10":       "US 10Y Real Rate (TIPS)",
-    "DFII5":        "US 5Y Real Rate (TIPS)",
-    "BAMLH0A0HYM2": "US HY Credit Spread OAS",
-    "BAMLC0A0CM":   "US IG Credit Spread OAS",
-}
+from fetch_macro_us_fred import FRED_MACRO_US as _FRED_MACRO_US_FULL
 
-# Category metadata for macro_us_hist columns (used for metadata header rows)
-FRED_MACRO_US_CATEGORIES = {
-    "T10Y2Y":       "Growth / Monetary",
-    "T10Y3M":       "Growth / Monetary",
-    "M2SL":         "Monetary",
-    "USSLIND":      "Growth",
-    "PERMIT":       "Growth",
-    "IC4WSA":       "Growth",
-    "PAYEMS":       "Growth",
-    "UNRATE":       "Growth",
-    "INDPRO":       "Growth",
-    "RSXFS":        "Growth",
-    "DRTSCILM":     "Financial Conditions",
-    "NFCI":         "Financial Conditions",
-    "CPIAUCSL":     "Inflation",
-    "CPILFESL":     "Inflation",
-    "PCEPILFE":     "Inflation",
-    "PPIACO":       "Inflation",
-    "T5YIE":        "Inflation",
-    "T10YIE":       "Inflation",
-    "T5YIFR":       "Inflation",
-    "MICH":         "Inflation",
-    "FEDFUNDS":     "Monetary",
-    "DFII10":       "Monetary",
-    "DFII5":        "Monetary",
-    "BAMLH0A0HYM2": "Financial Conditions",
-    "BAMLC0A0CM":   "Financial Conditions",
-}
+# Derive the two lookup dicts used in metadata prefix rows
+FRED_MACRO_US_NAMES = {k: v[0] for k, v in _FRED_MACRO_US_FULL.items()}
+FRED_MACRO_US_CATS  = {k: v[1] for k, v in _FRED_MACRO_US_FULL.items()}
 
 # ---------------------------------------------------------------------------
 # HELPERS: FRIDAY SPINE
@@ -740,12 +689,10 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
         if i < total:
             time.sleep(FRED_DELAY)
 
-    # Build DataFrame
+    # Build DataFrame — keep FRED series IDs as column headers;
+    # human-readable names appear in the metadata prefix rows (row 1 = Name, row 2 = Category)
     df = pd.DataFrame(series_data, index=spine)
     df.index.name = "Date"
-
-    # Use short names as column headers for readability
-    df.columns = [FRED_MACRO_US[sid] for sid in df.columns]
 
     df = df.reset_index()
     df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
@@ -783,11 +730,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
 
     for col in df.columns:
         if col == "Date":
-            name_row.append("")
-            region_row.append("")
-            asset_class_row.append("")
-            currency_row.append("")
-            continue
+            continue   # label ("Name" etc.) already in position 0 → no placeholder needed
 
         if col.endswith("_Local"):
             base = col[:-6]
@@ -811,19 +754,17 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
 def build_macro_meta_prefix(df: pd.DataFrame) -> list:
     """
     Build 2 metadata rows (Name, Category) for macro_us_hist.
-    Column names are FRED series IDs; looked up in FRED_MACRO_US and
-    FRED_MACRO_US_CATEGORIES.
+    Column names are FRED series IDs; looked up in FRED_MACRO_US_NAMES and
+    FRED_MACRO_US_CATS (derived from fetch_macro_us_fred.FRED_MACRO_US).
     """
     name_row     = ["Name"]
     category_row = ["Category"]
 
     for col in df.columns:
         if col == "Date":
-            name_row.append("")
-            category_row.append("")
-            continue
-        name_row.append(FRED_MACRO_US.get(col, col))
-        category_row.append(FRED_MACRO_US_CATEGORIES.get(col, ""))
+            continue   # label already in position 0 → no placeholder needed
+        name_row.append(FRED_MACRO_US_NAMES.get(col, col))
+        category_row.append(FRED_MACRO_US_CATS.get(col, ""))
 
     return [name_row, category_row]
 
