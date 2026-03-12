@@ -574,9 +574,20 @@ def push_macro_us_to_sheets(df: pd.DataFrame) -> None:
             print(f"[Phase A] Tab '{TAB_NAME}' already exists — will overwrite")
 
         # --- Write data ---------------------------------------------------
-        # Build values: header row + data rows
+        def _sv(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except (TypeError, ValueError):
+                pass
+            if isinstance(v, (int, float)):
+                return float(v)
+            return str(v)
+
         header = list(df.columns)
-        data_rows = df.fillna("").astype(str).values.tolist()
+        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
         values = [header] + data_rows
 
         range_notation = f"{TAB_NAME}!A1"
@@ -591,7 +602,7 @@ def push_macro_us_to_sheets(df: pd.DataFrame) -> None:
         sheets.values().update(
             spreadsheetId=SHEET_ID,
             range=range_notation,
-            valueInputOption="RAW",
+            valueInputOption="USER_ENTERED",
             body={"values": values}
         ).execute()
 

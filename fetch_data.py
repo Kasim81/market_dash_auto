@@ -476,10 +476,23 @@ def push_to_google_sheets(df_main):
     service = build("sheets", "v4", credentials=creds)
     sheets = service.spreadsheets()
 
+    def _sv(v):
+        """Serialize one cell: keep numbers as float, dates/strings as str, NaN as ''."""
+        if v is None:
+            return ""
+        try:
+            if pd.isna(v):
+                return ""
+        except (TypeError, ValueError):
+            pass
+        if isinstance(v, (int, float, np.integer, np.floating)):
+            return float(v)
+        return str(v)
+
     def df_to_values(df):
-        """Convert dataframe to list-of-lists for Sheets API, replacing NaN with empty string."""
+        """Convert dataframe to list-of-lists for Sheets API, preserving numeric types."""
         header = df.columns.tolist()
-        rows = df.fillna("").astype(str).values.tolist()
+        rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
         return [header] + rows
 
     def write_sheet(tab_name, values):
@@ -492,7 +505,7 @@ def push_to_google_sheets(df_main):
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
             range=f"{tab_name}!A1",
-            valueInputOption="RAW",
+            valueInputOption="USER_ENTERED",
             body={"values": values}
         ).execute()
         print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
