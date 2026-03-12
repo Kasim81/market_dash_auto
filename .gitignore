@@ -1,0 +1,18 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data outputs (generated at runtime)
+data/
+
+# Environment / secrets
+.env
+
+# OS
+.DS_Store

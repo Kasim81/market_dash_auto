@@ -172,41 +172,44 @@ OECD_COUNTRIES_FIN  = "AUS+CAN+CHE+DEU+EA19+FRA+GBR+ITA+JPN+USA"  # no CHN
 
 OECD_INDICATORS = [
     {
-        "col":      "CLI",
-        "name":     "Composite Leading Indicator (CLI)",
-        "category": "Leading Indicators",
-        "units":    "Index (amplitude adjusted; long-run avg = 100)",
-        "notes":    (
+        "col":       "CLI",
+        "name":      "Composite Leading Indicator (CLI)",
+        "category":  "Leading Indicators",
+        "units":     "Index (amplitude adjusted; long-run avg = 100)",
+        "frequency": "Monthly",
+        "notes":     (
             "Above 100 and rising = above-trend expansion; "
             "below 100 and falling = below-trend slowdown"
         ),
-        "dataflow": "OECD.SDD.STES,DSD_STES@DF_CLI,4.1",
-        "key":      f"{OECD_COUNTRIES_CLI}.M.LI...AA.IX..H",
+        "dataflow":  "OECD.SDD.STES,DSD_STES@DF_CLI,4.1",
+        "key":       f"{OECD_COUNTRIES_CLI}.M.LI...AA.IX..H",
     },
     {
-        "col":      "UNEMPLOYMENT",
-        "name":     "Unemployment Rate",
-        "category": "Labour Market",
-        "units":    "% of labour force (SA, total, age 15+)",
-        "notes":    (
+        "col":       "UNEMPLOYMENT",
+        "name":      "Unemployment Rate",
+        "category":  "Labour Market",
+        "units":     "% of labour force (SA, total, age 15+)",
+        "frequency": "Monthly",
+        "notes":     (
             "Seasonally adjusted total unemployment. "
             "Sustained rise = labour market deterioration signal. "
             "CHN and EA19 not available in OECD LFS."
         ),
-        "dataflow": "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0",
-        "key":      f"{OECD_COUNTRIES_LFS}..PT_LF_SUB._Z.Y._T.Y_GE15..M",
+        "dataflow":  "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0",
+        "key":       f"{OECD_COUNTRIES_LFS}..PT_LF_SUB._Z.Y._T.Y_GE15..M",
     },
     {
-        "col":      "RATE_3M",
-        "name":     "Short-term Interest Rate (3M)",
-        "category": "Monetary Policy",
-        "units":    "% per annum",
-        "notes":    (
+        "col":       "RATE_3M",
+        "name":      "Short-term Interest Rate (3M)",
+        "category":  "Monetary Policy",
+        "units":     "% per annum",
+        "frequency": "Monthly",
+        "notes":     (
             "3-month interbank/Treasury bill rate; proxy for policy rate trajectory. "
             "Rising = tightening cycle; falling = easing. CHN not available."
         ),
-        "dataflow": "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",
-        "key":      f"{OECD_COUNTRIES_FIN}.M.IRST.PA.....",
+        "dataflow":  "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",
+        "key":       f"{OECD_COUNTRIES_FIN}.M.IRST.PA.....",
     },
 ]
 
@@ -217,15 +220,16 @@ OECD_INDICATORS = [
 
 WB_INDICATORS = [
     {
-        "col":      "CPI",
-        "name":     "CPI Headline YoY %",
-        "category": "Inflation",
-        "units":    "% change year-on-year (annual average)",
-        "notes":    (
+        "col":       "CPI",
+        "name":      "CPI Headline YoY %",
+        "category":  "Inflation",
+        "units":     "% change year-on-year (annual average)",
+        "frequency": "Annual",
+        "notes":     (
             "World Bank / ILO annual average CPI inflation. "
             ">2% = above DM central bank targets; >5% = high-inflation regime"
         ),
-        "wb_id":    "FP.CPI.TOTL.ZG",
+        "wb_id":     "FP.CPI.TOTL.ZG",
     },
 ]
 
@@ -236,15 +240,16 @@ WB_INDICATORS = [
 
 IMF_INDICATORS = [
     {
-        "col":      "GDP_GROWTH",
-        "name":     "Real GDP Growth (Annual %)",
-        "category": "Growth",
-        "units":    "% change year-on-year, constant prices",
-        "notes":    (
+        "col":       "GDP_GROWTH",
+        "name":      "Real GDP Growth (Annual %)",
+        "category":  "Growth",
+        "units":     "% change year-on-year, constant prices",
+        "frequency": "Annual",
+        "notes":     (
             "IMF World Economic Outlook; includes forward projections "
             "for current and next year. Negative = recession-year contraction"
         ),
-        "series":   "NGDP_RPCH",
+        "series":    "NGDP_RPCH",
     },
 ]
 
@@ -890,27 +895,101 @@ def build_history(
 
 def _build_hist_metadata(columns: list) -> list:
     """
-    Build 2 metadata prefix rows (Indicator name, Country name).
-    Matches the format used in macro_us_hist and market_data_hist.
+    Build metadata prefix rows for macro_intl_hist.  Row order (label in col A):
+      1. Column ID      — internal column name (e.g. USA_GDP_GROWTH)
+      2. Source Code    — upstream API series identifier
+                          OECD: indicator col (CLI / UNEMPLOYMENT / RATE_3M)
+                          World Bank: wb_id (FP.CPI.TOTL.ZG)
+                          IMF: series (NGDP_RPCH)
+                          FRED: fred_id (e.g. CSCICP03EZM665S)
+      3. Source         — OECD / World Bank / IMF / FRED
+      4. Indicator      — human-readable indicator name
+      5. Country        — country display name
+      6. Units          — measurement units
+      7. Frequency      — "Weekly (from Monthly ffill)" etc.
+      8. Last Updated   — UTC timestamp of this run
     """
-    all_indics     = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS + FRED_INTL_INDICATORS
-    col_name_map   = {i["col"]: i["name"] for i in all_indics}
-    country_map    = {k: v[0] for k, v in COUNTRY_META.items()}
+    all_indics   = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS + FRED_INTL_INDICATORS
+    country_map  = {k: v[0] for k, v in COUNTRY_META.items()}
+    run_ts       = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
+    # Build per-indicator-col lookup maps
+    col_name_map    = {}
+    col_source_map  = {}
+    col_srccode_map = {}
+    col_units_map   = {}
+    col_freq_map    = {}
+
+    _freq_label = {
+        "Monthly":  "Weekly (monthly → ffill)",
+        "Annual":   "Weekly (annual → ffill)",
+    }
+
+    for indic in OECD_INDICATORS:
+        c = indic["col"]
+        col_name_map[c]    = indic["name"]
+        col_source_map[c]  = "OECD"
+        col_srccode_map[c] = c                          # OECD internal col code
+        col_units_map[c]   = indic.get("units", "")
+        col_freq_map[c]    = _freq_label.get(indic.get("frequency", ""), indic.get("frequency", ""))
+
+    for indic in WB_INDICATORS:
+        c = indic["col"]
+        col_name_map[c]    = indic["name"]
+        col_source_map[c]  = "World Bank"
+        col_srccode_map[c] = indic["wb_id"]
+        col_units_map[c]   = indic.get("units", "")
+        col_freq_map[c]    = _freq_label.get(indic.get("frequency", ""), indic.get("frequency", ""))
+
+    for indic in IMF_INDICATORS:
+        c = indic["col"]
+        col_name_map[c]    = indic["name"]
+        col_source_map[c]  = "IMF"
+        col_srccode_map[c] = indic["series"]
+        col_units_map[c]   = indic.get("units", "")
+        col_freq_map[c]    = _freq_label.get(indic.get("frequency", ""), indic.get("frequency", ""))
+
+    for indic in FRED_INTL_INDICATORS:
+        c = indic["col"]
+        col_name_map[c]    = indic["name"]
+        col_source_map[c]  = "FRED"
+        col_srccode_map[c] = indic.get("fred_id", c)
+        col_units_map[c]   = indic.get("units", "")
+        col_freq_map[c]    = _freq_label.get(indic.get("frequency", ""), indic.get("frequency", ""))
+
+    row_col_id    = ["Column ID"]
+    row_src_code  = ["Source Code"]
+    row_source    = ["Source"]
     row_indicator = ["Indicator"]
     row_country   = ["Country"]
+    row_units     = ["Units"]
+    row_frequency = ["Frequency"]
+    row_updated   = ["Last Updated"]
 
     for col in columns:
         # "EA19_GDP_GROWTH".split("_", 1) → ["EA19", "GDP_GROWTH"]
         parts = col.split("_", 1)
         if len(parts) == 2:
-            row_indicator.append(col_name_map.get(parts[1], parts[1]))
-            row_country.append(country_map.get(parts[0], parts[0]))
+            country_code  = parts[0]
+            indicator_col = parts[1]
         else:
-            row_indicator.append(col)
-            row_country.append(col)
+            country_code  = col
+            indicator_col = col
 
-    return [row_indicator, row_country]
+        row_col_id.append(col)
+        row_src_code.append(col_srccode_map.get(indicator_col, indicator_col))
+        row_source.append(col_source_map.get(indicator_col, ""))
+        row_indicator.append(col_name_map.get(indicator_col, indicator_col))
+        row_country.append(country_map.get(country_code, country_code))
+        row_units.append(col_units_map.get(indicator_col, ""))
+        row_frequency.append(col_freq_map.get(indicator_col, ""))
+        row_updated.append(run_ts)
+
+    return [
+        row_col_id, row_src_code, row_source,
+        row_indicator, row_country,
+        row_units, row_frequency, row_updated,
+    ]
 
 
 # ---------------------------------------------------------------------------
