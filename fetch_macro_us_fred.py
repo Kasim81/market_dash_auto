@@ -353,6 +353,61 @@ FRED_MACRO_US = {
 }
 
 # ---------------------------------------------------------------------------
+# FRED SERIES NATIVE FREQUENCIES
+# ---------------------------------------------------------------------------
+# Separate from FRED_MACRO_US to avoid breaking existing tuple destructuring.
+# Used by both the macro_us snapshot tab and by fetch_hist.py for macro_us_hist.
+# In macro_us_hist all series are forward-filled to weekly; the hist metadata
+# rows display "Weekly (from <native> ffill)" to make this explicit.
+
+FRED_MACRO_US_FREQ = {
+    # Daily series (FRED publishes business-daily; aligned to Friday close)
+    "T10Y2Y":             "Daily",
+    "T10Y3M":             "Daily",
+    "T5YIE":              "Daily",
+    "T10YIE":             "Daily",
+    "T5YIFR":             "Daily",
+    "DFII10":             "Daily",
+    "DFII5":              "Daily",
+    "BAMLH0A0HYM2":       "Daily",
+    "BAMLC0A0CM":         "Daily",
+    # Weekly series
+    "IC4WSA":             "Weekly",
+    "NFCI":               "Weekly",
+    # Monthly series
+    "M2SL":               "Monthly",
+    "USSLIND":            "Monthly",
+    "PERMIT":             "Monthly",
+    "PAYEMS":             "Monthly",
+    "UNRATE":             "Monthly",
+    "INDPRO":             "Monthly",
+    "RSXFS":              "Monthly",
+    "CPIAUCSL":           "Monthly",
+    "CPILFESL":           "Monthly",
+    "PCEPILFE":           "Monthly",
+    "PPIACO":             "Monthly",
+    "MICH":               "Monthly",
+    "FEDFUNDS":           "Monthly",
+    "UMCSENT":            "Monthly",
+    "UMCSI":              "Monthly",
+    "UMCSE":              "Monthly",
+    "CSCICP03USM665S":    "Monthly",
+    "BSCICP03USM665S":    "Monthly",
+    "NAPMPI":             "Monthly",
+    "GACDISA066MSFRBPHI": "Monthly",
+    "GACDISA066MSFRBNY":  "Monthly",
+    "GACDISA066MSFRBRIC": "Monthly",
+    "GACDISA066MSFRBKC":  "Monthly",
+    # Quarterly series (SLOOS surveys)
+    "DRTSCILM":           "Quarterly",
+    "DRTSCIS":            "Quarterly",
+    "DRTSCLCC":           "Quarterly",
+    "DRTSCLNG":           "Quarterly",
+    "DRTSCRE":            "Quarterly",
+}
+
+
+# ---------------------------------------------------------------------------
 # RATE-LIMIT-SAFE FRED FETCH
 # ---------------------------------------------------------------------------
 
@@ -486,6 +541,7 @@ def fetch_macro_us() -> pd.DataFrame:
             "Category":         category,
             "Subcategory":      subcategory,
             "Units":            units,
+            "Frequency":        FRED_MACRO_US_FREQ.get(series_id, ""),
             "Latest Value":     latest_val,
             "Prior Value":      prior_val,
             "Change":           change,

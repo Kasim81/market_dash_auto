@@ -228,10 +228,22 @@ ALL_YFINANCE = (
 # ---------------------------------------------------------------------------
 
 from fetch_macro_us_fred import FRED_MACRO_US as _FRED_MACRO_US_FULL
+from fetch_macro_us_fred import FRED_MACRO_US_FREQ as _FRED_MACRO_US_FREQ
 
-# Derive the two lookup dicts used in metadata prefix rows
-FRED_MACRO_US_NAMES = {k: v[0] for k, v in _FRED_MACRO_US_FULL.items()}
-FRED_MACRO_US_CATS  = {k: v[1] for k, v in _FRED_MACRO_US_FULL.items()}
+# Derive lookup dicts used in metadata prefix rows
+FRED_MACRO_US_NAMES   = {k: v[0] for k, v in _FRED_MACRO_US_FULL.items()}
+FRED_MACRO_US_CATS    = {k: v[1] for k, v in _FRED_MACRO_US_FULL.items()}
+FRED_MACRO_US_SUBCATS = {k: v[2] for k, v in _FRED_MACRO_US_FULL.items()}
+FRED_MACRO_US_UNITS   = {k: v[3] for k, v in _FRED_MACRO_US_FULL.items()}
+FRED_MACRO_US_FREQ    = _FRED_MACRO_US_FREQ
+
+# Map native FRED frequency → display string for hist tab (forward-filled to weekly)
+_FREQ_TO_HIST_LABEL = {
+    "Daily":     "Weekly (daily → ffill)",
+    "Weekly":    "Weekly",
+    "Monthly":   "Weekly (monthly → ffill)",
+    "Quarterly": "Weekly (quarterly → ffill)",
+}
 
 # ---------------------------------------------------------------------------
 # HELPERS: FRIDAY SPINE
@@ -708,11 +720,20 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
 
 def build_market_meta_prefix(df: pd.DataFrame) -> list:
     """
-    Build 4 metadata rows (Name, Region, Asset Class, Currency) for market_data_hist.
-    Each row has the label in column 0, then one value per DataFrame column.
-    For _Local columns the original instrument currency is used;
-    for _USD columns 'USD' is used regardless of instrument.
+    Build metadata rows for market_data_hist.  Row order (label in col A):
+      1. Ticker ID    — raw ticker without _Local/_USD suffix
+      2. Variant      — "Local" or "USD"
+      3. Source       — "yfinance", "FRED", or "Calculated"
+      4. Name         — instrument display name
+      5. Region       — geographic region
+      6. Asset Class  — instrument type
+      7. Currency     — original instrument currency (or "USD" for _USD columns)
+      8. Units        — Index / Price / Rate / % pa / Ratio
+      9. Frequency    — all weekly (Friday close or ffill)
+     10. Last Updated — UTC timestamp of this run
     """
+    run_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
     # Build lookup: base_ticker -> (name, region, asset_class, local_currency)
     meta = {}
     for ticker, name, region, asset_class, currency in ALL_YFINANCE:
@@ -720,54 +741,127 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
     for series_id, (name, region, asset_class, currency) in FRED_YIELDS.items():
         meta[series_id] = (name, region, asset_class, currency)
     for ratio_id, ratio_name, num, den in RATIO_DEFS:
-        # Inherit region/asset_class from numerator if available
         num_meta = meta.get(num, ("", "Global", "Ratio", "Ratio"))
         meta[ratio_id] = (ratio_name, num_meta[1], "Ratio", "Ratio")
 
+    # Source lookup: FRED yields and calculated ratios differ from yfinance
+    fred_yield_ids = set(FRED_YIELDS.keys())
+    ratio_ids      = {r[0] for r in RATIO_DEFS}
+
+    # Asset-class → units mapping
+    _ac_units = {
+        "Equity Index":      "Index",
+        "Equity ETF":        "Price",
+        "Sector ETF":        "Price",
+        "Style ETF":         "Price",
+        "Fixed Income ETF":  "Price",
+        "Commodity":         "Price",
+        "FX":                "Rate",
+        "Volatility":        "Index",
+        "Crypto":            "Price",
+        "Yield":             "% pa",
+        "Ratio":             "Ratio",
+    }
+
+    ticker_id_row   = ["Ticker ID"]
+    variant_row     = ["Variant"]
+    source_row      = ["Source"]
     name_row        = ["Name"]
     region_row      = ["Region"]
     asset_class_row = ["Asset Class"]
     currency_row    = ["Currency"]
+    units_row       = ["Units"]
+    frequency_row   = ["Frequency"]
+    updated_row     = ["Last Updated"]
 
     for col in df.columns:
         if col == "Date":
-            continue   # label ("Name" etc.) already in position 0 → no placeholder needed
+            continue
 
         if col.endswith("_Local"):
-            base = col[:-6]
-            is_usd = False
+            base    = col[:-6]
+            variant = "Local"
+            is_usd  = False
         elif col.endswith("_USD"):
-            base = col[:-4]
-            is_usd = True
+            base    = col[:-4]
+            variant = "USD"
+            is_usd  = True
         else:
-            base = col
-            is_usd = False
+            base    = col
+            variant = ""
+            is_usd  = False
 
-        m = meta.get(base, (base, "", "", ""))
+        m          = meta.get(base, (base, "", "", ""))
+        asset_cls  = m[2]
+
+        if base in fred_yield_ids:
+            source = "FRED"
+        elif base in ratio_ids:
+            source = "Calculated"
+        else:
+            source = "yfinance"
+
+        ticker_id_row.append(base)
+        variant_row.append(variant)
+        source_row.append(source)
         name_row.append(m[0])
         region_row.append(m[1])
-        asset_class_row.append(m[2])
+        asset_class_row.append(asset_cls)
         currency_row.append("USD" if is_usd else m[3])
+        units_row.append(_ac_units.get(asset_cls, ""))
+        frequency_row.append("Weekly")
+        updated_row.append(run_ts)
 
-    return [name_row, region_row, asset_class_row, currency_row]
+    return [
+        ticker_id_row, variant_row, source_row,
+        name_row, region_row, asset_class_row, currency_row,
+        units_row, frequency_row, updated_row,
+    ]
 
 
 def build_macro_meta_prefix(df: pd.DataFrame) -> list:
     """
-    Build 2 metadata rows (Name, Category) for macro_us_hist.
-    Column names are FRED series IDs; looked up in FRED_MACRO_US_NAMES and
-    FRED_MACRO_US_CATS (derived from fetch_macro_us_fred.FRED_MACRO_US).
+    Build metadata rows for macro_us_hist.  Row order (label in col A):
+      1. Series ID   — FRED series identifier (= column name)
+      2. Source      — "FRED" for all
+      3. Name        — full indicator name
+      4. Category    — Growth / Inflation / Monetary Policy / Financial Conditions / Survey
+      5. Subcategory — finer grouping within category
+      6. Units       — units string from FRED_MACRO_US
+      7. Frequency   — "Weekly (daily → ffill)", "Weekly (monthly → ffill)", etc.
+      8. Last Updated — UTC timestamp of this run
     """
-    name_row     = ["Name"]
-    category_row = ["Category"]
+    run_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+    series_id_row  = ["Series ID"]
+    source_row     = ["Source"]
+    name_row       = ["Name"]
+    category_row   = ["Category"]
+    subcat_row     = ["Subcategory"]
+    units_row      = ["Units"]
+    frequency_row  = ["Frequency"]
+    updated_row    = ["Last Updated"]
 
     for col in df.columns:
         if col == "Date":
-            continue   # label already in position 0 → no placeholder needed
+            continue
+        native_freq = FRED_MACRO_US_FREQ.get(col, "")
+        hist_freq   = _FREQ_TO_HIST_LABEL.get(native_freq, native_freq)
+
+        series_id_row.append(col)
+        source_row.append("FRED")
         name_row.append(FRED_MACRO_US_NAMES.get(col, col))
         category_row.append(FRED_MACRO_US_CATS.get(col, ""))
+        subcat_row.append(FRED_MACRO_US_SUBCATS.get(col, ""))
+        units_row.append(FRED_MACRO_US_UNITS.get(col, ""))
+        frequency_row.append(hist_freq)
+        updated_row.append(run_ts)
 
-    return [name_row, category_row]
+    return [
+        series_id_row, source_row,
+        name_row, category_row, subcat_row,
+        units_row, frequency_row, updated_row,
+    ]
 
 
 def save_csv(df: pd.DataFrame, path: str, label: str,
