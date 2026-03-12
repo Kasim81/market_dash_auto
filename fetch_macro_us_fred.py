@@ -257,6 +257,99 @@ FRED_MACRO_US = {
         "Percent",
         ">200bps historically coincides with recessions; IG-HY ratio = risk appetite"
     ),
+
+    # ---- FINANCIAL CONDITIONS: SLOOS Extended (was in macro_surveys) ------
+    # DRTSCILM (C&I Large/Medium) is already above; these add the full breakdown.
+    "DRTSCIS": (
+        "SLOOS: Net Tightening — C&I Loans, Small Firms",
+        "Financial Conditions", "Credit Conditions",
+        "Net Percent",
+        "Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle."
+    ),
+    "DRTSCLCC": (
+        "SLOOS: Net Tightening — Credit Card Loans",
+        "Financial Conditions", "Credit Conditions",
+        "Net Percent",
+        "Consumer credit availability. Tightening leads consumer spending slowdown."
+    ),
+    "DRTSCLNG": (
+        "SLOOS: Net Tightening — Consumer Loans (Non-Credit Card)",
+        "Financial Conditions", "Credit Conditions",
+        "Net Percent",
+        "Auto, student and personal loans. Broadens consumer credit picture."
+    ),
+    "DRTSCRE": (
+        "SLOOS: Net Tightening — Commercial Real Estate",
+        "Financial Conditions", "Credit Conditions",
+        "Net Percent",
+        "CRE credit cycle; leads commercial property stress by 2-4 quarters."
+    ),
+
+    # ---- SURVEY: Consumer Sentiment (was in sentiment_data) ---------------
+    "UMCSENT": (
+        "UMich Consumer Sentiment (Overall)",
+        "Survey", "Consumer Sentiment",
+        "Index (1966 Q1 = 100)",
+        "Headline consumer confidence; below 70 historically correlated with recessions."
+    ),
+    "UMCSI": (
+        "UMich: Index of Current Economic Conditions",
+        "Survey", "Consumer Sentiment",
+        "Index (1966 Q1 = 100)",
+        "Reflects assessment of present situation. Divergence from expectations = inflection signal."
+    ),
+    "UMCSE": (
+        "UMich: Index of Consumer Expectations",
+        "Survey", "Consumer Sentiment",
+        "Index (1966 Q1 = 100)",
+        "Forward-looking sub-index. Used in composite LEI."
+    ),
+    "CSCICP03USM665S": (
+        "Conference Board Consumer Confidence (US)",
+        "Survey", "Consumer Sentiment",
+        "Index (2015 = 100)",
+        "Business-sourced survey; leading indicator for consumer spending and employment."
+    ),
+    "BSCICP03USM665S": (
+        "US Business Confidence",
+        "Survey", "Business Sentiment",
+        "Composite indicator (normal value = 100)",
+        "OECD business confidence for US; companion to consumer confidence."
+    ),
+
+    # ---- SURVEY: PMI (was in sentiment_data) ------------------------------
+    "NAPMPI": (
+        "US ISM Manufacturing PMI",
+        "Survey", "PMI",
+        "Diffusion Index (50 = expansion/contraction threshold)",
+        "Leading indicator for manufacturing activity and new orders; above 50 = expansion."
+    ),
+
+    # ---- SURVEY: Regional Fed Manufacturing (was in macro_surveys) --------
+    "GACDISA066MSFRBPHI": (
+        "Philadelphia Fed: Mfg Business Conditions (General Activity)",
+        "Survey", "Regional Fed",
+        "Diffusion Index",
+        "One of the earliest monthly US mfg surveys; leads ISM by ~1 week."
+    ),
+    "GACDISA066MSFRBNY": (
+        "Empire State (NY Fed): Mfg Business Conditions",
+        "Survey", "Regional Fed",
+        "Diffusion Index",
+        "First regional Fed mfg survey released each month. Closely watched ISM preview."
+    ),
+    "GACDISA066MSFRBRIC": (
+        "Richmond Fed: Mfg Business Conditions (Composite Index)",
+        "Survey", "Regional Fed",
+        "Diffusion Index",
+        "Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV."
+    ),
+    "GACDISA066MSFRBKC": (
+        "Kansas City Fed: Mfg Business Conditions (Composite Index)",
+        "Survey", "Regional Fed",
+        "Diffusion Index",
+        "Tenth Federal Reserve District. Covers OK, KS, NE, CO, WY, NM, MO."
+    ),
 }
 
 # ---------------------------------------------------------------------------

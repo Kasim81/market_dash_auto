@@ -81,6 +81,8 @@ from googleapiclient.discovery import build
 # ---------------------------------------------------------------------------
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
+FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
+FRED_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 SHEET_ID     = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
 SNAPSHOT_TAB = "macro_intl"
@@ -243,6 +245,30 @@ IMF_INDICATORS = [
             "for current and next year. Negative = recession-year contraction"
         ),
         "series":   "NGDP_RPCH",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# FRED INTERNATIONAL INDICATOR DEFINITIONS
+# ---------------------------------------------------------------------------
+# Country-specific indicators sourced from FRED for non-US economies.
+# Format matches OECD/WB/IMF indicator dicts above.
+
+FRED_INTL_INDICATORS = [
+    {
+        "col":       "CONSUMER_CONF",
+        "name":      "Consumer Confidence",
+        "category":  "Survey",
+        "units":     "Balance, long-run avg = 100",
+        "notes":     (
+            "OECD/EC consumer confidence balance statistic. "
+            "Negative = below long-run average; leading indicator for household spending."
+        ),
+        "source":    "FRED",
+        "frequency": "Monthly",
+        "country":   "EA19",
+        "fred_id":   "CSCICP03EZM665S",
     },
 ]
 
@@ -442,6 +468,98 @@ def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
 
 
 # ---------------------------------------------------------------------------
+# FRED INTERNATIONAL DATA FETCHERS
+# ---------------------------------------------------------------------------
+
+def _parse_fred_monthly(data: dict, country_code: str) -> dict:
+    """
+    Parse FRED JSON response (asc order) into {country_code: [(period_str, val), ...]}
+    where period_str is "YYYY-MM" (consistent with OECD monthly format).
+    Returns {} on failure or empty data.
+    """
+    if not data or "observations" not in data:
+        return {}
+    obs = [o for o in data["observations"] if o.get("value") not in (".", "", None)]
+    if not obs:
+        return {}
+    pairs = []
+    for o in obs:
+        try:
+            period = o["date"][:7]   # "YYYY-MM-DD" → "YYYY-MM"
+            pairs.append((period, float(o["value"])))
+        except (ValueError, TypeError, KeyError):
+            continue
+    return {country_code: pairs} if pairs else {}
+
+
+def fetch_fred_intl_snapshot(indic: dict) -> dict:
+    """
+    Fetch last 3 monthly observations for a FRED international indicator.
+    Returns {country_code: [(period, val), ...]} or {} on failure.
+    """
+    if not FRED_API_KEY:
+        return {}
+    label = f"FRED/{indic['col']}"
+    print(f"  Fetching {label} ({indic['fred_id']})...")
+    data = _fetch_with_backoff(
+        FRED_BASE_URL,
+        params={
+            "series_id":   indic["fred_id"],
+            "api_key":     FRED_API_KEY,
+            "file_type":   "json",
+            "sort_order":  "desc",
+            "limit":       3,
+        },
+        label=label,
+    )
+    if data is None:
+        return {}
+    # _fetch_with_backoff returns dict (JSON); observations in desc order — reverse for asc
+    obs_asc = list(reversed(data.get("observations", [])))
+    data_asc = {"observations": obs_asc}
+    result = _parse_fred_monthly(data_asc, indic["country"])
+    if result:
+        vals = result[indic["country"]]
+        print(f"    → {len(vals)} obs; latest: {vals[-1] if vals else 'none'}")
+    else:
+        print(f"    → No data")
+    return result
+
+
+def fetch_fred_intl_history(indic: dict, start: str) -> dict:
+    """
+    Fetch full history for a FRED international indicator from start date.
+    Returns {country_code: [(period, val), ...]} or {} on failure.
+    """
+    if not FRED_API_KEY:
+        return {}
+    label = f"FRED/{indic['col']}/hist"
+    print(f"  Fetching {label} ({indic['fred_id']})...")
+    data = _fetch_with_backoff(
+        FRED_BASE_URL,
+        params={
+            "series_id":          indic["fred_id"],
+            "api_key":            FRED_API_KEY,
+            "file_type":          "json",
+            "sort_order":         "asc",
+            "observation_start":  start,
+            "limit":              100000,
+        },
+        label=label,
+    )
+    if data is None:
+        return {}
+    result = _parse_fred_monthly(data, indic["country"])
+    if result:
+        vals = result[indic["country"]]
+        print(f"    → {len(vals)} obs "
+              f"({vals[0][0] if vals else '?'} → {vals[-1][0] if vals else '?'})")
+    else:
+        print(f"    → No data")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # OECD DATA FETCHERS
 # ---------------------------------------------------------------------------
 
@@ -554,9 +672,10 @@ def fetch_imf_indicator(indic: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def build_snapshot(
-    oecd_results: dict,   # {col: {country_code: [(period, val), ...]}}
-    wb_results:   dict,   # {col: {country_code: [(year, val), ...]}}
-    imf_results:  dict,   # {col: {country_code: [(year, val), ...]}}
+    oecd_results:      dict,   # {col: {country_code: [(period, val), ...]}}
+    wb_results:        dict,   # {col: {country_code: [(year, val), ...]}}
+    imf_results:       dict,   # {col: {country_code: [(year, val), ...]}}
+    fred_intl_results: dict = None,  # {col: {country_code: [(period, val), ...]}}
 ) -> pd.DataFrame:
     """
     Build the snapshot DataFrame: one row per country × indicator.
@@ -608,6 +727,42 @@ def build_snapshot(
     _add_rows(OECD_INDICATORS, oecd_results, "OECD", "Monthly")
     _add_rows(WB_INDICATORS,   wb_results,   "World Bank", "Annual")
     _add_rows(IMF_INDICATORS,  imf_results,  "IMF",  "Annual")
+
+    # FRED international indicators (country-specific; only include the relevant country row)
+    if fred_intl_results:
+        for indic in FRED_INTL_INDICATORS:
+            col         = indic["col"]
+            country_code = indic["country"]
+            cname, region = COUNTRY_META.get(country_code, (country_code, ""))
+            series       = (fred_intl_results.get(col) or {}).get(country_code, [])
+
+            latest_val = prior_val = last_period = None
+            if series:
+                latest_val  = series[-1][1]
+                last_period = series[-1][0]
+                prior_val   = series[-2][1] if len(series) >= 2 else None
+
+            change = None
+            if latest_val is not None and prior_val is not None:
+                change = round(latest_val - prior_val, 4)
+
+            rows.append({
+                "Country":      country_code,
+                "Country Name": cname,
+                "Region":       region,
+                "Indicator":    indic["name"],
+                "Series":       col,
+                "Category":     indic["category"],
+                "Units":        indic["units"],
+                "Latest Value": round(latest_val, 4) if latest_val is not None else None,
+                "Prior Value":  round(prior_val, 4)  if prior_val  is not None else None,
+                "Change":       change,
+                "Last Period":  last_period,
+                "Frequency":    indic["frequency"],
+                "Source":       indic["source"],
+                "Notes":        indic["notes"],
+                "Fetched At":   fetched_at,
+            })
 
     df = pd.DataFrame(rows)
     n_with_data = int(df["Latest Value"].notna().sum())
@@ -689,9 +844,10 @@ def _annual_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
 
 
 def build_history(
-    oecd_hist: dict,
-    wb_hist:   dict,
-    imf_hist:  dict,
+    oecd_hist:      dict,
+    wb_hist:        dict,
+    imf_hist:       dict,
+    fred_intl_hist: dict = None,
 ) -> pd.DataFrame:
     """
     Build the weekly Friday-spine history DataFrame.
@@ -719,6 +875,11 @@ def build_history(
     for indic in IMF_INDICATORS:
         _merge(_annual_to_frame(imf_hist.get(indic["col"], {}), indic["col"]))
 
+    if fred_intl_hist:
+        for indic in FRED_INTL_INDICATORS:
+            country_data = (fred_intl_hist.get(indic["col"]) or {})
+            _merge(_monthly_to_frame(country_data, indic["col"]))
+
     print(f"\n[Phase C] History: {len(hist)} rows × {len(hist.columns)} data columns")
     return hist
 
@@ -732,7 +893,7 @@ def _build_hist_metadata(columns: list) -> list:
     Build 2 metadata prefix rows (Indicator name, Country name).
     Matches the format used in macro_us_hist and market_data_hist.
     """
-    all_indics     = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS
+    all_indics     = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS + FRED_INTL_INDICATORS
     col_name_map   = {i["col"]: i["name"] for i in all_indics}
     country_map    = {k: v[0] for k, v in COUNTRY_META.items()}
 
@@ -939,9 +1100,22 @@ def run_phase_c() -> None:
                 imf_data[indic["col"]] = {}
 
         # ------------------------------------------------------------------
+        # SNAPSHOT: FRED international indicators (e.g. EA Consumer Confidence)
+        # ------------------------------------------------------------------
+        print("\n[Snapshot] Fetching FRED international indicators...")
+        fred_intl_snap = {}
+        for indic in FRED_INTL_INDICATORS:
+            try:
+                fred_intl_snap[indic["col"]] = fetch_fred_intl_snapshot(indic)
+            except Exception as e:
+                print(f"  [Phase C] FRED {indic['col']} snapshot failed: {e}")
+                fred_intl_snap[indic["col"]] = {}
+            time.sleep(0.6)
+
+        # ------------------------------------------------------------------
         # Build and save snapshot
         # ------------------------------------------------------------------
-        snap_df = build_snapshot(oecd_snap, wb_snap, imf_data)
+        snap_df = build_snapshot(oecd_snap, wb_snap, imf_data, fred_intl_snap)
         if not snap_df.empty:
             save_snapshot_csv(snap_df)
             push_snapshot_to_sheets(snap_df)
@@ -978,9 +1152,22 @@ def run_phase_c() -> None:
         imf_hist = imf_data
 
         # ------------------------------------------------------------------
+        # HISTORY: FRED international indicators
+        # ------------------------------------------------------------------
+        print("\n[History] Fetching FRED international indicators (full history)...")
+        fred_intl_hist = {}
+        for indic in FRED_INTL_INDICATORS:
+            try:
+                fred_intl_hist[indic["col"]] = fetch_fred_intl_history(indic, HIST_START)
+            except Exception as e:
+                print(f"  [Phase C] FRED {indic['col']} history failed: {e}")
+                fred_intl_hist[indic["col"]] = {}
+            time.sleep(0.6)
+
+        # ------------------------------------------------------------------
         # Build and save history
         # ------------------------------------------------------------------
-        hist_df = build_history(oecd_hist, wb_hist, imf_hist)
+        hist_df = build_history(oecd_hist, wb_hist, imf_hist, fred_intl_hist)
         if not hist_df.empty:
             save_hist_csv(hist_df)
             push_hist_to_sheets(hist_df)

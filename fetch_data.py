@@ -552,8 +552,9 @@ def push_to_google_sheets(df_main, df_sentiment):
         print(f"  WARNING: Could not check/delete 'Market Data' tab: {e}")
 
     print("\nPushing data to Google Sheets...")
-    write_sheet("market_data",    df_to_values(df_main))
-    write_sheet("sentiment_data", df_to_values(df_sentiment))
+    write_sheet("market_data", df_to_values(df_main))
+    # sentiment_data tab deprecated: those indicators are now consolidated into
+    # macro_us (US series) and macro_intl (Euro Area series).
     print("✓ Google Sheets export complete.")
 
 
@@ -663,16 +664,6 @@ except Exception as _phase_c_err:
     print(f"[Phase C] Non-fatal import/run error: {_phase_c_err}")
     print("[Phase C] Existing pipeline outputs are unaffected")
 
-# ============================================================
-# PHASE B — SURVEY & CREDIT CONDITION INDICATORS
-# Fetches SLOOS detail, UMich sub-indices, Regional Fed surveys
-# Outputs: data/macro_surveys.csv, data/macro_surveys_hist.csv
-#          Google Sheets tabs: macro_surveys, macro_surveys_hist
-# ============================================================
-
-try:
-    from fetch_macro_surveys import run_phase_b
-    run_phase_b()
-except Exception as _phase_b_err:
-    print(f"[Phase B] Non-fatal import/run error: {_phase_b_err}")
-    print("[Phase B] Existing pipeline outputs are unaffected")
+# Phase B (fetch_macro_surveys.py) has been consolidated into macro_us.
+# All survey + credit condition indicators now live in fetch_macro_us_fred.py
+# and are written to the macro_us / macro_us_hist tabs.
