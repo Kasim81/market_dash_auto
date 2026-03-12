@@ -853,20 +853,21 @@ def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
             range=f"{tab_name}!A:ZZZ"
         ).execute()
 
-        # Prepare values: replace NaN/None with ""
-        header = list(df.columns)
-        data_rows = (
-            df.where(pd.notnull(df), other=None)
-              .fillna("")
-              .astype(str)
-              .values.tolist()
-        )
+        # Prepare values: keep numeric types as float, dates/strings as str, NaN as ""
+        def _sv(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except (TypeError, ValueError):
+                pass
+            if isinstance(v, (int, float, np.integer, np.floating)):
+                return float(v)
+            return str(v)
 
-        # Replace "nan" strings (edge case)
-        data_rows = [
-            ["" if v == "nan" else v for v in row]
-            for row in data_rows
-        ]
+        header = list(df.columns)
+        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
 
         values = (prefix_rows if prefix_rows else []) + [header] + data_rows
 
@@ -880,7 +881,7 @@ def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
             sheets.values().update(
                 spreadsheetId=SHEET_ID,
                 range=range_notation,
-                valueInputOption="RAW",
+                valueInputOption="USER_ENTERED",
                 body={"values": batch}
             ).execute()
             if len(values) > BATCH_SIZE:

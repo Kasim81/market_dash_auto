@@ -982,7 +982,7 @@ def _write_tab(sheets, tab_name: str, values: list) -> None:
     sheets.values().update(
         spreadsheetId=SHEET_ID,
         range=f"{tab_name}!A1",
-        valueInputOption="RAW",
+        valueInputOption="USER_ENTERED",
         body={"values": values}
     ).execute()
     print(f"[Phase C] Written {len(values)} rows to '{tab_name}' tab")
@@ -999,7 +999,20 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
         sheets    = service.spreadsheets()
         _ensure_tab(sheets, SNAPSHOT_TAB)
         header    = list(df.columns)
-        data_rows = df.fillna("").astype(str).values.tolist()
+
+        def _sv(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except (TypeError, ValueError):
+                pass
+            if isinstance(v, (int, float)):
+                return float(v)
+            return str(v)
+
+        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
         _write_tab(sheets, SNAPSHOT_TAB, [header] + data_rows)
     except json.JSONDecodeError as e:
         print(f"[Phase C] Credentials parse error: {e}")
@@ -1022,18 +1035,22 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
         meta_rows = _build_hist_metadata(columns)
         header    = ["Date"] + columns
 
-        data_rows = []
-        for idx, row in df.iterrows():
-            date_str = idx.strftime("%Y-%m-%d")
-            vals = []
-            for v in row.values:
-                if isinstance(v, float) and np.isnan(v):
-                    vals.append("")
-                elif isinstance(v, float):
-                    vals.append(str(round(v, 4)))
-                else:
-                    vals.append(str(v))
-            data_rows.append([date_str] + vals)
+        def _sv(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except (TypeError, ValueError):
+                pass
+            if isinstance(v, (int, float, np.integer, np.floating)):
+                return float(v)
+            return str(v)
+
+        data_rows = [
+            [idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row.values]
+            for idx, row in df.iterrows()
+        ]
 
         _write_tab(sheets, HIST_TAB, meta_rows + [header] + data_rows)
 
