@@ -534,27 +534,33 @@ def push_to_google_sheets(df_main, df_sentiment):
         ).execute()
         print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
 
-    # Delete the duplicate "Market Data" (space) tab if it exists.
-    # This tab is not created by any code in this repo but keeps reappearing
-    # (likely from a Google Apps Script or legacy manual tab). Deleting it here
-    # ensures it is cleaned up on every daily run.
+    # Remove legacy / deprecated tabs on every run.
+    # - "Market Data" (with space): never created by code; reappears via Apps Script
+    # - "sentiment_data": consolidated into macro_us + macro_intl
+    # - "macro_surveys": consolidated into macro_us
+    # - "macro_surveys_hist": consolidated into macro_us_hist
+    TABS_TO_DELETE = {"Market Data", "sentiment_data", "macro_surveys", "macro_surveys_hist"}
     try:
         meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
+        delete_requests = []
         for sheet in meta.get("sheets", []):
-            if sheet["properties"]["title"] == "Market Data":
-                sheets.batchUpdate(
-                    spreadsheetId=SPREADSHEET_ID,
-                    body={"requests": [{"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}]}
-                ).execute()
-                print("  Deleted duplicate 'Market Data' tab")
-                break
+            title = sheet["properties"]["title"]
+            if title in TABS_TO_DELETE:
+                delete_requests.append(
+                    {"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}
+                )
+                print(f"  Queued deletion of legacy tab '{title}'")
+        if delete_requests:
+            sheets.batchUpdate(
+                spreadsheetId=SPREADSHEET_ID,
+                body={"requests": delete_requests}
+            ).execute()
+            print(f"  Deleted {len(delete_requests)} legacy tab(s)")
     except Exception as e:
-        print(f"  WARNING: Could not check/delete 'Market Data' tab: {e}")
+        print(f"  WARNING: Could not clean up legacy tabs: {e}")
 
     print("\nPushing data to Google Sheets...")
     write_sheet("market_data", df_to_values(df_main))
-    # sentiment_data tab deprecated: those indicators are now consolidated into
-    # macro_us (US series) and macro_intl (Euro Area series).
     print("✓ Google Sheets export complete.")
 
 

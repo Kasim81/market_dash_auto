@@ -76,7 +76,7 @@ MARKET_HIST_CSV         = "data/market_data_hist.csv"
 MACRO_HIST_CSV          = "data/macro_us_hist.csv"
 
 # Historical start floors
-MARKET_HIST_START       = "1990-01-01"   # yfinance data; ETF columns NaN before launch date
+MARKET_HIST_START       = "1980-01-01"   # yfinance data; ETF columns NaN before launch date
 MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this far
 
 # Rate limit delays
@@ -670,9 +670,10 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
         return pd.DataFrame()
 
     series_data = {}
-    total = len(FRED_MACRO_US)
+    total = len(_FRED_MACRO_US_FULL)
 
-    for i, (series_id, name) in enumerate(FRED_MACRO_US.items(), 1):
+    for i, (series_id, meta) in enumerate(_FRED_MACRO_US_FULL.items(), 1):
+        name = meta[0]
         print(f"  [{i}/{total}] {series_id} ({name})...")
 
         s = fred_fetch_series_full(series_id, MACRO_HIST_START)
