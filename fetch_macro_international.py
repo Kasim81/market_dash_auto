@@ -90,7 +90,7 @@ HIST_TAB     = "macro_intl_hist"
 SNAPSHOT_CSV = "data/macro_intl.csv"
 HIST_CSV     = "data/macro_intl_hist.csv"
 
-HIST_START   = "2000-01-01"   # history floor for Friday spine
+HIST_START   = "1960-01-01"   # history floor — OECD CLI/rates back to ~1960s; maximise range
 
 # API base URLs
 OECD_BASE = "https://sdmx.oecd.org/public/rest/data"   # new OECD API

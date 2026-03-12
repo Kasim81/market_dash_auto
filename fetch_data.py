@@ -166,14 +166,6 @@ FRED_YIELDS = {
     "Japan 10Y JGB Yield":    "IRLTLT01JPM156N",
 }
 
-FRED_SENTIMENT = {
-    "UMich Consumer Sentiment":       "UMCSENT",
-    "Conference Board Consumer Conf": "CSCICP03USM665S",
-    "US Business Confidence":         "BSCICP03USM665S",
-    "Euro Area Consumer Confidence":  "CSCICP03EZM665S",
-    "US ISM Manufacturing PMI":       "NAPMPI",
-}
-
 # ─────────────────────────────────────────────
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────
@@ -414,35 +406,6 @@ def collect_fred_yields():
     return rows
 
 
-def collect_fred_sentiment():
-    """Collect FRED sentiment survey data."""
-    print("\nFetching FRED sentiment surveys...")
-    rows = []
-
-    for name, series_id in FRED_SENTIMENT.items():
-        print(f"  {series_id} ({name})...")
-        series = fetch_fred_series(series_id)
-
-        if series is not None and not series.empty:
-            latest = round(series.iloc[-1], 2)
-            prior = round(series.iloc[-2], 2) if len(series) > 1 else np.nan
-            chg = round(latest - prior, 2) if not pd.isna(prior) else np.nan
-            last_date = str(series.index[-1].date())
-        else:
-            latest = prior = chg = last_date = np.nan
-
-        rows.append({
-            "Indicator": name,
-            "FRED Series": series_id,
-            "Latest Reading": latest,
-            "Prior Reading": prior,
-            "Change": chg,
-            "Last Date": last_date,
-        })
-
-    return rows
-
-
 def build_calculated_fields(df):
     """Add ratio-based sentiment/positioning indicators."""
     print("\nCalculating ratio fields...")
@@ -490,9 +453,9 @@ def build_calculated_fields(df):
 
 SPREADSHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
-def push_to_google_sheets(df_main, df_sentiment):
+def push_to_google_sheets(df_main):
     """
-    Push market_data and sentiment_data dataframes to Google Sheets.
+    Push market_data dataframe to Google Sheets and clean up legacy tabs.
     Credentials are read from the GOOGLE_CREDENTIALS environment variable
     (set as a GitHub Actions secret containing the service account JSON).
     """
@@ -534,27 +497,33 @@ def push_to_google_sheets(df_main, df_sentiment):
         ).execute()
         print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
 
-    # Delete the duplicate "Market Data" (space) tab if it exists.
-    # This tab is not created by any code in this repo but keeps reappearing
-    # (likely from a Google Apps Script or legacy manual tab). Deleting it here
-    # ensures it is cleaned up on every daily run.
+    # Remove legacy / deprecated tabs on every run.
+    # - "Market Data" (with space): never created by code; reappears via Apps Script
+    # - "sentiment_data": consolidated into macro_us + macro_intl
+    # - "macro_surveys": consolidated into macro_us
+    # - "macro_surveys_hist": consolidated into macro_us_hist
+    TABS_TO_DELETE = {"Market Data", "sentiment_data", "macro_surveys", "macro_surveys_hist"}
     try:
         meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
+        delete_requests = []
         for sheet in meta.get("sheets", []):
-            if sheet["properties"]["title"] == "Market Data":
-                sheets.batchUpdate(
-                    spreadsheetId=SPREADSHEET_ID,
-                    body={"requests": [{"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}]}
-                ).execute()
-                print("  Deleted duplicate 'Market Data' tab")
-                break
+            title = sheet["properties"]["title"]
+            if title in TABS_TO_DELETE:
+                delete_requests.append(
+                    {"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}
+                )
+                print(f"  Queued deletion of legacy tab '{title}'")
+        if delete_requests:
+            sheets.batchUpdate(
+                spreadsheetId=SPREADSHEET_ID,
+                body={"requests": delete_requests}
+            ).execute()
+            print(f"  Deleted {len(delete_requests)} legacy tab(s)")
     except Exception as e:
-        print(f"  WARNING: Could not check/delete 'Market Data' tab: {e}")
+        print(f"  WARNING: Could not clean up legacy tabs: {e}")
 
     print("\nPushing data to Google Sheets...")
     write_sheet("market_data", df_to_values(df_main))
-    # sentiment_data tab deprecated: those indicators are now consolidated into
-    # macro_us (US series) and macro_intl (Euro Area series).
     print("✓ Google Sheets export complete.")
 
 
@@ -587,22 +556,14 @@ def main():
     df_ratios = pd.DataFrame(ratio_rows)
     df_main = pd.concat([df_main, df_ratios], ignore_index=True)
 
-    # 6. Sentiment surveys (separate file, different schema)
-    sentiment_rows = collect_fred_sentiment()
-    df_sentiment = pd.DataFrame(sentiment_rows)
-
-    # 7. Save outputs
+    # 6. Save output
     main_path = "data/market_data.csv"
-    sentiment_path = "data/sentiment_data.csv"
-
     df_main.to_csv(main_path, index=False)
-    df_sentiment.to_csv(sentiment_path, index=False)
 
-    # 8. Push to Google Sheets
-    push_to_google_sheets(df_main, df_sentiment)
+    # 7. Push to Google Sheets
+    push_to_google_sheets(df_main)
 
     print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
-    print(f"✓ Saved {sentiment_path} — {len(df_sentiment)} indicators")
     print(f"✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
 
     print("\n--- Asset class breakdown ---")
