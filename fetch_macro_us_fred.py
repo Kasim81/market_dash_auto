@@ -47,7 +47,7 @@ import time
 import json
 import requests
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
@@ -548,7 +548,7 @@ def fetch_macro_us() -> pd.DataFrame:
             "Last Date":        latest_date,
             "Source":           "FRED",
             "Notes":            notes,
-            "Fetched At":       datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "Fetched At":       datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         })
 
         # Rate-limit delay after every request (except the last)

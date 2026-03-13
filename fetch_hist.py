@@ -58,7 +58,7 @@ import requests
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
@@ -732,7 +732,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
       9. Frequency    — all weekly (Friday close or ffill)
      10. Last Updated — UTC timestamp of this run
     """
-    run_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     # Build lookup: base_ticker -> (name, region, asset_class, local_currency)
     meta = {}
@@ -831,7 +831,7 @@ def build_macro_meta_prefix(df: pd.DataFrame) -> list:
       7. Frequency   — "Weekly (daily → ffill)", "Weekly (monthly → ffill)", etc.
       8. Last Updated — UTC timestamp of this run
     """
-    run_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     series_id_row  = ["Series ID"]
     source_row     = ["Source"]

@@ -8,8 +8,9 @@ __pycache__/
 venv/
 env/
 
-# Data outputs (generated at runtime)
-data/
+# Data outputs — track CSVs but ignore large/binary files if any are added
+data/*.db
+data/*.sqlite
 
 # Environment / secrets
 .env
