@@ -230,7 +230,7 @@ def fetch_yf_history(ticker, retries=3):
     for attempt in range(retries):
         try:
             t = yf.Ticker(ticker)
-            hist = t.history(period="max")
+            hist = t.history(period="max", auto_adjust=True)
             if hist is not None and not hist.empty:
                 hist = hist[~hist.index.duplicated(keep="first")]
                 series = hist["Close"]
