@@ -363,6 +363,8 @@ def fetch_fx_cache(start: str) -> dict:
             try:
                 if len(fx_tickers) == 1:
                     s = raw["Close"]
+                    if isinstance(s, pd.DataFrame):
+                        s = s.iloc[:, 0]
                 else:
                     s = raw["Close"][ticker]
                 cache[ticker] = s.dropna()
@@ -408,11 +410,11 @@ def fetch_yfinance_history(
             progress=False,
             threads=True,
         )
-        # Extract Close prices; handle single vs multi-ticker response
-        if len(tickers) == 1:
-            close_df = raw[["Close"]].rename(columns={"Close": tickers[0]})
-        else:
-            close_df = raw["Close"]
+        # Extract Close prices. In yfinance 1.x, raw["Close"] always returns a
+        # DataFrame (MultiIndex default). In 0.2.x, single-ticker returns a Series.
+        close_df = raw["Close"]
+        if isinstance(close_df, pd.Series):
+            close_df = close_df.to_frame(tickers[0])
 
         bulk_success = set(close_df.columns.tolist())
         print(f"  Bulk fetch: {len(bulk_success)}/{len(tickers)} tickers returned data")
@@ -434,6 +436,9 @@ def fetch_yfinance_history(
                     auto_adjust=True,
                     progress=False,
                 )["Close"]
+                # yfinance 1.x returns a DataFrame for single-ticker downloads
+                if isinstance(s, pd.DataFrame):
+                    s = s.iloc[:, 0]
                 if not s.empty:
                     close_df[ticker] = s
                     print(f"    [{i}] {ticker}: OK ({len(s)} rows)")

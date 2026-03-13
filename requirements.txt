@@ -1,4 +1,4 @@
-yfinance>=0.2.40,<1.0.0
+yfinance>=0.2.51
 pandas
 numpy
 requests
