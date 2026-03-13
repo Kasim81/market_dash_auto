@@ -70,7 +70,7 @@ import json
 import requests
 import numpy as np
 import pandas as pd
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -690,7 +690,7 @@ def build_snapshot(
         Units | Latest Value | Prior Value | Change | Last Period |
         Frequency | Source | Notes | Fetched At
     """
-    fetched_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rows = []
 
     def _add_rows(indicator_list, results_dict, source, frequency):
@@ -911,7 +911,7 @@ def _build_hist_metadata(columns: list) -> list:
     """
     all_indics   = OECD_INDICATORS + WB_INDICATORS + IMF_INDICATORS + FRED_INTL_INDICATORS
     country_map  = {k: v[0] for k, v in COUNTRY_META.items()}
-    run_ts       = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    run_ts       = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     # Build per-indicator-col lookup maps
     col_name_map    = {}

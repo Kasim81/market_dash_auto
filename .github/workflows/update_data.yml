@@ -36,14 +36,14 @@ jobs:
       run: |
         git config --global user.name 'GitHub Actions Bot'
         git config --global user.email 'actions@github.com'
-        git add data/market_data.csv data/sentiment_data.csv
-        [ -f data/macro_us.csv ] && git add data/macro_us.csv || true
-        [ -f data/market_data_hist.csv ] && git add data/market_data_hist.csv || true
-        [ -f data/macro_us_hist.csv ] && git add data/macro_us_hist.csv || true
-        [ -f data/macro_intl.csv ] && git add data/macro_intl.csv || true
-        [ -f data/macro_intl_hist.csv ] && git add data/macro_intl_hist.csv || true
-        [ -f data/macro_surveys.csv ] && git add data/macro_surveys.csv || true
-        [ -f data/macro_surveys_hist.csv ] && git add data/macro_surveys_hist.csv || true
+        git add -f data/market_data.csv data/sentiment_data.csv
+        [ -f data/macro_us.csv ] && git add -f data/macro_us.csv || true
+        [ -f data/market_data_hist.csv ] && git add -f data/market_data_hist.csv || true
+        [ -f data/macro_us_hist.csv ] && git add -f data/macro_us_hist.csv || true
+        [ -f data/macro_intl.csv ] && git add -f data/macro_intl.csv || true
+        [ -f data/macro_intl_hist.csv ] && git add -f data/macro_intl_hist.csv || true
+        [ -f data/macro_surveys.csv ] && git add -f data/macro_surveys.csv || true
+        [ -f data/macro_surveys_hist.csv ] && git add -f data/macro_surveys_hist.csv || true
         git diff --staged --quiet || (
           git commit -m "Update market data - $(date -u '+%Y-%m-%d %H:%M UTC')" &&
           git push
