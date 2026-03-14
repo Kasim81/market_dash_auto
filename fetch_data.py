@@ -772,6 +772,67 @@ def collect_comp_assets(instruments, comp_fx_cache):
     return rows
 
 
+def collect_comp_fred_assets():
+    """Collect all FRED-sourced Rates instruments from the library for market_data_comp.
+
+    Covers: government yields, OAS/credit spreads, breakeven inflation rates,
+    yield-curve spreads, and policy rates.  All are treated as yield/spread
+    series — returns are expressed as basis-point changes.
+
+    This replaces the simple collect_fred_yields() call in the comp pipeline,
+    giving the comp sheet all 25 confirmed FRED Rates series instead of only
+    the original 4 government yields.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    rates_rows = df[
+        (df["data_source"] == "FRED") &
+        (df["validation_status"] == "CONFIRMED") &
+        (df["asset_class"] == "Rates")
+    ]
+
+    print(f"\nFetching comp FRED rates/spreads ({len(rates_rows)} series)...")
+    rows = []
+
+    for _, lib_row in rates_rows.iterrows():
+        name         = str(lib_row["name"]).strip()
+        region       = str(lib_row.get("region", "Global")).strip()
+        if region in ("nan", ""):
+            region = "Global"
+        asset_subclass = str(lib_row["asset_subclass"]).strip()
+
+        # Series ID is always in ticker_fred_tr for Rates rows
+        series_id = str(lib_row.get("ticker_fred_tr", "")).strip()
+        if series_id in ("nan", "N/A", ""):
+            continue
+
+        print(f"  {series_id} ({name[:45]})...")
+        series = fetch_fred_series(series_id)
+
+        row = {
+            "Symbol":      series_id,
+            "Name":        name,
+            "Ticker Type": "FRED Rate/Spread",
+            "Region":      region,
+            "Asset Class": asset_subclass,
+            "Currency":    "USD",
+            "Last Price":  np.nan,
+            "Last Date":   np.nan,
+        }
+
+        if series is not None and not series.empty:
+            row["Last Price"] = round(series.iloc[-1], 4)
+            row["Last Date"]  = str(series.index[-1].date())
+            for pk in PERIODS:
+                row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
+        else:
+            for pk in PERIODS:
+                row[f"Local {pk} (bps)"] = np.nan
+
+        rows.append(row)
+
+    return rows
+
+
 # ─────────────────────────────────────────────
 # GOOGLE SHEETS EXPORT
 # ─────────────────────────────────────────────
@@ -928,7 +989,7 @@ def main():
         comp_fx_cache   = build_comp_fx_cache()
         comp_instruments = load_instrument_library()
         comp_yf_rows    = collect_comp_assets(comp_instruments, comp_fx_cache)
-        comp_fred_rows  = collect_fred_yields()   # reuse existing FRED yields
+        comp_fred_rows  = collect_comp_fred_assets()  # all 25 FRED Rates from library
         df_comp = pd.DataFrame(comp_yf_rows + comp_fred_rows)
 
         # Calculated ratio/spread rows for comp (mirrors market_data behaviour)
