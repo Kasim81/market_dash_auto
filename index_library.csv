@@ -121,7 +121,7 @@ CBOE VVIX - Volatility of VIX,Volatility,Equity Volatility,Global,Global,Vol-of-
 CBOE SKEW Index,Volatility,Tail Risk,Global,Global,Market Tail Risk,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^SKEW,,,,,,,,1990-01-02
 CBOE VXEFA - EAFE Volatility,Volatility,Equity Volatility,Global ex-US/Canada,Developed Markets ex-NA,Intl DM Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^VXEFA,,,,,,,,2023-06-26
 CBOE VXEEM - EM Volatility,Volatility,Equity Volatility,Emerging Markets,EM Aggregate,EM Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^VXEEM,,,,,,,,2026-03-13
-MOVE Index - Bond Volatility,Volatility,Fixed Income Volatility,North America,USA,Fixed Income Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,UNAVAILABLE,^MOVE,,,,,,,,
+MOVE Index - Bond Volatility,Volatility,Fixed Income Volatility,North America,USA,Fixed Income Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^MOVE,,,,,,,,2002-11-12
 CBOE GVZ - Gold Volatility Index,Volatility,Commodity Volatility,Global,Global,Commodity Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^GVZ,,,,,,,,2008-06-03
 CBOE OVX - Crude Oil Volatility,Volatility,Commodity Volatility,Global,Global,Commodity Volatility,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^OVX,,,,,,,,2007-05-10
 NYSE FANG+ Index,Equity,Equity Factor,North America,United States,Mega-Cap Tech / Growth,Mega Cap,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,^NYFANG,,,,,,,,2014-09-22
@@ -154,7 +154,7 @@ iShares MSCI World Value Factor UCITS ETF,Equity,Equity Factor,Global,Developed 
 iShares MSCI ACWI Min Vol Factor ETF,Equity,Equity Factor,Global,All Countries DM+EM,Low Volatility,Large-Mid,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance,CONFIRMED,,ACWV,,,,,,,2011-10-20
 iShares MSCI EAFE Small-Cap ETF,Equity,Equity Factor,Global ex-US/Canada,Developed Markets ex-NA,Broad Market,Small,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance,CONFIRMED,,SCZ,,,,,,,2007-12-12
 iShares Latin America 40 ETF,Equity,Equity Broad,Latin America,LatAm Multi-Country,Blend,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance,CONFIRMED,,ILF,,,,,,,2001-10-26
-DXY Dollar Index,FX,Currency Index,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,UNAVAILABLE,DX-Y.NYB,,,,,,,,
+DXY Dollar Index,FX,Currency Index,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,DX-Y.NYB,,,,,,,,1971-01-04
 GBP/USD,FX,FX Spot Rate,Europe,United Kingdom,N/A,N/A,N/A,N/A,N/A,GBP,False,N/A,False,N/A,yfinance,CONFIRMED,GBPUSD=X,,,,,,,,2003-12-01
 EUR/USD,FX,FX Spot Rate,Europe,Eurozone,N/A,N/A,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance,CONFIRMED,EURUSD=X,,,,,,,,2003-12-01
 USD/JPY,FX,FX Spot Rate,Asia Pacific,Japan,N/A,N/A,N/A,N/A,N/A,JPY,False,N/A,False,N/A,yfinance,CONFIRMED,USDJPY=X,,,,,,,,1996-10-30
@@ -179,12 +179,33 @@ Vanguard USD EM Government Bond UCITS ETF,Fixed Income,Government,Emerging Marke
 iShares Core UK Gilts UCITS ETF,Fixed Income,Government,Europe,United Kingdom,N/A,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance,CONFIRMED,,IGLT.L,,,,,,,2008-01-02
 iShares UK Short Duration Gilt UCITS ETF,Fixed Income,Government Short,Europe,United Kingdom,N/A,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance,CONFIRMED,,IGLS.L,,,,,,,2009-04-17
 iShares China CNY Bond UCITS ETF,Fixed Income,Government,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,True,ETF,yfinance,CONFIRMED,,CNYB.L,,,,,,,2019-07-24
+ICE BofA US Corporate IG OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLC0A0CM,,,,,1996-12-31
+ICE BofA US AAA Corporate OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLC0A1CAAA,,,,,1996-12-31
+ICE BofA US AA Corporate OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLC0A2CAA,,,,,1996-12-31
+ICE BofA US A Corporate OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLC0A3CA,,,,,1996-12-31
+ICE BofA US BBB Corporate OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLC0A4CBBB,,,,,1996-12-31
+ICE BofA US High Yield OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLH0A0HYM2,,,,,1996-12-31
+ICE BofA US BB High Yield OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLH0A1HYBB,,,,,1996-12-31
+ICE BofA US Single-B High Yield OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLH0A2HYB,,,,,1996-12-31
+ICE BofA US CCC & Lower HY OAS,Rates,Credit Spread,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLH0A3HYC,,,,,1996-12-31
+ICE BofA Euro High Yield OAS,Rates,Credit Spread,Europe,Eurozone,N/A,N/A,N/A,N/A,N/A,EUR,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLHE00EHYIOAS,,,,,1997-12-31
+ICE BofA EM Corporate Plus OAS,Rates,Credit Spread,Emerging Markets,EM Aggregate,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLEMCBPIOAS,,,,,1998-12-31
+ICE BofA EM High Yield Corporate OAS,Rates,Credit Spread,Emerging Markets,EM Aggregate,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLEMHBHYCRPIOAS,,,,,1998-12-31
+ICE BofA EM Asia Corporate OAS,Rates,Credit Spread,Asia Pacific,EM Asia,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLEMRACRPIASIAOAS,,,,,1998-12-31
+ICE BofA EM BBB Corporate OAS,Rates,Credit Spread,Emerging Markets,EM Aggregate,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,BAMLEM2BRRBBBCRPIOAS,,,,,1998-12-31
+5-Year Breakeven Inflation Rate,Rates,Breakeven Inflation,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,T5YIE,,,,,2003-01-02
+10-Year Breakeven Inflation Rate,Rates,Breakeven Inflation,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,T10YIE,,,,,2003-01-02
+5-Year 5-Year Forward Inflation Rate,Rates,Breakeven Inflation,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,T5YIFR,,,,,2003-01-02
+US 10Y-2Y Treasury Yield Spread,Rates,Yield Curve,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,T10Y2Y,,,,,1976-06-01
+US 10Y-3M Treasury Yield Spread,Rates,Yield Curve,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,T10Y3M,,,,,1982-01-04
+Federal Funds Effective Rate,Rates,Policy Rate,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,DFF,,,,,1954-07-01
+Secured Overnight Financing Rate (SOFR),Rates,Policy Rate,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,,,SOFR,,,,,2018-04-03
 ICE BofA US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Broad,Sovereign,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,,GOVT,,,,,,,2012-02-24
 ICE BofA 1-3 Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Short (1-3yr),Sovereign,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,,SHY,,,,,,,2002-07-30
 ICE BofA 10+ Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Long (10yr+),Sovereign,N/A,USD,False,N/A,False,N/A,yfinance,CONFIRMED,,TLT,,,,,,,2002-07-30
 ICE BofA US Inflation-Linked Treasury Index (TIPS),Fixed Income,Inflation-Linked,North America,United States,N/A,N/A,Broad,Sovereign,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,TIP,,,DFII10,,,,2003-12-05
-ICE BofA US Corporate Index,Fixed Income,Corp IG,North America,United States,N/A,N/A,Broad,Investment Grade,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,LQD,,BAMLCC0A0CMTRIV,BAMLC0A0CMEY,,,,2002-07-30
-ICE BofA US High Yield Index,Fixed Income,Corp HY,North America,United States,N/A,N/A,Broad,High Yield,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,HYG,,BAMLHYH0A0HYM2TRIV,BAMLH0A0HYM2,,,,2007-04-11
+ICE BofA US Corporate Index,Fixed Income,Corp IG,North America,United States,N/A,N/A,Broad,Investment Grade,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,LQD,,BAMLCC0A0CMTRIV,BAMLC0A0CMEY,BAMLC0A0CM,,,2002-07-30
+ICE BofA US High Yield Index,Fixed Income,Corp HY,North America,United States,N/A,N/A,Broad,High Yield,N/A,USD,False,N/A,False,N/A,FRED,CONFIRMED,,HYG,,BAMLHYH0A0HYM2TRIV,,BAMLH0A0HYM2,,,2007-04-11
 ICE BofA UK Gilt Index,Fixed Income,Govt Bond,Europe,United Kingdom,N/A,N/A,Broad,Sovereign,N/A,GBP,False,N/A,False,N/A,yfinance,CONFIRMED,,IGLT.L,,,,,,,2008-01-02
 ICE BofA UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,Europe,United Kingdom,N/A,N/A,Broad,Sovereign,N/A,GBP,True,USD,True,ETF,yfinance,CONFIRMED,,BNDX,,,,,,,2013-06-04
 ICE BofA 1-3 Year UK Gilt Index,Fixed Income,Govt Bond,Europe,United Kingdom,N/A,N/A,Short (1-3yr),Sovereign,N/A,GBP,False,N/A,True,ETF,yfinance,CONFIRMED,,IGLS.L,,,,,,,2009-04-17
