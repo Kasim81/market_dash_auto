@@ -1592,11 +1592,21 @@ def build_comp_market_hist_df(
     df.index.name = "Date"
 
     for ticker in all_ordered:
-        s = local_yf.get(ticker) or local_fr.get(ticker) or pd.Series(np.nan, index=spine)
+        if ticker in local_yf:
+            s = local_yf[ticker]
+        elif ticker in local_fr:
+            s = local_fr[ticker]
+        else:
+            s = pd.Series(np.nan, index=spine)
         df[f"{ticker}_Local"] = s
 
     for ticker in all_ordered:
-        s = usd_yf.get(ticker) or usd_fr.get(ticker) or pd.Series(np.nan, index=spine)
+        if ticker in usd_yf:
+            s = usd_yf[ticker]
+        elif ticker in usd_fr:
+            s = usd_fr[ticker]
+        else:
+            s = pd.Series(np.nan, index=spine)
         df[f"{ticker}_USD"] = s
 
     df = df.reset_index()
