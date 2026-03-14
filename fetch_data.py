@@ -270,21 +270,35 @@ def calc_return(series, period_key, is_yield=False, is_level=False):
 
 
 def fetch_yf_history(ticker, retries=3):
-    """Fetch full price history from yfinance with retry logic."""
+    """Fetch full price history from yfinance with retry logic.
+
+    Tries period='max' first.  Some tickers (e.g. certain Chinese indices,
+    Russian markets, newer CBOE indices) only allow short look-back windows
+    via the period parameter, so if period='max' returns empty we fall back
+    to start='2000-01-01'.
+    """
+    def _process(hist):
+        if hist is None or hist.empty or "Close" not in hist.columns:
+            return None
+        hist = hist[~hist.index.duplicated(keep="first")]
+        series = hist["Close"]
+        idx = series.index
+        if idx.tzinfo is None:
+            idx = idx.tz_localize("UTC")
+        else:
+            idx = idx.tz_convert("UTC")
+        idx = idx.astype("datetime64[us, UTC]")
+        series.index = idx
+        return series if not series.empty else None
+
     for attempt in range(retries):
         try:
             t = yf.Ticker(ticker)
-            hist = t.history(period="max", auto_adjust=True)
-            if hist is not None and not hist.empty:
-                hist = hist[~hist.index.duplicated(keep="first")]
-                series = hist["Close"]
-                idx = series.index
-                if idx.tzinfo is None:
-                    idx = idx.tz_localize("UTC")
-                else:
-                    idx = idx.tz_convert("UTC")
-                idx = idx.astype("datetime64[us, UTC]")
-                series.index = idx
+            series = _process(t.history(period="max", auto_adjust=True))
+            if series is None:
+                # Fallback for tickers that restrict period= to short windows
+                series = _process(t.history(start="2000-01-01", auto_adjust=True))
+            if series is not None:
                 return series
         except Exception as e:
             print(f"  [{ticker}] attempt {attempt+1} failed: {e}")
@@ -699,8 +713,20 @@ def push_to_google_sheets(df_main, df_comp=None):
         rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
         return [header] + rows
 
+    def ensure_tab_exists(tab_name):
+        """Create the sheet tab if it does not already exist."""
+        meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
+        existing = {s["properties"]["title"] for s in meta.get("sheets", [])}
+        if tab_name not in existing:
+            sheets.batchUpdate(
+                spreadsheetId=SPREADSHEET_ID,
+                body={"requests": [{"addSheet": {"properties": {"title": tab_name}}}]},
+            ).execute()
+            print(f"  Created new tab '{tab_name}'")
+
     def write_sheet(tab_name, values):
-        """Clear tab and write values."""
+        """Ensure tab exists, clear it, and write values."""
+        ensure_tab_exists(tab_name)
         sheets.values().clear(
             spreadsheetId=SPREADSHEET_ID,
             range=f"{tab_name}!A1:ZZ10000"
