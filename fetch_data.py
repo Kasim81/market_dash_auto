@@ -37,6 +37,50 @@ FX_TICKERS = {
 FCY_PER_USD = {"JPY", "CNY", "INR", "KRW", "TWD"}
 
 # ─────────────────────────────────────────────
+# COMPREHENSIVE LIBRARY — constants for market_data_comp
+# ─────────────────────────────────────────────
+
+LIBRARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
+
+# FX pairs covering all currencies in the library.
+# Convention: direct pairs (1 FCY = X USD) listed first, then indirect (1 USD = X FCY).
+COMP_FX_TICKERS = {
+    # Direct quotes — 1 unit of FCY buys X USD (NOT in COMP_FCY_PER_USD)
+    "GBP": "GBPUSD=X",
+    "EUR": "EURUSD=X",
+    "AUD": "AUDUSD=X",
+    # Indirect quotes — 1 USD buys X units of FCY (IN COMP_FCY_PER_USD)
+    "JPY": "USDJPY=X",
+    "CNY": "CNY=X",
+    "INR": "INR=X",
+    "KRW": "KRW=X",
+    "TWD": "TWD=X",
+    "CAD": "USDCAD=X",
+    "BRL": "USDBRL=X",
+    "HKD": "USDHKD=X",
+    "MXN": "USDMXN=X",
+    "IDR": "USDIDR=X",
+    "RUB": "USDRUB=X",
+    "SAR": "USDSAR=X",
+    "ZAR": "USDZAR=X",
+    "TRY": "USDTRY=X",
+    "ARS": "USDARS=X",
+}
+
+# All indirect-quote currencies (invert when computing USD return)
+COMP_FCY_PER_USD = {
+    "JPY", "CNY", "INR", "KRW", "TWD",       # existing
+    "CAD", "BRL", "HKD", "MXN", "IDR",        # new
+    "RUB", "SAR", "ZAR", "TRY", "ARS",        # new
+}
+
+# Volatility indices — show absolute point change, not % change
+COMP_LEVEL_CHANGE_TICKERS = {
+    "^VIX", "^VIX9D", "^VIX3M", "^VVIX", "^SKEW",
+    "^VXEFA", "^VXEEM", "^GVZ", "^OVX",
+}
+
+# ─────────────────────────────────────────────
 # ASSET DEFINITIONS
 # Each tuple: (ticker, display_name, region, asset_class, local_currency)
 # local_currency = None means already priced in USD
@@ -296,8 +340,15 @@ def build_fx_cache():
     return cache
 
 
-def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache):
-    """Convert a local currency % return to USD % return."""
+def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache, fcy_per_usd=None):
+    """Convert a local currency % return to USD % return.
+
+    fcy_per_usd: set of currencies where the FX ticker is quoted as USD/FCY
+                 (i.e. 1 USD = X FCY, so we invert).  Defaults to FCY_PER_USD.
+    """
+    if fcy_per_usd is None:
+        fcy_per_usd = FCY_PER_USD
+
     if ccy is None or pd.isna(local_return_pct):
         return local_return_pct
 
@@ -310,7 +361,7 @@ def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache):
     if pd.isna(fx_return):
         return np.nan
 
-    if ccy in FCY_PER_USD:
+    if ccy in fcy_per_usd:
         fx_usd_return = -fx_return
     else:
         fx_usd_return = fx_return
@@ -448,16 +499,169 @@ def build_calculated_fields(df):
 
 
 # ─────────────────────────────────────────────
+# COMPREHENSIVE LIBRARY — data collection
+# ─────────────────────────────────────────────
+
+def build_comp_fx_cache():
+    """Pre-fetch FX rate histories for all currencies in the comprehensive library."""
+    print("Fetching comprehensive FX rates...")
+    cache = {}
+    for ccy, ticker in COMP_FX_TICKERS.items():
+        series = fetch_yf_history(ticker)
+        if series is not None:
+            cache[ccy] = series
+            print(f"  {ccy} ({ticker}): OK ({len(series)} rows)")
+        else:
+            print(f"  {ccy} ({ticker}): FAILED — USD conversion unavailable for {ccy} assets")
+    return cache
+
+
+def load_instrument_library():
+    """Read index_library.csv and return a flat list of instrument dicts.
+
+    For instruments with both a price-return index ticker (ticker_yfinance_pr)
+    and a total-return ETF proxy (ticker_yfinance_tr), two entries are produced:
+    one labelled 'Price Return (Index)' and one 'Total Return (ETF)'.
+    Tickers are deduplicated — if the same ticker would appear more than once
+    (e.g. BNDX used as proxy for many hedged bond indices) only the first
+    occurrence is kept.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    confirmed_yf = df[
+        (df["data_source"] == "yfinance") & (df["validation_status"] == "CONFIRMED")
+    ]
+
+    instruments = []
+    seen = set()
+
+    def _clean(val):
+        s = str(val).strip()
+        return None if s in ("nan", "", "N/A") else s
+
+    for _, row in confirmed_yf.iterrows():
+        name       = str(row["name"]).strip()
+        region     = str(row["region"]).strip()
+        asset_cls  = str(row["asset_subclass"]).strip()
+        ccy        = str(row["base_currency"]).strip()
+        if ccy in ("nan", ""):
+            ccy = "USD"
+
+        pr = _clean(row["ticker_yfinance_pr"])
+        tr = _clean(row["ticker_yfinance_tr"])
+
+        if pr and pr not in seen:
+            instruments.append({
+                "ticker":      pr,
+                "name":        name,
+                "region":      region,
+                "asset_class": asset_cls,
+                "currency":    ccy,
+                "ticker_type": "Price Return (Index)",
+                "pence":       pr.endswith(".L"),
+            })
+            seen.add(pr)
+
+        if tr and tr not in seen:
+            instruments.append({
+                "ticker":      tr,
+                "name":        name,
+                "region":      region,
+                "asset_class": asset_cls,
+                "currency":    ccy,
+                "ticker_type": "Total Return (ETF)",
+                "pence":       tr.endswith(".L"),
+            })
+            seen.add(tr)
+
+    print(f"  Library loaded: {len(instruments)} unique instruments "
+          f"({sum(1 for i in instruments if i['ticker_type'].startswith('Price'))} PR, "
+          f"{sum(1 for i in instruments if i['ticker_type'].startswith('Total'))} TR)")
+    return instruments
+
+
+def collect_comp_assets(instruments, comp_fx_cache):
+    """Fetch prices and compute returns for every instrument in the library.
+
+    Mirrors collect_yf_assets() but uses the comprehensive FX cache and
+    level-change set, and adds a 'Ticker Type' column.
+    """
+    print(f"\nFetching comp library ({len(instruments)} instruments)...")
+    rows = []
+
+    for inst in instruments:
+        ticker      = inst["ticker"]
+        name        = inst["name"]
+        region      = inst["region"]
+        asset_class = inst["asset_class"]
+        ccy         = inst["currency"]
+        ticker_type = inst["ticker_type"]
+        is_pence    = inst["pence"]
+        local_ccy   = None if ccy == "USD" else ccy
+        is_yield    = ticker in YIELD_TICKERS
+        is_level    = ticker in COMP_LEVEL_CHANGE_TICKERS
+
+        print(f"  [{ticker_type[:2]}] {ticker} ({name[:40]})...")
+        series = fetch_yf_history(ticker)
+
+        row = {
+            "Symbol":      ticker,
+            "Name":        name,
+            "Ticker Type": ticker_type,
+            "Region":      region,
+            "Asset Class": asset_class,
+            "Currency":    ccy,
+            "Last Price":  np.nan,
+            "Last Date":   np.nan,
+        }
+
+        if series is None or series.empty:
+            print(f"    → No data")
+            for pk in PERIODS:
+                row[f"Local {pk}"] = np.nan
+                if not is_yield:
+                    row[f"USD {pk}"] = np.nan
+            rows.append(row)
+            time.sleep(0.3)
+            continue
+
+        if is_pence:
+            series = series / 100
+
+        row["Last Price"] = round(series.iloc[-1], 4)
+        row["Last Date"]  = str(series.index[-1].date())
+
+        for pk in PERIODS:
+            local_ret = calc_return(series, pk, is_yield=is_yield, is_level=is_level)
+            if is_yield:
+                row[f"Local {pk} (bps)"] = local_ret
+            else:
+                row[f"Local {pk}"] = local_ret
+                if is_level or local_ccy is None:
+                    row[f"USD {pk}"] = local_ret
+                else:
+                    row[f"USD {pk}"] = usd_adjusted_return(
+                        local_ret, local_ccy, pk, comp_fx_cache,
+                        fcy_per_usd=COMP_FCY_PER_USD,
+                    )
+
+        rows.append(row)
+        time.sleep(0.3)
+
+    return rows
+
+
+# ─────────────────────────────────────────────
 # GOOGLE SHEETS EXPORT
 # ─────────────────────────────────────────────
 
 SPREADSHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
-def push_to_google_sheets(df_main):
+def push_to_google_sheets(df_main, df_comp=None):
     """
-    Push market_data dataframe to Google Sheets and clean up legacy tabs.
+    Push market_data (and optionally market_data_comp) to Google Sheets.
     Credentials are read from the GOOGLE_CREDENTIALS environment variable
     (set as a GitHub Actions secret containing the service account JSON).
+    df_comp: optional DataFrame for the market_data_comp tab.
     """
     import json
     from google.oauth2.service_account import Credentials
@@ -537,6 +741,10 @@ def push_to_google_sheets(df_main):
 
     print("\nPushing data to Google Sheets...")
     write_sheet("market_data", df_to_values(df_main))
+
+    if df_comp is not None and not df_comp.empty:
+        write_sheet("market_data_comp", df_to_values(df_comp))
+
     print("✓ Google Sheets export complete.")
 
 
@@ -569,17 +777,42 @@ def main():
     df_ratios = pd.DataFrame(ratio_rows)
     df_main = pd.concat([df_main, df_ratios], ignore_index=True)
 
-    # 6. Save output
+    # 6. Save market_data output
     main_path = "data/market_data.csv"
     df_main.to_csv(main_path, index=False)
-
-    # 7. Push to Google Sheets
-    push_to_google_sheets(df_main)
-
     print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
-    print(f"✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
 
-    print("\n--- Asset class breakdown ---")
+    # ── Comprehensive library (market_data_comp) ──────────────────────────
+    # Loads index_library.csv, fetches all confirmed instruments, and writes
+    # to the market_data_comp Google Sheet tab.  The existing market_data tab
+    # is completely unaffected by this block.
+    df_comp = None
+    try:
+        print("\n" + "=" * 60)
+        print("COMPREHENSIVE LIBRARY (market_data_comp)")
+        print("=" * 60)
+        comp_fx_cache   = build_comp_fx_cache()
+        comp_instruments = load_instrument_library()
+        comp_yf_rows    = collect_comp_assets(comp_instruments, comp_fx_cache)
+        comp_fred_rows  = collect_fred_yields()   # reuse existing FRED yields
+        df_comp = pd.DataFrame(comp_yf_rows + comp_fred_rows)
+        comp_path = "data/market_data_comp.csv"
+        df_comp.to_csv(comp_path, index=False)
+        print(f"\n✓ Saved {comp_path} — {len(df_comp)} instruments")
+        print("\n--- Comp asset class breakdown ---")
+        if "Asset Class" in df_comp.columns:
+            print(df_comp["Asset Class"].value_counts().to_string())
+    except Exception as e:
+        print(f"\nWARNING: Comprehensive library collection failed: {e}")
+        print("  market_data will still be pushed; market_data_comp will be skipped.")
+        df_comp = None
+
+    # 7. Push to Google Sheets (market_data always; market_data_comp if available)
+    push_to_google_sheets(df_main, df_comp=df_comp)
+
+    print(f"\n✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
+
+    print("\n--- market_data asset class breakdown ---")
     if "Asset Class" in df_main.columns:
         print(df_main["Asset Class"].value_counts().to_string())
 
