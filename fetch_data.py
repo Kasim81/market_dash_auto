@@ -81,6 +81,131 @@ COMP_LEVEL_CHANGE_TICKERS = {
 }
 
 # ─────────────────────────────────────────────
+# LIBRARY SORT ORDER
+# Used by load_instrument_library() and collect_comp_fred_assets()
+# to emit columns in a consistent, user-friendly group order.
+# Mirrors the constants in fetch_hist.py — keep in sync.
+# ─────────────────────────────────────────────
+
+_LIB_ASSET_CLASS_GROUP = {
+    "Equity":       1,
+    "Fixed Income": 2,
+    "Rates":        3,
+    "FX":           4,
+    "Commodity":    5,
+    "Crypto":       6,
+    "Volatility":   7,
+}
+
+_LIB_REGION_ORDER = {
+    "Global":               1,
+    "Global ex-US/Canada":  1,
+    "North America":        2,
+    "Europe":               3,
+    # Japan (country_market == "Japan") assigned rank 4 in sort key
+    "Emerging Markets":     5,
+    "Asia Pacific":         6,
+    "Middle East & Africa": 7,
+    "Latin America":        8,
+}
+
+_LIB_EQUITY_SUBCLASS_ORDER = {
+    "Equity Broad":              1,
+    "Equity Large Cap":          2,
+    "Equity Mid Cap":            3,
+    "Equity Mid Cap (Growth)":   3,
+    "Equity Mid Cap (Value)":    3,
+    "Equity Small Cap":          4,
+    "Equity Small Cap (Growth)": 4,
+    "Equity Small Cap (Value)":  4,
+    "Equity Sector":             5,
+    "Equity Industry Group":     6,
+    "Equity Factor":             7,
+}
+
+_LIB_SECTOR_ORDER = {
+    "Blend": 0, "Value": 1, "Growth": 2,
+    "Energy": 10, "Materials": 11, "Industrials": 12,
+    "Consumer Discretionary": 13, "Consumer Staples": 14,
+    "Health Care": 15, "Financials": 16,
+    "Information Technology": 17, "Communication Services": 18,
+    "Utilities": 19, "Real Estate": 20,
+    "Mega-Cap Tech / Growth": 30, "Equal Weight": 31,
+    "Momentum": 32, "Dividend Growth": 33, "Quality": 34,
+    "Dividend/Quality": 35, "Low Volatility": 36,
+    "Dividend/Income": 37, "Broad Market": 38,
+}
+
+_LIB_FI_SUBCLASS_ORDER = {
+    "Global Aggregate": 1,
+    "Govt Bond": 2, "Government": 2, "Government Short": 2,
+    "Inflation-Linked": 3,
+    "Corp IG": 4, "Corp HY": 5,
+}
+
+_LIB_MATURITY_ORDER = {
+    "Broad": 1, "Short (1-3yr)": 2, "Long (10yr+)": 3,
+}
+
+_LIB_COMMODITY_GROUP_ORDER = {
+    "Energy": 1, "Precious Metals": 2, "Industrial Metals": 3,
+    "Agriculture": 4, "Livestock": 5, "Broad": 6,
+}
+
+_LIB_VOL_SUBCLASS_ORDER = {
+    "Equity Volatility": 1, "Tail Risk": 2,
+    "Fixed Income Volatility": 3, "Commodity Volatility": 4,
+}
+
+_LIB_RATES_SUBCLASS_ORDER = {
+    "Government Yield": 1, "Breakeven Inflation": 2,
+    "Credit Spread": 3, "Policy Rate": 4, "Yield Curve": 5,
+}
+
+
+def _lib_sort_key(row) -> tuple:
+    """Sort key for a raw index_library.csv row."""
+    ac      = str(row.get("asset_class", ""))
+    asc     = str(row.get("asset_subclass", ""))
+    region  = str(row.get("region", ""))
+    country = str(row.get("country_market", ""))
+    sector  = str(row.get("sector_style", ""))
+    mat     = str(row.get("maturity_focus", ""))
+    cg      = str(row.get("commodity_group", ""))
+    name    = str(row.get("name", ""))
+
+    g = _LIB_ASSET_CLASS_GROUP.get(ac, 99)
+    r = _LIB_REGION_ORDER.get(region, 50)
+    if region == "Asia Pacific" and country == "Japan":
+        r = 4
+
+    if ac == "Equity":
+        s   = _LIB_EQUITY_SUBCLASS_ORDER.get(asc, 50)
+        sec = _LIB_SECTOR_ORDER.get(sector, 50)
+        return (g, r, s, sec, name)
+    if ac == "Fixed Income":
+        s   = _LIB_FI_SUBCLASS_ORDER.get(asc, 50)
+        m   = _LIB_MATURITY_ORDER.get(mat, 50)
+        return (g, r, s, m, name)
+    if ac == "FX":
+        s = 1 if "Index" in asc else 2
+        return (g, 0, s, name)
+    if ac == "Commodity":
+        s   = 1 if asc == "Commodity" else 2
+        cgn = _LIB_COMMODITY_GROUP_ORDER.get(cg, 50)
+        return (g, 0, s, cgn, name)
+    if ac == "Crypto":
+        return (g, 0, 0, name)
+    if ac == "Volatility":
+        s = _LIB_VOL_SUBCLASS_ORDER.get(asc, 50)
+        return (g, 0, s, name)
+    if ac == "Rates":
+        s = _LIB_RATES_SUBCLASS_ORDER.get(asc, 50)
+        return (g, r, s, name)
+    return (g, r, 0, name)
+
+
+# ─────────────────────────────────────────────
 # ASSET DEFINITIONS
 # Each tuple: (ticker, display_name, region, asset_class, local_currency)
 # local_currency = None means already priced in USD
@@ -651,7 +776,11 @@ def load_instrument_library():
     df = pd.read_csv(LIBRARY_PATH)
     confirmed_yf = df[
         (df["data_source"] == "yfinance") & (df["validation_status"] == "CONFIRMED")
-    ]
+    ].copy()
+
+    # Sort rows into display group order before building instrument list
+    confirmed_yf["_sort"] = confirmed_yf.apply(_lib_sort_key, axis=1)
+    confirmed_yf = confirmed_yf.sort_values("_sort").drop(columns=["_sort"])
 
     instruments = []
     seen = set()
@@ -788,7 +917,12 @@ def collect_comp_fred_assets():
         (df["data_source"] == "FRED") &
         (df["validation_status"] == "CONFIRMED") &
         (df["asset_class"] == "Rates")
-    ]
+    ].copy()
+
+    # Sort: Govt Yield → Breakeven → Credit Spread → Policy Rate → Yield Curve
+    rates_rows["_s"] = rates_rows["asset_subclass"].map(_LIB_RATES_SUBCLASS_ORDER).fillna(99)
+    rates_rows["_r"] = rates_rows["region"].map(_LIB_REGION_ORDER).fillna(50)
+    rates_rows = rates_rows.sort_values(["_s", "_r", "name"]).drop(columns=["_s", "_r"])
 
     print(f"\nFetching comp FRED rates/spreads ({len(rates_rows)} series)...")
     rows = []

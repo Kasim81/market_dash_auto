@@ -1079,14 +1079,15 @@ _ASSET_CLASS_GROUP = {
 }
 
 _REGION_ORDER = {
-    "North America":        1,
-    "Europe":               2,
-    "Asia Pacific":         3,
-    "Latin America":        4,
-    "Middle East & Africa": 5,
-    "Global":               6,
-    "Global ex-US/Canada":  7,
-    "Emerging Markets":     8,
+    "Global":               1,
+    "Global ex-US/Canada":  1,   # grouped with Global
+    "North America":        2,
+    "Europe":               3,
+    # Japan (country_market == "Japan") is assigned rank 4 in the sort key below
+    "Emerging Markets":     5,
+    "Asia Pacific":         6,   # non-Japan APAC
+    "Middle East & Africa": 7,
+    "Latin America":        8,
 }
 
 _EQUITY_SUBCLASS_ORDER = {
@@ -1165,10 +1166,10 @@ _VOL_SUBCLASS_ORDER = {
 
 _RATES_SUBCLASS_ORDER = {
     "Government Yield":       1,
-    "Credit Spread":          2,
-    "Breakeven Inflation":    3,
-    "Yield Curve":            4,
-    "Policy Rate":            5,
+    "Breakeven Inflation":    2,
+    "Credit Spread":          3,
+    "Policy Rate":            4,
+    "Yield Curve":            5,
 }
 
 
@@ -1177,6 +1178,7 @@ def _comp_inst_sort_key(row: pd.Series) -> tuple:
     ac       = str(row.get("asset_class", ""))
     asc      = str(row.get("asset_subclass", ""))
     region   = str(row.get("region", ""))
+    country  = str(row.get("country_market", ""))
     sector   = str(row.get("sector_style", ""))
     maturity = str(row.get("maturity_focus", ""))
     cg       = str(row.get("commodity_group", ""))
@@ -1184,6 +1186,9 @@ def _comp_inst_sort_key(row: pd.Series) -> tuple:
 
     g = _ASSET_CLASS_GROUP.get(ac, 99)
     r = _REGION_ORDER.get(region, 50)
+    # Japan sits between Europe (3) and Emerging Markets (5)
+    if region == "Asia Pacific" and country == "Japan":
+        r = 4
 
     if ac == "Equity":
         s   = _EQUITY_SUBCLASS_ORDER.get(asc, 50)
