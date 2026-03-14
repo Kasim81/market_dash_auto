@@ -1074,3 +1074,18 @@ except Exception as _phase_c_err:
 # Phase B (fetch_macro_surveys.py) has been consolidated into macro_us.
 # All survey + credit condition indicators now live in fetch_macro_us_fred.py
 # and are written to the macro_us / macro_us_hist tabs.
+
+# ============================================================
+# COMPREHENSIVE HISTORICAL SERIES
+# Builds market_data_comp_hist tab + CSV using all instruments
+# from index_library.csv.  Start date: 1950-01-01.
+# Runs after run_hist() so any failure cannot affect earlier
+# pipeline outputs.
+# ============================================================
+
+try:
+    from fetch_hist import run_comp_hist
+    run_comp_hist()
+except Exception as _comp_hist_err:
+    print(f"[CompHist] Non-fatal import/run error: {_comp_hist_err}")
+    print("[CompHist] Existing pipeline outputs are unaffected")
