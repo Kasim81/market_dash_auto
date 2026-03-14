@@ -1057,6 +1057,162 @@ COMP_HIST_START = "1950-01-01"
 
 LIBRARY_PATH_HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
 
+# ---------------------------------------------------------------------------
+# COMP HIST: SORT-ORDER MAPS
+# Instruments in the sheet are ordered:
+#   1. Equities (region → subclass → sector/style)
+#   2. Fixed Income / Bond Returns (region → subclass → maturity)
+#   3. Rates / Bond Yields & Credit Spreads  (FRED; subclass → region)
+#   4. FX / Currencies
+#   5. Commodities & Crypto
+#   6. Macro-Market Indicators (Volatility indices)
+# ---------------------------------------------------------------------------
+
+_ASSET_CLASS_GROUP = {
+    "Equity":       1,
+    "Fixed Income": 2,
+    "Rates":        3,   # FRED only — handled in load_comp_fred_rates()
+    "FX":           4,
+    "Commodity":    5,
+    "Crypto":       6,
+    "Volatility":   7,
+}
+
+_REGION_ORDER = {
+    "North America":        1,
+    "Europe":               2,
+    "Asia Pacific":         3,
+    "Latin America":        4,
+    "Middle East & Africa": 5,
+    "Global":               6,
+    "Global ex-US/Canada":  7,
+    "Emerging Markets":     8,
+}
+
+_EQUITY_SUBCLASS_ORDER = {
+    "Equity Broad":              1,
+    "Equity Large Cap":          2,
+    "Equity Mid Cap":            3,
+    "Equity Mid Cap (Growth)":   3,
+    "Equity Mid Cap (Value)":    3,
+    "Equity Small Cap":          4,
+    "Equity Small Cap (Growth)": 4,
+    "Equity Small Cap (Value)":  4,
+    "Equity Sector":             5,
+    "Equity Industry Group":     6,
+    "Equity Factor":             7,
+}
+
+# Equity sector order (GICS standard) + style factors at end
+_SECTOR_ORDER = {
+    "Blend":                          0,
+    "Value":                          1,
+    "Growth":                         2,
+    "Energy":                        10,
+    "Materials":                     11,
+    "Industrials":                   12,
+    "Consumer Discretionary":        13,
+    "Consumer Staples":              14,
+    "Health Care":                   15,
+    "Financials":                    16,
+    "Information Technology":        17,
+    "Communication Services":        18,
+    "Utilities":                     19,
+    "Real Estate":                   20,
+    # Factor styles
+    "Mega-Cap Tech / Growth":        30,
+    "Equal Weight":                  31,
+    "Momentum":                      32,
+    "Dividend Growth":               33,
+    "Quality":                       34,
+    "Dividend/Quality":              35,
+    "Low Volatility":                36,
+    "Dividend/Income":               37,
+    "Broad Market":                  38,
+}
+
+_FI_SUBCLASS_ORDER = {
+    "Global Aggregate":    1,
+    "Govt Bond":           2,
+    "Government":          2,
+    "Government Short":    2,
+    "Inflation-Linked":    3,
+    "Corp IG":             4,
+    "Corp HY":             5,
+}
+
+_MATURITY_ORDER = {
+    "Broad":          1,
+    "Short (1-3yr)":  2,
+    "Long (10yr+)":   3,
+}
+
+_COMMODITY_GROUP_ORDER = {
+    "Energy":            1,
+    "Precious Metals":   2,
+    "Industrial Metals": 3,
+    "Agriculture":       4,
+    "Livestock":         5,
+    "Broad":             6,
+}
+
+_VOL_SUBCLASS_ORDER = {
+    "Equity Volatility":          1,
+    "Tail Risk":                  2,
+    "Fixed Income Volatility":    3,
+    "Commodity Volatility":       4,
+}
+
+_RATES_SUBCLASS_ORDER = {
+    "Government Yield":       1,
+    "Credit Spread":          2,
+    "Breakeven Inflation":    3,
+    "Yield Curve":            4,
+    "Policy Rate":            5,
+}
+
+
+def _comp_inst_sort_key(row: pd.Series) -> tuple:
+    """Return a sort tuple for a library CSV row (instrument)."""
+    ac       = str(row.get("asset_class", ""))
+    asc      = str(row.get("asset_subclass", ""))
+    region   = str(row.get("region", ""))
+    sector   = str(row.get("sector_style", ""))
+    maturity = str(row.get("maturity_focus", ""))
+    cg       = str(row.get("commodity_group", ""))
+    name     = str(row.get("name", ""))
+
+    g = _ASSET_CLASS_GROUP.get(ac, 99)
+    r = _REGION_ORDER.get(region, 50)
+
+    if ac == "Equity":
+        s   = _EQUITY_SUBCLASS_ORDER.get(asc, 50)
+        sec = _SECTOR_ORDER.get(sector, 50)
+        return (g, r, s, sec, name)
+
+    if ac == "Fixed Income":
+        s   = _FI_SUBCLASS_ORDER.get(asc, 50)
+        mat = _MATURITY_ORDER.get(maturity, 50)
+        return (g, r, s, mat, name)
+
+    if ac == "FX":
+        s = 1 if "Index" in asc else 2
+        return (g, 0, s, name)
+
+    if ac == "Commodity":
+        s  = 1 if asc == "Commodity" else 2
+        cg_n = _COMMODITY_GROUP_ORDER.get(cg, 50)
+        return (g, 0, s, cg_n, name)
+
+    if ac == "Crypto":
+        return (g, 0, 0, name)
+
+    if ac == "Volatility":
+        s = _VOL_SUBCLASS_ORDER.get(asc, 50)
+        return (g, 0, s, name)
+
+    return (g, r, 0, name)
+
 # FX pairs covering all currencies in the comprehensive library
 COMP_FX_TICKERS_HIST = {
     "GBP": "GBPUSD=X",
@@ -1093,16 +1249,31 @@ COMP_FCY_PER_USD_HIST = {
 
 def load_comp_instruments() -> list:
     """
-    Read index_library.csv and return a list of instrument dicts.
-    For instruments with both PR and TR tickers, creates two entries.
-    Deduplicates by ticker so shared proxy ETFs appear only once.
-    Each dict: {ticker, name, region, asset_class, currency, ticker_type, pence}
+    Read index_library.csv and return a list of instrument dicts, sorted by:
+      Group 1: Equities   — region → subclass → sector/style → name
+      Group 2: Fixed Income — region → subclass → maturity → name
+      Group 3: FX          — subclass → name
+      Group 4: Commodities — subclass → commodity_group → name
+      Group 5: Crypto      — name
+      Group 6: Volatility (Macro-Market Indicators) — subclass → name
+
+    For instruments with both PR and TR tickers, the PR row comes first,
+    followed immediately by the TR row. Deduplicates by ticker so shared
+    proxy ETFs (e.g. BNDX appearing for many hedged bond indices) appear
+    only once (first occurrence wins).
+
+    Each dict: {ticker, name, region, asset_class, asset_subclass,
+                currency, ticker_type, pence}
     """
     df = pd.read_csv(LIBRARY_PATH_HIST)
     df = df[
         (df["data_source"] == "yfinance") &
         (df["validation_status"] == "CONFIRMED")
     ].copy()
+
+    # Sort rows by desired display order
+    df["_sort_key"] = df.apply(_comp_inst_sort_key, axis=1)
+    df = df.sort_values("_sort_key").drop(columns=["_sort_key"])
 
     instruments = []
     seen = set()
@@ -1111,6 +1282,7 @@ def load_comp_instruments() -> list:
         name        = str(row.get("name", "")).strip()
         region      = str(row.get("region", "")).strip()
         asset_class = str(row.get("asset_class", "")).strip()
+        asset_sub   = str(row.get("asset_subclass", "")).strip()
         currency    = str(row.get("base_currency", "USD")).strip()
         if not currency or currency == "nan":
             currency = "USD"
@@ -1119,7 +1291,8 @@ def load_comp_instruments() -> list:
         if pr and pr != "nan" and pr not in seen:
             instruments.append({
                 "ticker": pr, "name": name, "region": region,
-                "asset_class": asset_class, "currency": currency,
+                "asset_class": asset_class, "asset_subclass": asset_sub,
+                "currency": currency,
                 "ticker_type": "PR", "pence": pr.endswith(".L"),
             })
             seen.add(pr)
@@ -1128,7 +1301,8 @@ def load_comp_instruments() -> list:
         if tr and tr != "nan" and tr not in seen:
             instruments.append({
                 "ticker": tr, "name": name, "region": region,
-                "asset_class": asset_class, "currency": currency,
+                "asset_class": asset_class, "asset_subclass": asset_sub,
+                "currency": currency,
                 "ticker_type": "TR", "pence": tr.endswith(".L"),
             })
             seen.add(tr)
@@ -1138,8 +1312,10 @@ def load_comp_instruments() -> list:
 
 def load_comp_fred_rates() -> list:
     """
-    Read index_library.csv and return a list of FRED Rates series dicts.
-    Each dict: {series_id, name, region, asset_class}
+    Read index_library.csv and return FRED Rates series sorted by:
+      Government Yields → Credit Spreads → Breakeven Inflation →
+      Yield Curve → Policy Rate
+    Each dict: {series_id, name, region, asset_class, asset_subclass}
     """
     df = pd.read_csv(LIBRARY_PATH_HIST)
     rates_rows = df[
@@ -1147,6 +1323,10 @@ def load_comp_fred_rates() -> list:
         (df["validation_status"] == "CONFIRMED") &
         (df["asset_class"] == "Rates")
     ].copy()
+
+    rates_rows["_s"] = rates_rows["asset_subclass"].map(_RATES_SUBCLASS_ORDER).fillna(99)
+    rates_rows["_r"] = rates_rows["region"].map(_REGION_ORDER).fillna(50)
+    rates_rows = rates_rows.sort_values(["_s", "_r", "name"]).drop(columns=["_s", "_r"])
 
     fred_rates = []
     seen = set()
@@ -1156,10 +1336,11 @@ def load_comp_fred_rates() -> list:
         if not series_id or series_id == "nan" or series_id in seen:
             continue
         fred_rates.append({
-            "series_id":   series_id,
-            "name":        str(row.get("name", series_id)).strip(),
-            "region":      str(row.get("region", "")).strip(),
-            "asset_class": str(row.get("asset_class", "Rates")).strip(),
+            "series_id":      series_id,
+            "name":           str(row.get("name", series_id)).strip(),
+            "region":         str(row.get("region", "")).strip(),
+            "asset_class":    str(row.get("asset_class", "Rates")).strip(),
+            "asset_subclass": str(row.get("asset_subclass", "")).strip(),
         })
         seen.add(series_id)
 
@@ -1390,7 +1571,17 @@ def build_comp_market_hist_df(
     """
     yf_tickers  = [inst["ticker"] for inst in instruments]
     fred_ids    = [fr["series_id"] for fr in fred_rates]
-    all_ordered = yf_tickers + fred_ids
+    inst_meta   = {inst["ticker"]: inst for inst in instruments}
+
+    # Split yfinance tickers at the FX group boundary so that FRED Rates
+    # (bond yields & credit spreads) appear right after yfinance yield
+    # tickers — preserving the user-visible group order:
+    #   Equities → Fixed Income → Bond Yields & Spreads → FX → Commodities
+    #   → Crypto → Macro-Market Indicators
+    _pre_fx_classes  = {"Equity", "Fixed Income", "Rates"}
+    yf_pre_fx    = [t for t in yf_tickers if inst_meta[t]["asset_class"] in _pre_fx_classes]
+    yf_post_rates = [t for t in yf_tickers if inst_meta[t]["asset_class"] not in _pre_fx_classes]
+    all_ordered  = yf_pre_fx + fred_ids + yf_post_rates
 
     df = pd.DataFrame(index=spine)
     df.index.name = "Date"
@@ -1429,22 +1620,58 @@ def build_comp_market_meta_prefix(
     yf_meta = {inst["ticker"]: inst for inst in instruments}
     fr_meta = {fr["series_id"]: fr for fr in fred_rates}
 
+    # Display label for Asset Class row — Volatility renamed to align with
+    # user-facing group label "Macro-Market Indicators"
+    _ac_display = {
+        "Volatility": "Macro-Market Indicators",
+    }
+
+    # Units by asset class (library values)
     _ac_units = {
-        "Equity Index":     "Index",
-        "Equity ETF":       "Price",
-        "Sector ETF":       "Price",
-        "Style ETF":        "Price",
-        "Fixed Income ETF": "Price",
-        "Bond ETF":         "Price",
-        "Commodity":        "Price",
-        "Commodity ETF":    "Price",
-        "FX":               "Rate",
-        "Volatility":       "Index",
-        "Crypto":           "Price",
-        "Yield":            "% pa",
-        "Rates":            "% pa",
-        "Spread":           "bps",
-        "Ratio":            "Ratio",
+        "Equity":          "Index / Price",
+        "Fixed Income":    "Price",
+        "FX":              "Rate",
+        "Commodity":       "Price",
+        "Crypto":          "Price",
+        "Volatility":      "Index",
+        "Rates":           "% pa",
+    }
+
+    # More granular units by asset_subclass override
+    _asc_units = {
+        "Equity Broad":              "Index",
+        "Equity Large Cap":          "Index",
+        "Equity Mid Cap":            "Index",
+        "Equity Mid Cap (Growth)":   "Index",
+        "Equity Mid Cap (Value)":    "Index",
+        "Equity Small Cap":          "Index",
+        "Equity Small Cap (Growth)": "Index",
+        "Equity Small Cap (Value)":  "Index",
+        "Equity Sector":             "Index",
+        "Equity Industry Group":     "Index",
+        "Equity Factor":             "Price",
+        "Govt Bond":                 "Index",
+        "Government":                "Price",
+        "Government Short":          "Price",
+        "Global Aggregate":          "Price",
+        "Corp IG":                   "Index / Price",
+        "Corp HY":                   "Index / Price",
+        "Inflation-Linked":          "Index / Price",
+        "Currency Index":            "Index",
+        "FX Spot Rate":              "Rate",
+        "Commodity":                 "Price",
+        "Commodity Sub-Index":       "Price",
+        "Bitcoin":                   "Price",
+        "Ethereum":                  "Price",
+        "Equity Volatility":         "Index",
+        "Fixed Income Volatility":   "Index",
+        "Commodity Volatility":      "Index",
+        "Tail Risk":                 "Index",
+        "Government Yield":          "% pa",
+        "Credit Spread":             "bps",
+        "Breakeven Inflation":       "% pa",
+        "Yield Curve":               "bps",
+        "Policy Rate":               "% pa",
     }
 
     ticker_id_row   = ["Ticker ID"]
@@ -1475,26 +1702,31 @@ def build_comp_market_meta_prefix(
             name      = inst["name"]
             region    = inst["region"]
             asset_cls = inst["asset_class"]
+            asset_sub = inst.get("asset_subclass", "")
             local_ccy = inst["currency"] or "USD"
         elif base in fr_meta:
-            fr        = fr_meta[base]
+            fr_row    = fr_meta[base]
             source    = "FRED"
-            name      = fr["name"]
-            region    = fr["region"]
-            asset_cls = fr["asset_class"]
+            name      = fr_row["name"]
+            region    = fr_row["region"]
+            asset_cls = fr_row["asset_class"]
+            asset_sub = fr_row.get("asset_subclass", "")
             local_ccy = "USD"
         else:
-            source = name = region = asset_cls = ""
+            source = name = region = asset_cls = asset_sub = ""
             local_ccy = "USD"
+
+        display_ac = _ac_display.get(asset_cls, asset_cls)
+        units      = _asc_units.get(asset_sub) or _ac_units.get(asset_cls, "")
 
         ticker_id_row.append(base)
         variant_row.append(variant)
         source_row.append(source)
         name_row.append(name)
         region_row.append(region)
-        asset_class_row.append(asset_cls)
+        asset_class_row.append(display_ac)
         currency_row.append("USD" if is_usd else local_ccy)
-        units_row.append(_ac_units.get(asset_cls, ""))
+        units_row.append(units)
         frequency_row.append("Weekly")
         updated_row.append(run_ts)
 
