@@ -1047,5 +1047,529 @@ def run_hist() -> None:
         print("[Hist] Existing pipeline outputs are unaffected")
 
 
+# ---------------------------------------------------------------------------
+# COMP HIST CONSTANTS
+# ---------------------------------------------------------------------------
+
+COMP_HIST_TAB   = "market_data_comp_hist"
+COMP_HIST_CSV   = "data/market_data_comp_hist.csv"
+COMP_HIST_START = "1950-01-01"
+
+LIBRARY_PATH_HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
+
+# FX pairs covering all currencies in the comprehensive library
+COMP_FX_TICKERS_HIST = {
+    "GBP": "GBPUSD=X",
+    "EUR": "EURUSD=X",
+    "AUD": "AUDUSD=X",
+    "JPY": "USDJPY=X",
+    "CNY": "CNY=X",
+    "INR": "INR=X",
+    "KRW": "KRW=X",
+    "TWD": "TWD=X",
+    "CAD": "USDCAD=X",
+    "BRL": "USDBRL=X",
+    "HKD": "USDHKD=X",
+    "MXN": "USDMXN=X",
+    "IDR": "USDIDR=X",
+    "RUB": "USDRUB=X",
+    "SAR": "USDSAR=X",
+    "ZAR": "USDZAR=X",
+    "TRY": "USDTRY=X",
+    "ARS": "USDARS=X",
+}
+
+# Indirect-quote currencies (1 USD = X FCY): divide to get USD
+COMP_FCY_PER_USD_HIST = {
+    "JPY", "CNY", "INR", "KRW", "TWD",
+    "CAD", "BRL", "HKD", "MXN", "IDR",
+    "RUB", "SAR", "ZAR", "TRY", "ARS",
+}
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: LOAD INSTRUMENTS FROM LIBRARY
+# ---------------------------------------------------------------------------
+
+def load_comp_instruments() -> list:
+    """
+    Read index_library.csv and return a list of instrument dicts.
+    For instruments with both PR and TR tickers, creates two entries.
+    Deduplicates by ticker so shared proxy ETFs appear only once.
+    Each dict: {ticker, name, region, asset_class, currency, ticker_type, pence}
+    """
+    df = pd.read_csv(LIBRARY_PATH_HIST)
+    df = df[
+        (df["data_source"] == "yfinance") &
+        (df["validation_status"] == "CONFIRMED")
+    ].copy()
+
+    instruments = []
+    seen = set()
+
+    for _, row in df.iterrows():
+        name        = str(row.get("name", "")).strip()
+        region      = str(row.get("region", "")).strip()
+        asset_class = str(row.get("asset_class", "")).strip()
+        currency    = str(row.get("base_currency", "USD")).strip()
+        if not currency or currency == "nan":
+            currency = "USD"
+
+        pr = str(row.get("ticker_yfinance_pr", "")).strip()
+        if pr and pr != "nan" and pr not in seen:
+            instruments.append({
+                "ticker": pr, "name": name, "region": region,
+                "asset_class": asset_class, "currency": currency,
+                "ticker_type": "PR", "pence": pr.endswith(".L"),
+            })
+            seen.add(pr)
+
+        tr = str(row.get("ticker_yfinance_tr", "")).strip()
+        if tr and tr != "nan" and tr not in seen:
+            instruments.append({
+                "ticker": tr, "name": name, "region": region,
+                "asset_class": asset_class, "currency": currency,
+                "ticker_type": "TR", "pence": tr.endswith(".L"),
+            })
+            seen.add(tr)
+
+    return instruments
+
+
+def load_comp_fred_rates() -> list:
+    """
+    Read index_library.csv and return a list of FRED Rates series dicts.
+    Each dict: {series_id, name, region, asset_class}
+    """
+    df = pd.read_csv(LIBRARY_PATH_HIST)
+    rates_rows = df[
+        (df["data_source"] == "FRED") &
+        (df["validation_status"] == "CONFIRMED") &
+        (df["asset_class"] == "Rates")
+    ].copy()
+
+    fred_rates = []
+    seen = set()
+
+    for _, row in rates_rows.iterrows():
+        series_id = str(row.get("ticker_fred_tr", "")).strip()
+        if not series_id or series_id == "nan" or series_id in seen:
+            continue
+        fred_rates.append({
+            "series_id":   series_id,
+            "name":        str(row.get("name", series_id)).strip(),
+            "region":      str(row.get("region", "")).strip(),
+            "asset_class": str(row.get("asset_class", "Rates")).strip(),
+        })
+        seen.add(series_id)
+
+    return fred_rates
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: FX CACHE
+# ---------------------------------------------------------------------------
+
+def fetch_comp_fx_cache(start: str) -> dict:
+    """
+    Fetch all comprehensive FX pairs as daily Close series.
+    Bulk download first; per-ticker fallback for any failures.
+    """
+    print("  Fetching comprehensive FX cache...")
+    all_tickers = list(COMP_FX_TICKERS_HIST.values())
+    cache = {}
+
+    try:
+        raw = yf.download(
+            all_tickers, start=start,
+            auto_adjust=True, progress=False, threads=True,
+        )
+        close = raw["Close"]
+        if isinstance(close, pd.Series):
+            close = close.to_frame(all_tickers[0])
+        for ticker in all_tickers:
+            if ticker in close.columns:
+                s = close[ticker].dropna()
+                if not s.empty:
+                    cache[ticker] = s
+    except Exception as e:
+        print(f"    FX bulk fetch failed ({e}) — per-ticker fallback")
+
+    missing = [t for t in all_tickers if t not in cache]
+    for ticker in missing:
+        try:
+            s = yf.download(ticker, start=start, auto_adjust=True, progress=False)["Close"]
+            if isinstance(s, pd.DataFrame):
+                s = s.iloc[:, 0]
+            if not s.empty:
+                cache[ticker] = s.dropna()
+        except Exception as e:
+            print(f"    FX {ticker} failed: {e}")
+        time.sleep(YFINANCE_DELAY)
+
+    print(f"  Comp FX cache: {len(cache)}/{len(all_tickers)} pairs loaded")
+    return cache
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: USD CONVERSION
+# ---------------------------------------------------------------------------
+
+def compute_comp_usd_series(
+    local_prices: pd.Series,
+    currency: str,
+    fx_cache: dict,
+) -> pd.Series:
+    """
+    Convert local-currency price series to USD using the comprehensive FX cache.
+    Same logic as compute_usd_price_series() but uses COMP_FX_TICKERS_HIST.
+    """
+    if not currency or currency == "USD":
+        return local_prices
+
+    fx_ticker = COMP_FX_TICKERS_HIST.get(currency)
+    if not fx_ticker or fx_ticker not in fx_cache:
+        return local_prices
+
+    fx = fx_cache[fx_ticker]
+    fx_aligned = fx.reindex(local_prices.index, method="ffill")
+
+    if currency in COMP_FCY_PER_USD_HIST:
+        return local_prices / fx_aligned
+    else:
+        return local_prices * fx_aligned
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: FETCH yfinance BULK HISTORY
+# ---------------------------------------------------------------------------
+
+def fetch_comp_yfinance_history(
+    instruments: list,
+    start: str,
+    spine: pd.DatetimeIndex,
+    fx_cache: dict,
+) -> tuple[dict, dict]:
+    """
+    Fetch weekly (Friday) close prices for all comp instruments.
+    Bulk download in chunks of 100; per-ticker fallback for failures.
+    Returns (local_prices, usd_prices) dicts keyed by ticker.
+    """
+    tickers     = [inst["ticker"] for inst in instruments]
+    ticker_meta = {inst["ticker"]: inst for inst in instruments}
+    close_df    = pd.DataFrame()
+
+    CHUNK = 100
+    chunks = [tickers[i:i + CHUNK] for i in range(0, len(tickers), CHUNK)]
+    print(f"  Bulk downloading {len(tickers)} instruments in {len(chunks)} chunks...")
+
+    for ci, chunk in enumerate(chunks, 1):
+        print(f"  Chunk {ci}/{len(chunks)} ({len(chunk)} tickers)...")
+        try:
+            raw = yf.download(
+                chunk, start=start,
+                auto_adjust=True, progress=False, threads=True,
+            )
+            close_raw = raw["Close"]
+            if isinstance(close_raw, pd.Series):
+                close_raw = close_raw.to_frame(chunk[0])
+            for ticker in chunk:
+                if ticker in close_raw.columns:
+                    s = close_raw[ticker].dropna()
+                    if not s.empty:
+                        close_df[ticker] = s
+        except Exception as e:
+            print(f"    Chunk {ci} failed ({e})")
+        time.sleep(YFINANCE_DELAY)
+
+    failed = [t for t in tickers if t not in close_df.columns]
+    if failed:
+        print(f"  Per-ticker fallback for {len(failed)} instruments...")
+        for i, ticker in enumerate(failed, 1):
+            try:
+                s = yf.download(
+                    ticker, start=start,
+                    auto_adjust=True, progress=False,
+                )["Close"]
+                if isinstance(s, pd.DataFrame):
+                    s = s.iloc[:, 0]
+                if not s.empty:
+                    close_df[ticker] = s
+                    print(f"    [{i}] {ticker}: OK ({len(s)} rows)")
+                else:
+                    print(f"    [{i}] {ticker}: empty")
+            except Exception as e:
+                print(f"    [{i}] {ticker}: failed ({e})")
+            time.sleep(YFINANCE_DELAY)
+
+    print("  Processing prices and computing USD series...")
+    local_prices = {}
+    usd_prices   = {}
+
+    for ticker in tickers:
+        inst     = ticker_meta[ticker]
+        currency = inst["currency"] or "USD"
+
+        if ticker not in close_df.columns:
+            local_prices[ticker] = pd.Series(np.nan, index=spine, name=ticker)
+            usd_prices[ticker]   = pd.Series(np.nan, index=spine, name=ticker)
+            continue
+
+        s = close_df[ticker].dropna()
+
+        # Pence correction for LSE-listed instruments
+        if ticker.endswith(".L"):
+            median_val = s.dropna().median()
+            if pd.notna(median_val) and median_val > 50:
+                s = s / 100
+
+        s.index = pd.to_datetime(s.index)
+        weekly        = s.resample("W-FRI").last()
+        local_aligned = weekly.reindex(spine).ffill(limit=5)
+
+        local_prices[ticker] = local_aligned
+        usd_prices[ticker]   = compute_comp_usd_series(local_aligned, currency, fx_cache)
+
+    return local_prices, usd_prices
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: FETCH FRED RATES HISTORY
+# ---------------------------------------------------------------------------
+
+def fetch_comp_fred_rates_history(
+    fred_rates: list,
+    spine: pd.DatetimeIndex,
+) -> tuple[dict, dict]:
+    """
+    Fetch all FRED Rates series and align to Friday spine.
+    Rate series: USD = Local (no FX conversion needed).
+    """
+    if not FRED_API_KEY:
+        print("  [FRED rates] FRED_API_KEY not set — skipping")
+        return {}, {}
+
+    local_prices = {}
+    usd_prices   = {}
+    total = len(fred_rates)
+
+    print(f"  Fetching {total} FRED Rates series...")
+    for i, fr in enumerate(fred_rates, 1):
+        sid = fr["series_id"]
+        print(f"    [{i}/{total}] {sid} ({fr['name']})...")
+        data = fred_fetch_series_full(sid, COMP_HIST_START)
+        if data is None or data.empty:
+            local_prices[sid] = pd.Series(np.nan, index=spine)
+            usd_prices[sid]   = pd.Series(np.nan, index=spine)
+        else:
+            aligned          = align_to_friday_spine(data, spine)
+            local_prices[sid] = aligned
+            usd_prices[sid]   = aligned   # rates: no FX conversion
+        if i < total:
+            time.sleep(FRED_DELAY)
+
+    return local_prices, usd_prices
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: BUILD DATAFRAME
+# ---------------------------------------------------------------------------
+
+def build_comp_market_hist_df(
+    spine: pd.DatetimeIndex,
+    instruments: list,
+    fred_rates: list,
+    local_yf: dict,
+    usd_yf: dict,
+    local_fr: dict,
+    usd_fr: dict,
+) -> pd.DataFrame:
+    """
+    Assemble the market_data_comp_hist DataFrame.
+    Schema: Date | <ticker>_Local × N | <ticker>_USD × N
+    """
+    yf_tickers  = [inst["ticker"] for inst in instruments]
+    fred_ids    = [fr["series_id"] for fr in fred_rates]
+    all_ordered = yf_tickers + fred_ids
+
+    df = pd.DataFrame(index=spine)
+    df.index.name = "Date"
+
+    for ticker in all_ordered:
+        s = local_yf.get(ticker) or local_fr.get(ticker) or pd.Series(np.nan, index=spine)
+        df[f"{ticker}_Local"] = s
+
+    for ticker in all_ordered:
+        s = usd_yf.get(ticker) or usd_fr.get(ticker) or pd.Series(np.nan, index=spine)
+        df[f"{ticker}_USD"] = s
+
+    df = df.reset_index()
+    df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
+
+    print(f"  market_data_comp_hist: {len(df)} rows × {len(df.columns)} columns")
+    return df
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: METADATA PREFIX
+# ---------------------------------------------------------------------------
+
+def build_comp_market_meta_prefix(
+    df: pd.DataFrame,
+    instruments: list,
+    fred_rates: list,
+) -> list:
+    """
+    Build 10-row metadata prefix for market_data_comp_hist.
+    Row order: Ticker ID, Variant, Source, Name, Region,
+               Asset Class, Currency, Units, Frequency, Last Updated
+    """
+    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    yf_meta = {inst["ticker"]: inst for inst in instruments}
+    fr_meta = {fr["series_id"]: fr for fr in fred_rates}
+
+    _ac_units = {
+        "Equity Index":     "Index",
+        "Equity ETF":       "Price",
+        "Sector ETF":       "Price",
+        "Style ETF":        "Price",
+        "Fixed Income ETF": "Price",
+        "Bond ETF":         "Price",
+        "Commodity":        "Price",
+        "Commodity ETF":    "Price",
+        "FX":               "Rate",
+        "Volatility":       "Index",
+        "Crypto":           "Price",
+        "Yield":            "% pa",
+        "Rates":            "% pa",
+        "Spread":           "bps",
+        "Ratio":            "Ratio",
+    }
+
+    ticker_id_row   = ["Ticker ID"]
+    variant_row     = ["Variant"]
+    source_row      = ["Source"]
+    name_row        = ["Name"]
+    region_row      = ["Region"]
+    asset_class_row = ["Asset Class"]
+    currency_row    = ["Currency"]
+    units_row       = ["Units"]
+    frequency_row   = ["Frequency"]
+    updated_row     = ["Last Updated"]
+
+    for col in df.columns:
+        if col == "Date":
+            continue
+
+        if col.endswith("_Local"):
+            base, variant, is_usd = col[:-6], "Local", False
+        elif col.endswith("_USD"):
+            base, variant, is_usd = col[:-4], "USD", True
+        else:
+            base, variant, is_usd = col, "", False
+
+        if base in yf_meta:
+            inst      = yf_meta[base]
+            source    = f"yfinance {inst['ticker_type']}"
+            name      = inst["name"]
+            region    = inst["region"]
+            asset_cls = inst["asset_class"]
+            local_ccy = inst["currency"] or "USD"
+        elif base in fr_meta:
+            fr        = fr_meta[base]
+            source    = "FRED"
+            name      = fr["name"]
+            region    = fr["region"]
+            asset_cls = fr["asset_class"]
+            local_ccy = "USD"
+        else:
+            source = name = region = asset_cls = ""
+            local_ccy = "USD"
+
+        ticker_id_row.append(base)
+        variant_row.append(variant)
+        source_row.append(source)
+        name_row.append(name)
+        region_row.append(region)
+        asset_class_row.append(asset_cls)
+        currency_row.append("USD" if is_usd else local_ccy)
+        units_row.append(_ac_units.get(asset_cls, ""))
+        frequency_row.append("Weekly")
+        updated_row.append(run_ts)
+
+    return [
+        ticker_id_row, variant_row, source_row,
+        name_row, region_row, asset_class_row, currency_row,
+        units_row, frequency_row, updated_row,
+    ]
+
+
+# ---------------------------------------------------------------------------
+# COMP HIST: MAIN ENTRY POINT
+# ---------------------------------------------------------------------------
+
+def run_comp_hist() -> None:
+    """
+    Full historical fetch for market_data_comp_hist.
+    Produces the market_data_comp_hist Google Sheet tab and CSV.
+    Safe to call from fetch_data.py; all errors caught internally.
+    """
+    print("\n" + "=" * 60)
+    print("Comprehensive Historical Time Series Build")
+    print("=" * 60)
+
+    start_ts = time.time()
+
+    try:
+        # 1. Friday spine from 1950
+        comp_spine = get_friday_spine(COMP_HIST_START)
+        print(f"Comp spine: {len(comp_spine):,} Fridays "
+              f"({comp_spine[0].date()} → {comp_spine[-1].date()})")
+
+        # 2. Load instruments and FRED rates from library
+        instruments = load_comp_instruments()
+        fred_rates  = load_comp_fred_rates()
+        print(f"Loaded {len(instruments)} yfinance instruments, "
+              f"{len(fred_rates)} FRED Rates series")
+
+        # 3. FX cache
+        comp_fx_cache = fetch_comp_fx_cache(COMP_HIST_START)
+
+        # 4. yfinance history
+        local_yf, usd_yf = fetch_comp_yfinance_history(
+            instruments, COMP_HIST_START, comp_spine, comp_fx_cache
+        )
+
+        # 5. FRED rates history
+        local_fr, usd_fr = fetch_comp_fred_rates_history(fred_rates, comp_spine)
+
+        # 6. Build DataFrame
+        print("\nAssembling market_data_comp_hist DataFrame...")
+        comp_df = build_comp_market_hist_df(
+            comp_spine, instruments, fred_rates,
+            local_yf, usd_yf, local_fr, usd_fr,
+        )
+
+        # 7. Metadata prefix
+        comp_meta = build_comp_market_meta_prefix(comp_df, instruments, fred_rates)
+
+        # 8. Save CSV
+        save_csv(comp_df, COMP_HIST_CSV, "market_data_comp_hist",
+                 prefix_rows=comp_meta)
+
+        # 9. Push to Google Sheets
+        push_df_to_sheets(comp_df, COMP_HIST_TAB, "market_data_comp_hist",
+                          prefix_rows=comp_meta)
+
+        elapsed = round(time.time() - start_ts, 1)
+        print(f"\nComp historical build completed in {elapsed}s")
+
+    except Exception as e:
+        elapsed = round(time.time() - start_ts, 1)
+        print(f"\n[CompHist] Unexpected error after {elapsed}s: {e}")
+        print("[CompHist] Existing pipeline outputs are unaffected")
+
+
 if __name__ == "__main__":
     run_hist()
