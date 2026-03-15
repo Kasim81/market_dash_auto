@@ -802,8 +802,16 @@ def load_instrument_library():
         asset_cls_raw   = str(row["asset_class"]).strip()    # broad: Equity, Fixed Income, etc.
         asset_cls       = str(row["asset_subclass"]).strip() # granular: Equity Broad, etc.
         ccy             = str(row["base_currency"]).strip()
+        country         = str(row.get("country_market", "")).strip()
         if ccy in ("nan", ""):
             ccy = "USD"
+
+        # Give UK and Japan instruments a specific region label for Equity/Fixed Income
+        if asset_cls_raw in ("Equity", "Fixed Income"):
+            if country == "United Kingdom":
+                region = "UK"
+            elif country == "Japan":
+                region = "Japan"
 
         pr = _clean(row["ticker_yfinance_pr"])
         tr = _clean(row["ticker_yfinance_tr"])
@@ -1162,6 +1170,12 @@ def main():
         # Calculated ratio/spread rows for comp (mirrors market_data behaviour)
         comp_ratio_rows = build_calculated_fields_comp(df_comp)
         df_comp = pd.concat([df_comp, pd.DataFrame(comp_ratio_rows)], ignore_index=True)
+
+        # Enforce column order: Symbol, Name, Ticker Type, Broad Asset Class,
+        # Region, Sub-Category, then remaining columns as they appear.
+        _leading = ["Symbol", "Name", "Ticker Type", "Broad Asset Class", "Region", "Sub-Category"]
+        _rest = [c for c in df_comp.columns if c not in _leading]
+        df_comp = df_comp[_leading + _rest]
 
         comp_path = "data/market_data_comp.csv"
         df_comp.to_csv(comp_path, index=False)

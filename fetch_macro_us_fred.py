@@ -272,14 +272,16 @@ FRED_MACRO_US = {
         "Net Percent",
         "Consumer credit availability. Tightening leads consumer spending slowdown."
     ),
-    "DRTSCLNG": (
-        "SLOOS: Net Tightening — Consumer Loans (Non-Credit Card)",
+    # DRTSCLNG discontinued — replaced by STDSOTHCONS (ex CC & auto, Q2 2011+)
+    "STDSOTHCONS": (
+        "SLOOS: Net Tightening — Consumer Loans (ex Credit Card & Auto)",
         "Financial Conditions", "Credit Conditions",
         "Net Percent",
-        "Auto, student and personal loans. Broadens consumer credit picture."
+        "Auto/student/personal loan standards. Broadens consumer credit picture."
     ),
-    "DRTSCRE": (
-        "SLOOS: Net Tightening — Commercial Real Estate",
+    # DRTSCRE discontinued — replaced by SUBLPDRCSN (nonfarm nonresidential CRE)
+    "SUBLPDRCSN": (
+        "SLOOS: Net Tightening — CRE Loans (Nonfarm Nonresidential)",
         "Financial Conditions", "Credit Conditions",
         "Net Percent",
         "CRE credit cycle; leads commercial property stress by 2-4 quarters."
@@ -292,7 +294,8 @@ FRED_MACRO_US = {
         "Index (1966 Q1 = 100)",
         "Headline consumer confidence; below 70 historically correlated with recessions."
     ),
-    "UMCSI": (
+    # UMCSI is not a FRED series; correct ID for Current Conditions is UMCSC
+    "UMCSC": (
         "UMich: Index of Current Economic Conditions",
         "Survey", "Consumer Sentiment",
         "Index (1966 Q1 = 100)",
@@ -317,16 +320,10 @@ FRED_MACRO_US = {
         "OECD business confidence for US; companion to consumer confidence."
     ),
 
-    # ---- SURVEY: PMI (was in sentiment_data) ------------------------------
-    "NAPMPI": (
-        "US ISM Manufacturing PMI",
-        "Survey", "PMI",
-        "Diffusion Index (50 = expansion/contraction threshold)",
-        "Leading indicator for manufacturing activity and new orders; above 50 = expansion."
-    ),
-
     # ---- SURVEY: Regional Fed Manufacturing (was in macro_surveys) --------
-    "GACDISA066MSFRBPHI": (
+    # Note: NAPMPI (ISM Manufacturing PMI) removed — ISM revoked FRED licence in 2016.
+    # No direct replacement available via FRED API.
+    "GACDFSA066MSFRBPHI": (
         "Philadelphia Fed: Mfg Business Conditions (General Activity)",
         "Survey", "Regional Fed",
         "Diffusion Index",
@@ -338,13 +335,13 @@ FRED_MACRO_US = {
         "Diffusion Index",
         "First regional Fed mfg survey released each month. Closely watched ISM preview."
     ),
-    "GACDISA066MSFRBRIC": (
+    "MFRBSCOMP": (
         "Richmond Fed: Mfg Business Conditions (Composite Index)",
         "Survey", "Regional Fed",
         "Diffusion Index",
         "Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV."
     ),
-    "GACDISA066MSFRBKC": (
+    "KCACTMFG": (
         "Kansas City Fed: Mfg Business Conditions (Composite Index)",
         "Survey", "Regional Fed",
         "Diffusion Index",
@@ -388,22 +385,21 @@ FRED_MACRO_US_FREQ = {
     "PPIACO":             "Monthly",
     "MICH":               "Monthly",
     "FEDFUNDS":           "Monthly",
-    "UMCSENT":            "Monthly",
-    "UMCSI":              "Monthly",
-    "UMCSE":              "Monthly",
-    "CSCICP03USM665S":    "Monthly",
-    "BSCICP03USM665S":    "Monthly",
-    "NAPMPI":             "Monthly",
-    "GACDISA066MSFRBPHI": "Monthly",
-    "GACDISA066MSFRBNY":  "Monthly",
-    "GACDISA066MSFRBRIC": "Monthly",
-    "GACDISA066MSFRBKC":  "Monthly",
+    "UMCSENT":              "Monthly",
+    "UMCSC":               "Monthly",
+    "UMCSE":               "Monthly",
+    "CSCICP03USM665S":     "Monthly",
+    "BSCICP03USM665S":     "Monthly",
+    "GACDFSA066MSFRBPHI":  "Monthly",
+    "GACDISA066MSFRBNY":   "Monthly",
+    "MFRBSCOMP":           "Monthly",
+    "KCACTMFG":            "Monthly",
     # Quarterly series (SLOOS surveys)
-    "DRTSCILM":           "Quarterly",
-    "DRTSCIS":            "Quarterly",
-    "DRTSCLCC":           "Quarterly",
-    "DRTSCLNG":           "Quarterly",
-    "DRTSCRE":            "Quarterly",
+    "DRTSCILM":            "Quarterly",
+    "DRTSCIS":             "Quarterly",
+    "DRTSCLCC":            "Quarterly",
+    "STDSOTHCONS":         "Quarterly",
+    "SUBLPDRCSN":          "Quarterly",
 }
 
 
