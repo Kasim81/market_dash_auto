@@ -768,16 +768,32 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
         "Ratio":             "Ratio",
     }
 
-    ticker_id_row   = ["Ticker ID"]
-    variant_row     = ["Variant"]
-    source_row      = ["Source"]
-    name_row        = ["Name"]
-    region_row      = ["Region"]
-    asset_class_row = ["Asset Class"]
-    currency_row    = ["Currency"]
-    units_row       = ["Units"]
-    frequency_row   = ["Frequency"]
-    updated_row     = ["Last Updated"]
+    # Broad Asset Class mapping (from granular asset_class → broad group label)
+    _broad_ac_map = {
+        "Equity Index":      "Equity",
+        "Equity ETF":        "Equity",
+        "Sector ETF":        "Equity",
+        "Style ETF":         "Equity",
+        "Fixed Income ETF":  "Bonds",
+        "Commodity":         "Commodities",
+        "FX":                "FX",
+        "Volatility":        "Macro-Market Indicators",
+        "Crypto":            "Crypto",
+        "Yield":             "Bonds",
+        "Ratio":             "Macro-Market Indicators",
+    }
+
+    ticker_id_row        = ["Ticker ID"]
+    variant_row          = ["Variant"]
+    source_row           = ["Source"]
+    name_row             = ["Name"]
+    region_row           = ["Region"]
+    broad_asset_cls_row  = ["Broad Asset Class"]
+    asset_class_row      = ["Sub-Category"]
+    currency_row         = ["Currency"]
+    units_row            = ["Units"]
+    frequency_row        = ["Frequency"]
+    updated_row          = ["Last Updated"]
 
     for col in df.columns:
         if col == "Date":
@@ -798,6 +814,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
 
         m          = meta.get(base, (base, "", "", ""))
         asset_cls  = m[2]
+        broad_ac   = _broad_ac_map.get(asset_cls, asset_cls)
 
         if base in fred_yield_ids:
             source = "FRED"
@@ -811,6 +828,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
         source_row.append(source)
         name_row.append(m[0])
         region_row.append(m[1])
+        broad_asset_cls_row.append(broad_ac)
         asset_class_row.append(asset_cls)
         currency_row.append("USD" if is_usd else m[3])
         units_row.append(_ac_units.get(asset_cls, ""))
@@ -819,7 +837,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
 
     return [
         ticker_id_row, variant_row, source_row,
-        name_row, region_row, asset_class_row, currency_row,
+        name_row, region_row, broad_asset_cls_row, asset_class_row, currency_row,
         units_row, frequency_row, updated_row,
     ]
 
@@ -1082,12 +1100,13 @@ _REGION_ORDER = {
     "Global":               1,
     "Global ex-US/Canada":  1,   # grouped with Global
     "North America":        2,
-    "Europe":               3,
-    # Japan (country_market == "Japan") is assigned rank 4 in the sort key below
-    "Emerging Markets":     5,
-    "Asia Pacific":         6,   # non-Japan APAC
-    "Middle East & Africa": 7,
-    "Latin America":        8,
+    # UK (country_market == "United Kingdom") assigned rank 3 in sort key below
+    "Europe":               4,   # non-UK Europe
+    # Japan (country_market == "Japan") assigned rank 5 in sort key below
+    "Emerging Markets":     6,
+    "Asia Pacific":         7,   # non-Japan APAC
+    "Middle East & Africa": 8,
+    "Latin America":        9,
 }
 
 _EQUITY_SUBCLASS_ORDER = {
@@ -1186,9 +1205,12 @@ def _comp_inst_sort_key(row: pd.Series) -> tuple:
 
     g = _ASSET_CLASS_GROUP.get(ac, 99)
     r = _REGION_ORDER.get(region, 50)
-    # Japan sits between Europe (3) and Emerging Markets (5)
+    # UK sits between NA (2) and EU (4)
+    if region == "Europe" and country == "United Kingdom":
+        r = 3
+    # Japan sits between EU (4) and EM (6)
     if region == "Asia Pacific" and country == "Japan":
-        r = 4
+        r = 5
 
     if ac == "Equity":
         s   = _EQUITY_SUBCLASS_ORDER.get(asc, 50)
@@ -1689,16 +1711,35 @@ def build_comp_market_meta_prefix(
         "Policy Rate":               "% pa",
     }
 
-    ticker_id_row   = ["Ticker ID"]
-    variant_row     = ["Variant"]
-    source_row      = ["Source"]
-    name_row        = ["Name"]
-    region_row      = ["Region"]
-    asset_class_row = ["Asset Class"]
-    currency_row    = ["Currency"]
-    units_row       = ["Units"]
-    frequency_row   = ["Frequency"]
-    updated_row     = ["Last Updated"]
+    # Broad Asset Class derivation from raw asset_class + asset_subclass
+    def _broad_ac(asset_cls: str, asset_sub: str) -> str:
+        if asset_cls == "Equity":
+            return "Equity"
+        if asset_cls == "Fixed Income":
+            return "Bonds"
+        if asset_cls == "FX":
+            return "FX"
+        if asset_cls == "Commodity":
+            return "Commodities"
+        if asset_cls == "Crypto":
+            return "Crypto"
+        if asset_cls == "Volatility":
+            return "Macro-Market Indicators"
+        if asset_cls == "Rates":
+            return "Spreads" if asset_sub == "Credit Spread" else "Bonds"
+        return asset_cls
+
+    ticker_id_row        = ["Ticker ID"]
+    variant_row          = ["Variant"]
+    source_row           = ["Source"]
+    name_row             = ["Name"]
+    region_row           = ["Region"]
+    broad_asset_cls_row  = ["Broad Asset Class"]
+    asset_class_row      = ["Sub-Category"]
+    currency_row         = ["Currency"]
+    units_row            = ["Units"]
+    frequency_row        = ["Frequency"]
+    updated_row          = ["Last Updated"]
 
     for col in df.columns:
         if col == "Date":
@@ -1732,6 +1773,7 @@ def build_comp_market_meta_prefix(
             local_ccy = "USD"
 
         display_ac = _ac_display.get(asset_cls, asset_cls)
+        broad_ac   = _broad_ac(asset_cls, asset_sub)
         units      = _asc_units.get(asset_sub) or _ac_units.get(asset_cls, "")
 
         ticker_id_row.append(base)
@@ -1739,6 +1781,7 @@ def build_comp_market_meta_prefix(
         source_row.append(source)
         name_row.append(name)
         region_row.append(region)
+        broad_asset_cls_row.append(broad_ac)
         asset_class_row.append(display_ac)
         currency_row.append("USD" if is_usd else local_ccy)
         units_row.append(units)
@@ -1747,7 +1790,7 @@ def build_comp_market_meta_prefix(
 
     return [
         ticker_id_row, variant_row, source_row,
-        name_row, region_row, asset_class_row, currency_row,
+        name_row, region_row, broad_asset_cls_row, asset_class_row, currency_row,
         units_row, frequency_row, updated_row,
     ]
 

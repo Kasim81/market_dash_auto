@@ -101,12 +101,13 @@ _LIB_REGION_ORDER = {
     "Global":               1,
     "Global ex-US/Canada":  1,
     "North America":        2,
-    "Europe":               3,
-    # Japan (country_market == "Japan") assigned rank 4 in sort key
-    "Emerging Markets":     5,
-    "Asia Pacific":         6,
-    "Middle East & Africa": 7,
-    "Latin America":        8,
+    # UK (country_market == "United Kingdom") assigned rank 3 in sort key
+    "Europe":               4,   # non-UK Europe
+    # Japan (country_market == "Japan") assigned rank 5 in sort key
+    "Emerging Markets":     6,
+    "Asia Pacific":         7,   # non-Japan APAC
+    "Middle East & Africa": 8,
+    "Latin America":        9,
 }
 
 _LIB_EQUITY_SUBCLASS_ORDER = {
@@ -176,8 +177,12 @@ def _lib_sort_key(row) -> tuple:
 
     g = _LIB_ASSET_CLASS_GROUP.get(ac, 99)
     r = _LIB_REGION_ORDER.get(region, 50)
+    # UK sits between NA (2) and EU (4)
+    if region == "Europe" and country == "United Kingdom":
+        r = 3
+    # Japan sits between EU (4) and EM (6)
     if region == "Asia Pacific" and country == "Japan":
-        r = 4
+        r = 5
 
     if ac == "Equity":
         s   = _LIB_EQUITY_SUBCLASS_ORDER.get(asc, 50)
@@ -703,14 +708,15 @@ def build_calculated_fields_comp(df_comp):
     ratio_rows = []
     for num, den, name, region, asset_class in ratios:
         row = {
-            "Symbol":      f"{num}/{den}",
-            "Name":        name,
-            "Ticker Type": "Sentiment Ratio",
-            "Region":      region,
-            "Asset Class": asset_class,
-            "Currency":    "Ratio",
-            "Last Price":  np.nan,
-            "Last Date":   np.nan,
+            "Symbol":            f"{num}/{den}",
+            "Name":              name,
+            "Ticker Type":       "Sentiment Ratio",
+            "Region":            region,
+            "Broad Asset Class": "Macro-Market Indicators",
+            "Sub-Category":      asset_class,
+            "Currency":          "Ratio",
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
         }
         for pk in PERIODS:
             row[f"Local {pk}"] = safe_ratio_return(num, den, pk)
@@ -719,14 +725,15 @@ def build_calculated_fields_comp(df_comp):
 
     for a, b, name, region, asset_class in spreads:
         row = {
-            "Symbol":      f"{a}-{b}",
-            "Name":        name,
-            "Ticker Type": "Sentiment Ratio",
-            "Region":      region,
-            "Asset Class": asset_class,
-            "Currency":    "bps chg",
-            "Last Price":  np.nan,
-            "Last Date":   np.nan,
+            "Symbol":            f"{a}-{b}",
+            "Name":              name,
+            "Ticker Type":       "Sentiment Ratio",
+            "Region":            region,
+            "Broad Asset Class": "Macro-Market Indicators",
+            "Sub-Category":      asset_class,
+            "Currency":          "bps chg",
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
         }
         for pk in PERIODS:
             row[f"Local {pk} (bps)"] = safe_bps_spread(a, b, pk)
@@ -790,10 +797,11 @@ def load_instrument_library():
         return None if s in ("nan", "", "N/A") else s
 
     for _, row in confirmed_yf.iterrows():
-        name       = str(row["name"]).strip()
-        region     = str(row["region"]).strip()
-        asset_cls  = str(row["asset_subclass"]).strip()
-        ccy        = str(row["base_currency"]).strip()
+        name            = str(row["name"]).strip()
+        region          = str(row["region"]).strip()
+        asset_cls_raw   = str(row["asset_class"]).strip()    # broad: Equity, Fixed Income, etc.
+        asset_cls       = str(row["asset_subclass"]).strip() # granular: Equity Broad, etc.
+        ccy             = str(row["base_currency"]).strip()
         if ccy in ("nan", ""):
             ccy = "USD"
 
@@ -802,25 +810,27 @@ def load_instrument_library():
 
         if pr and pr not in seen:
             instruments.append({
-                "ticker":      pr,
-                "name":        name,
-                "region":      region,
-                "asset_class": asset_cls,
-                "currency":    ccy,
-                "ticker_type": "Price Return (Index)",
-                "pence":       pr.endswith(".L"),
+                "ticker":          pr,
+                "name":            name,
+                "region":          region,
+                "asset_class":     asset_cls,
+                "asset_class_raw": asset_cls_raw,
+                "currency":        ccy,
+                "ticker_type":     "Price Return (Index)",
+                "pence":           pr.endswith(".L"),
             })
             seen.add(pr)
 
         if tr and tr not in seen:
             instruments.append({
-                "ticker":      tr,
-                "name":        name,
-                "region":      region,
-                "asset_class": asset_cls,
-                "currency":    ccy,
-                "ticker_type": "Total Return (ETF)",
-                "pence":       tr.endswith(".L"),
+                "ticker":          tr,
+                "name":            name,
+                "region":          region,
+                "asset_class":     asset_cls,
+                "asset_class_raw": asset_cls_raw,
+                "currency":        ccy,
+                "ticker_type":     "Total Return (ETF)",
+                "pence":           tr.endswith(".L"),
             })
             seen.add(tr)
 
@@ -854,15 +864,27 @@ def collect_comp_assets(instruments, comp_fx_cache):
         print(f"  [{ticker_type[:2]}] {ticker} ({name[:40]})...")
         series = fetch_yf_history(ticker)
 
+        asset_class_raw = inst.get("asset_class_raw", asset_class)
+        broad_ac = (
+            "Macro-Market Indicators" if asset_class_raw == "Volatility"
+            else asset_class_raw if asset_class_raw in ("FX", "Crypto")
+            else "Commodities" if asset_class_raw == "Commodity"
+            else "Bonds" if asset_class_raw == "Fixed Income"
+            else "Equity" if asset_class_raw == "Equity"
+            else asset_class_raw
+        )
+
         row = {
-            "Symbol":      ticker,
-            "Name":        name,
-            "Ticker Type": ticker_type,
-            "Region":      region,
-            "Asset Class": asset_class,
-            "Currency":    ccy,
-            "Last Price":  np.nan,
-            "Last Date":   np.nan,
+            "Symbol":            ticker,
+            "Name":              name,
+            "Ticker Type":       ticker_type,
+            "Region":            region,
+            "Broad Asset Class": broad_ac,
+            "Sub-Category":      asset_class,
+            "Currency":          ccy,
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
+            "_sort_group":       _LIB_ASSET_CLASS_GROUP.get(asset_class_raw, 99),
         }
 
         if series is None or series.empty:
@@ -942,15 +964,19 @@ def collect_comp_fred_assets():
         print(f"  {series_id} ({name[:45]})...")
         series = fetch_fred_series(series_id)
 
+        broad_ac = "Spreads" if asset_subclass == "Credit Spread" else "Bonds"
+
         row = {
-            "Symbol":      series_id,
-            "Name":        name,
-            "Ticker Type": "FRED Rate/Spread",
-            "Region":      region,
-            "Asset Class": asset_subclass,
-            "Currency":    "USD",
-            "Last Price":  np.nan,
-            "Last Date":   np.nan,
+            "Symbol":            series_id,
+            "Name":              name,
+            "Ticker Type":       "FRED Rate/Spread",
+            "Region":            region,
+            "Broad Asset Class": broad_ac,
+            "Sub-Category":      asset_subclass,
+            "Currency":          "USD",
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
+            "_sort_group":       3,  # Rates group — same as yfinance Rates
         }
 
         if series is not None and not series.empty:
@@ -1124,7 +1150,14 @@ def main():
         comp_instruments = load_instrument_library()
         comp_yf_rows    = collect_comp_assets(comp_instruments, comp_fx_cache)
         comp_fred_rows  = collect_comp_fred_assets()  # all 25 FRED Rates from library
-        df_comp = pd.DataFrame(comp_yf_rows + comp_fred_rows)
+        all_comp_rows   = comp_yf_rows + comp_fred_rows
+        # Sort by _sort_group so FRED Rates appear adjacent to yfinance Rates rows
+        all_comp_rows.sort(key=lambda r: r.get("_sort_group", 99))
+        # Strip the internal sort key before building the DataFrame
+        df_comp = pd.DataFrame([
+            {k: v for k, v in r.items() if k != "_sort_group"}
+            for r in all_comp_rows
+        ])
 
         # Calculated ratio/spread rows for comp (mirrors market_data behaviour)
         comp_ratio_rows = build_calculated_fields_comp(df_comp)
@@ -1134,8 +1167,8 @@ def main():
         df_comp.to_csv(comp_path, index=False)
         print(f"\n✓ Saved {comp_path} — {len(df_comp)} instruments")
         print("\n--- Comp asset class breakdown ---")
-        if "Asset Class" in df_comp.columns:
-            print(df_comp["Asset Class"].value_counts().to_string())
+        if "Sub-Category" in df_comp.columns:
+            print(df_comp["Sub-Category"].value_counts().to_string())
     except Exception as e:
         print(f"\nWARNING: Comprehensive library collection failed: {e}")
         print("  market_data will still be pushed; market_data_comp will be skipped.")
