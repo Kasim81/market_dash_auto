@@ -837,7 +837,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
 
     return [
         ticker_id_row, variant_row, source_row,
-        name_row, region_row, broad_asset_cls_row, asset_class_row, currency_row,
+        name_row, broad_asset_cls_row, region_row, asset_class_row, currency_row,
         units_row, frequency_row, updated_row,
     ]
 
@@ -1311,8 +1311,16 @@ def load_comp_instruments() -> list:
         asset_class = str(row.get("asset_class", "")).strip()
         asset_sub   = str(row.get("asset_subclass", "")).strip()
         currency    = str(row.get("base_currency", "USD")).strip()
+        country     = str(row.get("country_market", "")).strip()
         if not currency or currency == "nan":
             currency = "USD"
+
+        # Give UK and Japan instruments a specific region label for Equity/Fixed Income
+        if asset_class in ("Equity", "Fixed Income"):
+            if country == "United Kingdom":
+                region = "UK"
+            elif country == "Japan":
+                region = "Japan"
 
         pr = str(row.get("ticker_yfinance_pr", "")).strip()
         if pr and pr != "nan" and pr not in seen:
@@ -1790,7 +1798,7 @@ def build_comp_market_meta_prefix(
 
     return [
         ticker_id_row, variant_row, source_row,
-        name_row, region_row, broad_asset_cls_row, asset_class_row, currency_row,
+        name_row, broad_asset_cls_row, region_row, asset_class_row, currency_row,
         units_row, frequency_row, updated_row,
     ]
 
