@@ -335,13 +335,13 @@ FRED_MACRO_US = {
         "Diffusion Index",
         "First regional Fed mfg survey released each month. Closely watched ISM preview."
     ),
-    "GACDFSA066MSFRBRIC": (
+    "MFRBSCOMP": (
         "Richmond Fed: Mfg Business Conditions (Composite Index)",
         "Survey", "Regional Fed",
         "Diffusion Index",
         "Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV."
     ),
-    "GACDFSA066MSFRBKC": (
+    "KCACTMFG": (
         "Kansas City Fed: Mfg Business Conditions (Composite Index)",
         "Survey", "Regional Fed",
         "Diffusion Index",
@@ -392,8 +392,8 @@ FRED_MACRO_US_FREQ = {
     "BSCICP03USM665S":     "Monthly",
     "GACDFSA066MSFRBPHI":  "Monthly",
     "GACDISA066MSFRBNY":   "Monthly",
-    "GACDFSA066MSFRBRIC":  "Monthly",
-    "GACDFSA066MSFRBKC":   "Monthly",
+    "MFRBSCOMP":           "Monthly",
+    "KCACTMFG":            "Monthly",
     # Quarterly series (SLOOS surveys)
     "DRTSCILM":            "Quarterly",
     "DRTSCIS":             "Quarterly",
