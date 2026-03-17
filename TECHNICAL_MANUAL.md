@@ -582,6 +582,7 @@ The Comp pipeline reads everything from `index_library.csv` at runtime. There ar
 - Adding/removing instruments only requires editing the CSV
 - The Python code never needs to change for instrument additions
 - `validation_status = "CONFIRMED"` is the gate — set to `"PENDING"` to disable an instrument without deleting it
+- `index_library.csv` is itself built by a Claude project located at C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb and associated code files. see 'TECHNICAL_MANUAL.MD' in the same folder.
 
 ---
 
