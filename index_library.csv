@@ -1,9 +1,9 @@
 ﻿name,asset_class,asset_subclass,region,country_market,sector_style,market_cap_focus,maturity_focus,credit_quality,commodity_group,base_currency,hedged,hedge_currency,proxy_flag,proxy_type,data_source,validation_status,ticker_yfinance_pr,ticker_yfinance_tr,ticker_investiny,ticker_fred_tr,ticker_fred_yield,ticker_fred_oas,ticker_fred_spread,ticker_fred_duration,data_start
-S&P 500,Equity,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GSPC,SPY,,,,,,,1927-12-30
+S&P 500,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GSPC,SPY,,,,,,,1927-12-30
 Dow Jones Industrial Average,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^DJI,DIA,,,,,,,1992-01-02
 NASDAQ Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^IXIC,QQQ,,,,,,,1971-02-05
 NYSE Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NYA,,,,,,,,1965-12-31
-Russell 1000,Equity,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUI,IWB,,,,,,,1992-12-10
+Russell 1000,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUI,IWB,,,,,,,1992-12-10
 S&P MidCap 400,Equity,Equity Mid Cap,North America,United States,N/A,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MID,MDY,,,,,,,1981-01-02
 Russell 2000,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUT,IWM,,,,,,,1987-09-10
 S&P SmallCap 600,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP600,IJR,,,,,,,1989-01-03
@@ -49,7 +49,7 @@ CSI 500 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False
 CSI 1000 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,
 Hang Seng Index,Equity,,Asia Pacific,Hong Kong,N/A,N/A,N/A,N/A,N/A,HKD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31
 S&P BSE Sensex,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^BSESN,SENSEXBEES.NS,,,,,,,1997-07-01
-Nifty 50,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17
+Nifty 50,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17
 Nifty Midcap 100,Equity,Equity Mid Cap,Asia Pacific,India,N/A,Mid,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,2007-09-17
 Nifty Smallcap 100,Equity,Equity Small Cap,Asia Pacific,India,N/A,Small,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXSC,SMALLCAP.NS,,,,,,,2024-03-18
 Bovespa (IBOVESPA),Equity,,Latin America,Brazil,N/A,N/A,N/A,N/A,N/A,BRL,False,N/A,False,N/A,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,1993-04-27
@@ -80,7 +80,7 @@ iShares MSCI World ETF,Equity,Equity Broad,Global,Global,N/A,Broad,N/A,N/A,N/A,U
 iShares MSCI Emerging Markets ETF,Equity,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EEM,,,,,,,2003-04-14
 iShares MSCI Japan ETF,Equity,Equity Broad,Japan,Japan,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EWJ,,,,,,,1996-03-18
 iShares MSCI All Country Asia ex Japan ETF,Equity,Equity Broad,Asia ex Japan,Asia ex Japan,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,AAXJ,,,,,,,2008-08-15
-iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),Equity,Equity Broad,,,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EZU,,,,,,,2000-07-31
+iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),Equity,Equity Broad,Europe,Europe,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EZU,,,,,,,2000-07-31
 S&P 500 Capital Goods,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2010,,,,,,,,2000-01-07
 S&P 500 Commercial & Professional Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2020,,,,,,,,2000-02-29
 S&P 500 Transportation,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2030,,,,,,,,2000-01-07
@@ -129,22 +129,22 @@ Wilshire US Mid-Cap Growth Index,Equity,Equity Mid Cap (Growth),North America,Un
 Wilshire US Mid-Cap Value Index,Equity,Equity Mid Cap (Value),North America,United States,Value,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
 Wilshire US Small-Cap Growth Index,Equity,Equity Small Cap (Growth),North America,United States,Growth,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
 Wilshire US Small-Cap Value Index,Equity,Equity Small Cap (Value),North America,United States,Value,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-iShares MSCI USA Momentum Factor ETF,Equity,Equity Broad,,,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,MTUM,,,,,,,2013-04-18
-Vanguard Dividend Appreciation ETF,Equity,Equity Broad,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,VIG,,,,,,,2006-05-02
-iShares MSCI USA Quality Factor ETF,Equity,Equity Broad,,,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,QUAL,,,,,,,2013-07-18
-Schwab US Dividend Equity ETF,Equity,Equity Broad,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SCHD,,,,,,,2011-10-20
+iShares MSCI USA Momentum Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,MTUM,,,,,,,2013-04-18
+Vanguard Dividend Appreciation ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,VIG,,,,,,,2006-05-02
+iShares MSCI USA Quality Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,QUAL,,,,,,,2013-07-18
+Schwab US Dividend Equity ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SCHD,,,,,,,2011-10-20
 Invesco S&P 500 Low Volatility ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SPLV,,,,,,,2011-05-05
-iShares MSCI USA Min Vol Factor ETF,Equity,Equity Broad,,,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,USMV,,,,,,,2011-10-20
-iShares MSCI Europe Momentum Factor UCITS ETF,Equity,,UK,United Kingdom,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFM.L,,,,,,,2015-01-19
-iShares MSCI Europe Min Vol UCITS ETF,Equity,,Europe,Germany,Factor,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EUN0.DE,,,,,,,2013-02-18
-iShares MSCI Europe Quality Factor UCITS ETF,Equity,,UK,United Kingdom,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFQ.L,,,,,,,2015-01-19
-SPDR S&P UK Dividend Aristocrats UCITS ETF,Equity,,UK,United Kingdom,Value,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,UKDV.L,,,,,,,2012-02-28
-SPDR S&P Euro Dividend Aristocrats UCITS ETF,Equity,,Europe,Germany,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SPYW.DE,,,,,,,2012-02-29
+iShares MSCI USA Min Vol Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,USMV,,,,,,,2011-10-20
+iShares MSCI Europe Momentum Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFM.L,,,,,,,2015-01-19
+iShares MSCI Europe Min Vol UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EUN0.DE,,,,,,,2013-02-18
+iShares MSCI Europe Quality Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFQ.L,,,,,,,2015-01-19
+SPDR S&P UK Dividend Aristocrats UCITS ETF,Equity,Factor,UK,United Kingdom,Value,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,UKDV.L,,,,,,,2012-02-28
+SPDR S&P Euro Dividend Aristocrats UCITS ETF,Equity,Factor,Europe,Germany,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SPYW.DE,,,,,,,2012-02-29
 iShares MSCI World Small Cap UCITS ETF,Equity,Equity Small Cap,Global,Global,N/A,Small,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,WSML.L,,,,,,,2018-03-27
 iShares MSCI World Quality Factor UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWQU.L,,,,,,,2014-10-06
 iShares MSCI World Min Vol UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,MINV.L,,,,,,,2012-11-30
 iShares MSCI World Momentum UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWMO.L,,,,,,,2014-10-06
-SPDR S&P Global Dividend Aristocrats UCITS ETF,Equity,,Global,Global,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ZPRG.DE,,,,,,,2013-05-16
+SPDR S&P Global Dividend Aristocrats UCITS ETF,Equity,Factor,Global,Global,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ZPRG.DE,,,,,,,2013-05-16
 iShares MSCI World Value Factor UCITS ETF,Equity,Factor,Global,Global,Value,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWVL.L,,,,,,,2014-10-06
 iShares MSCI ACWI Min Vol Factor ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ACWV,,,,,,,2011-10-20
 iShares MSCI EAFE Small-Cap ETF,Equity,Equity Small Cap,North America,United States,Blend,Small,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SCZ,,,,,,,2007-12-12
@@ -246,21 +246,21 @@ China Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,Chi
 India Government Bond Index,Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
 India Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
 Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Govt Bond,Latin America,Brazil,N/A,N/A,,Government,N/A,BRL,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Brazil Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Brazil Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,BRL,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 South Korea Government Bond Index (KTBs),Fixed Income,Govt Bond,Asia Pacific,South Korea,N/A,N/A,,Government,N/A,KRW,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-South Korea Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+South Korea Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,KRW,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 Mexico Government Bond Index (Bonos M),Fixed Income,Govt Bond,Latin America,Mexico,N/A,N/A,,Government,N/A,MXN,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Mexico Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Mexico Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,MXN,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 Indonesia Government Bond Index (SBN),Fixed Income,Govt Bond,Asia Pacific,Indonesia,N/A,N/A,,Government,N/A,IDR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Indonesia Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Indonesia Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,IDR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Govt Bond,Middle East & Africa,Saudi Arabia,N/A,N/A,,Government,N/A,SAR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,SAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 South Africa Government Bond Index,Fixed Income,Govt Bond,Middle East & Africa,South Africa,N/A,N/A,,Government,N/A,ZAR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-South Africa Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+South Africa Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ZAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 Turkey Government Bond Index,Fixed Income,Govt Bond,Europe,Turkey,N/A,N/A,,Government,N/A,TRY,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Turkey Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Turkey Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,TRY,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 Argentina Government Bond Index,Fixed Income,Govt Bond,Latin America,Argentina,N/A,N/A,,Government,N/A,ARS,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Argentina Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
+Argentina Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ARS,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 ICE BofA Global Corporate Bond Index,Fixed Income,Corp IG,Global,Global,N/A,N/A,Broad,Corp IG,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,VCIT,,BAMLCC0A0CMTRIV,,,,,2009-11-23
 ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Corp IG,Global,Global,N/A,N/A,,Corp IG,N/A,USD,True,USD,True,FRED,FRED,CONFIRMED,,,,BAMLCC0A0CMTRIV,,,,,1972-12-31
 ICE BofA Euro Corporate Bond Index,Fixed Income,Corp IG,Europe,Europe,N/A,N/A,,Corp IG,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IBCX.L,,,,,,,2008-01-02
