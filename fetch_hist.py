@@ -62,6 +62,12 @@ from datetime import date, datetime, timedelta, timezone
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
+from library_utils import (
+    COMP_FX_TICKERS,
+    COMP_FCY_PER_USD,
+    lib_sort_key as _comp_inst_sort_key,
+)
+
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
@@ -201,16 +207,9 @@ RATIO_DEFS = [
     ("IWF/IWFV.L",     "Growth vs Value",            "IWF",    "IWFV.L"),
 ]
 
-# FX tickers needed for USD return calculation
-FX_TICKERS = {
-    "GBP": "GBPUSD=X",
-    "EUR": "EURUSD=X",
-    "JPY": "USDJPY=X",
-    "CNY": "USDCNY=X",
-    "INR": "USDINR=X",
-    "KRW": "USDKRW=X",
-    "TWD": "USDTWD=X",
-}
+# FX tickers needed for USD return calculation (simple hist pipeline)
+# Uses the comprehensive map from library_utils — same 18 currencies
+FX_TICKERS = COMP_FX_TICKERS
 
 # LSE-listed ETFs quoted in pence (price > 50 after fetch → divide by 100)
 LSE_PENCE_TICKERS = {t for t, *_ in
@@ -328,10 +327,8 @@ def compute_usd_price_series(
     # Align FX to same index as local prices
     fx_aligned = fx.reindex(local_prices.index, method="ffill")
 
-    # Pairs where USD is the quote (GBPUSD, EURUSD): multiply
-    # Pairs where USD is the base (USDJPY, USDCNY etc.): divide
-    base_quote_pairs = {"JPY", "CNY", "INR", "KRW", "TWD"}
-    if currency in base_quote_pairs:
+    # Indirect quotes (1 USD = X FCY): divide. Direct quotes: multiply.
+    if currency in COMP_FCY_PER_USD:
         usd_prices = local_prices / fx_aligned
     else:
         usd_prices = local_prices * fx_aligned
@@ -1076,198 +1073,14 @@ COMP_HIST_START = "1950-01-01"
 LIBRARY_PATH_HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
 
 # ---------------------------------------------------------------------------
-# COMP HIST: SORT-ORDER MAPS
-# Instruments in the sheet are ordered:
-#   1. Equities (region → subclass → sector/style)
-#   2. Fixed Income / Bond Returns (region → subclass → maturity)
-#   3. Rates / Bond Yields & Credit Spreads  (FRED; subclass → region)
-#   4. FX / Currencies
-#   5. Commodities & Crypto
-#   6. Macro-Market Indicators (Volatility indices)
+# COMP HIST: SORT ORDER + FX MAPS
+# All sort dicts and the sort key function are imported from library_utils.
+# COMP_FX_TICKERS and COMP_FCY_PER_USD are also imported from library_utils.
 # ---------------------------------------------------------------------------
 
-_ASSET_CLASS_GROUP = {
-    "Equity":       1,
-    "Fixed Income": 2,
-    "Rates":        3,   # FRED only — handled in load_comp_fred_rates()
-    "FX":           4,
-    "Commodity":    5,
-    "Crypto":       6,
-    "Volatility":   7,
-}
-
-_REGION_ORDER = {
-    "Global":               1,
-    "Global ex-US/Canada":  1,   # grouped with Global
-    "North America":        2,
-    # UK (country_market == "United Kingdom") assigned rank 3 in sort key below
-    "Europe":               4,   # non-UK Europe
-    # Japan (country_market == "Japan") assigned rank 5 in sort key below
-    "Emerging Markets":     6,
-    "Asia Pacific":         7,   # non-Japan APAC
-    "Middle East & Africa": 8,
-    "Latin America":        9,
-}
-
-_EQUITY_SUBCLASS_ORDER = {
-    "Equity Broad":              1,
-    "Equity Large Cap":          2,
-    "Equity Mid Cap":            3,
-    "Equity Mid Cap (Growth)":   3,
-    "Equity Mid Cap (Value)":    3,
-    "Equity Small Cap":          4,
-    "Equity Small Cap (Growth)": 4,
-    "Equity Small Cap (Value)":  4,
-    "Equity Sector":             5,
-    "Equity Industry Group":     6,
-    "Equity Factor":             7,
-}
-
-# Equity sector order (GICS standard) + style factors at end
-_SECTOR_ORDER = {
-    "Blend":                          0,
-    "Value":                          1,
-    "Growth":                         2,
-    "Energy":                        10,
-    "Materials":                     11,
-    "Industrials":                   12,
-    "Consumer Discretionary":        13,
-    "Consumer Staples":              14,
-    "Health Care":                   15,
-    "Financials":                    16,
-    "Information Technology":        17,
-    "Communication Services":        18,
-    "Utilities":                     19,
-    "Real Estate":                   20,
-    # Factor styles
-    "Mega-Cap Tech / Growth":        30,
-    "Equal Weight":                  31,
-    "Momentum":                      32,
-    "Dividend Growth":               33,
-    "Quality":                       34,
-    "Dividend/Quality":              35,
-    "Low Volatility":                36,
-    "Dividend/Income":               37,
-    "Broad Market":                  38,
-}
-
-_FI_SUBCLASS_ORDER = {
-    "Global Aggregate":    1,
-    "Govt Bond":           2,
-    "Government":          2,
-    "Government Short":    2,
-    "Inflation-Linked":    3,
-    "Corp IG":             4,
-    "Corp HY":             5,
-}
-
-_MATURITY_ORDER = {
-    "Broad":          1,
-    "Short (1-3yr)":  2,
-    "Long (10yr+)":   3,
-}
-
-_COMMODITY_GROUP_ORDER = {
-    "Energy":            1,
-    "Precious Metals":   2,
-    "Industrial Metals": 3,
-    "Agriculture":       4,
-    "Livestock":         5,
-    "Broad":             6,
-}
-
-_VOL_SUBCLASS_ORDER = {
-    "Equity Volatility":          1,
-    "Tail Risk":                  2,
-    "Fixed Income Volatility":    3,
-    "Commodity Volatility":       4,
-}
-
-_RATES_SUBCLASS_ORDER = {
-    "Government Yield":       1,
-    "Breakeven Inflation":    2,
-    "Credit Spread":          3,
-    "Policy Rate":            4,
-    "Yield Curve":            5,
-}
-
-
-def _comp_inst_sort_key(row: pd.Series) -> tuple:
-    """Return a sort tuple for a library CSV row (instrument)."""
-    ac       = str(row.get("asset_class", ""))
-    asc      = str(row.get("asset_subclass", ""))
-    region   = str(row.get("region", ""))
-    country  = str(row.get("country_market", ""))
-    sector   = str(row.get("sector_style", ""))
-    maturity = str(row.get("maturity_focus", ""))
-    cg       = str(row.get("commodity_group", ""))
-    name     = str(row.get("name", ""))
-
-    g = _ASSET_CLASS_GROUP.get(ac, 99)
-    r = _REGION_ORDER.get(region, 50)
-    # UK sits between NA (2) and EU (4)
-    if region == "Europe" and country == "United Kingdom":
-        r = 3
-    # Japan sits between EU (4) and EM (6)
-    if region == "Asia Pacific" and country == "Japan":
-        r = 5
-
-    if ac == "Equity":
-        s   = _EQUITY_SUBCLASS_ORDER.get(asc, 50)
-        sec = _SECTOR_ORDER.get(sector, 50)
-        return (g, r, s, sec, name)
-
-    if ac == "Fixed Income":
-        s   = _FI_SUBCLASS_ORDER.get(asc, 50)
-        mat = _MATURITY_ORDER.get(maturity, 50)
-        return (g, r, s, mat, name)
-
-    if ac == "FX":
-        s = 1 if "Index" in asc else 2
-        return (g, 0, s, name)
-
-    if ac == "Commodity":
-        s  = 1 if asc == "Commodity" else 2
-        cg_n = _COMMODITY_GROUP_ORDER.get(cg, 50)
-        return (g, 0, s, cg_n, name)
-
-    if ac == "Crypto":
-        return (g, 0, 0, name)
-
-    if ac == "Volatility":
-        s = _VOL_SUBCLASS_ORDER.get(asc, 50)
-        return (g, 0, s, name)
-
-    return (g, r, 0, name)
-
-# FX pairs covering all currencies in the comprehensive library
-COMP_FX_TICKERS_HIST = {
-    "GBP": "GBPUSD=X",
-    "EUR": "EURUSD=X",
-    "AUD": "AUDUSD=X",
-    "JPY": "USDJPY=X",
-    "CNY": "CNY=X",
-    "INR": "INR=X",
-    "KRW": "KRW=X",
-    "TWD": "TWD=X",
-    "CAD": "USDCAD=X",
-    "BRL": "USDBRL=X",
-    "HKD": "USDHKD=X",
-    "MXN": "USDMXN=X",
-    "IDR": "USDIDR=X",
-    "RUB": "USDRUB=X",
-    "SAR": "USDSAR=X",
-    "ZAR": "USDZAR=X",
-    "TRY": "USDTRY=X",
-    "ARS": "USDARS=X",
-}
-
-# Indirect-quote currencies (1 USD = X FCY): divide to get USD
-COMP_FCY_PER_USD_HIST = {
-    "JPY", "CNY", "INR", "KRW", "TWD",
-    "CAD", "BRL", "HKD", "MXN", "IDR",
-    "RUB", "SAR", "ZAR", "TRY", "ARS",
-}
+# Aliases used by load_comp_fred_rates() sort logic
+COMP_FX_TICKERS_HIST   = COMP_FX_TICKERS      # single authoritative map
+COMP_FCY_PER_USD_HIST  = COMP_FCY_PER_USD      # single authoritative set
 
 
 # ---------------------------------------------------------------------------
@@ -1294,7 +1107,7 @@ def load_comp_instruments() -> list:
     """
     df = pd.read_csv(LIBRARY_PATH_HIST)
     df = df[
-        (df["data_source"] == "yfinance") &
+        df["data_source"].isin(["yfinance PR", "yfinance TR"]) &
         (df["validation_status"] == "CONFIRMED")
     ].copy()
 
@@ -1305,77 +1118,100 @@ def load_comp_instruments() -> list:
     instruments = []
     seen = set()
 
+    def _clean(val):
+        s = str(val).strip()
+        return None if s in ("nan", "", "N/A") else s
+
     for _, row in df.iterrows():
         name        = str(row.get("name", "")).strip()
         region      = str(row.get("region", "")).strip()
         asset_class = str(row.get("asset_class", "")).strip()
         asset_sub   = str(row.get("asset_subclass", "")).strip()
         currency    = str(row.get("base_currency", "USD")).strip()
-        country     = str(row.get("country_market", "")).strip()
-        if not currency or currency == "nan":
+        src         = str(row.get("data_source", "")).strip()
+        if not currency or currency in ("nan", "N/A"):
+            currency = "USD"
+        # USX = US cents → treat as USD after ÷100 correction
+        is_usx = (currency == "USX")
+        if is_usx:
             currency = "USD"
 
-        # Give UK and Japan instruments a specific region label for Equity/Fixed Income
-        if asset_class in ("Equity", "Fixed Income"):
-            if country == "United Kingdom":
-                region = "UK"
-            elif country == "Japan":
-                region = "Japan"
-
-        pr = str(row.get("ticker_yfinance_pr", "")).strip()
-        if pr and pr != "nan" and pr not in seen:
-            instruments.append({
-                "ticker": pr, "name": name, "region": region,
+        def _entry(ticker, ticker_type):
+            return {
+                "ticker": ticker, "name": name, "region": region,
                 "asset_class": asset_class, "asset_subclass": asset_sub,
-                "currency": currency,
-                "ticker_type": "PR", "pence": pr.endswith(".L"),
-            })
-            seen.add(pr)
+                "currency": currency, "ticker_type": ticker_type,
+                "pence": ticker.endswith(".L"), "usx": is_usx,
+            }
 
-        tr = str(row.get("ticker_yfinance_tr", "")).strip()
-        if tr and tr != "nan" and tr not in seen:
-            instruments.append({
-                "ticker": tr, "name": name, "region": region,
-                "asset_class": asset_class, "asset_subclass": asset_sub,
-                "currency": currency,
-                "ticker_type": "TR", "pence": tr.endswith(".L"),
-            })
-            seen.add(tr)
+        pr = _clean(row.get("ticker_yfinance_pr"))
+        tr = _clean(row.get("ticker_yfinance_tr"))
+
+        if src == "yfinance PR":
+            if pr and pr not in seen:
+                instruments.append(_entry(pr, "PR"))
+                seen.add(pr)
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "TR"))
+                seen.add(tr)
+        elif src == "yfinance TR":
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "TR"))
+                seen.add(tr)
 
     return instruments
 
 
 def load_comp_fred_rates() -> list:
     """
-    Read index_library.csv and return FRED Rates series sorted by:
-      Government Yields → Credit Spreads → Breakeven Inflation →
-      Yield Curve → Policy Rate
-    Each dict: {series_id, name, region, asset_class, asset_subclass}
+    Read index_library.csv and return all confirmed FRED series.
+    Ticker column priority: ticker_fred_oas > ticker_fred_tr > ticker_fred_yield.
+    Each dict: {series_id, name, region, asset_class, asset_subclass, is_yield}
+      is_yield=True  → bps change (OAS or yield series)
+      is_yield=False → % return (total return index)
     """
     df = pd.read_csv(LIBRARY_PATH_HIST)
-    rates_rows = df[
+    fred_rows = df[
         (df["data_source"] == "FRED") &
-        (df["validation_status"] == "CONFIRMED") &
-        (df["asset_class"] == "Rates")
+        (df["validation_status"] == "CONFIRMED")
     ].copy()
 
-    rates_rows["_s"] = rates_rows["asset_subclass"].map(_RATES_SUBCLASS_ORDER).fillna(99)
-    rates_rows["_r"] = rates_rows["region"].map(_REGION_ORDER).fillna(50)
-    rates_rows = rates_rows.sort_values(["_s", "_r", "name"]).drop(columns=["_s", "_r"])
+    fred_rows["_s"] = fred_rows.apply(_comp_inst_sort_key, axis=1)
+    fred_rows = fred_rows.sort_values("_s").drop(columns=["_s"])
 
     fred_rates = []
     seen = set()
 
-    for _, row in rates_rows.iterrows():
-        series_id = str(row.get("ticker_fred_tr", "")).strip()
-        if not series_id or series_id == "nan" or series_id in seen:
+    def _val(v):
+        s = str(v).strip()
+        return None if s in ("nan", "N/A", "") else s
+
+    for _, row in fred_rows.iterrows():
+        oas_id   = _val(row.get("ticker_fred_oas"))
+        tr_id    = _val(row.get("ticker_fred_tr"))
+        yield_id = _val(row.get("ticker_fred_yield"))
+
+        if oas_id:
+            series_id = oas_id
+            is_yield  = True
+        elif tr_id:
+            series_id = tr_id
+            is_yield  = False
+        elif yield_id:
+            series_id = yield_id
+            is_yield  = True
+        else:
+            continue
+
+        if series_id in seen:
             continue
         fred_rates.append({
             "series_id":      series_id,
             "name":           str(row.get("name", series_id)).strip(),
             "region":         str(row.get("region", "")).strip(),
-            "asset_class":    str(row.get("asset_class", "Rates")).strip(),
+            "asset_class":    str(row.get("asset_class", "")).strip(),
             "asset_subclass": str(row.get("asset_subclass", "")).strip(),
+            "is_yield":       is_yield,
         })
         seen.add(series_id)
 
@@ -1538,6 +1374,9 @@ def fetch_comp_yfinance_history(
             median_val = s.dropna().median()
             if pd.notna(median_val) and median_val > 50:
                 s = s / 100
+        # USX correction: agricultural futures quoted in US cents → convert to USD
+        elif inst.get("usx", False):
+            s = s / 100
 
         s.index = pd.to_datetime(s.index)
         weekly        = s.resample("W-FRI").last()

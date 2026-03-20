@@ -12,6 +12,14 @@ import os
 import requests
 import time
 
+from library_utils import (
+    ASSET_CLASS_GROUP as _LIB_ASSET_CLASS_GROUP,
+    REGION_ORDER as _LIB_REGION_ORDER,
+    COMP_FX_TICKERS,
+    COMP_FCY_PER_USD,
+    lib_sort_key as _lib_sort_key,
+)
+
 # ─────────────────────────────────────────────
 # FRED API KEY — set as GitHub Secret FRED_API_KEY
 # ─────────────────────────────────────────────
@@ -19,21 +27,17 @@ FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 
 # ─────────────────────────────────────────────
-# FX TICKERS (all quoted as units of foreign currency per 1 USD)
-# Used to convert local returns to USD returns
+# FX TICKERS — simple pipeline (subset of COMP_FX_TICKERS from library_utils)
 # ─────────────────────────────────────────────
 FX_TICKERS = {
-    "GBP": "GBPUSD=X",   # GBP per USD → invert to get USD per GBP
+    "GBP": "GBPUSD=X",
     "EUR": "EURUSD=X",
-    "JPY": "USDJPY=X",   # JPY per USD
+    "JPY": "USDJPY=X",
     "CNY": "USDCNY=X",
     "INR": "USDINR=X",
     "KRW": "USDKRW=X",
     "TWD": "USDTWD=X",
 }
-
-# Currencies where the yfinance ticker is already USD/FCY (i.e. USD is numerator)
-# For these we need to invert when converting local→USD
 FCY_PER_USD = {"JPY", "CNY", "INR", "KRW", "TWD"}
 
 # ─────────────────────────────────────────────
@@ -42,172 +46,15 @@ FCY_PER_USD = {"JPY", "CNY", "INR", "KRW", "TWD"}
 
 LIBRARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
 
-# FX pairs covering all currencies in the library.
-# Convention: direct pairs (1 FCY = X USD) listed first, then indirect (1 USD = X FCY).
-COMP_FX_TICKERS = {
-    # Direct quotes — 1 unit of FCY buys X USD (NOT in COMP_FCY_PER_USD)
-    "GBP": "GBPUSD=X",
-    "EUR": "EURUSD=X",
-    "AUD": "AUDUSD=X",
-    # Indirect quotes — 1 USD buys X units of FCY (IN COMP_FCY_PER_USD)
-    "JPY": "USDJPY=X",
-    "CNY": "CNY=X",
-    "INR": "INR=X",
-    "KRW": "KRW=X",
-    "TWD": "TWD=X",
-    "CAD": "USDCAD=X",
-    "BRL": "USDBRL=X",
-    "HKD": "USDHKD=X",
-    "MXN": "USDMXN=X",
-    "IDR": "USDIDR=X",
-    "RUB": "USDRUB=X",
-    "SAR": "USDSAR=X",
-    "ZAR": "USDZAR=X",
-    "TRY": "USDTRY=X",
-    "ARS": "USDARS=X",
-}
-
-# All indirect-quote currencies (invert when computing USD return)
-COMP_FCY_PER_USD = {
-    "JPY", "CNY", "INR", "KRW", "TWD",       # existing
-    "CAD", "BRL", "HKD", "MXN", "IDR",        # new
-    "RUB", "SAR", "ZAR", "TRY", "ARS",        # new
-}
-
-# Volatility indices — show absolute point change, not % change
-COMP_LEVEL_CHANGE_TICKERS = {
-    "^VIX", "^VIX9D", "^VIX3M", "^VVIX", "^SKEW",
-    "^VXEFA", "^VXEEM", "^GVZ", "^OVX",
-}
-
-# ─────────────────────────────────────────────
-# LIBRARY SORT ORDER
-# Used by load_instrument_library() and collect_comp_fred_assets()
-# to emit columns in a consistent, user-friendly group order.
-# Mirrors the constants in fetch_hist.py — keep in sync.
-# ─────────────────────────────────────────────
-
-_LIB_ASSET_CLASS_GROUP = {
-    "Equity":       1,
-    "Fixed Income": 2,
-    "Rates":        3,
-    "FX":           4,
-    "Commodity":    5,
-    "Crypto":       6,
-    "Volatility":   7,
-}
-
-_LIB_REGION_ORDER = {
-    "Global":               1,
-    "Global ex-US/Canada":  1,
-    "North America":        2,
-    # UK (country_market == "United Kingdom") assigned rank 3 in sort key
-    "Europe":               4,   # non-UK Europe
-    # Japan (country_market == "Japan") assigned rank 5 in sort key
-    "Emerging Markets":     6,
-    "Asia Pacific":         7,   # non-Japan APAC
-    "Middle East & Africa": 8,
-    "Latin America":        9,
-}
-
-_LIB_EQUITY_SUBCLASS_ORDER = {
-    "Equity Broad":              1,
-    "Equity Large Cap":          2,
-    "Equity Mid Cap":            3,
-    "Equity Mid Cap (Growth)":   3,
-    "Equity Mid Cap (Value)":    3,
-    "Equity Small Cap":          4,
-    "Equity Small Cap (Growth)": 4,
-    "Equity Small Cap (Value)":  4,
-    "Equity Sector":             5,
-    "Equity Industry Group":     6,
-    "Equity Factor":             7,
-}
-
-_LIB_SECTOR_ORDER = {
-    "Blend": 0, "Value": 1, "Growth": 2,
-    "Energy": 10, "Materials": 11, "Industrials": 12,
-    "Consumer Discretionary": 13, "Consumer Staples": 14,
-    "Health Care": 15, "Financials": 16,
-    "Information Technology": 17, "Communication Services": 18,
-    "Utilities": 19, "Real Estate": 20,
-    "Mega-Cap Tech / Growth": 30, "Equal Weight": 31,
-    "Momentum": 32, "Dividend Growth": 33, "Quality": 34,
-    "Dividend/Quality": 35, "Low Volatility": 36,
-    "Dividend/Income": 37, "Broad Market": 38,
-}
-
-_LIB_FI_SUBCLASS_ORDER = {
-    "Global Aggregate": 1,
-    "Govt Bond": 2, "Government": 2, "Government Short": 2,
-    "Inflation-Linked": 3,
-    "Corp IG": 4, "Corp HY": 5,
-}
-
-_LIB_MATURITY_ORDER = {
-    "Broad": 1, "Short (1-3yr)": 2, "Long (10yr+)": 3,
-}
-
-_LIB_COMMODITY_GROUP_ORDER = {
-    "Energy": 1, "Precious Metals": 2, "Industrial Metals": 3,
-    "Agriculture": 4, "Livestock": 5, "Broad": 6,
-}
-
-_LIB_VOL_SUBCLASS_ORDER = {
-    "Equity Volatility": 1, "Tail Risk": 2,
-    "Fixed Income Volatility": 3, "Commodity Volatility": 4,
-}
-
-_LIB_RATES_SUBCLASS_ORDER = {
-    "Government Yield": 1, "Breakeven Inflation": 2,
-    "Credit Spread": 3, "Policy Rate": 4, "Yield Curve": 5,
-}
-
-
-def _lib_sort_key(row) -> tuple:
-    """Sort key for a raw index_library.csv row."""
-    ac      = str(row.get("asset_class", ""))
-    asc     = str(row.get("asset_subclass", ""))
-    region  = str(row.get("region", ""))
-    country = str(row.get("country_market", ""))
-    sector  = str(row.get("sector_style", ""))
-    mat     = str(row.get("maturity_focus", ""))
-    cg      = str(row.get("commodity_group", ""))
-    name    = str(row.get("name", ""))
-
-    g = _LIB_ASSET_CLASS_GROUP.get(ac, 99)
-    r = _LIB_REGION_ORDER.get(region, 50)
-    # UK sits between NA (2) and EU (4)
-    if region == "Europe" and country == "United Kingdom":
-        r = 3
-    # Japan sits between EU (4) and EM (6)
-    if region == "Asia Pacific" and country == "Japan":
-        r = 5
-
-    if ac == "Equity":
-        s   = _LIB_EQUITY_SUBCLASS_ORDER.get(asc, 50)
-        sec = _LIB_SECTOR_ORDER.get(sector, 50)
-        return (g, r, s, sec, name)
-    if ac == "Fixed Income":
-        s   = _LIB_FI_SUBCLASS_ORDER.get(asc, 50)
-        m   = _LIB_MATURITY_ORDER.get(mat, 50)
-        return (g, r, s, m, name)
-    if ac == "FX":
-        s = 1 if "Index" in asc else 2
-        return (g, 0, s, name)
-    if ac == "Commodity":
-        s   = 1 if asc == "Commodity" else 2
-        cgn = _LIB_COMMODITY_GROUP_ORDER.get(cg, 50)
-        return (g, 0, s, cgn, name)
-    if ac == "Crypto":
-        return (g, 0, 0, name)
-    if ac == "Volatility":
-        s = _LIB_VOL_SUBCLASS_ORDER.get(asc, 50)
-        return (g, 0, s, name)
-    if ac == "Rates":
-        s = _LIB_RATES_SUBCLASS_ORDER.get(asc, 50)
-        return (g, r, s, name)
-    return (g, r, 0, name)
+# Level-change tickers (absolute point change, not % change) — read from CSV
+# so the list can be maintained without touching this file.
+_LEVEL_CHANGE_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "level_change_tickers.csv")
+try:
+    COMP_LEVEL_CHANGE_TICKERS = set(pd.read_csv(_LEVEL_CHANGE_CSV)["ticker"].dropna().str.strip())
+except Exception:
+    COMP_LEVEL_CHANGE_TICKERS = {"^VIX", "^VIX9D", "^VIX3M", "^VVIX", "^SKEW",
+                                  "^VXEFA", "^VXEEM", "^GVZ", "^OVX"}
+    print("WARNING: could not load level_change_tickers.csv — using built-in fallback")
 
 
 # ─────────────────────────────────────────────
@@ -773,16 +620,19 @@ def build_comp_fx_cache():
 def load_instrument_library():
     """Read index_library.csv and return a flat list of instrument dicts.
 
-    For instruments with both a price-return index ticker (ticker_yfinance_pr)
-    and a total-return ETF proxy (ticker_yfinance_tr), two entries are produced:
-    one labelled 'Price Return (Index)' and one 'Total Return (ETF)'.
-    Tickers are deduplicated — if the same ticker would appear more than once
-    (e.g. BNDX used as proxy for many hedged bond indices) only the first
-    occurrence is kept.
+    data_source values handled:
+      "yfinance PR" — row has a ticker_yfinance_pr; may also have ticker_yfinance_tr
+                      → create a PR entry and, if present, a TR entry
+      "yfinance TR" — row has only ticker_yfinance_tr (no PR ticker)
+                      → create a TR entry only
+
+    Tickers are deduplicated — if the same ticker appears more than once
+    (e.g. a shared ETF proxy) only the first occurrence is kept.
     """
     df = pd.read_csv(LIBRARY_PATH)
     confirmed_yf = df[
-        (df["data_source"] == "yfinance") & (df["validation_status"] == "CONFIRMED")
+        df["data_source"].isin(["yfinance PR", "yfinance TR"]) &
+        (df["validation_status"] == "CONFIRMED")
     ].copy()
 
     # Sort rows into display group order before building instrument list
@@ -797,50 +647,45 @@ def load_instrument_library():
         return None if s in ("nan", "", "N/A") else s
 
     for _, row in confirmed_yf.iterrows():
-        name            = str(row["name"]).strip()
-        region          = str(row["region"]).strip()
-        asset_cls_raw   = str(row["asset_class"]).strip()    # broad: Equity, Fixed Income, etc.
-        asset_cls       = str(row["asset_subclass"]).strip() # granular: Equity Broad, etc.
-        ccy             = str(row["base_currency"]).strip()
-        country         = str(row.get("country_market", "")).strip()
-        if ccy in ("nan", ""):
+        name          = str(row["name"]).strip()
+        region        = str(row["region"]).strip()
+        asset_cls_raw = str(row["asset_class"]).strip()
+        asset_cls     = str(row["asset_subclass"]).strip()
+        ccy           = str(row["base_currency"]).strip()
+        src           = str(row["data_source"]).strip()
+        if ccy in ("nan", "", "N/A"):
             ccy = "USD"
-
-        # Give UK and Japan instruments a specific region label for Equity/Fixed Income
-        if asset_cls_raw in ("Equity", "Fixed Income"):
-            if country == "United Kingdom":
-                region = "UK"
-            elif country == "Japan":
-                region = "Japan"
+        # USX = US cents (agricultural futures) → treat as USD after ÷100 correction
+        if ccy == "USX":
+            ccy = "USD"
 
         pr = _clean(row["ticker_yfinance_pr"])
         tr = _clean(row["ticker_yfinance_tr"])
 
-        if pr and pr not in seen:
-            instruments.append({
-                "ticker":          pr,
+        def _entry(ticker, ticker_type):
+            return {
+                "ticker":          ticker,
                 "name":            name,
                 "region":          region,
                 "asset_class":     asset_cls,
                 "asset_class_raw": asset_cls_raw,
                 "currency":        ccy,
-                "ticker_type":     "Price Return (Index)",
-                "pence":           pr.endswith(".L"),
-            })
-            seen.add(pr)
+                "ticker_type":     ticker_type,
+                "pence":           ticker.endswith(".L"),
+                "usx":             str(row["base_currency"]).strip() == "USX",
+            }
 
-        if tr and tr not in seen:
-            instruments.append({
-                "ticker":          tr,
-                "name":            name,
-                "region":          region,
-                "asset_class":     asset_cls,
-                "asset_class_raw": asset_cls_raw,
-                "currency":        ccy,
-                "ticker_type":     "Total Return (ETF)",
-                "pence":           tr.endswith(".L"),
-            })
-            seen.add(tr)
+        if src == "yfinance PR":
+            if pr and pr not in seen:
+                instruments.append(_entry(pr, "Price Return (Index)"))
+                seen.add(pr)
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
+        elif src == "yfinance TR":
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
 
     print(f"  Library loaded: {len(instruments)} unique instruments "
           f"({sum(1 for i in instruments if i['ticker_type'].startswith('Price'))} PR, "
@@ -861,33 +706,27 @@ def collect_comp_assets(instruments, comp_fx_cache):
         ticker      = inst["ticker"]
         name        = inst["name"]
         region      = inst["region"]
-        asset_class = inst["asset_class"]
+        asset_class = inst["asset_class"]      # asset_subclass (granular)
+        asset_class_raw = inst.get("asset_class_raw", asset_class)  # broad asset class
         ccy         = inst["currency"]
         ticker_type = inst["ticker_type"]
         is_pence    = inst["pence"]
-        local_ccy   = None if ccy == "USD" else ccy
-        is_yield    = ticker in YIELD_TICKERS
+        is_usx      = inst.get("usx", False)
+        # Rates and Spread asset classes are expressed as bps changes
+        is_yield    = asset_class_raw in ("Rates", "Spread")
         is_level    = ticker in COMP_LEVEL_CHANGE_TICKERS
+        # USX and USD instruments need no FX conversion
+        local_ccy   = None if ccy == "USD" else ccy
 
         print(f"  [{ticker_type[:2]}] {ticker} ({name[:40]})...")
         series = fetch_yf_history(ticker)
-
-        asset_class_raw = inst.get("asset_class_raw", asset_class)
-        broad_ac = (
-            "Macro-Market Indicators" if asset_class_raw == "Volatility"
-            else asset_class_raw if asset_class_raw in ("FX", "Crypto")
-            else "Commodities" if asset_class_raw == "Commodity"
-            else "Bonds" if asset_class_raw == "Fixed Income"
-            else "Equity" if asset_class_raw == "Equity"
-            else asset_class_raw
-        )
 
         row = {
             "Symbol":            ticker,
             "Name":              name,
             "Ticker Type":       ticker_type,
             "Region":            region,
-            "Broad Asset Class": broad_ac,
+            "Broad Asset Class": asset_class_raw,
             "Sub-Category":      asset_class,
             "Currency":          ccy,
             "Last Price":        np.nan,
@@ -906,6 +745,9 @@ def collect_comp_assets(instruments, comp_fx_cache):
             continue
 
         if is_pence:
+            series = series / 100
+        elif is_usx:
+            # Agricultural futures quoted in US cents — convert to USD
             series = series / 100
 
         row["Last Price"] = round(series.iloc[-1], 4)
@@ -932,69 +774,88 @@ def collect_comp_assets(instruments, comp_fx_cache):
 
 
 def collect_comp_fred_assets():
-    """Collect all FRED-sourced Rates instruments from the library for market_data_comp.
+    """Collect all FRED-sourced instruments from the library for market_data_comp.
 
-    Covers: government yields, OAS/credit spreads, breakeven inflation rates,
-    yield-curve spreads, and policy rates.  All are treated as yield/spread
-    series — returns are expressed as basis-point changes.
+    Handles three series types determined by which ticker column is populated:
+      ticker_fred_oas  → Spread/OAS series   → bps change (is_yield=True)
+      ticker_fred_yield → Yield series        → bps change (is_yield=True)
+      ticker_fred_tr   → Total return index   → % return  (is_yield=False)
 
-    This replaces the simple collect_fred_yields() call in the comp pipeline,
-    giving the comp sheet all 25 confirmed FRED Rates series instead of only
-    the original 4 government yields.
+    Asset class is read directly from the library.
     """
     df = pd.read_csv(LIBRARY_PATH)
-    rates_rows = df[
+    fred_rows = df[
         (df["data_source"] == "FRED") &
-        (df["validation_status"] == "CONFIRMED") &
-        (df["asset_class"] == "Rates")
+        (df["validation_status"] == "CONFIRMED")
     ].copy()
 
-    # Sort: Govt Yield → Breakeven → Credit Spread → Policy Rate → Yield Curve
-    rates_rows["_s"] = rates_rows["asset_subclass"].map(_LIB_RATES_SUBCLASS_ORDER).fillna(99)
-    rates_rows["_r"] = rates_rows["region"].map(_LIB_REGION_ORDER).fillna(50)
-    rates_rows = rates_rows.sort_values(["_s", "_r", "name"]).drop(columns=["_s", "_r"])
+    fred_rows["_s"] = fred_rows.apply(_lib_sort_key, axis=1)
+    fred_rows = fred_rows.sort_values("_s").drop(columns=["_s"])
 
-    print(f"\nFetching comp FRED rates/spreads ({len(rates_rows)} series)...")
+    print(f"\nFetching comp FRED series ({len(fred_rows)} rows)...")
     rows = []
 
-    for _, lib_row in rates_rows.iterrows():
-        name         = str(lib_row["name"]).strip()
-        region       = str(lib_row.get("region", "Global")).strip()
-        if region in ("nan", ""):
-            region = "Global"
-        asset_subclass = str(lib_row["asset_subclass"]).strip()
+    def _val(v):
+        s = str(v).strip()
+        return None if s in ("nan", "N/A", "") else s
 
-        # Series ID is always in ticker_fred_tr for Rates rows
-        series_id = str(lib_row.get("ticker_fred_tr", "")).strip()
-        if series_id in ("nan", "N/A", ""):
-            continue
+    for _, lib_row in fred_rows.iterrows():
+        name          = str(lib_row["name"]).strip()
+        region        = str(lib_row.get("region", "Global")).strip()
+        if region in ("nan", "", "N/A"):
+            region = "Global"
+        asset_cls_raw = str(lib_row["asset_class"]).strip()
+        asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
+
+        # Determine which FRED ticker to use — priority: OAS > TR > yield
+        oas_id   = _val(lib_row.get("ticker_fred_oas"))
+        tr_id    = _val(lib_row.get("ticker_fred_tr"))
+        yield_id = _val(lib_row.get("ticker_fred_yield"))
+
+        if oas_id:
+            series_id = oas_id
+            is_yield  = True
+        elif tr_id:
+            series_id = tr_id
+            is_yield  = False
+        elif yield_id:
+            series_id = yield_id
+            is_yield  = True
+        else:
+            continue  # no usable ticker
 
         print(f"  {series_id} ({name[:45]})...")
         series = fetch_fred_series(series_id)
 
-        broad_ac = "Spreads" if asset_subclass == "Credit Spread" else "Bonds"
-
         row = {
             "Symbol":            series_id,
             "Name":              name,
-            "Ticker Type":       "FRED Rate/Spread",
+            "Ticker Type":       "FRED",
             "Region":            region,
-            "Broad Asset Class": broad_ac,
-            "Sub-Category":      asset_subclass,
+            "Broad Asset Class": asset_cls_raw,
+            "Sub-Category":      asset_sub,
             "Currency":          "USD",
             "Last Price":        np.nan,
             "Last Date":         np.nan,
-            "_sort_group":       3,  # Rates group — same as yfinance Rates
+            "_sort_group":       _LIB_ASSET_CLASS_GROUP.get(asset_cls_raw, 99),
         }
 
         if series is not None and not series.empty:
             row["Last Price"] = round(series.iloc[-1], 4)
             row["Last Date"]  = str(series.index[-1].date())
             for pk in PERIODS:
-                row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
+                else:
+                    row[f"Local {pk}"] = calc_return(series, pk, is_yield=False)
+                    row[f"USD {pk}"]   = row[f"Local {pk}"]
         else:
             for pk in PERIODS:
-                row[f"Local {pk} (bps)"] = np.nan
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = np.nan
+                else:
+                    row[f"Local {pk}"] = np.nan
+                    row[f"USD {pk}"]   = np.nan
 
         rows.append(row)
 
