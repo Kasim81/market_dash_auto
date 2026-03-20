@@ -209,13 +209,14 @@ def calc_return(series, period_key, is_yield=False, is_level=False):
     if series is None or series.empty:
         return np.nan
 
+    as_of = series.index[-1]
     last_val = series.iloc[-1]
 
     if period_key == "Perf YTD":
-        target_date = get_ytd_start()
+        target_date = pd.Timestamp(as_of.year, 1, 1, tz="UTC")
     else:
         days = PERIODS[period_key]
-        target_date = datetime.now(timezone.utc) - timedelta(days=days)
+        target_date = as_of - timedelta(days=days)
 
     try:
         ts = pd.Timestamp(target_date).tz_convert("UTC").as_unit("us")
@@ -276,7 +277,9 @@ def fetch_yf_history(ticker, retries=3):
                 # Fallback for tickers that restrict period= to short windows
                 series = _process(t.history(start="2000-01-01", auto_adjust=True))
             if series is not None:
-                return series
+                cutoff = pd.Timestamp(datetime.now(timezone.utc).date()).tz_localize("UTC").as_unit("us")
+                series = series[series.index < cutoff]
+                return series if not series.empty else None
         except Exception as e:
             print(f"  [{ticker}] attempt {attempt+1} failed: {e}")
             time.sleep(2)
