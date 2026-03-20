@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-03-17
+> Last updated: 2026-03-20
 
 ---
 
@@ -62,6 +62,7 @@ market_dash_auto/
 ├── fetch_macro_us_fred.py      # Phase A — US FRED macro indicators
 ├── fetch_macro_international.py # Phase C — International macro (OECD / World Bank / IMF)
 ├── index_library.csv           # Instrument master library (~302 rows)
+├── level_change_tickers.csv    # Vol tickers that use absolute pt change (not % return)
 ├── requirements.txt            # Python dependencies
 ├── TECHNICAL_MANUAL.md         # This file
 ├── MarketDashboard_ClaudeCode_Handover.md  # AI assistant handover notes
@@ -161,7 +162,8 @@ The Simple pipeline is **never modified** unless Kasim explicitly approves. The 
 | `FX_TICKERS` | 7 FX pairs for simple pipeline |
 | `COMP_FX_TICKERS` | 18 FX pairs for comp pipeline |
 | `COMP_FCY_PER_USD` | Set of indirect-quote currencies (invert for USD conversion) |
-| `COMP_LEVEL_CHANGE_TICKERS` | Vol indices that use point change, not % change |
+| `COMP_LEVEL_CHANGE_TICKERS` | Vol indices that use absolute point change (not % change) — loaded from `level_change_tickers.csv` |
+| `LEVEL_CHANGE_TICKERS` | Alias for `COMP_LEVEL_CHANGE_TICKERS`; used by the simple pipeline main loop so both pipelines share the same set |
 | `_LIB_ASSET_CLASS_GROUP` | Sort order for comp output by asset class |
 
 #### Key Functions
@@ -662,6 +664,9 @@ These tickers exist in `index_library.csv` but yfinance serves no historical dat
 
 | Issue | Fix Applied | Commit |
 |---|---|---|
+| All vol tickers except `^VIX` computed as % return instead of absolute point change | `LEVEL_CHANGE_TICKERS` in the simple pipeline now points to `COMP_LEVEL_CHANGE_TICKERS` (all 9 tickers from `level_change_tickers.csv`) instead of the hardcoded `{"^VIX"}` | Done |
+| `fetch_yf_history` could return a bar for today (intraday / incomplete close) for continuously-trading instruments (FX, futures) | Series is now capped to exclude the current UTC date before returning — `series.iloc[-1]` is always a confirmed prior close | Done |
+| `calc_return` anchored period lookbacks to `datetime.now()` causing 1W/1M/etc. windows to drift from the actual last close date | Period windows now computed relative to `series.index[-1]` (the as-of date); YTD start is `Jan 1` of the as-of year | Done |
 | Wrong FRED series ID for Richmond Fed (`GACDISA066MSFRBRIC`) | Replaced with `MFRBSCOMP` | Done |
 | Wrong FRED series ID for Kansas City Fed (`GACDISA066MSFRBKC`) | Replaced with `KCACTMFG` | Done |
 | Wrong FRED series ID for Philadelphia Fed (`GACDISA066MSFRBPHI`) | Replaced with `GACDFSA066MSFRBPHI` | Done |
