@@ -1,298 +1,298 @@
 ﻿name,asset_class,asset_subclass,region,country_market,sector_style,market_cap_focus,maturity_focus,credit_quality,commodity_group,base_currency,hedged,hedge_currency,proxy_flag,proxy_type,data_source,validation_status,ticker_yfinance_pr,ticker_yfinance_tr,ticker_investiny,ticker_fred_tr,ticker_fred_yield,ticker_fred_oas,ticker_fred_spread,ticker_fred_duration,data_start
-S&P 500,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GSPC,SPY,,,,,,,1927-12-30
-Dow Jones Industrial Average,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^DJI,DIA,,,,,,,1992-01-02
-NASDAQ Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^IXIC,QQQ,,,,,,,1971-02-05
-NYSE Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NYA,,,,,,,,1965-12-31
-Russell 1000,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUI,IWB,,,,,,,1992-12-10
-S&P MidCap 400,Equity,Equity Mid Cap,North America,United States,N/A,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MID,MDY,,,,,,,1981-01-02
-Russell 2000,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUT,IWM,,,,,,,1987-09-10
-S&P SmallCap 600,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP600,IJR,,,,,,,1989-01-03
-S&P 500 Value,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500V,IVE,,,,,,,2000-05-26
-S&P 500 Growth,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500G,IVW,,,,,,,2000-05-26
-Russell 1000 Value,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RLV,IWD,,,,,,,2002-09-30
-Russell 1000 Growth,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RLG,IWF,,,,,,,2002-09-30
-Russell 2000 Value,Equity,Equity Small Cap (Value),North America,United States,Value,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUJ,IWN,,,,,,,2002-09-30
-Russell 2000 Growth,Equity,Equity Small Cap (Growth),North America,United States,Growth,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RUO,IWO,,,,,,,2002-09-30
-S&P 500 Energy,Equity,Equity Sector,North America,United States,Energy,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GSPE,XLE,,,,,,,1993-05-04
-S&P 500 Materials,Equity,Equity Sector,North America,United States,Materials,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-15,XLB,,,,,,,1993-05-04
-S&P 500 Industrials,Equity,Equity Sector,North America,United States,Industrials,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-20,XLI,,,,,,,1993-05-04
-S&P 500 Consumer Discretionary,Equity,Equity Sector,North America,United States,Consumer Discretionary,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-25,XLY,,,,,,,1993-05-04
-S&P 500 Consumer Staples,Equity,Equity Sector,North America,United States,Consumer Staples,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-30,XLP,,,,,,,1993-05-04
-S&P 500 Health Care,Equity,Equity Sector,North America,United States,Health Care,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-35,XLV,,,,,,,1993-05-04
-S&P 500 Financials,Equity,Equity Sector,North America,United States,Financials,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-40,XLF,,,,,,,1993-05-04
-S&P 500 Information Technology,Equity,Equity Sector,North America,United States,Information Technology,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-45,XLK,,,,,,,1993-05-04
-S&P 500 Communication Services,Equity,Equity Sector,North America,United States,Communication Services,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-50,XLC,,,,,,,1993-05-04
-S&P 500 Utilities,Equity,Equity Sector,North America,United States,Utilities,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-55,XLU,,,,,,,1993-05-04
-S&P 500 Real Estate,Equity,Equity Sector,North America,United States,Real Estate,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-60,XLRE,,,,,,,2001-10-09
-FTSE 100,Equity,Equity Large Cap,UK,United Kingdom,N/A,Large,N/A,N/A,N/A,GBP,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FTSE,ISF.L,,,,,,,1984-01-03
-FTSE 250,Equity,Equity Mid Cap,UK,United Kingdom,N/A,Mid,N/A,N/A,N/A,GBP,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FTMC,VMID.L,,,,,,,1985-12-31
-FTSE All-Share,Equity,Equity Broad,UK,United Kingdom,N/A,Broad,N/A,N/A,N/A,GBP,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FTAS,ISFA.L,,,,,,,1980-02-11
-FTSE SmallCap,Equity,Equity Small Cap,UK,United Kingdom,N/A,Small,N/A,N/A,N/A,GBP,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FTSC,,,,,,,,1993-02-19
-DAX 40,Equity,Equity Large Cap,Europe,Germany,N/A,Large,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GDAXI,EXS1.DE,,,,,,,1987-12-30
-MDAX,Equity,Equity Mid Cap,Europe,Germany,N/A,Mid,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MDAXI,EXS3.DE,,,,,,,1996-02-29
-SDAX,Equity,Equity Small Cap,Europe,Germany,N/A,Small,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SDAXI,,,,,,,,2013-03-05
-TecDAX,Equity,,Europe,Germany,N/A,N/A,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TECDAX,,,,,,,,1998-01-02
-CAC 40,Equity,Equity Large Cap,Europe,France,N/A,Large,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FCHI,C40.PA,,,,,,,1990-03-01
-CAC Mid 60,Equity,Equity Mid Cap,Europe,France,N/A,Mid,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CM100,,,,,,,,1999-01-25
-FTSE MIB Index,Equity,,Europe,Italy,N/A,N/A,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,FTSEMIB.MI,IMIB.MI,,,,,,,1997-12-31
-Nikkei 225,Equity,Equity Large Cap,Japan,Japan,N/A,Large,N/A,N/A,N/A,JPY,False,N/A,False,N/A,yfinance PR,CONFIRMED,^N225,1321.T,,,,,,,1965-01-05
-TOPIX Index,Equity,Equity Broad,Japan,Japan,N/A,Broad,N/A,N/A,N/A,JPY,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TOPX,1306.T,,,,,,,2008-01-04
-S&P/TSX Composite,Equity,Equity Broad,North America,Canada,N/A,Broad,N/A,N/A,N/A,CAD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GSPTSE,XIU.TO,,,,,,,1979-06-29
-S&P/TSX 60,Equity,,North America,Canada,N/A,N/A,N/A,N/A,N/A,CAD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TX60,XIU.TO,,,,,,,1999-10-04
-S&P/TSX SmallCap,Equity,Equity Small Cap,North America,Canada,N/A,Small,N/A,N/A,N/A,CAD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TSXV,XCS.TO,,,,,,,2007-05-18
-S&P/ASX 200,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^AXJO,IOZ.AX,,,,,,,1992-11-23
-S&P/ASX All Ordinaries,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^AORD,VAS.AX,,,,,,,1984-08-03
-S&P/ASX Small Ordinaries,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^AXSO,SSO.AX,,,,,,,2004-05-03
-Shanghai Composite,Equity,Equity Broad,Asia Pacific,China,N/A,Broad,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,CONFIRMED,000001.SS,,,,,,,,1997-07-02
-CSI 300 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,CONFIRMED,000300.SS,ASHR,,,,,,,2021-03-11
-CSI 500 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,
-CSI 1000 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,
-Hang Seng Index,Equity,,Asia Pacific,Hong Kong,N/A,N/A,N/A,N/A,N/A,HKD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31
-S&P BSE Sensex,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^BSESN,SENSEXBEES.NS,,,,,,,1997-07-01
-Nifty 50,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17
-Nifty Midcap 100,Equity,Equity Mid Cap,Asia Pacific,India,N/A,Mid,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,2007-09-17
-Nifty Smallcap 100,Equity,Equity Small Cap,Asia Pacific,India,N/A,Small,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXSC,SMALLCAP.NS,,,,,,,2024-03-18
-Bovespa (IBOVESPA),Equity,,Latin America,Brazil,N/A,N/A,N/A,N/A,N/A,BRL,False,N/A,False,N/A,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,1993-04-27
-KOSPI,Equity,,Asia Pacific,South Korea,N/A,N/A,N/A,N/A,N/A,KRW,False,N/A,False,N/A,yfinance PR,CONFIRMED,^KS11,069500.KS,,,,,,,1996-12-11
-KOSPI 200,Equity,Equity Large Cap,Asia Pacific,South Korea,N/A,Large,N/A,N/A,N/A,KRW,False,N/A,False,N/A,yfinance PR,CONFIRMED,^KS200,069500.KS,,,,,,,1996-03-20
-KOSDAQ,Equity,,Asia Pacific,South Korea,N/A,N/A,N/A,N/A,N/A,KRW,False,N/A,False,N/A,yfinance PR,CONFIRMED,^KQ11,,,,,,,,2000-10-16
-S&P/BMV IPC Index (Mexico),Equity,,Latin America,Mexico,N/A,N/A,N/A,N/A,N/A,MXN,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MXX,NAFTRAC.MX,,,,,,,1991-11-08
-Jakarta Composite (IDX Composite),Equity,Equity Broad,Asia Pacific,Indonesia,N/A,Broad,N/A,N/A,N/A,IDR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^JKSE,,,,,,,,1990-04-06
-Tadawul All Share Index (Saudi),Equity,Equity Broad,Middle East & Africa,Saudi Arabia,N/A,Broad,N/A,N/A,N/A,SAR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TASI.SR,,,,,,,,1998-10-19
-FTSE/JSE All Share,Equity,Equity Broad,Middle East & Africa,South Africa,N/A,Broad,N/A,N/A,N/A,ZAR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^J203.JO,,,,,,,,2012-02-08
-FTSE/JSE Top 40,Equity,,Middle East & Africa,South Africa,N/A,N/A,N/A,N/A,N/A,ZAR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^J200.JO,STX40.JO,,,,,,,1995-06-30
-Borsa Istanbul 100,Equity,,Europe,Turkey,N/A,N/A,N/A,N/A,N/A,TRY,False,N/A,False,N/A,yfinance PR,CONFIRMED,XU100.IS,,,,,,,,1997-07-01
-Borsa Istanbul 30,Equity,,Europe,Turkey,N/A,N/A,N/A,N/A,N/A,TRY,False,N/A,False,N/A,yfinance PR,CONFIRMED,XU030.IS,,,,,,,,1997-01-02
-MERVAL (Argentina),Equity,,Latin America,Argentina,N/A,N/A,N/A,N/A,N/A,ARS,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MERV,,,,,,,,1996-10-08
-Euro Stoxx 50,Equity,Equity Large Cap,Europe,Developed Europe,N/A,Large,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^STOXX50E,FEZ,,,,,,,2007-03-30
-STOXX Europe 600,Equity,Equity Broad,Europe,Developed Europe,N/A,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^STOXX,EXSA.DE,,,,,,,2004-04-26
-STOXX Europe 600 Banks,Equity,Equity Sector,Europe,Europe,N/A,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SX7E,EXV1.DE,,,,,,,2008-01-02
-STOXX Europe 600 Health Care,Equity,Equity Sector,Europe,Europe,Health Care,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SXDP,EXV4.DE,,,,,,,2008-01-02
-STOXX Europe 600 Technology,Equity,Equity Sector,Europe,Europe,Information Technology,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SX8P,EXV3.DE,,,,,,,2008-01-02
-STOXX Europe 600 Energy,Equity,Equity Sector,Europe,Europe,Energy,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SXEP,EXH1.DE,,,,,,,2008-01-02
-STOXX Europe 600 Industrials,Equity,Equity Sector,Europe,Europe,Industrials,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SXNP,EXH4.DE,,,,,,,2008-01-02
-STOXX Europe 600 Consumer Staples,Equity,Equity Sector,Europe,Europe,Consumer Staples,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SX3P,EXH3.DE,,,,,,,2008-01-02
-STOXX Europe 600 Utilities,Equity,Equity Sector,Europe,Europe,Utilities,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SX6P,EXH9.DE,,,,,,,2008-01-02
-STOXX Europe 600 Telecom,Equity,Equity Broad,Europe,Europe,N/A,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SXKP,EXV2.DE,,,,,,,2008-01-02
-STOXX Europe 600 Real Estate,Equity,Equity Sector,Europe,Europe,Real Estate,Broad,N/A,N/A,N/A,EUR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SX4P,EXI5.DE,,,,,,,2008-01-02
-iShares MSCI ACWI ETF,Equity,Equity Broad,Global,Global,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ACWI,,,,,,,2008-03-28
-iShares MSCI World ETF,Equity,Equity Broad,Global,Global,N/A,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,URTH,,,,,,,2012-01-12
-iShares MSCI Emerging Markets ETF,Equity,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EEM,,,,,,,2003-04-14
-iShares MSCI Japan ETF,Equity,Equity Broad,Japan,Japan,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EWJ,,,,,,,1996-03-18
-iShares MSCI All Country Asia ex Japan ETF,Equity,Equity Broad,Asia ex Japan,Asia ex Japan,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,AAXJ,,,,,,,2008-08-15
-iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),Equity,Equity Broad,Europe,Europe,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EZU,,,,,,,2000-07-31
-S&P 500 Capital Goods,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2010,,,,,,,,2000-01-07
-S&P 500 Commercial & Professional Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2020,,,,,,,,2000-02-29
-S&P 500 Transportation,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2030,,,,,,,,2000-01-07
-S&P 500 Automobiles & Components,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2510,,,,,,,,2000-01-07
-S&P 500 Consumer Durables & Apparel,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2520,,,,,,,,2000-01-07
-S&P 500 Consumer Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2530,,,,,,,,2000-01-07
-S&P 500 Consumer Discretionary Distribution & Retail,Equity,Equity Industry Group,North America,United States,Consumer Discretionary,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-2550,,,,,,,,1994-12-27
-S&P 500 Food & Staples Retailing,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-3010,,,,,,,,2000-01-07
-S&P 500 Food Beverage & Tobacco,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-3020,,,,,,,,2000-01-07
-S&P 500 Household & Personal Products,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-3030,,,,,,,,2000-02-22
-S&P 500 Health Care Equipment & Services,Equity,Equity Industry Group,North America,United States,Health Care,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-3510,,,,,,,,2000-01-07
-S&P 500 Pharma Biotech & Life Sciences,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-3520,,,,,,,,2000-01-07
-S&P 500 Banks,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4010,,,,,,,,1994-12-27
-S&P 500 Financial Services,Equity,Equity Industry Group,North America,United States,Financials,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4020,,,,,,,,2000-01-07
-S&P 500 Insurance,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4030,,,,,,,,1994-12-27
-S&P 500 Software & Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4510,,,,,,,,2000-01-07
-S&P 500 Technology Hardware & Equipment,Equity,Equity Industry Group,North America,United States,Information Technology,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4520,,,,,,,,2000-01-07
-S&P 500 Semiconductors & Equipment,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-4530,,,,,,,,2003-05-02
-S&P 500 Telecommunication Services,Equity,Equity Industry Group,North America,United States,Communication Services,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-5010,,,,,,,,1994-12-30
-S&P 500 Media & Entertainment,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SP500-5020,,,,,,,,2000-01-07
-S&P 500 Equity Real Estate Investment Trusts,Equity,Equity Industry Group,North America,United States,Real Estate,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,^SP500-6020,,,,,,,,
-Nifty IT,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXIT,,,,,,,,2007-09-17
-Nifty Auto,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXAUTO,,,,,,,,2011-07-12
-Nifty Bank,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NSEBANK,,,,,,,,2007-09-17
-Nifty Energy,Equity,Equity Sector,Asia Pacific,India,Energy,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXENERGY,,,,,,,,2011-01-31
-Nifty FMCG,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXFMCG,,,,,,,,2011-01-31
-Nifty Infrastructure,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXINFRA,,,,,,,,2010-07-19
-Nifty Metal,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXMETAL,,,,,,,,2011-07-12
-Nifty Pharma,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXPHARMA,,,,,,,,2011-01-31
-Nifty Realty,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,^CNXREALTY,,,,,,,,2010-07-19
-CBOE VIX Volatility Index,Volatility,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VIX,,,,,,,,1990-01-02
-CBOE VIX9D - 9-Day VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VIX9D,,,,,,,,2011-01-03
-CBOE VIX3M - 3-Month VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VIX3M,,,,,,,,2006-07-17
-CBOE VVIX - Volatility of VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VVIX,,,,,,,,2007-01-03
-CBOE SKEW Index,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SKEW,,,,,,,,1990-01-02
-CBOE VXEFA - EAFE Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VXEFA,,,,,,,,2023-06-26
-CBOE VXEEM - EM Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,^VXEEM,,,,,,,,
-MOVE Index - Bond Volatility,Volatility,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MOVE,,,,,,,,2002-11-12
-NYSE FANG+ Index,Equity,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,2014-09-22
-S&P 500 Equal Weight Index,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SPXEW,RSP,,,,,,,2006-12-08
-Russell Midcap Growth Index,Equity,Equity Mid Cap (Growth),North America,United States,Growth,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RMCCG,IWP,,,,,,,2001-08-02
-Russell Midcap Value Index,Equity,Equity Mid Cap (Value),North America,United States,Value,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RMCCV,IWS,,,,,,,2001-08-02
-Wilshire US Large-Cap Growth Index,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Wilshire US Large-Cap Value Index,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Wilshire US Mid-Cap Growth Index,Equity,Equity Mid Cap (Growth),North America,United States,Growth,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Wilshire US Mid-Cap Value Index,Equity,Equity Mid Cap (Value),North America,United States,Value,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Wilshire US Small-Cap Growth Index,Equity,Equity Small Cap (Growth),North America,United States,Growth,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Wilshire US Small-Cap Value Index,Equity,Equity Small Cap (Value),North America,United States,Value,Small,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-iShares MSCI USA Momentum Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,MTUM,,,,,,,2013-04-18
-Vanguard Dividend Appreciation ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,VIG,,,,,,,2006-05-02
-iShares MSCI USA Quality Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,QUAL,,,,,,,2013-07-18
-Schwab US Dividend Equity ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SCHD,,,,,,,2011-10-20
-Invesco S&P 500 Low Volatility ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SPLV,,,,,,,2011-05-05
-iShares MSCI USA Min Vol Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,USMV,,,,,,,2011-10-20
-iShares MSCI Europe Momentum Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFM.L,,,,,,,2015-01-19
-iShares MSCI Europe Min Vol UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EUN0.DE,,,,,,,2013-02-18
-iShares MSCI Europe Quality Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEFQ.L,,,,,,,2015-01-19
-SPDR S&P UK Dividend Aristocrats UCITS ETF,Equity,Factor,UK,United Kingdom,Value,N/A,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,UKDV.L,,,,,,,2012-02-28
-SPDR S&P Euro Dividend Aristocrats UCITS ETF,Equity,Factor,Europe,Germany,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SPYW.DE,,,,,,,2012-02-29
-iShares MSCI World Small Cap UCITS ETF,Equity,Equity Small Cap,Global,Global,N/A,Small,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,WSML.L,,,,,,,2018-03-27
-iShares MSCI World Quality Factor UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWQU.L,,,,,,,2014-10-06
-iShares MSCI World Min Vol UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,MINV.L,,,,,,,2012-11-30
-iShares MSCI World Momentum UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWMO.L,,,,,,,2014-10-06
-SPDR S&P Global Dividend Aristocrats UCITS ETF,Equity,Factor,Global,Global,Value,N/A,N/A,N/A,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ZPRG.DE,,,,,,,2013-05-16
-iShares MSCI World Value Factor UCITS ETF,Equity,Factor,Global,Global,Value,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IWVL.L,,,,,,,2014-10-06
-iShares MSCI ACWI Min Vol Factor ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ACWV,,,,,,,2011-10-20
-iShares MSCI EAFE Small-Cap ETF,Equity,Equity Small Cap,North America,United States,Blend,Small,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SCZ,,,,,,,2007-12-12
-iShares Latin America 40 ETF,Equity,Equity Broad,North America,United States,Blend,Broad,N/A,N/A,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,ILF,,,,,,,2001-10-26
-DXY Dollar Index,FX,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,DX-Y.NYB,,,,,,,,1971-01-04
-GBP/USD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,GBPUSD=X,,,,,,,,2003-12-01
-EUR/USD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,EURUSD=X,,,,,,,,2003-12-01
-USD/JPY,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,JPY,False,N/A,False,N/A,yfinance PR,CONFIRMED,USDJPY=X,,,,,,,,1996-10-30
-USD/CNY,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,CNY,False,N/A,False,N/A,yfinance PR,CONFIRMED,CNY=X,,,,,,,,2001-06-25
-USD/INR,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,INR,False,N/A,False,N/A,yfinance PR,CONFIRMED,INR=X,,,,,,,,2003-12-01
-USD/KRW,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,KRW,False,N/A,False,N/A,yfinance PR,CONFIRMED,KRW=X,,,,,,,,2003-12-01
-USD/TWD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,TWD,False,N/A,False,N/A,yfinance PR,CONFIRMED,TWD=X,,,,,,,,2004-03-24
-Bitcoin,Crypto,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,BTC-USD,,,,,,,,2014-09-17
-Ethereum,Crypto,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,ETH-USD,,,,,,,,2017-11-09
-US 3-Month Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^IRX,,,,,,,,1960-01-04
-US 5-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^FVX,,,,,,,,1962-01-02
-US 10-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TNX,,,,,,,,1962-01-02
-US 30-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^TYX,,,,,,,,1977-02-15
-US 2-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,DGS2,,,,1976-06-01
-UK 10-Year Gilt Yield,Rates,,UK,United Kingdom,N/A,N/A,N/A,N/A,N/A,GBP,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01GBM156N,,,,1960-01-01
-Germany 10-Year Bund Yield,Rates,,Europe,Germany,N/A,N/A,N/A,N/A,N/A,EUR,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01DEM156N,,,,1956-05-01
-Japan 10-Year JGB Yield,Rates,,Japan,Japan,N/A,N/A,N/A,N/A,N/A,JPY,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01JPM156N,,,,1989-01-01
-5-Year Breakeven Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,T5YIE,,,,2003-01-02
-10-Year Breakeven Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,T10YIE,,,,2003-01-02
-5-Year 5-Year Forward Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,T5YIFR,,,,2003-01-02
-US 10Y-2Y Treasury Yield Spread,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,,,T10Y2Y,,1976-06-01
-US 10Y-3M Treasury Yield Spread,Rates,,,,N/A,N/A,N/A,N/A,N/A,,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,,,T10Y3M,,1982-01-04
-Federal Funds Effective Rate,Rates,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,DFF,,,,1954-07-01
-Secured Overnight Financing Rate (SOFR),Rates,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,UNAVAILABLE,CONFIRMED,,,,,SOFR,,,,2018-04-03
-iShares Core Global Aggregate Bond UCITS ETF,Fixed Income,Bond Aggregate,Global,Global,N/A,N/A,,,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,AGGG.L,,,,,,,2017-11-21
-iShares Core GBP Corporate Bond UCITS ETF,Fixed Income,Corp IG,UK,United Kingdom,N/A,N/A,,Corp IG,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SLXX.L,,,,,,,2008-01-02
-iShares USD High Yield Corp Bond UCITS ETF,Fixed Income,Corp HY,UK,United Kingdom,N/A,N/A,,High Yield,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IHYU.L,,,,,,,2011-09-13
-Vanguard USD EM Government Bond UCITS ETF,Fixed Income,Emerging Market Debt,UK,United Kingdom,N/A,N/A,,EMD,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,VDET.L,,,,,,,2016-12-06
-iShares Core UK Gilts UCITS ETF,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,2008-01-02
-iShares UK Short Duration Gilt UCITS ETF,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IGLS.L,,,,,,,2009-04-17
-iShares China CNY Bond UCITS ETF,Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,False,N/A,True,ETF,yfinance TR,CONFIRMED,,CNYB.L,,,,,,,2019-07-24
-ICE BofA US Corporate IG OAS,Fixed Income,Corp IG,North America,United States,N/A,N/A,,Corp IG,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLC0A0CM,,,1996-12-31
-ICE BofA US AAA Corporate OAS,Fixed Income,Credit Spread,North America,United States,N/A,N/A,,AAA,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLC0A1CAAA,,,1996-12-31
-ICE BofA US AA Corporate OAS,Fixed Income,Credit Spread,North America,United States,N/A,N/A,,AA,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLC0A2CAA,,,1996-12-31
-ICE BofA US A Corporate OAS,Fixed Income,Credit Spread,North America,United States,N/A,N/A,,A,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLC0A3CA,,,1996-12-31
-ICE BofA US BBB Corporate OAS,Fixed Income,Credit Spread,North America,United States,N/A,N/A,,BBB,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLC0A4CBBB,,,1996-12-31
-ICE BofA US High Yield OAS,Fixed Income,Corp HY,North America,United States,N/A,N/A,,High Yield,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLH0A0HYM2,,,1996-12-31
-ICE BofA US BB High Yield OAS,Fixed Income,Corp HY,North America,United States,N/A,N/A,,BB,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLH0A1HYBB,,,1996-12-31
-ICE BofA US Single-B High Yield OAS,Fixed Income,Corp HY,North America,United States,N/A,N/A,,B,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLH0A2HYB,,,1996-12-31
-ICE BofA US CCC & Lower HY OAS,Fixed Income,Corp HY,North America,United States,N/A,N/A,,CCC & Lower,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLH0A3HYC,,,1996-12-31
-ICE BofA Euro High Yield OAS,Fixed Income,Corp HY,Europe,Europe,N/A,N/A,,High Yield,N/A,EUR,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLHE00EHYIOAS,,,1997-12-31
-ICE BofA EM Corporate Plus OAS,Fixed Income,Credit Spread,Emerging Markets,Emerging Markets,N/A,N/A,,EMD,N/A,USD,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLEMCBPIOAS,,,1998-12-31
-ICE BofA EM High Yield Corporate OAS,Fixed Income,Corp HY,,,N/A,N/A,,High Yield,N/A,,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLEMHBHYCRPIOAS,,,1998-12-31
-ICE BofA EM Asia Corporate OAS,Fixed Income,Credit Spread,,,N/A,N/A,,EMD,N/A,,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLEMRACRPIASIAOAS,,,1998-12-31
-ICE BofA EM BBB Corporate OAS,Fixed Income,Credit Spread,,,N/A,N/A,,BBB,N/A,,False,N/A,True,FRED,FRED,CONFIRMED,,,,,,BAMLEM2BRRBBBCRPIOAS,,,1998-12-31
-ICE BofA US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Medium (3-7yr),Government,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,GOVT,,,,,,,2012-02-24
-ICE BofA 1-3 Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Short (1-3yr),Government,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,SHY,,,,,,,2002-07-30
-ICE BofA 10+ Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Long (10yr+),Government,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,TLT,,,,,,,2002-07-30
-ICE BofA US Inflation-Linked Treasury Index (TIPS),Fixed Income,Government Inflation-Linked,North America,United States,N/A,N/A,Broad,Government,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,TIP,,,DFII10,,,,2003-12-05
-ICE BofA US Corporate Index,Fixed Income,Corp IG,North America,United States,N/A,N/A,Broad,Corp IG,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,LQD,,BAMLCC0A0CMTRIV,BAMLC0A0CMEY,BAMLC0A0CM,,,2002-07-30
-ICE BofA US High Yield Index,Fixed Income,Corp HY,North America,United States,N/A,N/A,Broad,High Yield,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,HYG,,BAMLHYH0A0HYM2TRIV,,BAMLH0A0HYM2,,,2007-04-11
-ICE BofA UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,2008-01-02
-ICE BofA UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 1-3 Year UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IGLS.L,,,,,,,2009-04-17
-ICE BofA 1-3 Year UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 10+ Year UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,2008-01-02
-ICE BofA 10+ Year UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA UK Inflation-Linked Gilt Index,Fixed Income,Government Inflation-Linked,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,False,N/A,True,ETF,yfinance TR,CONFIRMED,,INXG.L,,,,,,,2008-01-02
-ICE BofA UK Inflation-Linked Gilt Index (USD Hedged),Fixed Income,Government Inflation-Linked,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,,Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IEAG.L,,,,,,,2009-03-06
-ICE BofA Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,,Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 1-3 Year Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Short (1-3yr),Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IBGS.L,,,,,,,2008-01-02
-ICE BofA 1-3 Year Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Short (1-3yr),Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 10+ Year Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Long (10yr+),Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IBGL.L,,,,,,,2008-01-02
-ICE BofA 10+ Year Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Long (10yr+),Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Euro Inflation-Linked Government Bond Index,Fixed Income,Government Inflation-Linked,Europe,Europe,N/A,N/A,,Inflation-Linked,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IBCI.L,,,,,,,2008-01-02
-ICE BofA Euro Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Europe,Europe,N/A,N/A,,Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,,Government,N/A,JPY,False,N/A,True,ETF,yfinance TR,CONFIRMED,,2561.T,,,,,,,2020-02-21
-ICE BofA Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,,Government,N/A,JPY,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 1-3 Year Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Short (1-3yr),Government,N/A,JPY,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 1-3 Year Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Short (1-3yr),Government,N/A,JPY,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 10+ Year Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Long (10yr+),Government,N/A,JPY,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 10+ Year Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Long (10yr+),Government,N/A,JPY,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Japan Inflation-Linked Government Bond Index,Fixed Income,Government Inflation-Linked,Japan,Japan,N/A,N/A,,Inflation-Linked,N/A,JPY,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Japan Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Japan,Japan,N/A,N/A,,Government,N/A,JPY,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,,Government,N/A,CAD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,XGB.TO,,,,,,,2006-11-10
-ICE BofA Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,,Government,N/A,CAD,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 1-3 Year Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Short (1-3yr),Government,N/A,CAD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,XSB.TO,,,,,,,2000-11-23
-ICE BofA 1-3 Year Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Short (1-3yr),Government,N/A,CAD,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA 10+ Year Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Long (10yr+),Government,N/A,CAD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,XLB.TO,,,,,,,2006-11-10
-ICE BofA 10+ Year Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Long (10yr+),Government,N/A,CAD,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Canada Real Return Bond Index (Inflation-Linked),Fixed Income,Government Inflation-Linked,North America,Canada,N/A,N/A,,Government,N/A,CAD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,XRB.TO,,,,,,,2005-12-28
-Canada Real Return Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,North America,Canada,N/A,N/A,,Government,N/A,CAD,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Germany Government Bond Index (Bunds),Fixed Income,Govt Bond,Europe,Germany,N/A,N/A,,Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EXX6.DE,,,,,,,2008-01-02
-ICE BofA Germany Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Germany,N/A,N/A,,Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-France Government Bond Index (OATs),Fixed Income,Govt Bond,Europe,France,N/A,N/A,,Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IFRB.L,,,,,,,2012-05-08
-France Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,France,N/A,N/A,,Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Italy Government Bond Index (BTPs),Fixed Income,Govt Bond,Europe,Italy,N/A,N/A,,Government,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IITB.L,,,,,,,2012-05-15
-Italy Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Italy,N/A,N/A,,Government,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Australia Government Bond Index,Fixed Income,Govt Bond,Asia Pacific,Australia,N/A,N/A,,Government,N/A,AUD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IAF.AX,,,,,,,2012-03-14
-Australia Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,Australia,N/A,N/A,,Government,N/A,AUD,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-China Government Bond Index (CGBs),Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,False,N/A,True,ETF,yfinance TR,CONFIRMED,,CNYB.L,,,,,,,2019-07-24
-China Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-India Government Bond Index,Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-India Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Govt Bond,Latin America,Brazil,N/A,N/A,,Government,N/A,BRL,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Brazil Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,BRL,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-South Korea Government Bond Index (KTBs),Fixed Income,Govt Bond,Asia Pacific,South Korea,N/A,N/A,,Government,N/A,KRW,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-South Korea Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,KRW,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-Mexico Government Bond Index (Bonos M),Fixed Income,Govt Bond,Latin America,Mexico,N/A,N/A,,Government,N/A,MXN,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Mexico Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,MXN,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-Indonesia Government Bond Index (SBN),Fixed Income,Govt Bond,Asia Pacific,Indonesia,N/A,N/A,,Government,N/A,IDR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Indonesia Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,IDR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Govt Bond,Middle East & Africa,Saudi Arabia,N/A,N/A,,Government,N/A,SAR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,SAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-South Africa Government Bond Index,Fixed Income,Govt Bond,Middle East & Africa,South Africa,N/A,N/A,,Government,N/A,ZAR,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-South Africa Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ZAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-Turkey Government Bond Index,Fixed Income,Govt Bond,Europe,Turkey,N/A,N/A,,Government,N/A,TRY,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Turkey Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,TRY,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-Argentina Government Bond Index,Fixed Income,Govt Bond,Latin America,Argentina,N/A,N/A,,Government,N/A,ARS,False,N/A,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-Argentina Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ARS,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-ICE BofA Global Corporate Bond Index,Fixed Income,Corp IG,Global,Global,N/A,N/A,Broad,Corp IG,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,VCIT,,BAMLCC0A0CMTRIV,,,,,2009-11-23
-ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Corp IG,Global,Global,N/A,N/A,,Corp IG,N/A,USD,True,USD,True,FRED,FRED,CONFIRMED,,,,BAMLCC0A0CMTRIV,,,,,1972-12-31
-ICE BofA Euro Corporate Bond Index,Fixed Income,Corp IG,Europe,Europe,N/A,N/A,,Corp IG,N/A,EUR,False,N/A,True,ETF,yfinance TR,CONFIRMED,,IBCX.L,,,,,,,2008-01-02
-ICE BofA Euro Corporate Bond Index (USD Hedged),Fixed Income,Corp IG,Europe,Europe,N/A,N/A,,Corp IG,N/A,EUR,True,USD,True,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
-ICE BofA Global High Yield Bond Index,Fixed Income,Corp HY,Global,Global,N/A,N/A,Broad,High Yield,N/A,USD,False,N/A,True,ETF,FRED,CONFIRMED,,JNK,,BAMLHYH0A0HYM2TRIV,,,,,2007-12-04
-ICE BofA Global High Yield Bond Index (USD Hedged),Fixed Income,Corp HY,Global,Global,N/A,N/A,,High Yield,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,HYLH.L,,,,,,,2026-01-20
-ICE BofA Euro High Yield Bond Index,Fixed Income,Corp HY,Europe,Europe,N/A,N/A,,High Yield,N/A,EUR,False,N/A,True,ETF,FRED,CONFIRMED,,IHYG.L,,BAMLHE00EHYITRIV,,,,,2010-09-03
-ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Corp HY,Europe,Europe,N/A,N/A,Broad,High Yield,N/A,EUR,True,USD,True,ETF,yfinance TR,CONFIRMED,,HYXU,,,,,,,2012-04-03
-JP Morgan  USD Emerging Market Debt,Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
-FTSE International Government Inflation-Protected Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Global,Global,N/A,N/A,,Government,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,WIP,,,,,,,2008-03-19
-CBOE GVZ - Gold Volatility Index,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GVZ,,,,,,,,2008-06-03
-CBOE OVX - Crude Oil Volatility,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10
-WTI Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CL=F,,,,,,,,2000-08-23
-Brent Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,BZ=F,,,,,,,,2007-07-30
-Natural Gas (Henry Hub),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,NG=F,,,,,,,,2000-08-30
-Gasoline (RBOB),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,RB=F,,,,,,,,2000-11-01
-Heating Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HO=F,,,,,,,,2000-09-01
-Gold,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,GC=F,,,,,,,,2000-08-30
-Silver,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,SI=F,,,,,,,,2000-08-30
-Copper,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HG=F,,,,,,,,2000-08-30
-Aluminium,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,ALI=F,,,,,,,,2014-05-06
-Soybeans,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZS=F,,,,,,,,2000-09-15
-Corn,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZC=F,,,,,,,,2000-07-17
-Wheat,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZW=F,,,,,,,,2000-07-17
-Sugar No. 11,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,SB=F,,,,,,,,2000-03-01
-Cotton No. 2,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,CT=F,,,,,,,,2000-01-03
-Coffee (Arabica),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,KC=F,,,,,,,,2000-01-03
-Cocoa,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CC=F,,,,,,,,2000-01-03
-Live Cattle,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,LE=F,,,,,,,,2001-03-01
-Iron Ore (World Bank Price Index),Commodity,Commodity,Global,Industrial Metals,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,Price Series,FRED,CONFIRMED,,,,PIORECRUSDM,,,,,2015-01-01
-Invesco DB Energy Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBE,,,,,,,2007-01-05
-Invesco DB Precious Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBP,,,,,,,2007-01-05
-Invesco DB Base Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBB,,,,,,,2007-01-05
-Invesco DB Agriculture Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBA,,,,,,,2007-01-05
-Invesco DB Commodity Index Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Broad,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBC,,,,,,,2006-02-06
+S&P 500,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^GSPC,SPY,,,,,,,30/12/1927
+Dow Jones Industrial Average,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^DJI,DIA,,,,,,,02/01/1992
+NASDAQ Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^IXIC,QQQ,,,,,,,05/02/1971
+NYSE Composite,Equity,Equity Broad,North America,United States,N/A,Broad,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^NYA,,,,,,,,31/12/1965
+Russell 1000,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RUI,IWB,,,,,,,10/12/1992
+S&P MidCap 400,Equity,Equity Mid Cap,North America,United States,N/A,Mid,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^MID,MDY,,,,,,,02/01/1981
+Russell 2000,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RUT,IWM,,,,,,,10/09/1987
+S&P SmallCap 600,Equity,Equity Small Cap,North America,United States,N/A,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP600,IJR,,,,,,,03/01/1989
+S&P 500 Value,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500V,IVE,,,,,,,26/05/2000
+S&P 500 Growth,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500G,IVW,,,,,,,26/05/2000
+Russell 1000 Value,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RLV,IWD,,,,,,,30/09/2002
+Russell 1000 Growth,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RLG,IWF,,,,,,,30/09/2002
+Russell 2000 Value,Equity,Equity Small Cap (Value),North America,United States,Value,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RUJ,IWN,,,,,,,30/09/2002
+Russell 2000 Growth,Equity,Equity Small Cap (Growth),North America,United States,Growth,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RUO,IWO,,,,,,,30/09/2002
+S&P 500 Energy,Equity,Equity Sector,North America,United States,Energy,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^GSPE,XLE,,,,,,,04/05/1993
+S&P 500 Materials,Equity,Equity Sector,North America,United States,Materials,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-15,XLB,,,,,,,04/05/1993
+S&P 500 Industrials,Equity,Equity Sector,North America,United States,Industrials,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-20,XLI,,,,,,,04/05/1993
+S&P 500 Consumer Discretionary,Equity,Equity Sector,North America,United States,Consumer Discretionary,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-25,XLY,,,,,,,04/05/1993
+S&P 500 Consumer Staples,Equity,Equity Sector,North America,United States,Consumer Staples,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-30,XLP,,,,,,,04/05/1993
+S&P 500 Health Care,Equity,Equity Sector,North America,United States,Health Care,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-35,XLV,,,,,,,04/05/1993
+S&P 500 Financials,Equity,Equity Sector,North America,United States,Financials,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-40,XLF,,,,,,,04/05/1993
+S&P 500 Information Technology,Equity,Equity Sector,North America,United States,Information Technology,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-45,XLK,,,,,,,04/05/1993
+S&P 500 Communication Services,Equity,Equity Sector,North America,United States,Communication Services,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-50,XLC,,,,,,,04/05/1993
+S&P 500 Utilities,Equity,Equity Sector,North America,United States,Utilities,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-55,XLU,,,,,,,04/05/1993
+S&P 500 Real Estate,Equity,Equity Sector,North America,United States,Real Estate,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-60,XLRE,,,,,,,09/10/2001
+FTSE 100,Equity,Equity Large Cap,UK,United Kingdom,N/A,Large,N/A,N/A,N/A,GBP,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FTSE,ISF.L,,,,,,,03/01/1984
+FTSE 250,Equity,Equity Mid Cap,UK,United Kingdom,N/A,Mid,N/A,N/A,N/A,GBP,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FTMC,VMID.L,,,,,,,31/12/1985
+FTSE All-Share,Equity,Equity Broad,UK,United Kingdom,N/A,Broad,N/A,N/A,N/A,GBP,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FTAS,ISFA.L,,,,,,,11/02/1980
+FTSE SmallCap,Equity,Equity Small Cap,UK,United Kingdom,N/A,Small,N/A,N/A,N/A,GBP,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FTSC,,,,,,,,19/02/1993
+DAX 40,Equity,Equity Large Cap,Europe,Germany,N/A,Large,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^GDAXI,EXS1.DE,,,,,,,30/12/1987
+MDAX,Equity,Equity Mid Cap,Europe,Germany,N/A,Mid,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^MDAXI,EXS3.DE,,,,,,,29/02/1996
+SDAX,Equity,Equity Small Cap,Europe,Germany,N/A,Small,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SDAXI,,,,,,,,05/03/2013
+TecDAX,Equity,,Europe,Germany,N/A,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TECDAX,,,,,,,,02/01/1998
+CAC 40,Equity,Equity Large Cap,Europe,France,N/A,Large,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FCHI,C40.PA,,,,,,,01/03/1990
+CAC Mid 60,Equity,Equity Mid Cap,Europe,France,N/A,Mid,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CM100,,,,,,,,25/01/1999
+FTSE MIB Index,Equity,,Europe,Italy,N/A,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,FTSEMIB.MI,IMIB.MI,,,,,,,31/12/1997
+Nikkei 225,Equity,Equity Large Cap,Japan,Japan,N/A,Large,N/A,N/A,N/A,JPY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^N225,1321.T,,,,,,,05/01/1965
+TOPIX Index,Equity,Equity Broad,Japan,Japan,N/A,Broad,N/A,N/A,N/A,JPY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TOPX,1306.T,,,,,,,04/01/2008
+S&P/TSX Composite,Equity,Equity Broad,North America,Canada,N/A,Broad,N/A,N/A,N/A,CAD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^GSPTSE,XIU.TO,,,,,,,29/06/1979
+S&P/TSX 60,Equity,,North America,Canada,N/A,N/A,N/A,N/A,N/A,CAD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TX60,XIU.TO,,,,,,,04/10/1999
+S&P/TSX SmallCap,Equity,Equity Small Cap,North America,Canada,N/A,Small,N/A,N/A,N/A,CAD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TSXV,XCS.TO,,,,,,,18/05/2007
+S&P/ASX 200,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^AXJO,IOZ.AX,,,,,,,23/11/1992
+S&P/ASX All Ordinaries,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^AORD,VAS.AX,,,,,,,03/08/1984
+S&P/ASX Small Ordinaries,Equity,,Asia Pacific,Australia,N/A,N/A,N/A,N/A,N/A,AUD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^AXSO,SSO.AX,,,,,,,03/05/2004
+Shanghai Composite,Equity,Equity Broad,Asia Pacific,China,N/A,Broad,N/A,N/A,N/A,CNY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,000001.SS,,,,,,,,02/07/1997
+CSI 300 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,000300.SS,ASHR,,,,,,,11/03/2021
+CSI 500 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,FALSE,N/A,FALSE,N/A,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,
+CSI 1000 Index,Equity,,Asia Pacific,China,N/A,N/A,N/A,N/A,N/A,CNY,FALSE,N/A,FALSE,N/A,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,
+Hang Seng Index,Equity,,Asia Pacific,Hong Kong,N/A,N/A,N/A,N/A,N/A,HKD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,31/12/1986
+S&P BSE Sensex,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^BSESN,SENSEXBEES.NS,,,,,,,01/07/1997
+Nifty 50,Equity,Equity Large Cap,Asia Pacific,India,N/A,Large,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,17/09/2007
+Nifty Midcap 100,Equity,Equity Mid Cap,Asia Pacific,India,N/A,Mid,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,17/09/2007
+Nifty Smallcap 100,Equity,Equity Small Cap,Asia Pacific,India,N/A,Small,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXSC,SMALLCAP.NS,,,,,,,18/03/2024
+Bovespa (IBOVESPA),Equity,,Latin America,Brazil,N/A,N/A,N/A,N/A,N/A,BRL,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,27/04/1993
+KOSPI,Equity,,Asia Pacific,South Korea,N/A,N/A,N/A,N/A,N/A,KRW,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^KS11,069500.KS,,,,,,,11/12/1996
+KOSPI 200,Equity,Equity Large Cap,Asia Pacific,South Korea,N/A,Large,N/A,N/A,N/A,KRW,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^KS200,069500.KS,,,,,,,20/03/1996
+KOSDAQ,Equity,,Asia Pacific,South Korea,N/A,N/A,N/A,N/A,N/A,KRW,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^KQ11,,,,,,,,16/10/2000
+S&P/BMV IPC Index (Mexico),Equity,,Latin America,Mexico,N/A,N/A,N/A,N/A,N/A,MXN,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^MXX,NAFTRAC.MX,,,,,,,08/11/1991
+Jakarta Composite (IDX Composite),Equity,Equity Broad,Asia Pacific,Indonesia,N/A,Broad,N/A,N/A,N/A,IDR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^JKSE,,,,,,,,06/04/1990
+Tadawul All Share Index (Saudi),Equity,Equity Broad,Middle East & Africa,Saudi Arabia,N/A,Broad,N/A,N/A,N/A,SAR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TASI.SR,,,,,,,,19/10/1998
+FTSE/JSE All Share,Equity,Equity Broad,Middle East & Africa,South Africa,N/A,Broad,N/A,N/A,N/A,ZAR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^J203.JO,,,,,,,,08/02/2012
+FTSE/JSE Top 40,Equity,,Middle East & Africa,South Africa,N/A,N/A,N/A,N/A,N/A,ZAR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^J200.JO,STX40.JO,,,,,,,30/06/1995
+Borsa Istanbul 100,Equity,,Europe,Turkey,N/A,N/A,N/A,N/A,N/A,TRY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,XU100.IS,,,,,,,,01/07/1997
+Borsa Istanbul 30,Equity,,Europe,Turkey,N/A,N/A,N/A,N/A,N/A,TRY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,XU030.IS,,,,,,,,02/01/1997
+MERVAL (Argentina),Equity,,Latin America,Argentina,N/A,N/A,N/A,N/A,N/A,ARS,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^MERV,,,,,,,,08/10/1996
+Euro Stoxx 50,Equity,Equity Large Cap,Europe,Developed Europe,N/A,Large,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^STOXX50E,FEZ,,,,,,,30/03/2007
+STOXX Europe 600,Equity,Equity Broad,Europe,Developed Europe,N/A,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^STOXX,EXSA.DE,,,,,,,26/04/2004
+STOXX Europe 600 Banks,Equity,Equity Sector,Europe,Europe,N/A,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SX7E,EXV1.DE,,,,,,,02/01/2008
+STOXX Europe 600 Health Care,Equity,Equity Sector,Europe,Europe,Health Care,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SXDP,EXV4.DE,,,,,,,02/01/2008
+STOXX Europe 600 Technology,Equity,Equity Sector,Europe,Europe,Information Technology,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SX8P,EXV3.DE,,,,,,,02/01/2008
+STOXX Europe 600 Energy,Equity,Equity Sector,Europe,Europe,Energy,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SXEP,EXH1.DE,,,,,,,02/01/2008
+STOXX Europe 600 Industrials,Equity,Equity Sector,Europe,Europe,Industrials,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SXNP,EXH4.DE,,,,,,,02/01/2008
+STOXX Europe 600 Consumer Staples,Equity,Equity Sector,Europe,Europe,Consumer Staples,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SX3P,EXH3.DE,,,,,,,02/01/2008
+STOXX Europe 600 Utilities,Equity,Equity Sector,Europe,Europe,Utilities,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SX6P,EXH9.DE,,,,,,,02/01/2008
+STOXX Europe 600 Telecom,Equity,Equity Broad,Europe,Europe,N/A,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SXKP,EXV2.DE,,,,,,,02/01/2008
+STOXX Europe 600 Real Estate,Equity,Equity Sector,Europe,Europe,Real Estate,Broad,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SX4P,EXI5.DE,,,,,,,02/01/2008
+iShares MSCI ACWI ETF,Equity,Equity Broad,Global,Global,N/A,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,ACWI,,,,,,,28/03/2008
+iShares MSCI World ETF,Equity,Equity Broad,Global,Global,N/A,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,URTH,,,,,,,12/01/2012
+iShares MSCI Emerging Markets ETF,Equity,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EEM,,,,,,,14/04/2003
+iShares MSCI Japan ETF,Equity,Equity Broad,Japan,Japan,Blend,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EWJ,,,,,,,18/03/1996
+iShares MSCI All Country Asia ex Japan ETF,Equity,Equity Broad,Asia ex Japan,Asia ex Japan,Blend,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,AAXJ,,,,,,,15/08/2008
+iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),Equity,Equity Broad,Europe,Europe,Blend,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EZU,,,,,,,31/07/2000
+S&P 500 Capital Goods,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2010,,,,,,,,07/01/2000
+S&P 500 Commercial & Professional Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2020,,,,,,,,29/02/2000
+S&P 500 Transportation,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2030,,,,,,,,07/01/2000
+S&P 500 Automobiles & Components,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2510,,,,,,,,07/01/2000
+S&P 500 Consumer Durables & Apparel,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2520,,,,,,,,07/01/2000
+S&P 500 Consumer Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2530,,,,,,,,07/01/2000
+S&P 500 Consumer Discretionary Distribution & Retail,Equity,Equity Industry Group,North America,United States,Consumer Discretionary,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-2550,,,,,,,,27/12/1994
+S&P 500 Food & Staples Retailing,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-3010,,,,,,,,07/01/2000
+S&P 500 Food Beverage & Tobacco,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-3020,,,,,,,,07/01/2000
+S&P 500 Household & Personal Products,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-3030,,,,,,,,22/02/2000
+S&P 500 Health Care Equipment & Services,Equity,Equity Industry Group,North America,United States,Health Care,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-3510,,,,,,,,07/01/2000
+S&P 500 Pharma Biotech & Life Sciences,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-3520,,,,,,,,07/01/2000
+S&P 500 Banks,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4010,,,,,,,,27/12/1994
+S&P 500 Financial Services,Equity,Equity Industry Group,North America,United States,Financials,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4020,,,,,,,,07/01/2000
+S&P 500 Insurance,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4030,,,,,,,,27/12/1994
+S&P 500 Software & Services,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4510,,,,,,,,07/01/2000
+S&P 500 Technology Hardware & Equipment,Equity,Equity Industry Group,North America,United States,Information Technology,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4520,,,,,,,,07/01/2000
+S&P 500 Semiconductors & Equipment,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-4530,,,,,,,,02/05/2003
+S&P 500 Telecommunication Services,Equity,Equity Industry Group,North America,United States,Communication Services,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-5010,,,,,,,,30/12/1994
+S&P 500 Media & Entertainment,Equity,Equity Industry Group,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SP500-5020,,,,,,,,07/01/2000
+S&P 500 Equity Real Estate Investment Trusts,Equity,Equity Industry Group,North America,United States,Real Estate,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,UNAVAILABLE,^SP500-6020,,,,,,,,
+Nifty IT,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXIT,,,,,,,,17/09/2007
+Nifty Auto,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXAUTO,,,,,,,,12/07/2011
+Nifty Bank,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^NSEBANK,,,,,,,,17/09/2007
+Nifty Energy,Equity,Equity Sector,Asia Pacific,India,Energy,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXENERGY,,,,,,,,31/01/2011
+Nifty FMCG,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXFMCG,,,,,,,,31/01/2011
+Nifty Infrastructure,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXINFRA,,,,,,,,19/07/2010
+Nifty Metal,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXMETAL,,,,,,,,12/07/2011
+Nifty Pharma,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXPHARMA,,,,,,,,31/01/2011
+Nifty Realty,Equity,,Asia Pacific,India,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^CNXREALTY,,,,,,,,19/07/2010
+CBOE VIX Volatility Index,Volatility,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^VIX,,,,,,,,02/01/1990
+CBOE VIX9D - 9-Day VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^VIX9D,,,,,,,,03/01/2011
+CBOE VIX3M - 3-Month VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^VIX3M,,,,,,,,17/07/2006
+CBOE VVIX - Volatility of VIX,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^VVIX,,,,,,,,03/01/2007
+CBOE SKEW Index,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SKEW,,,,,,,,02/01/1990
+CBOE VXEFA - EAFE Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^VXEFA,,,,,,,,26/06/2023
+CBOE VXEEM - EM Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,UNAVAILABLE,^VXEEM,,,,,,,,
+MOVE Index - Bond Volatility,Volatility,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^MOVE,,,,,,,,12/11/2002
+NYSE FANG+ Index,Equity,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,22/09/2014
+S&P 500 Equal Weight Index,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^SPXEW,RSP,,,,,,,08/12/2006
+Russell Midcap Growth Index,Equity,Equity Mid Cap (Growth),North America,United States,Growth,Mid,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RMCCG,IWP,,,,,,,02/08/2001
+Russell Midcap Value Index,Equity,Equity Mid Cap (Value),North America,United States,Value,Mid,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^RMCCV,IWS,,,,,,,02/08/2001
+Wilshire US Large-Cap Growth Index,Equity,Equity Large Cap (Growth),North America,United States,Growth,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Wilshire US Large-Cap Value Index,Equity,Equity Large Cap (Value),North America,United States,Value,Large,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Wilshire US Mid-Cap Growth Index,Equity,Equity Mid Cap (Growth),North America,United States,Growth,Mid,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Wilshire US Mid-Cap Value Index,Equity,Equity Mid Cap (Value),North America,United States,Value,Mid,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Wilshire US Small-Cap Growth Index,Equity,Equity Small Cap (Growth),North America,United States,Growth,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Wilshire US Small-Cap Value Index,Equity,Equity Small Cap (Value),North America,United States,Value,Small,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+iShares MSCI USA Momentum Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,MTUM,,,,,,,18/04/2013
+Vanguard Dividend Appreciation ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,VIG,,,,,,,02/05/2006
+iShares MSCI USA Quality Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,QUAL,,,,,,,18/07/2013
+Schwab US Dividend Equity ETF,Equity,Factor,North America,United States,Value,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SCHD,,,,,,,20/10/2011
+Invesco S&P 500 Low Volatility ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SPLV,,,,,,,05/05/2011
+iShares MSCI USA Min Vol Factor ETF,Equity,Factor,North America,United States,Factor,Large,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,USMV,,,,,,,20/10/2011
+iShares MSCI Europe Momentum Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IEFM.L,,,,,,,19/01/2015
+iShares MSCI Europe Min Vol UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EUN0.DE,,,,,,,18/02/2013
+iShares MSCI Europe Quality Factor UCITS ETF,Equity,Factor,Europe,Europe,Factor,N/A,N/A,N/A,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IEFQ.L,,,,,,,19/01/2015
+SPDR S&P UK Dividend Aristocrats UCITS ETF,Equity,Factor,UK,United Kingdom,Value,N/A,N/A,N/A,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,UKDV.L,,,,,,,28/02/2012
+SPDR S&P Euro Dividend Aristocrats UCITS ETF,Equity,Factor,Europe,Germany,Value,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SPYW.DE,,,,,,,29/02/2012
+iShares MSCI World Small Cap UCITS ETF,Equity,Equity Small Cap,Global,Global,N/A,Small,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,WSML.L,,,,,,,27/03/2018
+iShares MSCI World Quality Factor UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IWQU.L,,,,,,,06/10/2014
+iShares MSCI World Min Vol UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,MINV.L,,,,,,,30/11/2012
+iShares MSCI World Momentum UCITS ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IWMO.L,,,,,,,06/10/2014
+SPDR S&P Global Dividend Aristocrats UCITS ETF,Equity,Factor,Global,Global,Value,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,ZPRG.DE,,,,,,,16/05/2013
+iShares MSCI World Value Factor UCITS ETF,Equity,Factor,Global,Global,Value,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IWVL.L,,,,,,,06/10/2014
+iShares MSCI ACWI Min Vol Factor ETF,Equity,Factor,Global,Global,Factor,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,ACWV,,,,,,,20/10/2011
+iShares MSCI EAFE Small-Cap ETF,Equity,Equity Small Cap,North America,United States,Blend,Small,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SCZ,,,,,,,12/12/2007
+iShares Latin America 40 ETF,Equity,Equity Broad,North America,United States,Blend,Broad,N/A,N/A,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,ILF,,,,,,,26/10/2001
+DXY Dollar Index,FX,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,DX-Y.NYB,,,,,,,,04/01/1971
+GBP/USD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,GBPUSD=X,,,,,,,,01/12/2003
+EUR/USD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,EURUSD=X,,,,,,,,01/12/2003
+USD/JPY,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,JPY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,USDJPY=X,,,,,,,,30/10/1996
+USD/CNY,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,CNY,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,CNY=X,,,,,,,,25/06/2001
+USD/INR,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,INR,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,INR=X,,,,,,,,01/12/2003
+USD/KRW,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,KRW,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,KRW=X,,,,,,,,01/12/2003
+USD/TWD,FX,,Global,Global,N/A,N/A,N/A,N/A,N/A,TWD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,TWD=X,,,,,,,,24/03/2004
+Bitcoin,Crypto,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,BTC-USD,,,,,,,,17/09/2014
+Ethereum,Crypto,,Global,Global,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,ETH-USD,,,,,,,,09/11/2017
+US 3-Month Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^IRX,,,,,,,,04/01/1960
+US 5-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^FVX,,,,,,,,02/01/1962
+US 10-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TNX,,,,,,,,02/01/1962
+US 30-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^TYX,,,,,,,,15/02/1977
+US 2-Year Treasury Yield,Rates,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,DGS2,,,,01/06/1976
+UK 10-Year Gilt Yield,Rates,,UK,United Kingdom,N/A,N/A,N/A,N/A,N/A,GBP,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01GBM156N,,,,01/01/1960
+Germany 10-Year Bund Yield,Rates,,Europe,Germany,N/A,N/A,N/A,N/A,N/A,EUR,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01DEM156N,,,,01/05/1956
+Japan 10-Year JGB Yield,Rates,,Japan,Japan,N/A,N/A,N/A,N/A,N/A,JPY,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,IRLTLT01JPM156N,,,,01/01/1989
+5-Year Breakeven Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,T5YIE,,,,02/01/2003
+10-Year Breakeven Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,T10YIE,,,,02/01/2003
+5-Year 5-Year Forward Inflation Rate,Rates,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,T5YIFR,,,,02/01/2003
+US 10Y-2Y Treasury Yield Spread,Spread,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,,,T10Y2Y,,01/06/1976
+US 10Y-3M Treasury Yield Spread,Spread,,,,N/A,N/A,N/A,N/A,N/A,,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,,,T10Y3M,,04/01/1982
+Federal Funds Effective Rate,Rates,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,DFF,,,,01/07/1954
+Secured Overnight Financing Rate (SOFR),Rates,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,FALSE,N/A,FALSE,N/A,UNAVAILABLE,CONFIRMED,,,,,SOFR,,,,03/04/2018
+iShares Core Global Aggregate Bond UCITS ETF,Fixed Income,Bond Aggregate,Global,Global,N/A,N/A,,,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,AGGG.L,,,,,,,21/11/2017
+iShares Core GBP Corporate Bond UCITS ETF,Fixed Income,Corp IG,UK,United Kingdom,N/A,N/A,,Corp IG,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SLXX.L,,,,,,,02/01/2008
+iShares USD High Yield Corp Bond UCITS ETF,Fixed Income,Corp HY,UK,United Kingdom,N/A,N/A,,High Yield,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IHYU.L,,,,,,,13/09/2011
+Vanguard USD EM Government Bond UCITS ETF,Fixed Income,Emerging Market Debt,UK,United Kingdom,N/A,N/A,,EMD,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,VDET.L,,,,,,,06/12/2016
+iShares Core UK Gilts UCITS ETF,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,02/01/2008
+iShares UK Short Duration Gilt UCITS ETF,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IGLS.L,,,,,,,17/04/2009
+iShares China CNY Bond UCITS ETF,Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,CNYB.L,,,,,,,24/07/2019
+ICE BofA US Corporate IG OAS,Spread,Corp IG,North America,United States,N/A,N/A,,Corp IG,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLC0A0CM,,,31/12/1996
+ICE BofA US AAA Corporate OAS,Spread,Credit Spread,North America,United States,N/A,N/A,,AAA,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLC0A1CAAA,,,31/12/1996
+ICE BofA US AA Corporate OAS,Spread,Credit Spread,North America,United States,N/A,N/A,,AA,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLC0A2CAA,,,31/12/1996
+ICE BofA US A Corporate OAS,Spread,Credit Spread,North America,United States,N/A,N/A,,A,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLC0A3CA,,,31/12/1996
+ICE BofA US BBB Corporate OAS,Spread,Credit Spread,North America,United States,N/A,N/A,,BBB,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLC0A4CBBB,,,31/12/1996
+ICE BofA US High Yield OAS,Spread,Corp HY,North America,United States,N/A,N/A,,High Yield,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLH0A0HYM2,,,31/12/1996
+ICE BofA US BB High Yield OAS,Spread,Corp HY,North America,United States,N/A,N/A,,BB,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLH0A1HYBB,,,31/12/1996
+ICE BofA US Single-B High Yield OAS,Spread,Corp HY,North America,United States,N/A,N/A,,B,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLH0A2HYB,,,31/12/1996
+ICE BofA US CCC & Lower HY OAS,Spread,Corp HY,North America,United States,N/A,N/A,,CCC & Lower,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLH0A3HYC,,,31/12/1996
+ICE BofA Euro High Yield OAS,Spread,Corp HY,Europe,Europe,N/A,N/A,,High Yield,N/A,EUR,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLHE00EHYIOAS,,,31/12/1997
+ICE BofA EM Corporate Plus OAS,Spread,Credit Spread,Emerging Markets,Emerging Markets,N/A,N/A,,EMD,N/A,USD,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLEMCBPIOAS,,,31/12/1998
+ICE BofA EM High Yield Corporate OAS,Spread,Corp HY,,,N/A,N/A,,High Yield,N/A,,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLEMHBHYCRPIOAS,,,31/12/1998
+ICE BofA EM Asia Corporate OAS,Spread,Credit Spread,,,N/A,N/A,,EMD,N/A,,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLEMRACRPIASIAOAS,,,31/12/1998
+ICE BofA EM BBB Corporate OAS,Spread,Credit Spread,,,N/A,N/A,,BBB,N/A,,FALSE,N/A,TRUE,FRED,FRED,CONFIRMED,,,,,,BAMLEM2BRRBBBCRPIOAS,,,31/12/1998
+ICE BofA US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Medium (3-7yr),Government,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,GOVT,,,,,,,24/02/2012
+ICE BofA 1-3 Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Short (1-3yr),Government,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,SHY,,,,,,,30/07/2002
+ICE BofA 10+ Year US Treasury Index,Fixed Income,Govt Bond,North America,United States,N/A,N/A,Long (10yr+),Government,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,TLT,,,,,,,30/07/2002
+ICE BofA US Inflation-Linked Treasury Index (TIPS),Fixed Income,Government Inflation-Linked,North America,United States,N/A,N/A,Broad,Government,N/A,USD,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,TIP,,,DFII10,,,,05/12/2003
+ICE BofA US Corporate Index,Fixed Income,Corp IG,North America,United States,N/A,N/A,Broad,Corp IG,N/A,USD,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,LQD,,BAMLCC0A0CMTRIV,BAMLC0A0CMEY,BAMLC0A0CM,,,30/07/2002
+ICE BofA US High Yield Index,Fixed Income,Corp HY,North America,United States,N/A,N/A,Broad,High Yield,N/A,USD,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,HYG,,BAMLHYH0A0HYM2TRIV,,BAMLH0A0HYM2,,,11/04/2007
+ICE BofA UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,02/01/2008
+ICE BofA UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 1-3 Year UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IGLS.L,,,,,,,17/04/2009
+ICE BofA 1-3 Year UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Short (1-3yr),Government,N/A,GBP,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 10+ Year UK Gilt Index,Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IGLT.L,,,,,,,02/01/2008
+ICE BofA 10+ Year UK Gilt Index (USD Hedged),Fixed Income,Govt Bond,UK,United Kingdom,N/A,N/A,Long (10yr+),Government,N/A,GBP,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA UK Inflation-Linked Gilt Index,Fixed Income,Government Inflation-Linked,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,INXG.L,,,,,,,02/01/2008
+ICE BofA UK Inflation-Linked Gilt Index (USD Hedged),Fixed Income,Government Inflation-Linked,UK,United Kingdom,N/A,N/A,,Government,N/A,GBP,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,,Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IEAG.L,,,,,,,06/03/2009
+ICE BofA Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,,Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 1-3 Year Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Short (1-3yr),Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IBGS.L,,,,,,,02/01/2008
+ICE BofA 1-3 Year Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Short (1-3yr),Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 10+ Year Euro Government Bond Index,Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Long (10yr+),Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IBGL.L,,,,,,,02/01/2008
+ICE BofA 10+ Year Euro Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Europe,N/A,N/A,Long (10yr+),Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Euro Inflation-Linked Government Bond Index,Fixed Income,Government Inflation-Linked,Europe,Europe,N/A,N/A,,Inflation-Linked,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IBCI.L,,,,,,,02/01/2008
+ICE BofA Euro Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Europe,Europe,N/A,N/A,,Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,,Government,N/A,JPY,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,2561.T,,,,,,,21/02/2020
+ICE BofA Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,,Government,N/A,JPY,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 1-3 Year Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Short (1-3yr),Government,N/A,JPY,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 1-3 Year Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Short (1-3yr),Government,N/A,JPY,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 10+ Year Japan Government Bond Index,Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Long (10yr+),Government,N/A,JPY,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 10+ Year Japan Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Japan,Japan,N/A,N/A,Long (10yr+),Government,N/A,JPY,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Japan Inflation-Linked Government Bond Index,Fixed Income,Government Inflation-Linked,Japan,Japan,N/A,N/A,,Inflation-Linked,N/A,JPY,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Japan Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Japan,Japan,N/A,N/A,,Government,N/A,JPY,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,,Government,N/A,CAD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,XGB.TO,,,,,,,10/11/2006
+ICE BofA Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,,Government,N/A,CAD,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 1-3 Year Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Short (1-3yr),Government,N/A,CAD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,XSB.TO,,,,,,,23/11/2000
+ICE BofA 1-3 Year Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Short (1-3yr),Government,N/A,CAD,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA 10+ Year Canada Government Bond Index,Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Long (10yr+),Government,N/A,CAD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,XLB.TO,,,,,,,10/11/2006
+ICE BofA 10+ Year Canada Government Bond Index (USD Hedged),Fixed Income,Govt Bond,North America,Canada,N/A,N/A,Long (10yr+),Government,N/A,CAD,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Canada Real Return Bond Index (Inflation-Linked),Fixed Income,Government Inflation-Linked,North America,Canada,N/A,N/A,,Government,N/A,CAD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,XRB.TO,,,,,,,28/12/2005
+Canada Real Return Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,North America,Canada,N/A,N/A,,Government,N/A,CAD,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Germany Government Bond Index (Bunds),Fixed Income,Govt Bond,Europe,Germany,N/A,N/A,,Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EXX6.DE,,,,,,,02/01/2008
+ICE BofA Germany Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Germany,N/A,N/A,,Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+France Government Bond Index (OATs),Fixed Income,Govt Bond,Europe,France,N/A,N/A,,Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IFRB.L,,,,,,,08/05/2012
+France Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,France,N/A,N/A,,Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Italy Government Bond Index (BTPs),Fixed Income,Govt Bond,Europe,Italy,N/A,N/A,,Government,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IITB.L,,,,,,,15/05/2012
+Italy Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Europe,Italy,N/A,N/A,,Government,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Australia Government Bond Index,Fixed Income,Govt Bond,Asia Pacific,Australia,N/A,N/A,,Government,N/A,AUD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IAF.AX,,,,,,,14/03/2012
+Australia Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,Australia,N/A,N/A,,Government,N/A,AUD,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+China Government Bond Index (CGBs),Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,CNYB.L,,,,,,,24/07/2019
+China Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,China,N/A,N/A,,Government,N/A,CNY,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+India Government Bond Index,Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+India Government Bond Index (USD Hedged),Fixed Income,Govt Bond,Asia Pacific,India,N/A,N/A,,Government,N/A,INR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Govt Bond,Latin America,Brazil,N/A,N/A,,Government,N/A,BRL,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Brazil Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,BRL,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+South Korea Government Bond Index (KTBs),Fixed Income,Govt Bond,Asia Pacific,South Korea,N/A,N/A,,Government,N/A,KRW,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+South Korea Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,KRW,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+Mexico Government Bond Index (Bonos M),Fixed Income,Govt Bond,Latin America,Mexico,N/A,N/A,,Government,N/A,MXN,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Mexico Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,MXN,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+Indonesia Government Bond Index (SBN),Fixed Income,Govt Bond,Asia Pacific,Indonesia,N/A,N/A,,Government,N/A,IDR,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Indonesia Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,IDR,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Govt Bond,Middle East & Africa,Saudi Arabia,N/A,N/A,,Government,N/A,SAR,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,SAR,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+South Africa Government Bond Index,Fixed Income,Govt Bond,Middle East & Africa,South Africa,N/A,N/A,,Government,N/A,ZAR,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+South Africa Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ZAR,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+Turkey Government Bond Index,Fixed Income,Govt Bond,Europe,Turkey,N/A,N/A,,Government,N/A,TRY,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Turkey Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,TRY,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+Argentina Government Bond Index,Fixed Income,Govt Bond,Latin America,Argentina,N/A,N/A,,Government,N/A,ARS,FALSE,N/A,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+Argentina Government Bond Index (USD Hedged),Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,ARS,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+ICE BofA Global Corporate Bond Index,Fixed Income,Corp IG,Global,Global,N/A,N/A,Broad,Corp IG,N/A,USD,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,VCIT,,BAMLCC0A0CMTRIV,,,,,23/11/2009
+ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Corp IG,Global,Global,N/A,N/A,,Corp IG,N/A,USD,TRUE,USD,TRUE,FRED,FRED,CONFIRMED,,,,BAMLCC0A0CMTRIV,,,,,31/12/1972
+ICE BofA Euro Corporate Bond Index,Fixed Income,Corp IG,Europe,Europe,N/A,N/A,,Corp IG,N/A,EUR,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,IBCX.L,,,,,,,02/01/2008
+ICE BofA Euro Corporate Bond Index (USD Hedged),Fixed Income,Corp IG,Europe,Europe,N/A,N/A,,Corp IG,N/A,EUR,TRUE,USD,TRUE,N/A,UNAVAILABLE,UNAVAILABLE,,,,,,,,,
+ICE BofA Global High Yield Bond Index,Fixed Income,Corp HY,Global,Global,N/A,N/A,Broad,High Yield,N/A,USD,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,JNK,,BAMLHYH0A0HYM2TRIV,,,,,04/12/2007
+ICE BofA Global High Yield Bond Index (USD Hedged),Fixed Income,Corp HY,Global,Global,N/A,N/A,,High Yield,N/A,USD,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,HYLH.L,,,,,,,20/01/2026
+ICE BofA Euro High Yield Bond Index,Fixed Income,Corp HY,Europe,Europe,N/A,N/A,,High Yield,N/A,EUR,FALSE,N/A,TRUE,ETF,FRED,CONFIRMED,,IHYG.L,,BAMLHE00EHYITRIV,,,,,03/09/2010
+ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Corp HY,Europe,Europe,N/A,N/A,Broad,High Yield,N/A,EUR,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,HYXU,,,,,,,03/04/2012
+JP Morgan  USD Emerging Market Debt,Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,19/12/2007
+FTSE International Government Inflation-Protected Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Global,Global,N/A,N/A,,Government,N/A,USD,TRUE,USD,TRUE,ETF,yfinance TR,CONFIRMED,,WIP,,,,,,,19/03/2008
+CBOE GVZ - Gold Volatility Index,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^GVZ,,,,,,,,03/06/2008
+CBOE OVX - Crude Oil Volatility,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,^OVX,,,,,,,,10/05/2007
+WTI Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,CL=F,,,,,,,,23/08/2000
+Brent Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,BZ=F,,,,,,,,30/07/2007
+Natural Gas (Henry Hub),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,NG=F,,,,,,,,30/08/2000
+Gasoline (RBOB),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,RB=F,,,,,,,,01/11/2000
+Heating Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,HO=F,,,,,,,,01/09/2000
+Gold,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,GC=F,,,,,,,,30/08/2000
+Silver,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,SI=F,,,,,,,,30/08/2000
+Copper,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,HG=F,,,,,,,,30/08/2000
+Aluminium,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,ALI=F,,,,,,,,06/05/2014
+Soybeans,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,ZS=F,,,,,,,,15/09/2000
+Corn,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,ZC=F,,,,,,,,17/07/2000
+Wheat,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,ZW=F,,,,,,,,17/07/2000
+Sugar No. 11,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,SB=F,,,,,,,,01/03/2000
+Cotton No. 2,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,CT=F,,,,,,,,03/01/2000
+Coffee (Arabica),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,KC=F,,,,,,,,03/01/2000
+Cocoa,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,CC=F,,,,,,,,03/01/2000
+Live Cattle,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,FALSE,N/A,FALSE,N/A,yfinance PR,CONFIRMED,LE=F,,,,,,,,01/03/2001
+Iron Ore (World Bank Price Index),Commodity,Commodity,Global,Industrial Metals,N/A,N/A,N/A,N/A,Industrial Metals,USD,FALSE,N/A,TRUE,Price Series,FRED,CONFIRMED,,,,PIORECRUSDM,,,,,01/01/2015
+Invesco DB Energy Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,DBE,,,,,,,05/01/2007
+Invesco DB Precious Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,DBP,,,,,,,05/01/2007
+Invesco DB Base Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,DBB,,,,,,,05/01/2007
+Invesco DB Agriculture Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,DBA,,,,,,,05/01/2007
+Invesco DB Commodity Index Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Broad,USD,FALSE,N/A,TRUE,ETF,yfinance TR,CONFIRMED,,DBC,,,,,,,06/02/2006
