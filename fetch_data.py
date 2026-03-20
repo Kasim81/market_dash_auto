@@ -164,8 +164,8 @@ ALL_YF_ASSETS = (
 YIELD_TICKERS = {t[0] for t in YIELD_YF}
 
 # Tickers that show absolute level change in points (not % change, not bps)
-# VIX is already a volatility index expressed in points — % change is misleading
-LEVEL_CHANGE_TICKERS = {"^VIX"}
+# Use the same CSV-sourced set as the comp loop so the two tables are consistent.
+LEVEL_CHANGE_TICKERS = COMP_LEVEL_CHANGE_TICKERS
 
 # Tickers priced in pence on LSE (divide by 100 for GBP)
 PENCE_TICKERS = {
