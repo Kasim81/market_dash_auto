@@ -740,8 +740,10 @@ def collect_comp_assets(instruments, comp_fx_cache):
         if series is None or series.empty:
             print(f"    → No data")
             for pk in PERIODS:
-                row[f"Local {pk}"] = np.nan
-                if not is_yield:
+                if is_yield or is_level:
+                    row[f"Local {pk} (bps)"] = np.nan
+                else:
+                    row[f"Local {pk}"] = np.nan
                     row[f"USD {pk}"] = np.nan
             rows.append(row)
             time.sleep(0.3)
@@ -758,11 +760,11 @@ def collect_comp_assets(instruments, comp_fx_cache):
 
         for pk in PERIODS:
             local_ret = calc_return(series, pk, is_yield=is_yield, is_level=is_level)
-            if is_yield:
+            if is_yield or is_level:
                 row[f"Local {pk} (bps)"] = local_ret
             else:
                 row[f"Local {pk}"] = local_ret
-                if is_level or local_ccy is None:
+                if local_ccy is None:
                     row[f"USD {pk}"] = local_ret
                 else:
                     row[f"USD {pk}"] = usd_adjusted_return(
