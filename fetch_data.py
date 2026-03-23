@@ -1004,6 +1004,9 @@ def main():
     df_ratios = pd.DataFrame(ratio_rows)
     df_main = pd.concat([df_main, df_ratios], ignore_index=True)
 
+    # Add row_id in column A after all sort/column ordering is finalised
+    df_main.insert(0, "row_id", range(1, len(df_main) + 1))
+
     # 6. Save market_data output
     main_path = "data/market_data.csv"
     df_main.to_csv(main_path, index=False)
