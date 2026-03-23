@@ -688,6 +688,7 @@ def run_phase_a() -> None:
             print("[Phase A] No data fetched — exiting cleanly")
             return
 
+        df.insert(0, "row_id", range(1, len(df) + 1))
         save_csv(df)
         push_macro_us_to_sheets(df)
 

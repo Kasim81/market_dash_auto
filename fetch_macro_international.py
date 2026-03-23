@@ -1019,13 +1019,19 @@ def save_hist_csv(df: pd.DataFrame) -> None:
     os.makedirs("data", exist_ok=True)
     columns   = list(df.columns)
     meta_rows = _build_hist_metadata(columns)
+    meta_rows = [[""] + row for row in meta_rows]
+
+    # Reset index so Date becomes a column, then insert row_id in column A
+    df_out = df.reset_index()
+    df_out.rename(columns={df_out.columns[0]: "Date"}, inplace=True)
+    df_out.insert(0, "row_id", range(1, len(df_out) + 1))
 
     with open(HIST_CSV, "w", newline="") as f:
         writer = csv_module.writer(f)
         writer.writerows(meta_rows)
 
-    df.to_csv(HIST_CSV, mode="a", date_format="%Y-%m-%d",
-              float_format="%.4f", na_rep="")
+    df_out.to_csv(HIST_CSV, mode="a", date_format="%Y-%m-%d",
+                  float_format="%.4f", na_rep="", index=False)
 
     print(f"[Phase C] Written {len(df)} rows + {len(meta_rows)} metadata rows to {HIST_CSV}")
 
@@ -1112,7 +1118,8 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
 
         columns   = list(df.columns)
         meta_rows = _build_hist_metadata(columns)
-        header    = ["Date"] + columns
+        meta_rows = [[""] + row for row in meta_rows]
+        header    = ["row_id", "Date"] + columns
 
         def _sv(v):
             if v is None:
@@ -1127,8 +1134,8 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
             return str(v)
 
         data_rows = [
-            [idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row.values]
-            for idx, row in df.iterrows()
+            [i + 1, idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row.values]
+            for i, (idx, row) in enumerate(df.iterrows())
         ]
 
         _write_tab(sheets, HIST_TAB, meta_rows + [header] + data_rows)
@@ -1213,6 +1220,7 @@ def run_phase_c() -> None:
         # ------------------------------------------------------------------
         snap_df = build_snapshot(oecd_snap, wb_snap, imf_data, fred_intl_snap)
         if not snap_df.empty:
+            snap_df.insert(0, "row_id", range(1, len(snap_df) + 1))
             save_snapshot_csv(snap_df)
             push_snapshot_to_sheets(snap_df)
 
