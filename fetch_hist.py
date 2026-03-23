@@ -1040,6 +1040,8 @@ def run_hist() -> None:
         # --- market_data_hist ---------------------------------------------
         market_df = build_market_hist_df(market_spine)
         market_meta = build_market_meta_prefix(market_df)
+        market_df.insert(0, "row_id", range(1, len(market_df) + 1))
+        market_meta = [[""] + row for row in market_meta]
         save_csv(market_df, MARKET_HIST_CSV, "market_data_hist",
                  prefix_rows=market_meta)
         push_df_to_sheets(market_df, MARKET_HIST_TAB, "market_data_hist",
@@ -1048,6 +1050,8 @@ def run_hist() -> None:
         # --- macro_us_hist ------------------------------------------------
         macro_df = build_macro_hist_df(macro_spine)
         macro_meta = build_macro_meta_prefix(macro_df)
+        macro_df.insert(0, "row_id", range(1, len(macro_df) + 1))
+        macro_meta = [[""] + row for row in macro_meta]
         save_csv(macro_df, MACRO_HIST_CSV, "macro_us_hist",
                  prefix_rows=macro_meta)
         push_df_to_sheets(macro_df, MACRO_HIST_TAB, "macro_us_hist",
@@ -1690,6 +1694,8 @@ def run_comp_hist() -> None:
 
         # 7. Metadata prefix
         comp_meta = build_comp_market_meta_prefix(comp_df, instruments, fred_rates)
+        comp_df.insert(0, "row_id", range(1, len(comp_df) + 1))
+        comp_meta = [[""] + row for row in comp_meta]
 
         # 8. Save CSV
         save_csv(comp_df, COMP_HIST_CSV, "market_data_comp_hist",
