@@ -119,6 +119,8 @@ CBOE SKEW Index,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,
 CBOE VXEFA - EAFE Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^VXEFA,,,,,,,,2023-06-26
 CBOE VXEEM - EM Volatility,Volatility,,North America,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,UNAVAILABLE,^VXEEM,,,,,,,,
 MOVE Index - Bond Volatility,Volatility,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^MOVE,,,,,,,,2002-11-12
+CBOE GVZ - Gold Volatility Index,Volatility,Volatility,Global,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GVZ,,,,,,,,2008-06-03
+CBOE OVX - Crude Oil Volatility,Volatility,Volatility,Global,United States,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10
 NYSE FANG+ Index,Equity,,,,N/A,N/A,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,2014-09-22
 S&P 500 Equal Weight Index,Equity,Equity Large Cap,North America,United States,N/A,Large,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^SPXEW,RSP,,,,,,,2006-12-08
 Russell Midcap Growth Index,Equity,Equity Mid Cap (Growth),North America,United States,Growth,Mid,N/A,N/A,N/A,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^RMCCG,IWP,,,,,,,2001-08-02
@@ -354,28 +356,26 @@ ICE BofA Euro High Yield Bond Index,Fixed Income,Corp HY,Europe,Europe,N/A,N/A,,
 ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Corp HY,Europe,Europe,N/A,N/A,Broad,High Yield,N/A,EUR,True,USD,True,ETF,yfinance TR,CONFIRMED,,HYXU,,,,,,,2012-04-03
 JP Morgan  USD Emerging Market Debt,Fixed Income,EM Bond,Emerging Markets,Emerging Markets,N/A,N/A,Broad,EMD,N/A,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19
 FTSE International Government Inflation-Protected Bond Index (USD Hedged),Fixed Income,Government Inflation-Linked,Global,Global,N/A,N/A,,Government,N/A,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,WIP,,,,,,,2008-03-19
-CBOE GVZ - Gold Volatility Index,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^GVZ,,,,,,,,2008-06-03
-CBOE OVX - Crude Oil Volatility,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10
-WTI Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CL=F,,,,,,,,2000-08-23
-Brent Crude Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,BZ=F,,,,,,,,2007-07-30
-Natural Gas (Henry Hub),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,NG=F,,,,,,,,2000-08-30
-Gasoline (RBOB),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,RB=F,,,,,,,,2000-11-01
-Heating Oil,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HO=F,,,,,,,,2000-09-01
-Gold,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,GC=F,,,,,,,,2000-08-30
-Silver,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,SI=F,,,,,,,,2000-08-30
-Copper,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HG=F,,,,,,,,2000-08-30
-Aluminium,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,ALI=F,,,,,,,,2014-05-06
-Soybeans,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZS=F,,,,,,,,2000-09-15
-Corn,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZC=F,,,,,,,,2000-07-17
-Wheat,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZW=F,,,,,,,,2000-07-17
-Sugar No. 11,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,SB=F,,,,,,,,2000-03-01
-Cotton No. 2,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,CT=F,,,,,,,,2000-01-03
-Coffee (Arabica),Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,KC=F,,,,,,,,2000-01-03
-Cocoa,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CC=F,,,,,,,,2000-01-03
-Live Cattle,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,LE=F,,,,,,,,2001-03-01
-Iron Ore (World Bank Price Index),Commodity,Commodity,Global,Industrial Metals,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,Price Series,FRED,CONFIRMED,,,,PIORECRUSDM,,,,,2015-01-01
-Invesco DB Energy Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBE,,,,,,,2007-01-05
-Invesco DB Precious Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBP,,,,,,,2007-01-05
-Invesco DB Base Metals Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBB,,,,,,,2007-01-05
-Invesco DB Agriculture Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBA,,,,,,,2007-01-05
-Invesco DB Commodity Index Fund,Commodity,Commodity,North America,United States,N/A,N/A,N/A,N/A,Broad,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBC,,,,,,,2006-02-06
+WTI Crude Oil,Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CL=F,,,,,,,,2000-08-23
+Brent Crude Oil,Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,BZ=F,,,,,,,,2007-07-30
+Natural Gas (Henry Hub),Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,NG=F,,,,,,,,2000-08-30
+Gasoline (RBOB),Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,RB=F,,,,,,,,2000-11-01
+Heating Oil,Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HO=F,,,,,,,,2000-09-01
+Gold,Commodity,Precious Metals,Global,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,GC=F,,,,,,,,2000-08-30
+Silver,Commodity,Precious Metals,Global,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,SI=F,,,,,,,,2000-08-30
+Copper,Commodity,Industrial Metals,Global,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,HG=F,,,,,,,,2000-08-30
+Aluminium,Commodity,Industrial Metals,Global,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,ALI=F,,,,,,,,2014-05-06
+Soybeans,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZS=F,,,,,,,,2000-09-15
+Corn,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZC=F,,,,,,,,2000-07-17
+Wheat,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,ZW=F,,,,,,,,2000-07-17
+Sugar No. 11,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,SB=F,,,,,,,,2000-03-01
+Cotton No. 2,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,CT=F,,,,,,,,2000-01-03
+Coffee (Arabica),Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,KC=F,,,,,,,,2000-01-03
+Cocoa,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,False,N/A,yfinance PR,CONFIRMED,CC=F,,,,,,,,2000-01-03
+Live Cattle,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USX,False,N/A,False,N/A,yfinance PR,CONFIRMED,LE=F,,,,,,,,2001-03-01
+Iron Ore (World Bank Price Index),Commodity,Industrial Metals,Global,Industrial Metals,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,Price Series,FRED,CONFIRMED,,,,PIORECRUSDM,,,,,2015-01-01
+Invesco DB Energy Fund,Commodity,Energy,Global,United States,N/A,N/A,N/A,N/A,Energy,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBE,,,,,,,2007-01-05
+Invesco DB Precious Metals Fund,Commodity,Precious Metals,Global,United States,N/A,N/A,N/A,N/A,Precious Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBP,,,,,,,2007-01-05
+Invesco DB Base Metals Fund,Commodity,Industrial Metals,Global,United States,N/A,N/A,N/A,N/A,Industrial Metals,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBB,,,,,,,2007-01-05
+Invesco DB Agriculture Fund,Commodity,Agriculture,Global,United States,N/A,N/A,N/A,N/A,Agriculture,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBA,,,,,,,2007-01-05
+Invesco DB Commodity Index Fund,Commodity,Broad,Global,United States,N/A,N/A,N/A,N/A,Broad,USD,False,N/A,True,ETF,yfinance TR,CONFIRMED,,DBC,,,,,,,2006-02-06
