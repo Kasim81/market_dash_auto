@@ -1041,6 +1041,9 @@ def main():
         _rest = [c for c in df_comp.columns if c not in _leading]
         df_comp = df_comp[_leading + _rest]
 
+        # Add row_id in column A after all sort/column ordering is finalised
+        df_comp.insert(0, "row_id", range(1, len(df_comp) + 1))
+
         comp_path = "data/market_data_comp.csv"
         df_comp.to_csv(comp_path, index=False)
         print(f"\n✓ Saved {comp_path} — {len(df_comp)} instruments")
