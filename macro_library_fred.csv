@@ -20,10 +20,14 @@ T10YIE,,US TIPS 10Y Breakeven Inflation Rate,Inflation,Breakevens,Percent,Daily,
 T5YIFR,,US 5Y5Y Forward Inflation Swap Rate,Inflation,Breakevens,Percent,Daily,"Market-implied inflation years 5-10; measures whether long-run expectations anchored",190,
 MICH,,UMich Consumer Inflation Expectations 1Y,Inflation,Survey,Percent,Monthly,"Consumer-based; Fed watches closely; rise >3.5% would be policy alarm",200,
 FEDFUNDS,,US Federal Funds Rate (Effective),Monetary Policy,Policy Rate,Percent (SA),Monthly,"Foundational Tier 1 indicator; direction and pace determine regime trajectory",210,
+DGS2,,US 2-Year Treasury Yield (Constant Maturity),Monetary Policy,Government Yields,Percent,Daily,"Short-end policy-sensitive nominal rate; used for 2s10s slope and to track where markets price the Fed terminal rate",215,
+DGS10,,US 10-Year Treasury Yield (Constant Maturity),Monetary Policy,Government Yields,Percent,Daily,"Benchmark long-end nominal rate; input to yield-curve slope, breakeven, and term-premium indicators; drives mortgage pricing",217,
 DFII10,,US 10Y Real Interest Rate (TIPS),Monetary Policy,Real Rates,Percent,Daily,"Real rates >2% historically associated with growth decel and recession risk",220,
 DFII5,,US 5Y Real Interest Rate (TIPS),Monetary Policy,Real Rates,Percent,Daily,"Short-end real rate; rising = tightening financial conditions for risk assets",230,
 BAMLH0A0HYM2,,US HY Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,">600bps = severe stress; >800bps = crisis; tightening from stress = risk-on",240,
 BAMLC0A0CM,,US IG Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,">200bps historically coincides with recessions; IG-HY ratio = risk appetite",250,
+BAMLC0A0CMEY,,ICE BofA US Corporate Index Effective Yield,Financial Conditions,Credit Markets,Percent,Daily,"All-in effective yield on broad US IG corporate bond index; level reflects risk appetite and funding costs for IG issuers",252,
+BAMLCC0A0CMTRIV,,ICE BofA US Corporate Index Total Return Index Value,Financial Conditions,Credit Markets,Index,Daily,"Total return index for US IG corporates; captures coupon income plus price return; use for momentum and drawdown signals",253,
 DRTSCIS,,SLOOS: Net Tightening — C&I Loans Small Firms,Financial Conditions,Credit Conditions,Net Percent,Quarterly,"Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle.",260,
 DRTSCLCC,,SLOOS: Net Tightening — Credit Card Loans,Financial Conditions,Credit Conditions,Net Percent,Quarterly,"Consumer credit availability. Tightening leads consumer spending slowdown.",270,
 STDSOTHCONS,,SLOOS: Net Tightening — Consumer Loans (ex Credit Card & Auto),Financial Conditions,Credit Conditions,Net Percent,Quarterly,"Auto/student/personal loan standards. Broadens consumer credit picture.",280,
@@ -37,4 +41,7 @@ GACDFSA066MSFRBPHI,,Philadelphia Fed: Mfg Business Conditions (General Activity)
 GACDISA066MSFRBNY,,Empire State (NY Fed): Mfg Business Conditions,Survey,Regional Fed,Diffusion Index,Monthly,"First regional Fed mfg survey released each month. Closely watched ISM preview.",360,
 MFRBSCOMP,,Richmond Fed: Mfg Business Conditions (Composite Index),Survey,Regional Fed,Diffusion Index,Monthly,"Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV.",370,
 KCACTMFG,,Kansas City Fed: Mfg Business Conditions (Composite Index),Survey,Regional Fed,Diffusion Index,Monthly,"Tenth Federal Reserve District. Covers OK, KS, NE, CO, WY, NM, MO.",380,
+PIORECRUSDM,,World Bank Iron Ore Price Index (USD),Commodity,Industrial Metals,Index,Monthly,"World Bank iron ore price; proxy for China's steel and infrastructure demand; leads industrial metals and EM commodity exporters",385,
 CSCICP03EZM665S,CONSUMER_CONF,Consumer Confidence,Survey,Consumer Sentiment,Balance (long-run avg = 100),Monthly,"OECD/EC consumer confidence balance statistic. Negative = below long-run average; leading indicator for household spending.",390,EA19
+IRLTLT01GBM156N,GBR_GILT_10Y,UK 10-Year Gilt Yield,Monetary Policy,Government Yields,% per annum,Monthly,"UK benchmark long-rate; tracks BoE policy expectations and UK fiscal risk premium; used for UK-Bund spread analysis",395,GBR
+IRLTLT01DEM156N,DEU_BUND_10Y,Germany 10-Year Bund Yield,Monetary Policy,Government Yields,% per annum,Monthly,"Core euro area reference rate and risk-free anchor for EUR bonds; used for intra-European sovereign spread analysis",396,DEU
