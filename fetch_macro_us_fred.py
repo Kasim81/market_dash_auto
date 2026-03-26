@@ -73,334 +73,131 @@ BACKOFF_BASE = 2        # seconds for first retry
 BACKOFF_MAX_RETRIES = 5
 
 # ---------------------------------------------------------------------------
-# FRED SERIES DEFINITIONS
+# LIBRARY LOADER
 # ---------------------------------------------------------------------------
-# Format:
-#   series_id: (name, category, subcategory, units, notes)
+# US macro indicators are defined in macro_library_fred.csv (rows where the
+# country column is blank).  Add or remove indicators by editing that CSV —
+# no Python changes required.
 #
-# All series are US-only. International data is Phase C (OpenBB/OECD/IMF).
-#
-# Categories align with the Indicator Library:
-#   Growth | Inflation | Financial Conditions | Monetary Policy
+# FRED_MACRO_US and FRED_MACRO_US_FREQ are built from the CSV at import time
+# and kept as module-level exports for backward-compatibility with
+# fetch_hist.py, which imports them directly.
 
-FRED_MACRO_US = {
+import pathlib as _pl
 
-    # ---- GROWTH: Yield Curve -----------------------------------------------
-    "T10Y2Y": (
-        "US Yield Curve 10Y-2Y Spread",
-        "Growth", "Yield Curve",
-        "Percentage Points",
-        "Inversion (negative) has preceded every US recession 6-18m in advance"
-    ),
-    "T10Y3M": (
-        "US Yield Curve 10Y-3M Spread",
-        "Growth", "Yield Curve",
-        "Percentage Points",
-        "Campbell & Shiller preferred recession predictor; stronger near-term signal"
-    ),
+_FRED_LIBRARY_CSV = _pl.Path(__file__).parent / "macro_library_fred.csv"
 
-    # ---- GROWTH: Money Supply ----------------------------------------------
-    "M2SL": (
-        "US M2 Money Supply",
-        "Growth", "Money Supply",
-        "Billions USD (SA)",
-        "YoY growth leads nominal GDP by 12-18m; negative YoY = deflation risk"
-    ),
 
-    # ---- GROWTH: Leading Indicators ----------------------------------------
-    "USSLIND": (
-        "US Conference Board Leading Economic Index (LEI)",
-        "Growth", "Leading Indicators",
-        "Index 2016=100",
-        "3 consecutive monthly declines in 6m diffusion index = recession signal"
-    ),
-    "PERMIT": (
-        "US Building Permits (SAAR)",
-        "Growth", "Leading Indicators",
-        "Thousands of Units (SAAR)",
-        "Leads housing starts 1-2m; YoY negative = construction contraction"
-    ),
+def _load_fred_us_library() -> tuple[dict, dict]:
+    """
+    Read macro_library_fred.csv and return (FRED_MACRO_US, FRED_MACRO_US_FREQ).
 
-    # ---- GROWTH: Labour Market ---------------------------------------------
-    "IC4WSA": (
-        "US Initial Jobless Claims 4-Week Average",
-        "Growth", "Labour Market",
-        "Thousands of Persons (SA)",
-        "Sustained rise above 300k signals labour market deterioration"
-    ),
-    "PAYEMS": (
-        "US Nonfarm Payrolls MoM Change",
-        "Growth", "Labour Market",
-        "Thousands of Persons (SA)",
-        "3m avg >200k = solid expansion; <100k = slowdown; negative = recession"
-    ),
-    "UNRATE": (
-        "US Unemployment Rate",
-        "Growth", "Labour Market",
-        "Percent (SA)",
-        "Sahm Rule: 0.5pp rise in 3m average vs prior 12m low = recession signal"
-    ),
+    FRED_MACRO_US      : {series_id: (name, category, subcategory, units, notes)}
+    FRED_MACRO_US_FREQ : {series_id: frequency_string}
 
-    # ---- GROWTH: Activity --------------------------------------------------
-    "INDPRO": (
-        "US Industrial Production Index",
-        "Growth", "Real Activity",
-        "Index 2017=100 (SA)",
-        "YoY negative = recession signal; companion to manufacturing PMI"
-    ),
-    "RSXFS": (
-        "US Retail Sales ex-Autos MoM",
-        "Growth", "Real Activity",
-        "Millions USD (SA)",
-        "Consumer spending momentum; YoY real negative = recessionary signal"
-    ),
+    Only rows with a blank country column are included (US scope).
+    Row order in the CSV controls display order in the macro_us sheet.
+    """
+    try:
+        df = pd.read_csv(_FRED_LIBRARY_CSV, dtype=str, keep_default_na=False)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"macro_library_fred.csv not found at {_FRED_LIBRARY_CSV}. "
+            "Restore the file before running."
+        )
 
-    # ---- GROWTH: Credit Cycle ----------------------------------------------
-    "DRTSCILM": (
-        "US SLOOS Net % Banks Tightening C&I Lending Standards (Large Firms)",
-        "Growth", "Credit Cycle",
-        "Net Percent (SA)",
-        "Net tightening >20% has preceded every recession; 6-12m lead time"
-    ),
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    us = df[df["country"].str.strip() == ""].sort_values("sort_key")
 
-    # ---- GROWTH: Financial Conditions --------------------------------------
-    "NFCI": (
-        "Chicago Fed National Financial Conditions Index (NFCI)",
-        "Financial Conditions", "Composite",
-        "Index",
-        "Negative = easier than avg; positive and rising = tightening; leads growth 3-6m"
-    ),
+    macro_us = {
+        row["series_id"]: (
+            row["name"],
+            row["category"],
+            row["subcategory"],
+            row["units"],
+            row["notes"],
+        )
+        for _, row in us.iterrows()
+    }
+    freq_map = {
+        row["series_id"]: row["frequency"]
+        for _, row in us.iterrows()
+    }
+    return macro_us, freq_map
 
-    # ---- INFLATION: CPI & PCE ----------------------------------------------
-    "CPIAUCSL": (
-        "US CPI Headline",
-        "Inflation", "CPI",
-        "Index 1982-84=100 (SA)",
-        "Primary public inflation benchmark; >5% YoY = high-inflation regime"
-    ),
-    "CPILFESL": (
-        "US Core CPI (ex Food & Energy)",
-        "Inflation", "CPI",
-        "Index 1982-84=100 (SA)",
-        "Strips transitory commodity effects; sticky >3% = overheating signal"
-    ),
-    "PCEPILFE": (
-        "US Core PCE Deflator",
-        "Inflation", "PCE",
-        "Index 2017=100 (SA)",
-        "Fed's preferred inflation measure; Fed 2% target refers to this series"
-    ),
-    "PPIACO": (
-        "US PPI All Commodities",
-        "Inflation", "PPI",
-        "Index 1982=100 (NSA)",
-        "Leads CPI by 2-3m; acceleration = leading indicator of consumer price pressure"
-    ),
 
-    # ---- INFLATION: Breakevens & Expectations ------------------------------
-    "T5YIE": (
-        "US TIPS 5Y Breakeven Inflation Rate",
-        "Inflation", "Breakevens",
-        "Percent",
-        "Market-implied 5yr avg inflation; level >3% = inflation concern"
-    ),
-    "T10YIE": (
-        "US TIPS 10Y Breakeven Inflation Rate",
-        "Inflation", "Breakevens",
-        "Percent",
-        "Most widely watched breakeven; rising 5Y vs 10Y = near-term inflation concerns"
-    ),
-    "T5YIFR": (
-        "US 5Y5Y Forward Inflation Swap Rate",
-        "Inflation", "Breakevens",
-        "Percent",
-        "Market-implied inflation years 5-10; measures whether long-run expectations anchored"
-    ),
-    "MICH": (
-        "UMich Consumer Inflation Expectations 1Y",
-        "Inflation", "Survey",
-        "Percent",
-        "Consumer-based; Fed watches closely; rise >3.5% would be policy alarm"
-    ),
+# Module-level exports — same dict structure as before, now sourced from CSV.
+# fetch_hist.py imports these directly so names and formats must not change.
+FRED_MACRO_US, FRED_MACRO_US_FREQ = _load_fred_us_library()
 
-    # ---- MONETARY POLICY ---------------------------------------------------
-    "FEDFUNDS": (
-        "US Federal Funds Rate (Effective)",
-        "Monetary Policy", "Policy Rate",
-        "Percent (SA)",
-        "Foundational Tier 1 indicator; direction and pace determine regime trajectory"
-    ),
-    "DFII10": (
-        "US 10Y Real Interest Rate (TIPS)",
-        "Monetary Policy", "Real Rates",
-        "Percent",
-        "Real rates >2% historically associated with growth decel and recession risk"
-    ),
-    "DFII5": (
-        "US 5Y Real Interest Rate (TIPS)",
-        "Monetary Policy", "Real Rates",
-        "Percent",
-        "Short-end real rate; rising = tightening financial conditions for risk assets"
-    ),
-
-    # ---- FINANCIAL CONDITIONS: Credit Spreads (market proxies) ------------
-    # Note: ICE BofA spread indices are on FRED (BAMLH0A0HYM2 etc.)
-    "BAMLH0A0HYM2": (
-        "US HY Credit Spread OAS (ICE BofA)",
-        "Financial Conditions", "Credit Spreads",
-        "Percent",
-        ">600bps = severe stress; >800bps = crisis; tightening from stress = risk-on"
-    ),
-    "BAMLC0A0CM": (
-        "US IG Credit Spread OAS (ICE BofA)",
-        "Financial Conditions", "Credit Spreads",
-        "Percent",
-        ">200bps historically coincides with recessions; IG-HY ratio = risk appetite"
-    ),
-
-    # ---- FINANCIAL CONDITIONS: SLOOS Extended (was in macro_surveys) ------
-    # DRTSCILM (C&I Large/Medium) is already above; these add the full breakdown.
-    "DRTSCIS": (
-        "SLOOS: Net Tightening — C&I Loans, Small Firms",
-        "Financial Conditions", "Credit Conditions",
-        "Net Percent",
-        "Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle."
-    ),
-    "DRTSCLCC": (
-        "SLOOS: Net Tightening — Credit Card Loans",
-        "Financial Conditions", "Credit Conditions",
-        "Net Percent",
-        "Consumer credit availability. Tightening leads consumer spending slowdown."
-    ),
-    # DRTSCLNG discontinued — replaced by STDSOTHCONS (ex CC & auto, Q2 2011+)
-    "STDSOTHCONS": (
-        "SLOOS: Net Tightening — Consumer Loans (ex Credit Card & Auto)",
-        "Financial Conditions", "Credit Conditions",
-        "Net Percent",
-        "Auto/student/personal loan standards. Broadens consumer credit picture."
-    ),
-    # DRTSCRE discontinued — replaced by SUBLPDRCSN (nonfarm nonresidential CRE)
-    "SUBLPDRCSN": (
-        "SLOOS: Net Tightening — CRE Loans (Nonfarm Nonresidential)",
-        "Financial Conditions", "Credit Conditions",
-        "Net Percent",
-        "CRE credit cycle; leads commercial property stress by 2-4 quarters."
-    ),
-
-    # ---- SURVEY: Consumer Sentiment (was in sentiment_data) ---------------
-    "UMCSENT": (
-        "UMich Consumer Sentiment (Overall)",
-        "Survey", "Consumer Sentiment",
-        "Index (1966 Q1 = 100)",
-        "Headline consumer confidence; below 70 historically correlated with recessions."
-    ),
-    # UMCSI is not a FRED series; correct ID for Current Conditions is UMCSC
-    "UMCSC": (
-        "UMich: Index of Current Economic Conditions",
-        "Survey", "Consumer Sentiment",
-        "Index (1966 Q1 = 100)",
-        "Reflects assessment of present situation. Divergence from expectations = inflection signal."
-    ),
-    "UMCSE": (
-        "UMich: Index of Consumer Expectations",
-        "Survey", "Consumer Sentiment",
-        "Index (1966 Q1 = 100)",
-        "Forward-looking sub-index. Used in composite LEI."
-    ),
-    "CSCICP03USM665S": (
-        "Conference Board Consumer Confidence (US)",
-        "Survey", "Consumer Sentiment",
-        "Index (2015 = 100)",
-        "Business-sourced survey; leading indicator for consumer spending and employment."
-    ),
-    "BSCICP03USM665S": (
-        "US Business Confidence",
-        "Survey", "Business Sentiment",
-        "Composite indicator (normal value = 100)",
-        "OECD business confidence for US; companion to consumer confidence."
-    ),
-
-    # ---- SURVEY: Regional Fed Manufacturing (was in macro_surveys) --------
-    # Note: NAPMPI (ISM Manufacturing PMI) removed — ISM revoked FRED licence in 2016.
-    # No direct replacement available via FRED API.
-    "GACDFSA066MSFRBPHI": (
-        "Philadelphia Fed: Mfg Business Conditions (General Activity)",
-        "Survey", "Regional Fed",
-        "Diffusion Index",
-        "One of the earliest monthly US mfg surveys; leads ISM by ~1 week."
-    ),
-    "GACDISA066MSFRBNY": (
-        "Empire State (NY Fed): Mfg Business Conditions",
-        "Survey", "Regional Fed",
-        "Diffusion Index",
-        "First regional Fed mfg survey released each month. Closely watched ISM preview."
-    ),
-    "MFRBSCOMP": (
-        "Richmond Fed: Mfg Business Conditions (Composite Index)",
-        "Survey", "Regional Fed",
-        "Diffusion Index",
-        "Mid-Atlantic manufacturing survey. Covers VA, MD, DC, NC, SC, WV."
-    ),
-    "KCACTMFG": (
-        "Kansas City Fed: Mfg Business Conditions (Composite Index)",
-        "Survey", "Regional Fed",
-        "Diffusion Index",
-        "Tenth Federal Reserve District. Covers OK, KS, NE, CO, WY, NM, MO."
-    ),
-}
 
 # ---------------------------------------------------------------------------
-# FRED SERIES NATIVE FREQUENCIES
+# LIBRARY VALIDATION
 # ---------------------------------------------------------------------------
-# Separate from FRED_MACRO_US to avoid breaking existing tuple destructuring.
-# Used by both the macro_us snapshot tab and by fetch_hist.py for macro_us_hist.
-# In macro_us_hist all series are forward-filled to weekly; the hist metadata
-# rows display "Weekly (from <native> ffill)" to make this explicit.
 
-FRED_MACRO_US_FREQ = {
-    # Daily series (FRED publishes business-daily; aligned to Friday close)
-    "T10Y2Y":             "Daily",
-    "T10Y3M":             "Daily",
-    "T5YIE":              "Daily",
-    "T10YIE":             "Daily",
-    "T5YIFR":             "Daily",
-    "DFII10":             "Daily",
-    "DFII5":              "Daily",
-    "BAMLH0A0HYM2":       "Daily",
-    "BAMLC0A0CM":         "Daily",
-    # Weekly series
-    "IC4WSA":             "Weekly",
-    "NFCI":               "Weekly",
-    # Monthly series
-    "M2SL":               "Monthly",
-    "USSLIND":            "Monthly",
-    "PERMIT":             "Monthly",
-    "PAYEMS":             "Monthly",
-    "UNRATE":             "Monthly",
-    "INDPRO":             "Monthly",
-    "RSXFS":              "Monthly",
-    "CPIAUCSL":           "Monthly",
-    "CPILFESL":           "Monthly",
-    "PCEPILFE":           "Monthly",
-    "PPIACO":             "Monthly",
-    "MICH":               "Monthly",
-    "FEDFUNDS":           "Monthly",
-    "UMCSENT":              "Monthly",
-    "UMCSC":               "Monthly",
-    "UMCSE":               "Monthly",
-    "CSCICP03USM665S":     "Monthly",
-    "BSCICP03USM665S":     "Monthly",
-    "GACDFSA066MSFRBPHI":  "Monthly",
-    "GACDISA066MSFRBNY":   "Monthly",
-    "MFRBSCOMP":           "Monthly",
-    "KCACTMFG":            "Monthly",
-    # Quarterly series (SLOOS surveys)
-    "DRTSCILM":            "Quarterly",
-    "DRTSCIS":             "Quarterly",
-    "DRTSCLCC":            "Quarterly",
-    "STDSOTHCONS":         "Quarterly",
-    "SUBLPDRCSN":          "Quarterly",
-}
+FRED_SERIES_URL = "https://api.stlouisfed.org/fred/series"
+
+
+def _validate_fred_library() -> list:
+    """
+    Validate every series_id in FRED_MACRO_US against the FRED API.
+
+    For each series:
+      - Confirms the series_id exists in FRED (warns if not found or HTTP 400)
+      - Prints the CSV name alongside the official FRED title for spot-checking
+
+    Returns a list of warning strings (empty = all series found).
+    Skipped silently if FRED_API_KEY is not set.
+    """
+    if not FRED_API_KEY:
+        print("  [Validation] FRED_API_KEY not set — skipping library validation")
+        return []
+
+    indicators = [
+        {"series_id": sid, "name": meta[0]}
+        for sid, meta in FRED_MACRO_US.items()
+    ]
+    warnings = []
+    total = len(indicators)
+    print(f"\nValidating {total} series in macro_library_fred.csv against FRED API...")
+
+    for i, indic in enumerate(indicators, 1):
+        sid = indic["series_id"]
+        try:
+            resp = requests.get(
+                FRED_SERIES_URL,
+                params={"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json"},
+                timeout=10,
+            )
+            time.sleep(0.3)
+
+            if resp.status_code == 200:
+                seriess = resp.json().get("seriess", [])
+                if seriess:
+                    official = seriess[0]["title"]
+                    print(f"  [{i}/{total}] {sid}")
+                    print(f"    csv : {indic['name']}")
+                    print(f"    fred: {official}")
+                else:
+                    warnings.append(
+                        f"FRED '{sid}' returned no metadata — verify series_id "
+                        f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
+                    )
+            elif resp.status_code == 400:
+                warnings.append(
+                    f"FRED '{sid}' not found (HTTP 400) — check series_id "
+                    f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
+                )
+            else:
+                print(f"  [SKIP] {sid}: HTTP {resp.status_code} — cannot validate")
+
+        except Exception as e:
+            print(f"  [SKIP] {sid}: validation error — {e}")
+
+    return warnings
+
+
+# (indicator definitions moved to macro_library_fred.csv)
 
 
 # ---------------------------------------------------------------------------
@@ -682,6 +479,14 @@ def run_phase_a() -> None:
     start = time.time()
 
     try:
+        warnings = _validate_fred_library()
+        if warnings:
+            print("\n" + "!" * 60)
+            print("MACRO LIBRARY VALIDATION — ACTION REQUIRED:")
+            for w in warnings:
+                print(f"  [WARN] {w}")
+            print("!" * 60 + "\n")
+
         df = fetch_macro_us()
 
         if df.empty:

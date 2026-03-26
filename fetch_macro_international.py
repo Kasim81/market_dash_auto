@@ -160,122 +160,245 @@ WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
 
 
 # ---------------------------------------------------------------------------
-# OECD INDICATOR DEFINITIONS  (new sdmx.oecd.org API)
+# LIBRARY LOADERS
 # ---------------------------------------------------------------------------
-# Keys are confirmed from OECD Data Explorer documented examples.
-# OECD CSV response columns: REF_AREA, TIME_PERIOD, OBS_VALUE (among others).
-# Note: CHN and EA19 are absent from LFS unemployment (OECD members only).
+# Indicator definitions are in four CSV files:
+#   macro_library_oecd.csv       → OECD_INDICATORS
+#   macro_library_worldbank.csv  → WB_INDICATORS
+#   macro_library_imf.csv        → IMF_INDICATORS
+#   macro_library_fred.csv       → FRED_INTL_INDICATORS (rows where country != "")
+#
+# Add new indicators by editing the relevant CSV — no Python changes required.
+# Adding a new data source: create a new macro_library_<source>.csv file,
+# write a loader function, and add fetch/validation logic below.
 
-OECD_COUNTRIES_CLI  = "AUS+CAN+CHE+CHN+DEU+EA19+FRA+GBR+ITA+JPN+USA"
-OECD_COUNTRIES_LFS  = "AUS+CAN+CHE+DEU+FRA+GBR+ITA+JPN+USA"    # no CHN/EA19
-OECD_COUNTRIES_FIN  = "AUS+CAN+CHE+DEU+EA19+FRA+GBR+ITA+JPN+USA"  # no CHN
+import pathlib as _pl
 
-OECD_INDICATORS = [
-    {
-        "col":       "CLI",
-        "name":      "Composite Leading Indicator (CLI)",
-        "category":  "Leading Indicators",
-        "units":     "Index (amplitude adjusted; long-run avg = 100)",
-        "frequency": "Monthly",
-        "notes":     (
-            "Above 100 and rising = above-trend expansion; "
-            "below 100 and falling = below-trend slowdown"
-        ),
-        "dataflow":  "OECD.SDD.STES,DSD_STES@DF_CLI,4.1",
-        "key":       f"{OECD_COUNTRIES_CLI}.M.LI...AA.IX..H",
-    },
-    {
-        "col":       "UNEMPLOYMENT",
-        "name":      "Unemployment Rate",
-        "category":  "Labour Market",
-        "units":     "% of labour force (SA, total, age 15+)",
-        "frequency": "Monthly",
-        "notes":     (
-            "Seasonally adjusted total unemployment. "
-            "Sustained rise = labour market deterioration signal. "
-            "CHN and EA19 not available in OECD LFS."
-        ),
-        "dataflow":  "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0",
-        "key":       f"{OECD_COUNTRIES_LFS}..PT_LF_SUB._Z.Y._T.Y_GE15..M",
-    },
-    {
-        "col":       "RATE_3M",
-        "name":      "Short-term Interest Rate (3M)",
-        "category":  "Monetary Policy",
-        "units":     "% per annum",
-        "frequency": "Monthly",
-        "notes":     (
-            "3-month interbank/Treasury bill rate; proxy for policy rate trajectory. "
-            "Rising = tightening cycle; falling = easing. CHN not available."
-        ),
-        "dataflow":  "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",
-        "key":       f"{OECD_COUNTRIES_FIN}.M.IRST.PA.....",
-    },
-]
+_OECD_CSV = _pl.Path(__file__).parent / "macro_library_oecd.csv"
+_WB_CSV   = _pl.Path(__file__).parent / "macro_library_worldbank.csv"
+_IMF_CSV  = _pl.Path(__file__).parent / "macro_library_imf.csv"
+_FRED_CSV = _pl.Path(__file__).parent / "macro_library_fred.csv"
+
+
+def _load_oecd_indicators() -> list:
+    """
+    Load OECD indicators from macro_library_oecd.csv.
+    Returns a list of dicts with keys: col, name, category, units, frequency,
+    notes, dataflow, key.  The 'key' is built by substituting {countries}
+    in oecd_key_template with the oecd_countries value.
+    """
+    df = pd.read_csv(_OECD_CSV, dtype=str, keep_default_na=False)
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    result = []
+    for _, row in df.sort_values("sort_key").iterrows():
+        key = row["oecd_key_template"].replace("{countries}", row["oecd_countries"])
+        result.append({
+            "col":       row["series_id"],
+            "name":      row["name"],
+            "category":  row["category"],
+            "units":     row["units"],
+            "frequency": row["frequency"],
+            "notes":     row["notes"],
+            "dataflow":  row["oecd_dataflow"],
+            "key":       key,
+        })
+    return result
+
+
+def _load_wb_indicators() -> list:
+    """Load World Bank indicators from macro_library_worldbank.csv."""
+    df = pd.read_csv(_WB_CSV, dtype=str, keep_default_na=False)
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    result = []
+    for _, row in df.sort_values("sort_key").iterrows():
+        col = row["col"].strip() if row["col"].strip() else row["series_id"]
+        result.append({
+            "col":       col,
+            "name":      row["name"],
+            "category":  row["category"],
+            "units":     row["units"],
+            "frequency": row["frequency"],
+            "notes":     row["notes"],
+            "wb_id":     row["series_id"],
+        })
+    return result
+
+
+def _load_imf_indicators() -> list:
+    """Load IMF indicators from macro_library_imf.csv."""
+    df = pd.read_csv(_IMF_CSV, dtype=str, keep_default_na=False)
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    result = []
+    for _, row in df.sort_values("sort_key").iterrows():
+        col = row["col"].strip() if row["col"].strip() else row["series_id"]
+        result.append({
+            "col":       col,
+            "name":      row["name"],
+            "category":  row["category"],
+            "units":     row["units"],
+            "frequency": row["frequency"],
+            "notes":     row["notes"],
+            "series":    row["series_id"],   # IMF fetch uses "series" key
+        })
+    return result
+
+
+def _load_fred_intl_indicators() -> list:
+    """
+    Load international FRED indicators from macro_library_fred.csv.
+    Only rows with a non-blank country column are included.
+    """
+    df = pd.read_csv(_FRED_CSV, dtype=str, keep_default_na=False)
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    intl = df[df["country"].str.strip() != ""].sort_values("sort_key")
+    result = []
+    for _, row in intl.iterrows():
+        col = row["col"].strip() if row["col"].strip() else row["series_id"]
+        result.append({
+            "col":       col,
+            "name":      row["name"],
+            "category":  row["category"],
+            "units":     row["units"],
+            "frequency": row["frequency"],
+            "notes":     row["notes"],
+            "source":    "FRED",
+            "country":   row["country"].strip(),
+            "fred_id":   row["series_id"],
+        })
+    return result
+
+
+# Module-level globals — populated from CSVs at import time.
+# All existing code that references these lists works unchanged.
+OECD_INDICATORS      = _load_oecd_indicators()
+WB_INDICATORS        = _load_wb_indicators()
+IMF_INDICATORS       = _load_imf_indicators()
+FRED_INTL_INDICATORS = _load_fred_intl_indicators()
 
 
 # ---------------------------------------------------------------------------
-# WORLD BANK INDICATOR DEFINITIONS
+# LIBRARY VALIDATION
 # ---------------------------------------------------------------------------
 
-WB_INDICATORS = [
-    {
-        "col":       "CPI",
-        "name":      "CPI Headline YoY %",
-        "category":  "Inflation",
-        "units":     "% change year-on-year (annual average)",
-        "frequency": "Annual",
-        "notes":     (
-            "World Bank / ILO annual average CPI inflation. "
-            ">2% = above DM central bank targets; >5% = high-inflation regime"
-        ),
-        "wb_id":     "FP.CPI.TOTL.ZG",
-    },
-]
+_FRED_SERIES_META_URL = "https://api.stlouisfed.org/fred/series"
 
 
-# ---------------------------------------------------------------------------
-# IMF INDICATOR DEFINITIONS
-# ---------------------------------------------------------------------------
+def _validate_wb_library() -> list:
+    """
+    Validate World Bank indicator IDs against the WB API.
+    Prints CSV name vs official WB indicator name for spot-checking.
+    Returns a list of warning strings (empty = all indicators found).
+    """
+    warnings = []
+    total = len(WB_INDICATORS)
+    print(f"\nValidating {total} indicator(s) in macro_library_worldbank.csv...")
+    for indic in WB_INDICATORS:
+        wb_id = indic["wb_id"]
+        try:
+            resp = requests.get(
+                f"https://api.worldbank.org/v2/indicator/{wb_id}",
+                params={"format": "json"},
+                timeout=15,
+            )
+            time.sleep(WB_DELAY)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and len(data) > 1 and data[1]:
+                    official = data[1][0].get("name", "")
+                    print(f"  [OK] WB {wb_id}")
+                    print(f"    csv: {indic['name']}")
+                    print(f"    wb : {official}")
+                else:
+                    warnings.append(
+                        f"WB '{wb_id}' not found — verify series_id "
+                        f"in macro_library_worldbank.csv  (csv name: '{indic['name']}')"
+                    )
+            else:
+                print(f"  [SKIP] WB {wb_id}: HTTP {resp.status_code} — cannot validate")
+        except Exception as e:
+            print(f"  [SKIP] WB {wb_id}: validation error — {e}")
+    return warnings
 
-IMF_INDICATORS = [
-    {
-        "col":       "GDP_GROWTH",
-        "name":      "Real GDP Growth (Annual %)",
-        "category":  "Growth",
-        "units":     "% change year-on-year, constant prices",
-        "frequency": "Annual",
-        "notes":     (
-            "IMF World Economic Outlook; includes forward projections "
-            "for current and next year. Negative = recession-year contraction"
-        ),
-        "series":    "NGDP_RPCH",
-    },
-]
+
+def _validate_imf_library() -> list:
+    """
+    Validate IMF DataMapper indicator IDs.
+    Prints CSV name vs official IMF label for spot-checking.
+    Returns a list of warning strings (empty = all indicators found).
+    """
+    warnings = []
+    total = len(IMF_INDICATORS)
+    print(f"\nValidating {total} indicator(s) in macro_library_imf.csv...")
+    for indic in IMF_INDICATORS:
+        imf_id = indic["series"]
+        try:
+            resp = requests.get(
+                f"{IMF_BASE}/indicator/{imf_id}",
+                timeout=15,
+            )
+            time.sleep(IMF_DELAY)
+            if resp.status_code == 200:
+                data = resp.json()
+                label = data.get("indicator", {}).get(imf_id, {}).get("label", "")
+                if label:
+                    print(f"  [OK] IMF {imf_id}")
+                    print(f"    csv: {indic['name']}")
+                    print(f"    imf: {label}")
+                else:
+                    warnings.append(
+                        f"IMF '{imf_id}' not found in API response — verify series_id "
+                        f"in macro_library_imf.csv  (csv name: '{indic['name']}')"
+                    )
+            else:
+                print(f"  [SKIP] IMF {imf_id}: HTTP {resp.status_code} — cannot validate")
+        except Exception as e:
+            print(f"  [SKIP] IMF {imf_id}: validation error — {e}")
+    return warnings
 
 
-# ---------------------------------------------------------------------------
-# FRED INTERNATIONAL INDICATOR DEFINITIONS
-# ---------------------------------------------------------------------------
-# Country-specific indicators sourced from FRED for non-US economies.
-# Format matches OECD/WB/IMF indicator dicts above.
-
-FRED_INTL_INDICATORS = [
-    {
-        "col":       "CONSUMER_CONF",
-        "name":      "Consumer Confidence",
-        "category":  "Survey",
-        "units":     "Balance, long-run avg = 100",
-        "notes":     (
-            "OECD/EC consumer confidence balance statistic. "
-            "Negative = below long-run average; leading indicator for household spending."
-        ),
-        "source":    "FRED",
-        "frequency": "Monthly",
-        "country":   "EA19",
-        "fred_id":   "CSCICP03EZM665S",
-    },
-]
+def _validate_fred_intl_library() -> list:
+    """
+    Validate FRED international indicator IDs against the FRED API.
+    Prints CSV name vs official FRED title for spot-checking.
+    Returns a list of warning strings (empty = all series found).
+    Skipped silently if FRED_API_KEY is not set.
+    """
+    if not FRED_API_KEY or not FRED_INTL_INDICATORS:
+        return []
+    warnings = []
+    total = len(FRED_INTL_INDICATORS)
+    print(f"\nValidating {total} indicator(s) in macro_library_fred.csv (International)...")
+    for indic in FRED_INTL_INDICATORS:
+        sid = indic["fred_id"]
+        try:
+            resp = requests.get(
+                _FRED_SERIES_META_URL,
+                params={"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json"},
+                timeout=10,
+            )
+            time.sleep(0.3)
+            if resp.status_code == 200:
+                seriess = resp.json().get("seriess", [])
+                if seriess:
+                    official = seriess[0]["title"]
+                    print(f"  [OK] FRED {sid}")
+                    print(f"    csv : {indic['name']}")
+                    print(f"    fred: {official}")
+                else:
+                    warnings.append(
+                        f"FRED '{sid}' returned no metadata — verify series_id "
+                        f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
+                    )
+            elif resp.status_code == 400:
+                warnings.append(
+                    f"FRED '{sid}' not found (HTTP 400) — check series_id "
+                    f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
+                )
+            else:
+                print(f"  [SKIP] {sid}: HTTP {resp.status_code} — cannot validate")
+        except Exception as e:
+            print(f"  [SKIP] {sid}: validation error — {e}")
+    return warnings
 
 
 # ---------------------------------------------------------------------------
@@ -1162,6 +1285,20 @@ def run_phase_c() -> None:
     start_time = time.time()
 
     try:
+        # ------------------------------------------------------------------
+        # VALIDATE LIBRARIES
+        # ------------------------------------------------------------------
+        all_warnings = []
+        all_warnings += _validate_wb_library()
+        all_warnings += _validate_imf_library()
+        all_warnings += _validate_fred_intl_library()
+        if all_warnings:
+            print("\n" + "!" * 60)
+            print("MACRO LIBRARY VALIDATION — ACTION REQUIRED:")
+            for w in all_warnings:
+                print(f"  [WARN] {w}")
+            print("!" * 60 + "\n")
+
         # ------------------------------------------------------------------
         # SNAPSHOT: OECD (last 3 observations per indicator)
         # ------------------------------------------------------------------
