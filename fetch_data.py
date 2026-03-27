@@ -624,7 +624,9 @@ def collect_comp_assets(instruments, comp_fx_cache):
             continue
 
         if is_pence:
-            series = series / 100
+            median_val = series.dropna().median()
+            if pd.notna(median_val) and median_val > 50:
+                series = series / 100
         elif is_usx:
             # Agricultural futures quoted in US cents — convert to USD
             series = series / 100
