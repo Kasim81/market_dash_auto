@@ -202,114 +202,6 @@ def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache, fcy_per_usd
     return round(combined * 100, 2)
 
 
-def build_calculated_fields_comp(df_comp):
-    """Add ratio-based sentiment/positioning indicators to market_data_comp.
-
-    Mirrors build_calculated_fields() but uses the expanded ratio set and
-    the comp DataFrame column schema (which includes a 'Ticker Type' column
-    and yield rows named 'Local {pk} (bps)' rather than 'Local {pk}').
-
-    Where a symbol has both a Price Return and Total Return row, the Total
-    Return row is preferred for ratio computation.
-    """
-    print("\nCalculating comp ratio fields...")
-
-    # Build symbol lookup, letting Total Return rows overwrite Price Return rows.
-    sym_map = {}
-    for _, row in df_comp.iterrows():
-        sym = str(row.get("Symbol", "")).strip()
-        if not sym:
-            continue
-        ticker_type = str(row.get("Ticker Type", "")).lower()
-        if sym not in sym_map or "total" in ticker_type:
-            sym_map[sym] = row
-
-    def safe_ratio_return(num_ticker, den_ticker, period_key):
-        num_row = sym_map.get(num_ticker)
-        den_row = sym_map.get(den_ticker)
-        if num_row is None or den_row is None:
-            return np.nan
-        col = f"Local {period_key}"
-        n = num_row.get(col)
-        d = den_row.get(col)
-        if pd.isna(n) or pd.isna(d) or (1 + float(d) / 100) == 0:
-            return np.nan
-        return round(((1 + float(n) / 100) / (1 + float(d) / 100) - 1) * 100, 2)
-
-    def safe_bps_spread(a_ticker, b_ticker, period_key):
-        a_row = sym_map.get(a_ticker)
-        b_row = sym_map.get(b_ticker)
-        if a_row is None or b_row is None:
-            return np.nan
-        col = f"Local {period_key} (bps)"
-        a = a_row.get(col)
-        b = b_row.get(col)
-        if pd.isna(a) or pd.isna(b):
-            return np.nan
-        return round(float(a) - float(b), 1)
-
-    ratios = [
-        # (numerator, denominator, name, region, asset_class)
-        ("SPY",    "GOVT",   "Risk-On vs Risk-Off (Equities vs Treasuries)", "North America", "Sentiment Ratio"),
-        ("XLY",    "XLP",    "Cyclicals vs Defensives",                      "North America", "Sentiment Ratio"),
-        ("XLF",    "XLU",    "Financials vs Utilities",                      "North America", "Sentiment Ratio"),
-        ("HG=F",   "GC=F",   "Dr. Copper vs Gold (Industrial Growth Signal)","Global",        "Sentiment Ratio"),
-        ("IHYU.L", "SLXX.L", "HY vs IG Credit Spread Proxy",                 "North America", "Sentiment Ratio"),
-        ("IHYU.L", "GOVT",   "HY vs Treasuries (Credit Risk Proxy)",         "North America", "Sentiment Ratio"),
-        ("IVW",    "IVE",    "Growth vs Value (S&P 500)",                    "North America", "Sentiment Ratio"),
-        ("IWM",    "SPY",    "Small Cap vs Large Cap (US)",                  "North America", "Sentiment Ratio"),
-        ("^FTMC",  "^FTSE",  "Small Cap vs Large Cap (UK)",                  "Europe",        "Sentiment Ratio"),
-    ]
-    spreads = [
-        # (a_ticker, b_ticker, name, region, asset_class)  — uses bps columns
-        ("^TNX", "DGS2", "Yield Curve Slope (US 10Y minus 2Y, bps change)", "North America", "Sentiment Ratio"),
-    ]
-
-    ratio_rows = []
-    for num, den, name, region, asset_class in ratios:
-        row = {
-            "Symbol":            f"{num}/{den}",
-            "Name":              name,
-            "Ticker Type":       "Sentiment Ratio",
-            "Region":            region,
-            "Broad Asset Class": "Macro-Market Indicators",
-            "Sub-Category":      asset_class,
-            "Currency":          "Ratio",
-            "Last Price":        np.nan,
-            "Last Date":         np.nan,
-        }
-        for pk in PERIODS:
-            row[f"Local {pk}"] = safe_ratio_return(num, den, pk)
-            row[f"USD {pk}"]   = np.nan
-        ratio_rows.append(row)
-
-    for a, b, name, region, asset_class in spreads:
-        row = {
-            "Symbol":            f"{a}-{b}",
-            "Name":              name,
-            "Ticker Type":       "Sentiment Ratio",
-            "Region":            region,
-            "Broad Asset Class": "Macro-Market Indicators",
-            "Sub-Category":      asset_class,
-            "Currency":          "bps chg",
-            "Last Price":        np.nan,
-            "Last Date":         np.nan,
-        }
-        for pk in PERIODS:
-            row[f"Local {pk} (bps)"] = safe_bps_spread(a, b, pk)
-        ratio_rows.append(row)
-
-    n_added = len(ratio_rows)
-    missing = [sym for sym in
-               [t[0] for t in ratios] + [t[1] for t in ratios] +
-               [t[0] for t in spreads] + [t[1] for t in spreads]
-               if sym not in sym_map]
-    if missing:
-        print(f"  Comp ratios: added {n_added} rows "
-              f"(components not found — empty perfs: {sorted(set(missing))})")
-    else:
-        print(f"  Comp ratios: added {n_added} ratio/spread rows")
-    return ratio_rows
 
 
 # ─────────────────────────────────────────────
@@ -916,12 +808,6 @@ def main():
         comp_yf_rows     = collect_comp_assets(comp_instruments, fx_cache)
         comp_fred_rows   = collect_comp_fred_assets()
         df_comp = _build_library_df(comp_yf_rows, comp_fred_rows)
-
-        # Calculated ratio/spread rows for comp
-        comp_ratio_rows = build_calculated_fields_comp(df_comp)
-        df_comp = pd.concat([df_comp, pd.DataFrame(comp_ratio_rows)], ignore_index=True)
-        # Re-add row_id after ratio rows appended
-        df_comp["row_id"] = range(1, len(df_comp) + 1)
 
         comp_path = "data/market_data_comp.csv"
         df_comp.to_csv(comp_path, index=False)
