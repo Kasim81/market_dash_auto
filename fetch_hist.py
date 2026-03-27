@@ -532,6 +532,9 @@ def load_comp_instruments() -> list:
         asset_class = str(row.get("asset_class", "")).strip()
         broad_ac    = str(row.get("broad_asset_class", asset_class)).strip()
         asset_sub   = str(row.get("asset_subclass", "")).strip()
+        units       = str(row.get("units", "")).strip()
+        if units in ("nan", ""):
+            units = ""
         currency    = str(row.get("base_currency", "USD")).strip()
         src         = str(row.get("data_source", "")).strip()
         if not currency or currency in ("nan", "N/A"):
@@ -545,7 +548,7 @@ def load_comp_instruments() -> list:
             return {
                 "ticker": ticker, "name": name, "region": region,
                 "asset_class": asset_class, "broad_asset_class": broad_ac,
-                "asset_subclass": asset_sub,
+                "asset_subclass": asset_sub, "units": units,
                 "currency": currency, "ticker_type": ticker_type,
                 "pence": ticker.endswith(".L"), "usx": is_usx,
             }
@@ -619,6 +622,7 @@ def load_comp_fred_rates() -> list:
             "asset_class":      ac_raw,
             "broad_asset_class": str(row.get("broad_asset_class", ac_raw)).strip(),
             "asset_subclass":   str(row.get("asset_subclass", "")).strip(),
+            "units":            str(row.get("units", "")).strip(),
             "is_yield":         is_yield,
         })
         seen.add(series_id)
@@ -918,54 +922,6 @@ def build_comp_market_meta_prefix(
         "Volatility": "Macro-Market Indicators",
     }
 
-    # Units by asset class (library values)
-    _ac_units = {
-        "Equity":          "Index / Price",
-        "Fixed Income":    "Price",
-        "FX":              "Rate",
-        "Commodity":       "Price",
-        "Crypto":          "Price",
-        "Volatility":      "Index",
-        "Rates":           "% pa",
-    }
-
-    # More granular units by asset_subclass override
-    _asc_units = {
-        "Equity Broad":              "Index",
-        "Equity Large Cap":          "Index",
-        "Equity Mid Cap":            "Index",
-        "Equity Mid Cap (Growth)":   "Index",
-        "Equity Mid Cap (Value)":    "Index",
-        "Equity Small Cap":          "Index",
-        "Equity Small Cap (Growth)": "Index",
-        "Equity Small Cap (Value)":  "Index",
-        "Equity Sector":             "Index",
-        "Equity Industry Group":     "Index",
-        "Equity Factor":             "Price",
-        "Govt Bond":                 "Index",
-        "Government":                "Price",
-        "Government Short":          "Price",
-        "Global Aggregate":          "Price",
-        "Corp IG":                   "Index / Price",
-        "Corp HY":                   "Index / Price",
-        "Inflation-Linked":          "Index / Price",
-        "Currency Index":            "Index",
-        "FX Spot Rate":              "Rate",
-        "Commodity":                 "Price",
-        "Commodity Sub-Index":       "Price",
-        "Bitcoin":                   "Price",
-        "Ethereum":                  "Price",
-        "Equity Volatility":         "Index",
-        "Fixed Income Volatility":   "Index",
-        "Commodity Volatility":      "Index",
-        "Tail Risk":                 "Index",
-        "Government Yield":          "% pa",
-        "Credit Spread":             "bps",
-        "Breakeven Inflation":       "% pa",
-        "Yield Curve":               "bps",
-        "Policy Rate":               "% pa",
-    }
-
     ticker_id_row        = ["Ticker ID"]
     variant_row          = ["Variant"]
     source_row           = ["Source"]
@@ -997,6 +953,7 @@ def build_comp_market_meta_prefix(
             asset_cls = inst["asset_class"]
             broad_ac  = inst.get("broad_asset_class", asset_cls)
             asset_sub = inst.get("asset_subclass", "")
+            units     = inst.get("units", "")
             local_ccy = inst["currency"] or "USD"
         elif base in fr_meta:
             fr_row    = fr_meta[base]
@@ -1006,13 +963,13 @@ def build_comp_market_meta_prefix(
             asset_cls = fr_row["asset_class"]
             broad_ac  = fr_row.get("broad_asset_class", asset_cls)
             asset_sub = fr_row.get("asset_subclass", "")
+            units     = fr_row.get("units", "")
             local_ccy = "USD"
         else:
-            source = name = region = asset_cls = broad_ac = asset_sub = ""
+            source = name = region = asset_cls = broad_ac = asset_sub = units = ""
             local_ccy = "USD"
 
         display_ac = _ac_display.get(asset_cls, asset_cls)
-        units      = _asc_units.get(asset_sub) or _ac_units.get(asset_cls, "")
 
         ticker_id_row.append(base)
         variant_row.append(variant)
