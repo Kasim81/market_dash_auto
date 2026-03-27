@@ -85,7 +85,7 @@ BACKOFF_MAX_RETRIES = 5
 
 import pathlib as _pl
 
-_FRED_LIBRARY_CSV = _pl.Path(__file__).parent / "macro_library_fred.csv"
+_FRED_LIBRARY_CSV = _pl.Path(__file__).parent / "data" / "macro_library_fred.csv"
 
 
 def _load_fred_us_library() -> tuple[dict, dict]:
