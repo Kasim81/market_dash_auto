@@ -7,7 +7,7 @@ Market Dashboard Expansion
 WHAT THIS MODULE DOES
 ---------------------
 Computes 50 macro-market composite indicators defined in
-macromarket/macro_indicator_library.csv as weekly time series.
+data/macro_indicator_library.csv as weekly time series.
 
 For each indicator three values are produced per date:
   raw     — the ratio, spread, growth rate, level or composite as defined
@@ -120,7 +120,7 @@ ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
 # INDICATOR METADATA  (id → region_block, category, formula_note)
-# Matches macromarket/macro_indicator_library.csv
+# Matches data/macro_indicator_library.csv
 # ---------------------------------------------------------------------------
 INDICATOR_META = {
     # US & Neighbours — Growth
@@ -584,7 +584,7 @@ def make_result(raw: pd.Series, ind_id: str) -> pd.DataFrame:
 # ===========================================================================
 # Each entry is a lambda(raw_value, zscore) → regime_string.
 # raw and zscore may be NaN — the lambda must guard against this.
-# Thresholds follow macromarket/macro_indicator_library.csv.
+# Thresholds follow data/macro_indicator_library.csv.
 # ===========================================================================
 
 def _r(raw, z, pos_z, neg_z, pos_label, neg_label, neutral="neutral"):

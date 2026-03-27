@@ -1074,7 +1074,7 @@ COMP_HIST_TAB   = "market_data_comp_hist"
 COMP_HIST_CSV   = "data/market_data_comp_hist.csv"
 COMP_HIST_START = "1950-01-01"
 
-LIBRARY_PATH_HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
+LIBRARY_PATH_HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "index_library.csv")
 
 # ---------------------------------------------------------------------------
 # COMP HIST: SORT ORDER + FX MAPS

@@ -44,11 +44,11 @@ FCY_PER_USD = {"JPY", "CNY", "INR", "KRW", "TWD"}
 # COMPREHENSIVE LIBRARY — constants for market_data_comp
 # ─────────────────────────────────────────────
 
-LIBRARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_library.csv")
+LIBRARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "index_library.csv")
 
 # Level-change tickers (absolute point change, not % change) — read from CSV
 # so the list can be maintained without touching this file.
-_LEVEL_CHANGE_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "level_change_tickers.csv")
+_LEVEL_CHANGE_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "level_change_tickers.csv")
 try:
     COMP_LEVEL_CHANGE_TICKERS = set(pd.read_csv(_LEVEL_CHANGE_CSV)["ticker"].dropna().str.strip())
 except Exception:

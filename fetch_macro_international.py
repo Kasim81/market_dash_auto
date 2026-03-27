@@ -174,10 +174,10 @@ WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
 
 import pathlib as _pl
 
-_OECD_CSV = _pl.Path(__file__).parent / "macro_library_oecd.csv"
-_WB_CSV   = _pl.Path(__file__).parent / "macro_library_worldbank.csv"
-_IMF_CSV  = _pl.Path(__file__).parent / "macro_library_imf.csv"
-_FRED_CSV = _pl.Path(__file__).parent / "macro_library_fred.csv"
+_OECD_CSV = _pl.Path(__file__).parent / "data" / "macro_library_oecd.csv"
+_WB_CSV   = _pl.Path(__file__).parent / "data" / "macro_library_worldbank.csv"
+_IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
+_FRED_CSV = _pl.Path(__file__).parent / "data" / "macro_library_fred.csv"
 
 
 def _load_oecd_indicators() -> list:
