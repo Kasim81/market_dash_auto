@@ -359,12 +359,13 @@ def load_simple_library():
         return None if s in ("nan", "", "N/A") else s
 
     for _, row in simple.iterrows():
-        name          = str(row["name"]).strip()
-        region        = str(row["region"]).strip()
-        asset_cls_raw = str(row["asset_class"]).strip()
-        asset_cls     = str(row["asset_subclass"]).strip()
-        ccy           = str(row["base_currency"]).strip()
-        src           = str(row["data_source"]).strip()
+        name            = str(row["name"]).strip()
+        region          = str(row["region"]).strip()
+        asset_cls_raw   = str(row["asset_class"]).strip()
+        broad_ac        = str(row.get("broad_asset_class", asset_cls_raw)).strip()
+        asset_cls       = str(row["asset_subclass"]).strip()
+        ccy             = str(row["base_currency"]).strip()
+        src             = str(row["data_source"]).strip()
         if ccy in ("nan", "", "N/A"):
             ccy = "USD"
         if ccy == "USX":
@@ -375,15 +376,16 @@ def load_simple_library():
 
         def _entry(ticker, ticker_type):
             return {
-                "ticker":          ticker,
-                "name":            name,
-                "region":          region,
-                "asset_class":     asset_cls,
-                "asset_class_raw": asset_cls_raw,
-                "currency":        ccy,
-                "ticker_type":     ticker_type,
-                "pence":           ticker.endswith(".L"),
-                "usx":             str(row["base_currency"]).strip() == "USX",
+                "ticker":            ticker,
+                "name":              name,
+                "region":            region,
+                "asset_class":       asset_cls,
+                "asset_class_raw":   asset_cls_raw,
+                "broad_asset_class": broad_ac,
+                "currency":          ccy,
+                "ticker_type":       ticker_type,
+                "pence":             ticker.endswith(".L"),
+                "usx":               str(row["base_currency"]).strip() == "USX",
             }
 
         if src == "yfinance PR":
@@ -438,6 +440,7 @@ def collect_simple_fred_assets():
         if region in ("nan", "", "N/A"):
             region = "Global"
         asset_cls_raw = str(lib_row["asset_class"]).strip()
+        broad_ac      = str(lib_row.get("broad_asset_class", asset_cls_raw)).strip()
         asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
 
         oas_id   = _val(lib_row.get("ticker_fred_oas"))
@@ -464,7 +467,7 @@ def collect_simple_fred_assets():
             "Name":              name,
             "Ticker Type":       "FRED",
             "Region":            region,
-            "Broad Asset Class": asset_cls_raw,
+            "Broad Asset Class": broad_ac,
             "Sub-Category":      asset_sub,
             "Currency":          "USD",
             "Last Price":        np.nan,
@@ -524,12 +527,13 @@ def load_instrument_library():
         return None if s in ("nan", "", "N/A") else s
 
     for _, row in confirmed_yf.iterrows():
-        name          = str(row["name"]).strip()
-        region        = str(row["region"]).strip()
-        asset_cls_raw = str(row["asset_class"]).strip()
-        asset_cls     = str(row["asset_subclass"]).strip()
-        ccy           = str(row["base_currency"]).strip()
-        src           = str(row["data_source"]).strip()
+        name            = str(row["name"]).strip()
+        region          = str(row["region"]).strip()
+        asset_cls_raw   = str(row["asset_class"]).strip()
+        broad_ac        = str(row.get("broad_asset_class", asset_cls_raw)).strip()
+        asset_cls       = str(row["asset_subclass"]).strip()
+        ccy             = str(row["base_currency"]).strip()
+        src             = str(row["data_source"]).strip()
         if ccy in ("nan", "", "N/A"):
             ccy = "USD"
         # USX = US cents (agricultural futures) → treat as USD after ÷100 correction
@@ -541,15 +545,16 @@ def load_instrument_library():
 
         def _entry(ticker, ticker_type):
             return {
-                "ticker":          ticker,
-                "name":            name,
-                "region":          region,
-                "asset_class":     asset_cls,
-                "asset_class_raw": asset_cls_raw,
-                "currency":        ccy,
-                "ticker_type":     ticker_type,
-                "pence":           ticker.endswith(".L"),
-                "usx":             str(row["base_currency"]).strip() == "USX",
+                "ticker":            ticker,
+                "name":              name,
+                "region":            region,
+                "asset_class":       asset_cls,
+                "asset_class_raw":   asset_cls_raw,
+                "broad_asset_class": broad_ac,
+                "currency":          ccy,
+                "ticker_type":       ticker_type,
+                "pence":             ticker.endswith(".L"),
+                "usx":               str(row["base_currency"]).strip() == "USX",
             }
 
         if src == "yfinance PR":
@@ -584,7 +589,8 @@ def collect_comp_assets(instruments, comp_fx_cache):
         name        = inst["name"]
         region      = inst["region"]
         asset_class = inst["asset_class"]      # asset_subclass (granular)
-        asset_class_raw = inst.get("asset_class_raw", asset_class)  # broad asset class
+        asset_class_raw = inst.get("asset_class_raw", asset_class)  # raw asset_class for sort/logic
+        broad_ac    = inst.get("broad_asset_class", asset_class_raw)  # display label
         ccy         = inst["currency"]
         ticker_type = inst["ticker_type"]
         is_pence    = inst["pence"]
@@ -603,7 +609,7 @@ def collect_comp_assets(instruments, comp_fx_cache):
             "Name":              name,
             "Ticker Type":       ticker_type,
             "Region":            region,
-            "Broad Asset Class": asset_class_raw,
+            "Broad Asset Class": broad_ac,
             "Sub-Category":      asset_class,
             "Currency":          ccy,
             "Last Price":        np.nan,
@@ -686,6 +692,7 @@ def collect_comp_fred_assets():
         if region in ("nan", "", "N/A"):
             region = "Global"
         asset_cls_raw = str(lib_row["asset_class"]).strip()
+        broad_ac      = str(lib_row.get("broad_asset_class", asset_cls_raw)).strip()
         asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
 
         # Determine which FRED ticker to use — priority: OAS > TR > yield
@@ -713,7 +720,7 @@ def collect_comp_fred_assets():
             "Name":              name,
             "Ticker Type":       "FRED",
             "Region":            region,
-            "Broad Asset Class": asset_cls_raw,
+            "Broad Asset Class": broad_ac,
             "Sub-Category":      asset_sub,
             "Currency":          "USD",
             "Last Price":        np.nan,

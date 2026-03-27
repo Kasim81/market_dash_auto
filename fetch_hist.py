@@ -530,6 +530,7 @@ def load_comp_instruments() -> list:
         name        = str(row.get("name", "")).strip()
         region      = str(row.get("region", "")).strip()
         asset_class = str(row.get("asset_class", "")).strip()
+        broad_ac    = str(row.get("broad_asset_class", asset_class)).strip()
         asset_sub   = str(row.get("asset_subclass", "")).strip()
         currency    = str(row.get("base_currency", "USD")).strip()
         src         = str(row.get("data_source", "")).strip()
@@ -543,7 +544,8 @@ def load_comp_instruments() -> list:
         def _entry(ticker, ticker_type):
             return {
                 "ticker": ticker, "name": name, "region": region,
-                "asset_class": asset_class, "asset_subclass": asset_sub,
+                "asset_class": asset_class, "broad_asset_class": broad_ac,
+                "asset_subclass": asset_sub,
                 "currency": currency, "ticker_type": ticker_type,
                 "pence": ticker.endswith(".L"), "usx": is_usx,
             }
@@ -609,13 +611,15 @@ def load_comp_fred_rates() -> list:
 
         if series_id in seen:
             continue
+        ac_raw = str(row.get("asset_class", "")).strip()
         fred_rates.append({
-            "series_id":      series_id,
-            "name":           str(row.get("name", series_id)).strip(),
-            "region":         str(row.get("region", "")).strip(),
-            "asset_class":    str(row.get("asset_class", "")).strip(),
-            "asset_subclass": str(row.get("asset_subclass", "")).strip(),
-            "is_yield":       is_yield,
+            "series_id":        series_id,
+            "name":             str(row.get("name", series_id)).strip(),
+            "region":           str(row.get("region", "")).strip(),
+            "asset_class":      ac_raw,
+            "broad_asset_class": str(row.get("broad_asset_class", ac_raw)).strip(),
+            "asset_subclass":   str(row.get("asset_subclass", "")).strip(),
+            "is_yield":         is_yield,
         })
         seen.add(series_id)
 
@@ -962,24 +966,6 @@ def build_comp_market_meta_prefix(
         "Policy Rate":               "% pa",
     }
 
-    # Broad Asset Class derivation from raw asset_class + asset_subclass
-    def _broad_ac(asset_cls: str, asset_sub: str) -> str:
-        if asset_cls == "Equity":
-            return "Equity"
-        if asset_cls == "Fixed Income":
-            return "Bonds"
-        if asset_cls == "FX":
-            return "FX"
-        if asset_cls == "Commodity":
-            return "Commodities"
-        if asset_cls == "Crypto":
-            return "Crypto"
-        if asset_cls == "Volatility":
-            return "Macro-Market Indicators"
-        if asset_cls == "Rates":
-            return "Spreads" if asset_sub == "Credit Spread" else "Bonds"
-        return asset_cls
-
     ticker_id_row        = ["Ticker ID"]
     variant_row          = ["Variant"]
     source_row           = ["Source"]
@@ -1009,6 +995,7 @@ def build_comp_market_meta_prefix(
             name      = inst["name"]
             region    = inst["region"]
             asset_cls = inst["asset_class"]
+            broad_ac  = inst.get("broad_asset_class", asset_cls)
             asset_sub = inst.get("asset_subclass", "")
             local_ccy = inst["currency"] or "USD"
         elif base in fr_meta:
@@ -1017,14 +1004,14 @@ def build_comp_market_meta_prefix(
             name      = fr_row["name"]
             region    = fr_row["region"]
             asset_cls = fr_row["asset_class"]
+            broad_ac  = fr_row.get("broad_asset_class", asset_cls)
             asset_sub = fr_row.get("asset_subclass", "")
             local_ccy = "USD"
         else:
-            source = name = region = asset_cls = asset_sub = ""
+            source = name = region = asset_cls = broad_ac = asset_sub = ""
             local_ccy = "USD"
 
         display_ac = _ac_display.get(asset_cls, asset_cls)
-        broad_ac   = _broad_ac(asset_cls, asset_sub)
         units      = _asc_units.get(asset_sub) or _ac_units.get(asset_cls, "")
 
         ticker_id_row.append(base)
