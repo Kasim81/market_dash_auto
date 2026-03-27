@@ -82,8 +82,8 @@ MARKET_HIST_CSV         = "data/market_data_hist.csv"
 MACRO_HIST_CSV          = "data/macro_us_hist.csv"
 
 # Historical start floors
-MARKET_HIST_START       = "1980-01-01"   # yfinance data; ETF columns NaN before launch date
-MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this far
+MARKET_HIST_START       = "1950-01-01"   # yfinance data; ETF/fund columns NaN before launch date
+MACRO_HIST_START        = "1950-01-01"   # FRED data; series fill in as available from this date
 
 # Rate limit delays
 YFINANCE_DELAY          = 0.3            # seconds between yfinance per-ticker calls
@@ -236,12 +236,32 @@ FRED_MACRO_US_SUBCATS = {k: v[2] for k, v in _FRED_MACRO_US_FULL.items()}
 FRED_MACRO_US_UNITS   = {k: v[3] for k, v in _FRED_MACRO_US_FULL.items()}
 FRED_MACRO_US_FREQ    = _FRED_MACRO_US_FREQ
 
-# Map native FRED frequency → display string for hist tab (forward-filled to weekly)
+# ---------------------------------------------------------------------------
+# HIST PIPELINE OVERRIDE: FEDFUNDS (monthly) → DFF (daily)
+# The snapshot tab (macro_us) keeps FEDFUNDS. The daily hist pipeline uses DFF
+# so that the Fed Funds rate column has genuine daily resolution.
+# ---------------------------------------------------------------------------
+_FRED_MACRO_US_HIST = {
+    ("DFF" if k == "FEDFUNDS" else k): v
+    for k, v in _FRED_MACRO_US_FULL.items()
+}
+_FRED_MACRO_US_FREQ_HIST = {
+    ("DFF" if k == "FEDFUNDS" else k): v
+    for k, v in _FRED_MACRO_US_FREQ.items()
+}
+_FRED_MACRO_US_FREQ_HIST["DFF"] = "Daily"
+
+FRED_MACRO_US_NAMES_HIST   = {k: v[0] for k, v in _FRED_MACRO_US_HIST.items()}
+FRED_MACRO_US_CATS_HIST    = {k: v[1] for k, v in _FRED_MACRO_US_HIST.items()}
+FRED_MACRO_US_SUBCATS_HIST = {k: v[2] for k, v in _FRED_MACRO_US_HIST.items()}
+FRED_MACRO_US_UNITS_HIST   = {k: v[3] for k, v in _FRED_MACRO_US_HIST.items()}
+
+# Map native FRED frequency → display string for hist tab (forward-filled to daily)
 _FREQ_TO_HIST_LABEL = {
-    "Daily":     "Weekly (daily → ffill)",
-    "Weekly":    "Weekly",
-    "Monthly":   "Weekly (monthly → ffill)",
-    "Quarterly": "Weekly (quarterly → ffill)",
+    "Daily":     "Daily",
+    "Weekly":    "Daily (weekly → ffill)",
+    "Monthly":   "Daily (monthly → ffill)",
+    "Quarterly": "Daily (quarterly → ffill)",
 }
 
 # ---------------------------------------------------------------------------
@@ -251,11 +271,10 @@ _FREQ_TO_HIST_LABEL = {
 def get_friday_spine(start_str: str, end_date: date = None) -> pd.DatetimeIndex:
     """
     Generate a DatetimeIndex of every Friday from start_str to end_date.
-    end_date defaults to the most recent Friday.
+    Retained for reference; production pipelines now use get_daily_spine().
     """
     if end_date is None:
         today = date.today()
-        # Roll back to most recent Friday
         days_since_friday = (today.weekday() - 4) % 7
         end_date = today - timedelta(days=days_since_friday)
 
@@ -267,17 +286,49 @@ def get_friday_spine(start_str: str, end_date: date = None) -> pd.DatetimeIndex:
     return spine
 
 
+def get_daily_spine(start_str: str, end_date: date = None) -> pd.DatetimeIndex:
+    """
+    Generate a DatetimeIndex of every calendar day from start_str to end_date.
+    end_date defaults to today.
+
+    Calendar days (freq='D') are used so that instruments traded in different
+    regions (different bank holiday calendars) can all share a single spine.
+    Weekends and holidays carry forward the last known value via ffill.
+    """
+    if end_date is None:
+        end_date = date.today()
+
+    spine = pd.date_range(
+        start=start_str,
+        end=end_date.strftime("%Y-%m-%d"),
+        freq="D"
+    )
+    return spine
+
+
 def align_to_friday_spine(series: pd.Series, spine: pd.DatetimeIndex) -> pd.Series:
     """
-    Reindex a series to a Friday spine, then forward-fill to propagate
-    monthly/quarterly values into intervening weekly slots.
+    Reindex a series to a Friday spine, then forward-fill.
+    Retained for reference; production pipelines now use align_to_daily_spine().
     """
-    # Ensure series index is datetime
     series.index = pd.to_datetime(series.index)
     series = series.sort_index()
-
-    # Reindex to spine, then ffill
     aligned = series.reindex(spine, method="ffill")
+    return aligned
+
+
+def align_to_daily_spine(series: pd.Series, spine: pd.DatetimeIndex) -> pd.Series:
+    """
+    Reindex a series to a calendar-daily spine, then forward-fill.
+
+    No limit on ffill: lower-frequency series (monthly, quarterly) carry their
+    last known value forward until the next observation arrives. Weekends and
+    market holidays in daily market data are filled from the prior trading day.
+    Values before the first observation remain NaN (no backfill).
+    """
+    series.index = pd.to_datetime(series.index)
+    series = series.sort_index()
+    aligned = series.reindex(spine).ffill()
     return aligned
 
 
@@ -461,14 +512,11 @@ def fetch_yfinance_history(
         # Pence correction for LSE ETFs
         s = apply_pence_correction(ticker, s)
 
-        # Resample to weekly Friday close (last valid value in each week)
+        # Align daily market data to calendar spine.
+        # yfinance returns trading days only; weekends and holidays are filled
+        # from the last known close via ffill. No resample needed.
         s.index = pd.to_datetime(s.index)
-        weekly = s.resample("W-FRI").last()
-
-        # Align to our canonical Friday spine
-        local_aligned = weekly.reindex(spine)
-        # Forward-fill short gaps (e.g. exchange holidays) — max 5 trading days
-        local_aligned = local_aligned.ffill(limit=5)
+        local_aligned = align_to_daily_spine(s, spine)
 
         local_prices[ticker] = local_aligned
 
@@ -506,7 +554,7 @@ def fetch_fred_yields_history(spine: pd.DatetimeIndex) -> tuple[dict, dict]:
             local_prices[series_id] = pd.Series(np.nan, index=spine)
             usd_prices[series_id]   = pd.Series(np.nan, index=spine)
         else:
-            aligned = align_to_friday_spine(data, spine)
+            aligned = align_to_daily_spine(data, spine)
             local_prices[series_id] = aligned
             usd_prices[series_id]   = aligned  # yields: no FX conversion
 
@@ -684,9 +732,9 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
         return pd.DataFrame()
 
     series_data = {}
-    total = len(_FRED_MACRO_US_FULL)
+    total = len(_FRED_MACRO_US_HIST)
 
-    for i, (series_id, meta) in enumerate(_FRED_MACRO_US_FULL.items(), 1):
+    for i, (series_id, meta) in enumerate(_FRED_MACRO_US_HIST.items(), 1):
         name = meta[0]
         print(f"  [{i}/{total}] {series_id} ({name})...")
 
@@ -696,7 +744,7 @@ def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
             print(f"    → No data")
             series_data[series_id] = pd.Series(np.nan, index=spine, name=series_id)
         else:
-            aligned = align_to_friday_spine(s, spine)
+            aligned = align_to_daily_spine(s, spine)
             series_data[series_id] = aligned
             print(f"    → {len(s)} obs, first: {s.index[0].date()}, "
                   f"last: {s.index[-1].date()}")
@@ -829,7 +877,7 @@ def build_market_meta_prefix(df: pd.DataFrame) -> list:
         asset_class_row.append(asset_cls)
         currency_row.append("USD" if is_usd else m[3])
         units_row.append(_ac_units.get(asset_cls, ""))
-        frequency_row.append("Weekly")
+        frequency_row.append("Daily")
         updated_row.append(run_ts)
 
     return [
@@ -865,15 +913,15 @@ def build_macro_meta_prefix(df: pd.DataFrame) -> list:
     for col in df.columns:
         if col == "Date":
             continue
-        native_freq = FRED_MACRO_US_FREQ.get(col, "")
+        native_freq = _FRED_MACRO_US_FREQ_HIST.get(col, "")
         hist_freq   = _FREQ_TO_HIST_LABEL.get(native_freq, native_freq)
 
         series_id_row.append(col)
         source_row.append("FRED")
-        name_row.append(FRED_MACRO_US_NAMES.get(col, col))
-        category_row.append(FRED_MACRO_US_CATS.get(col, ""))
-        subcat_row.append(FRED_MACRO_US_SUBCATS.get(col, ""))
-        units_row.append(FRED_MACRO_US_UNITS.get(col, ""))
+        name_row.append(FRED_MACRO_US_NAMES_HIST.get(col, col))
+        category_row.append(FRED_MACRO_US_CATS_HIST.get(col, ""))
+        subcat_row.append(FRED_MACRO_US_SUBCATS_HIST.get(col, ""))
+        units_row.append(FRED_MACRO_US_UNITS_HIST.get(col, ""))
         frequency_row.append(hist_freq)
         updated_row.append(run_ts)
 
@@ -1028,13 +1076,13 @@ def run_hist() -> None:
     start_ts = time.time()
 
     try:
-        # --- Build Friday spines ------------------------------------------
-        market_spine = get_friday_spine(MARKET_HIST_START)
-        macro_spine  = get_friday_spine(MACRO_HIST_START)
+        # --- Build daily spines -------------------------------------------
+        market_spine = get_daily_spine(MARKET_HIST_START)
+        macro_spine  = get_daily_spine(MACRO_HIST_START)
 
-        print(f"Market spine:  {len(market_spine):,} Fridays "
+        print(f"Market spine:  {len(market_spine):,} days "
               f"({market_spine[0].date()} → {market_spine[-1].date()})")
-        print(f"Macro spine:   {len(macro_spine):,} Fridays "
+        print(f"Macro spine:   {len(macro_spine):,} days "
               f"({macro_spine[0].date()} → {macro_spine[-1].date()})")
 
         # --- market_data_hist ---------------------------------------------
@@ -1383,8 +1431,7 @@ def fetch_comp_yfinance_history(
             s = s / 100
 
         s.index = pd.to_datetime(s.index)
-        weekly        = s.resample("W-FRI").last()
-        local_aligned = weekly.reindex(spine).ffill(limit=5)
+        local_aligned = align_to_daily_spine(s, spine)
 
         local_prices[ticker] = local_aligned
         usd_prices[ticker]   = compute_comp_usd_series(local_aligned, currency, fx_cache)
@@ -1421,7 +1468,7 @@ def fetch_comp_fred_rates_history(
             local_prices[sid] = pd.Series(np.nan, index=spine)
             usd_prices[sid]   = pd.Series(np.nan, index=spine)
         else:
-            aligned          = align_to_friday_spine(data, spine)
+            aligned          = align_to_daily_spine(data, spine)
             local_prices[sid] = aligned
             usd_prices[sid]   = aligned   # rates: no FX conversion
         if i < total:
@@ -1636,7 +1683,7 @@ def build_comp_market_meta_prefix(
         asset_class_row.append(display_ac)
         currency_row.append("USD" if is_usd else local_ccy)
         units_row.append(units)
-        frequency_row.append("Weekly")
+        frequency_row.append("Daily")
         updated_row.append(run_ts)
 
     return [
@@ -1663,9 +1710,9 @@ def run_comp_hist() -> None:
     start_ts = time.time()
 
     try:
-        # 1. Friday spine from 1950
-        comp_spine = get_friday_spine(COMP_HIST_START)
-        print(f"Comp spine: {len(comp_spine):,} Fridays "
+        # 1. Daily spine from 1950
+        comp_spine = get_daily_spine(COMP_HIST_START)
+        print(f"Comp spine: {len(comp_spine):,} days "
               f"({comp_spine[0].date()} → {comp_spine[-1].date()})")
 
         # 2. Load instruments and FRED rates from library
