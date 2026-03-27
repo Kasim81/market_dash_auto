@@ -620,6 +620,170 @@ def build_comp_fx_cache():
     return cache
 
 
+def load_simple_library():
+    """Read index_library.csv filtered on simple_dash == True.
+
+    Returns instruments in the same dict format as load_instrument_library()
+    but only the single ticker each simple-pipeline row actually uses:
+      - yfinance PR rows → PR ticker (or TR ticker if PR absent)
+      - yfinance TR rows → TR ticker only
+      - FRED/UNAVAILABLE rows → handled separately via collect_simple_fred_assets()
+
+    The simple pipeline's display order matches the library sort order.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    simple = df[
+        (df["simple_dash"] == True) &
+        (df["data_source"].isin(["yfinance PR", "yfinance TR"])) &
+        (df["validation_status"] == "CONFIRMED")
+    ].copy()
+
+    simple["_sort"] = simple.apply(_lib_sort_key, axis=1)
+    simple = simple.sort_values("_sort").drop(columns=["_sort"])
+
+    instruments = []
+    seen = set()
+
+    def _clean(val):
+        s = str(val).strip()
+        return None if s in ("nan", "", "N/A") else s
+
+    for _, row in simple.iterrows():
+        name          = str(row["name"]).strip()
+        region        = str(row["region"]).strip()
+        asset_cls_raw = str(row["asset_class"]).strip()
+        asset_cls     = str(row["asset_subclass"]).strip()
+        ccy           = str(row["base_currency"]).strip()
+        src           = str(row["data_source"]).strip()
+        if ccy in ("nan", "", "N/A"):
+            ccy = "USD"
+        if ccy == "USX":
+            ccy = "USD"
+
+        pr = _clean(row["ticker_yfinance_pr"])
+        tr = _clean(row["ticker_yfinance_tr"])
+
+        def _entry(ticker, ticker_type):
+            return {
+                "ticker":          ticker,
+                "name":            name,
+                "region":          region,
+                "asset_class":     asset_cls,
+                "asset_class_raw": asset_cls_raw,
+                "currency":        ccy,
+                "ticker_type":     ticker_type,
+                "pence":           ticker.endswith(".L"),
+                "usx":             str(row["base_currency"]).strip() == "USX",
+            }
+
+        if src == "yfinance PR":
+            # For PR rows, use the TR ticker if available (ETF/fund),
+            # otherwise use the PR ticker (index)
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
+            elif pr and pr not in seen:
+                instruments.append(_entry(pr, "Price Return (Index)"))
+                seen.add(pr)
+        elif src == "yfinance TR":
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
+
+    print(f"  Simple library loaded: {len(instruments)} instruments "
+          f"({sum(1 for i in instruments if i['ticker_type'].startswith('Price'))} PR, "
+          f"{sum(1 for i in instruments if i['ticker_type'].startswith('Total'))} TR)")
+    return instruments
+
+
+def collect_simple_fred_assets():
+    """Collect FRED-sourced instruments for market_data (simple_dash == True only).
+
+    Uses the same pattern as collect_comp_fred_assets() but filters to
+    simple_dash rows.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    fred_rows = df[
+        (df["simple_dash"] == True) &
+        (df["data_source"].isin(["FRED", "UNAVAILABLE"])) &
+        (df["validation_status"] == "CONFIRMED")
+    ].copy()
+
+    if fred_rows.empty:
+        return []
+
+    fred_rows["_s"] = fred_rows.apply(_lib_sort_key, axis=1)
+    fred_rows = fred_rows.sort_values("_s").drop(columns=["_s"])
+
+    print(f"\nFetching simple FRED series ({len(fred_rows)} rows)...")
+    rows = []
+
+    def _val(v):
+        s = str(v).strip()
+        return None if s in ("nan", "N/A", "") else s
+
+    for _, lib_row in fred_rows.iterrows():
+        name          = str(lib_row["name"]).strip()
+        region        = str(lib_row.get("region", "Global")).strip()
+        if region in ("nan", "", "N/A"):
+            region = "Global"
+        asset_cls_raw = str(lib_row["asset_class"]).strip()
+        asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
+
+        oas_id   = _val(lib_row.get("ticker_fred_oas"))
+        tr_id    = _val(lib_row.get("ticker_fred_tr"))
+        yield_id = _val(lib_row.get("ticker_fred_yield"))
+
+        if oas_id:
+            series_id = oas_id
+            is_yield  = True
+        elif tr_id:
+            series_id = tr_id
+            is_yield  = False
+        elif yield_id:
+            series_id = yield_id
+            is_yield  = True
+        else:
+            continue
+
+        print(f"  {series_id} ({name[:45]})...")
+        series = fetch_fred_series(series_id)
+
+        row = {
+            "Symbol":            series_id,
+            "Name":              name,
+            "Ticker Type":       "FRED",
+            "Region":            region,
+            "Broad Asset Class": asset_cls_raw,
+            "Sub-Category":      asset_sub,
+            "Currency":          "USD",
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
+            "_sort_group":       _LIB_ASSET_CLASS_GROUP.get(asset_cls_raw, 99),
+        }
+
+        if series is not None and not series.empty:
+            row["Last Price"] = round(series.iloc[-1], 4)
+            row["Last Date"]  = str(series.index[-1].date())
+            for pk in PERIODS:
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
+                else:
+                    row[f"Local {pk}"] = calc_return(series, pk, is_yield=False)
+                    row[f"USD {pk}"]   = row[f"Local {pk}"]
+        else:
+            for pk in PERIODS:
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = np.nan
+                else:
+                    row[f"Local {pk}"] = np.nan
+                    row[f"USD {pk}"]   = np.nan
+
+        rows.append(row)
+
+    return rows
+
+
 def load_instrument_library():
     """Read index_library.csv and return a flat list of instrument dicts.
 
@@ -981,6 +1145,25 @@ def push_to_google_sheets(df_main, df_comp=None):
 # ENTRY POINT
 # ─────────────────────────────────────────────
 
+def _build_library_df(yf_rows, fred_rows):
+    """Assemble a library-driven DataFrame from yfinance + FRED row lists.
+
+    Common helper for both market_data and market_data_comp pipelines.
+    Sorts by _sort_group, enforces standard column order, adds row_id.
+    """
+    all_rows = yf_rows + fred_rows
+    all_rows.sort(key=lambda r: r.get("_sort_group", 99))
+    df = pd.DataFrame([
+        {k: v for k, v in r.items() if k != "_sort_group"}
+        for r in all_rows
+    ])
+    _leading = ["Symbol", "Name", "Ticker Type", "Broad Asset Class", "Region", "Sub-Category"]
+    _rest = [c for c in df.columns if c not in _leading]
+    df = df[_leading + _rest]
+    df.insert(0, "row_id", range(1, len(df) + 1))
+    return df
+
+
 def main():
     print("=" * 60)
     print(f"Market Dashboard Data Fetch — {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
@@ -988,66 +1171,38 @@ def main():
 
     os.makedirs("data", exist_ok=True)
 
-    # 1. FX cache
-    fx_cache = build_fx_cache()
+    # ── FX cache (shared by both pipelines) ──────────────────────────────
+    fx_cache = build_comp_fx_cache()
 
-    # 2. yfinance assets
-    yf_rows = collect_yf_assets(fx_cache)
+    # ── market_data (simple dashboard — simple_dash == True) ─────────────
+    print("\n" + "=" * 60)
+    print("SIMPLE DASHBOARD (market_data)")
+    print("=" * 60)
+    simple_instruments = load_simple_library()
+    simple_yf_rows     = collect_comp_assets(simple_instruments, fx_cache)
+    simple_fred_rows   = collect_simple_fred_assets()
+    df_main = _build_library_df(simple_yf_rows, simple_fred_rows)
 
-    # 3. FRED yields
-    fred_yield_rows = collect_fred_yields()
-
-    # 4. Build main dataframe
-    all_rows = yf_rows + fred_yield_rows
-    df_main = pd.DataFrame(all_rows)
-
-    # 5. Calculated ratio fields (need df_main to exist first)
-    ratio_rows = build_calculated_fields(df_main)
-    df_ratios = pd.DataFrame(ratio_rows)
-    df_main = pd.concat([df_main, df_ratios], ignore_index=True)
-
-    # Add row_id in column A after all sort/column ordering is finalised
-    df_main.insert(0, "row_id", range(1, len(df_main) + 1))
-
-    # 6. Save market_data output
     main_path = "data/market_data.csv"
     df_main.to_csv(main_path, index=False)
     print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
 
-    # ── Comprehensive library (market_data_comp) ──────────────────────────
-    # Loads index_library.csv, fetches all confirmed instruments, and writes
-    # to the market_data_comp Google Sheet tab.  The existing market_data tab
-    # is completely unaffected by this block.
+    # ── market_data_comp (full library) ──────────────────────────────────
     df_comp = None
     try:
         print("\n" + "=" * 60)
         print("COMPREHENSIVE LIBRARY (market_data_comp)")
         print("=" * 60)
-        comp_fx_cache   = build_comp_fx_cache()
         comp_instruments = load_instrument_library()
-        comp_yf_rows    = collect_comp_assets(comp_instruments, comp_fx_cache)
-        comp_fred_rows  = collect_comp_fred_assets()  # all 25 FRED Rates from library
-        all_comp_rows   = comp_yf_rows + comp_fred_rows
-        # Sort by _sort_group so FRED Rates appear adjacent to yfinance Rates rows
-        all_comp_rows.sort(key=lambda r: r.get("_sort_group", 99))
-        # Strip the internal sort key before building the DataFrame
-        df_comp = pd.DataFrame([
-            {k: v for k, v in r.items() if k != "_sort_group"}
-            for r in all_comp_rows
-        ])
+        comp_yf_rows     = collect_comp_assets(comp_instruments, fx_cache)
+        comp_fred_rows   = collect_comp_fred_assets()
+        df_comp = _build_library_df(comp_yf_rows, comp_fred_rows)
 
-        # Calculated ratio/spread rows for comp (mirrors market_data behaviour)
+        # Calculated ratio/spread rows for comp
         comp_ratio_rows = build_calculated_fields_comp(df_comp)
         df_comp = pd.concat([df_comp, pd.DataFrame(comp_ratio_rows)], ignore_index=True)
-
-        # Enforce column order: Symbol, Name, Ticker Type, Broad Asset Class,
-        # Region, Sub-Category, then remaining columns as they appear.
-        _leading = ["Symbol", "Name", "Ticker Type", "Broad Asset Class", "Region", "Sub-Category"]
-        _rest = [c for c in df_comp.columns if c not in _leading]
-        df_comp = df_comp[_leading + _rest]
-
-        # Add row_id in column A after all sort/column ordering is finalised
-        df_comp.insert(0, "row_id", range(1, len(df_comp) + 1))
+        # Re-add row_id after ratio rows appended
+        df_comp["row_id"] = range(1, len(df_comp) + 1)
 
         comp_path = "data/market_data_comp.csv"
         df_comp.to_csv(comp_path, index=False)
@@ -1060,7 +1215,7 @@ def main():
         print("  market_data will still be pushed; market_data_comp will be skipped.")
         df_comp = None
 
-    # 7. Push to Google Sheets (market_data always; market_data_comp if available)
+    # ── Push to Google Sheets ────────────────────────────────────────────
     push_to_google_sheets(df_main, df_comp=df_comp)
 
     print(f"\n✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
