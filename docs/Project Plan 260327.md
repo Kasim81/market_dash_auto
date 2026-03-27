@@ -179,29 +179,44 @@ The project uses CSV files as indicator registries so new series can be added wi
 
 ---
 
-## 6. Known Issues
+## 6. Known Issues — Status Audit
 
-### 6.1 Breaking Issues
+The `METADATA_REDUNDANCY_REVIEW.md` (written 2026-03-20) catalogued 12 issues. A code audit on 2026-03-27 found that several have since been resolved. Current status below.
 
-1. **`data_source` filter broken** (`fetch_data.py:784`, `fetch_hist.py:1297`) — The comp pipeline filters on `data_source == "yfinance"` but `index_library.csv` now uses `"yfinance PR"` / `"yfinance TR"`. This causes the comp pipeline to return zero yfinance instruments. The filter needs to be updated to `str.startswith("yfinance")` or `.isin(["yfinance PR", "yfinance TR"])`.
+### 6.1 Previously Breaking — Now Fixed
 
-2. **PR/TR ticker logic** (`fetch_data.py:816-843`, `fetch_hist.py:1325-1342`) — Rows with `data_source = "yfinance TR"` have no `ticker_yfinance_pr` value. Once the filter in item 1 is fixed, this logic must also be reviewed.
+| # | Issue | Resolution | Verified |
+|---|---|---|---|
+| 1 | `data_source == "yfinance"` filter returned zero instruments | Both `fetch_data.py:637` and `fetch_hist.py:1114` now use `.isin(["yfinance PR", "yfinance TR"])` | Yes |
+| 2 | PR/TR ticker logic needed updating | Both files now branch on `src == "yfinance PR"` vs `"yfinance TR"`, with dedup via a `seen` set (`fetch_data.py:681-691`, `fetch_hist.py:1154-1164`) | Yes |
 
-### 6.2 Redundancy Issues
+### 6.2 Previously Redundant — Now Resolved
 
-- Instrument lists hardcoded 3x (fetch_data.py, fetch_hist.py, index_library.csv) with inconsistent metadata
-- FX ticker maps defined 4 times across 2 files
-- Sort-order dicts duplicated identically in fetch_data.py and fetch_hist.py
-- Region overridden to "UK"/"Japan" in code, contradicting library values
-- "Broad Asset Class" label computed in code rather than read from library
+| # | Issue | Resolution | Verified |
+|---|---|---|---|
+| 5 | `LEVEL_CHANGE_TICKERS` hardcoded | Now loaded from `data/level_change_tickers.csv` at `fetch_data.py:51-57`, with hardcoded fallback. Simple pipeline aliases the same set (`line 168`) | Yes |
+| 6 | Sort-order dicts duplicated in fetch_data.py and fetch_hist.py | All sort-order dicts and `lib_sort_key()` consolidated in `library_utils.py:20-168`. Both files import from there | Yes |
+| 7 | FX ticker maps defined 4 times | Comp FX maps (`COMP_FX_TICKERS`, `COMP_FCY_PER_USD`) consolidated in `library_utils.py:182-210`. Both `fetch_data.py` and `fetch_hist.py` import from there. Simple pipeline retains a 7-currency subset in `fetch_data.py:32-41` (intentional — only needs its own instruments) | Yes |
+| 9 | Region overridden to "UK"/"Japan" at runtime | No runtime override exists in current code. UK and Japan regions are set directly in the hardcoded asset definitions. The library's `region` values and the code's values may still differ, but there is no runtime mutation | Yes |
 
-See `docs/METADATA_REDUNDANCY_REVIEW.md` for the full catalogue (12 items).
+### 6.3 Remaining — Open Items
 
-### 6.3 Operational Issues
+| # | Issue | Current State | Severity |
+|---|---|---|---|
+| 3 | Simple pipeline instrument lists hardcoded 3× (fetch_data.py, fetch_hist.py, index_library.csv) | Still present. The simple pipeline's 66 instruments are hardcoded in both Python files independently of the library. Metadata inconsistencies remain (e.g. VFEM.L region differs between files) | Redundant |
+| 4 | `PENCE_TICKERS` hardcoded set in simple pipeline | `fetch_data.py:171-176` still has a hardcoded set of 12 .L tickers. The comp pipeline and fetch_hist.py use dynamic `.endswith(".L")` detection instead | Redundant |
+| 8 | "Broad Asset Class" label computed in code | `fetch_hist.py` computes this via `_broad_ac_map` (simple hist, line 768) and `_broad_ac()` (comp hist, line 1565). Not read from a library column | Structural |
+| 10 | Ratio/spread definitions entirely hardcoded | Simple pipeline: `SIMPLE_SENTIMENT_RATIOS` in `fetch_data.py:543`. Simple hist: `RATIO_DEFS` in `fetch_hist.py:202`. Comp pipeline has its own separate set. No library representation | Structural |
+| 11 | `_ac_units` mapping hardcoded | Two versions in `fetch_hist.py`: simple hist (line 754, 12 entries) and comp hist (lines 1518-1563, granular `_ac_units` + `_asc_units`). No `units` column in `index_library.csv` | Structural |
+| 12 | `build_market_meta_prefix()` sources metadata from hardcoded lists | Simple hist metadata rows are derived from the hardcoded instrument lists, not from the library | Structural |
 
-- `macro_market.csv` and `macro_market_hist.csv` were missing from the GitHub Actions git-add list (now fixed in this commit)
-- GitHub Actions auto-pauses after 60 days of no pushes
-- Google Sheets CDN caching — always use Sheets export URL, not GitHub raw URL
+### 6.4 Operational Issues
+
+| Issue | Status |
+|---|---|
+| `macro_market.csv` / `macro_market_hist.csv` missing from GitHub Actions git-add | **Fixed** — added to `update_data.yml` in this commit |
+| GitHub Actions auto-pauses after 60 days of no pushes | Active risk — pipeline is running daily so not currently an issue |
+| Google Sheets CDN caching | Ongoing — always use Sheets export URL with `gid=` parameter |
 
 ---
 
@@ -220,21 +235,18 @@ See `docs/METADATA_REDUNDANCY_REVIEW.md` for the full catalogue (12 items).
 
 ## 8. Next Phases
 
-### 8.1 Priority 1: Fix Breaking `data_source` Filter
+### 8.1 Priority 1: Remaining Code Consolidation
 
-**Impact:** High — comp pipeline silently returns zero yfinance instruments.
-**Effort:** Small (2 lines of code + testing).
-**Action:** Update the `data_source == "yfinance"` filter in `fetch_data.py` and `fetch_hist.py` to match the new `"yfinance PR"` / `"yfinance TR"` values in `index_library.csv`. Also review the PR/TR ticker column logic.
+The breaking issues (data_source filter, PR/TR logic) and the major redundancies (sort dicts, FX maps, level-change tickers) have been resolved. The remaining consolidation work is lower severity but would reduce long-term maintenance burden.
 
-### 8.2 Priority 2: Code Consolidation (Redundancy Cleanup)
-
-**Impact:** Medium — reduces maintenance burden and metadata drift.
+**Impact:** Medium — prevents metadata drift; simplifies onboarding.
 **Effort:** Medium.
 **Actions:**
-- Move shared FX maps, sort-order dicts, and pence logic into `library_utils.py`
-- Decide whether to drive the simple pipeline from `index_library.csv` (via a boolean flag column) or keep it hardcoded
-- Resolve region overrides — update library to use "UK" / "Japan" directly, or document the runtime override as intentional
-- Add `units`, `level_change`, and `broad_asset_class` columns to `index_library.csv` to eliminate hardcoded mappings
+- **Simple pipeline hardcoded lists (item 3):** Decide whether to drive the simple pipeline from `index_library.csv` (via a boolean flag column like `in_simple_pipeline`) or keep it hardcoded. If kept hardcoded, reconcile metadata inconsistencies (e.g. VFEM.L region) between the two files
+- **PENCE_TICKERS (item 4):** Replace the hardcoded set in fetch_data.py's simple pipeline with the dynamic `.endswith(".L")` + median check already used in the comp pipeline
+- **Broad Asset Class (item 8):** Add a `broad_asset_class` column to `index_library.csv` so the label is read rather than computed
+- **Units (item 11):** Add a `units` column to `index_library.csv` to eliminate the `_ac_units` / `_asc_units` dicts in fetch_hist.py
+- **Ratios (item 10):** Consider adding a "calculated" row type to `index_library.csv` for ratio/spread definitions, or document them as intentionally code-defined
 
 ### 8.3 Priority 3: Phase D — FMP PMI Data
 
