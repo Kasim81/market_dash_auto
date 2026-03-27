@@ -1142,3 +1142,19 @@ try:
 except Exception as _comp_hist_err:
     print(f"[CompHist] Non-fatal import/run error: {_comp_hist_err}")
     print("[CompHist] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# PHASE E — MACRO-MARKET INDICATORS
+# Computes 50 composite macro-market indicators as weekly
+# time series with rolling z-scores and regime classifications.
+# Outputs: data/macro_market.csv, data/macro_market_hist.csv
+#          Google Sheets tabs: macro_market, macro_market_hist
+# Runs last so all upstream hist CSVs are guaranteed to exist.
+# ============================================================
+
+try:
+    from compute_macro_market import run_phase_e
+    run_phase_e()
+except Exception as _phase_e_err:
+    print(f"[Phase E] Non-fatal import/run error: {_phase_e_err}")
+    print("[Phase E] Existing pipeline outputs are unaffected")
