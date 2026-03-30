@@ -111,3 +111,178 @@ These were evaluated and deliberately excluded:
 | JP Morgan Global PMI | S&P Global licence required | Equal-weight ISM + EZ PMI + Japan PMI (future) |
 | EM Currencies Index (EMFX) | JP Morgan proprietary | Basket of CNY/INR/KRW/TWD vs USD (future) |
 | China 10Y yield (FRED) | Data quality issues | CNYB.L ETF as proxy |
+
+---
+
+## 4. New Feature Development
+
+### 4.1 Phase D — PMI / Survey Data
+
+**Priority:** Low-medium — regional Fed surveys are already covered via FRED in `macro_us`.
+**Status:** Not started. `FMP_API_KEY` secret not registered.
+
+**Decision needed:** Check whether ISM Manufacturing PMI and ISM Services PMI are available via FRED directly. If so, FMP may be unnecessary — add them to `macro_library_fred.csv` and the existing FRED fetch pattern handles the rest. If not, register for a free FMP API key and implement a new module.
+
+FRED series to check first:
+- `NAPM` — ISM Manufacturing PMI (may have replaced `NAPMPI`)
+- `NMFCI`, `NMFBAI` — ISM Non-Manufacturing (Services)
+- Empire State Manufacturing: check FRED coverage
+- Philly Fed components: many available on FRED
+
+### 4.2 Instrument Expansion
+
+**Priority:** Medium — broadens market coverage.
+**Status:** Blocked on owner decision.
+**Action:** Kasim to confirm target instrument list before implementation. Categories to consider:
+
+- Europe sector ETFs (`.DE`, EUR-denominated)
+- EM regional ETFs
+- UK style ETFs
+- Asia/Japan additional coverage
+
+Once confirmed, add rows to `index_library.csv` — no new Python modules needed. For each new instrument:
+1. Verify ticker returns data via `python -c "import yfinance as yf; print(yf.Ticker('TICKER').history(period='5d'))"`
+2. Set correct `base_currency` (required for FX conversion)
+3. Set `validation_status = "CONFIRMED"`
+4. For `.L` tickers: pence correction is automatic (no code change needed)
+5. For new currencies: add to `COMP_FX_TICKERS` and `COMP_FCY_PER_USD` in `library_utils.py`
+
+### 4.3 Calculated Fields Expansion
+
+Several calculated fields were proposed but not yet implemented. Some may already be covered by the 57 macro-market indicators — audit before building duplicates.
+
+| Field | Formula | Status |
+|---|---|---|
+| HY/IG ratio | BAMLH0A0HYM2 / BAMLC0A0CM | Likely covered by US_I5 (HY-IG spread) |
+| EMFX basket | Equal-weight CNY, INR, KRW, TWD vs USD | Not yet implemented |
+| EEM/IWDA ratio | EEM / IWDA.L (FX-adjusted) | Not yet implemented |
+| MOVE proxy | 30-day realised vol on ^TNX | Not yet implemented |
+| Global PMI proxy | Equal-weight ISM + Eurozone PMI + Japan PMI | Depends on Phase D |
+| Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented |
+
+**Action:** Audit the 57 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the same pattern: add to `INDICATOR_META`, write a `_calc_*` function, add to `REGIME_RULES` and `_US_CALCULATORS`, add a row to `macro_indicator_library.csv`.
+
+### 4.4 Sheets Export Audit (Phase G)
+
+**Priority:** Low — housekeeping.
+
+- Verify all active tabs are pushed correctly by the relevant modules
+- Confirm tab names match exactly (lowercase with underscores)
+- Record GIDs for all tabs created since the handover
+- Confirm batch write logic (10,000 rows per call) is used for large tabs
+- Confirm protected-tab guard blocks writes to `market_data` and `sentiment_data`
+- Verify legacy tab deletion (`TABS_TO_DELETE` in fetch_data.py) is working
+
+### 4.5 Library Manager Utility
+
+**Priority:** Low — developer tooling.
+
+Create `library_manager.py` — a standalone utility for maintaining `index_library.csv`:
+
+- Validate all tickers against yfinance (flag those returning no data)
+- Auto-set `validation_status = "UNAVAILABLE"` for dead tickers
+- Suggest alternative tickers for unavailable instruments
+- Check metadata consistency (no duplicate tickers, all required fields filled)
+- Run manually (`python library_manager.py`), not as part of the daily pipeline
+
+### 4.6 Incremental Fetch Mode (fetch_hist.py)
+
+**Priority:** Medium — performance improvement.
+
+Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run (~8-12 min for `run_comp_hist()`). An incremental append mode would:
+
+1. Check the last date in the existing CSV
+2. Only fetch new weekly rows since the last update
+3. Append to existing data rather than full rebuild
+
+This would reduce daily historical data runtime from ~10 minutes to seconds.
+
+---
+
+## 5. Multi-Frequency Pipeline (Phase 2)
+
+**Priority:** High impact but large effort. Detailed plan exists in `multifreq_plan.md`.
+**Status:** Not started.
+
+### Objective
+
+Replace the weekly Friday spine with native-frequency storage using ragged columns — each series gets its own date column + value column(s). This eliminates wasted cells from forward-filling monthly/quarterly data to weekly, and provides genuine daily granularity for market prices.
+
+### Design: Ragged Column Format
+
+```
+Date_SPY  | SPY_Local | SPY_USD | Date_UNRATE | UNRATE  | ...
+1990-01-02| 35.2      | 35.2    | 1990-01-01  | 5.4     |
+1990-01-03| 35.5      | 35.5    | 1990-02-01  | 5.3     |
+1990-01-04| 35.1      | 35.1    | 1990-03-01  | 5.2     |
+...       | ...       | ...     | (ends here) |         |
+```
+
+- Market data: daily from 1990 (not weekly)
+- Macro data: stored at native frequency (monthly, quarterly, annual) — no forward-fill
+- `macro_market_hist` stays weekly — resample final indicators to W-FRI for output
+
+### Cell Budget
+
+| Tab | Columns | Max Rows | Cells |
+|---|---|---|---|
+| `market_data_comp_hist` | 390 x 3 = ~906 | ~9,000 | ~8.15M |
+| `macro_us_hist` | 43 x 2 = ~86 | ~430 (monthly) | ~37K |
+| `macro_intl_hist` | 56 x 2 = ~112 | ~430 | ~48K |
+| `macro_market_hist` | 150 (keep weekly) | ~1,300 | ~195K |
+| Snapshots | small | small | ~10K |
+| **Total** | | | **~8.4M** |
+
+Google Sheets limit is 10M cells. Headroom is tight. Future optimisation: drop `_Local` columns for USD-base tickers (saves ~150 columns).
+
+### Implementation Steps
+
+1. **Add alignment utilities to `library_utils.py`:** `load_ragged_series()`, `align_series()`, `detect_frequency()`, `freq_aware_shift()`
+2. **Convert `fetch_hist.py` to ragged output:** Replace spine-aligned builders with per-ticker ragged output
+3. **Convert `fetch_macro_international.py` to native frequency:** Store OECD monthly and WB/IMF annual at their natural cadence
+4. **Update `compute_macro_market.py`:** All 57 indicator calculator functions updated to consume ragged data via alignment utilities
+5. **Validate:** Compare indicator values between weekly and ragged branches for overlapping Friday dates
+
+### Risks
+
+1. **Sheets cell budget tight (8.4M/10M)** — if more tickers added, may need to drop `_Local` for USD-base instruments or split tabs
+2. **57 indicator functions to update** — each must be tested individually against weekly branch output
+3. **Z-score window equivalence** — 260 weekly != 1300 daily (trading vs calendar days); verify regime classifications match
+4. **Cherry-pick conflicts** — hist/compute changes won't merge cleanly between branches; manual adaptation needed
+
+---
+
+## 6. Operational & Infrastructure
+
+### GitHub Actions
+
+- **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
+- **Run timeout:** Currently set to 120 minutes. Monitor if incremental fetch mode (section 4.6) reduces this.
+
+### Google Sheets
+
+- **CDN caching:** GitHub raw CSV URLs cache aggressively. Always use the Sheets export URL with `gid=` parameter for up-to-date data.
+- **Legacy tab cleanup:** `TABS_TO_DELETE` in `fetch_data.py` automatically removes deprecated tabs (`Market Data`, `sentiment_data`, `macro_surveys`, `macro_surveys_hist`, `market_data_hist`) on every run. These will stop appearing once the Sheets-side Apps Script (if any) stops recreating them.
+- **Spreadsheet ID:** `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac` — hardcoded in all 5 modules that write to Sheets.
+
+### Downstream Consumer: trigger.py
+
+`trigger.py` runs at 06:15 London time on a local Windows machine (`C:\Users\kasim\ClaudeWorkflow\`). It reads only:
+- `market_data` tab (via Sheets CSV export, GID `68683176`)
+
+No other tabs are consumed by trigger.py. Changes to macro, history, or indicator tabs do not affect the downstream consumer.
+
+### index_library.csv Maintenance
+
+The library is the single source of truth for all instrument metadata. It is built and maintained via a separate Claude project located at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. See the `TECHNICAL_MANUAL.md` in that folder for the library build process.
+
+To add a new instrument without the library builder:
+1. Add a row to `data/index_library.csv` with `validation_status = "CONFIRMED"`
+2. Verify the ticker works: `python -c "import yfinance as yf; print(yf.Ticker('TICKER').history(period='5d'))"`
+3. Set `base_currency` correctly — required for FX conversion
+4. Set `simple_dash = True` if it should appear in the simple dashboard
+5. Changes take effect on the next pipeline run — no Python code changes needed
+
+---
+
+*End of Forward Plan*
