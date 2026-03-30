@@ -558,3 +558,261 @@ Each indicator goes through:
 | `INDICATOR_META` | dict | Maps 57 IDs to (region_block, category, formula_note) |
 | `REGIME_RULES` | dict | Maps 57 IDs to regime classification lambdas |
 | `_US_CALCULATORS` | dict | Maps 57 IDs to calculator functions |
+
+---
+
+## 10. FX Conversion Logic
+
+### Snapshot (fetch_data.py)
+
+For each instrument row, the USD return is computed as:
+
+```
+USD_return = (1 + Local_return) * (1 + FX_return) - 1
+```
+
+where `FX_return` is the spot FX change over the same period. For indirect-quote currencies (JPY, CNY, etc. — listed in `COMP_FCY_PER_USD`), the FX rate is inverted before applying.
+
+### Historical (fetch_hist.py)
+
+`compute_comp_usd_series(local_series, ccy, fx_cache, fcy_per_usd)`:
+
+1. Looks up FX history from the pre-fetched `fx_cache`
+2. Aligns FX series to the instrument's date index with forward-fill
+3. For direct-quote currencies (GBP, EUR, AUD): `usd_price = local_price * fx_rate`
+4. For indirect-quote currencies (JPY, CNY, INR, etc.): `usd_price = local_price / fx_rate`
+
+Each Friday's USD price uses **that Friday's exchange rate** (or the nearest prior trading day's rate via forward-fill). No look-ahead bias.
+
+### Currency Convention Reference
+
+| Currency | yfinance Ticker | Convention | In `COMP_FCY_PER_USD`? |
+|---|---|---|---|
+| GBP | `GBPUSD=X` | 1 GBP = X USD | No (multiply) |
+| EUR | `EURUSD=X` | 1 EUR = X USD | No (multiply) |
+| AUD | `AUDUSD=X` | 1 AUD = X USD | No (multiply) |
+| JPY | `USDJPY=X` | 1 USD = X JPY | Yes (divide) |
+| CNY | `CNY=X` | 1 USD = X CNY | Yes (divide) |
+| INR | `INR=X` | 1 USD = X INR | Yes (divide) |
+| CAD | `USDCAD=X` | 1 USD = X CAD | Yes (divide) |
+| KRW | `USDKRW=X` | 1 USD = X KRW | Yes (divide) |
+| HKD | `USDHKD=X` | 1 USD = X HKD | Yes (divide) |
+| BRL | `USDBRL=X` | 1 USD = X BRL | Yes (divide) |
+| TWD | `USDTWD=X` | 1 USD = X TWD | Yes (divide) |
+| MXN | `USDMXN=X` | 1 USD = X MXN | Yes (divide) |
+| ZAR | `USDZAR=X` | 1 USD = X ZAR | Yes (divide) |
+| TRY | `USDTRY=X` | 1 USD = X TRY | Yes (divide) |
+| IDR | `USDIDR=X` | 1 USD = X IDR | Yes (divide) |
+| RUB | `USDRUB=X` | 1 USD = X RUB | Yes (divide) |
+| SAR | `USDSAR=X` | 1 USD = X SAR | Yes (divide) |
+
+The full mapping is defined once in `library_utils.py` as `COMP_FX_TICKERS` (18 entries) and `COMP_FCY_PER_USD` (15 entries), imported by all modules.
+
+### LSE Pence Correction
+
+UK `.L` tickers may report prices in pence (GBp) rather than pounds (GBP). The correction is applied dynamically:
+
+```python
+if ticker.endswith(".L"):
+    median_val = series.dropna().median()
+    if pd.notna(median_val) and median_val > 50:
+        series = series / 100
+```
+
+This is used in both `collect_comp_assets()` (fetch_data.py) and `fetch_comp_yfinance_history()` (fetch_hist.py). No hardcoded pence ticker list is needed.
+
+---
+
+## 11. Key Design Patterns
+
+### Pattern 1: Phase Isolation (Fail-Safe Chaining)
+
+Every phase after `main()` is wrapped in `try/except` at the module level:
+
+```python
+try:
+    from fetch_hist import run_hist
+    run_hist()
+except Exception as _hist_err:
+    print(f"[Hist] Non-fatal import/run error: {_hist_err}")
+```
+
+If Phase C crashes, `market_data`, `market_data_comp`, and `macro_us` are already written and safe. Each phase runs independently.
+
+### Pattern 2: Per-Series Try/Except
+
+Inside each module, every individual ticker/series fetch is also wrapped:
+
+```python
+for series_id in SERIES_LIST:
+    try:
+        data = fetch_series(series_id)
+        ...
+    except Exception as e:
+        print(f"  WARNING: {series_id} failed: {e}")
+        continue
+```
+
+One bad ticker or FRED series never kills the rest of the output.
+
+### Pattern 3: Friday Spine
+
+All historical data is aligned to a weekly Friday date index. Monthly and quarterly series are forward-filled into the Friday slots. This ensures all series share a common date axis, enabling cross-series analysis without date alignment complexity.
+
+### Pattern 4: Metadata Prefix Rows
+
+History tabs in Google Sheets have metadata rows above the data:
+
+- `macro_us_hist`: 8 prefix rows (Series ID, Source, Name, Category, Subcategory, Units, Frequency, Last Updated)
+- `market_data_comp_hist`: 10 prefix rows (Ticker ID, Variant, Source, Name, Broad Asset Class, Region, Sub-Category, Currency, Units, Frequency)
+
+The CSVs include these prefix rows. Code that reads them back must skip the appropriate number of header rows (e.g. `pd.read_csv(..., header=N)`).
+
+### Pattern 5: Library-Driven Configuration
+
+Both pipelines read everything from `index_library.csv` at runtime:
+
+- Adding/removing instruments only requires editing the CSV
+- `validation_status = "CONFIRMED"` is the gate — set to `"PENDING"` to disable without deleting
+- `simple_dash = True/False` controls simple pipeline inclusion
+- `broad_asset_class` and `units` are read from CSV, not computed in code
+
+Similarly, FRED series definitions live in `macro_library_fred.csv`, OECD/WB/IMF definitions in their respective CSVs, and macro-market indicator definitions in `macro_indicator_library.csv`.
+
+### Pattern 6: Diff-Check CSV Commits
+
+Output CSVs are only committed to git if content actually changed. This avoids noisy daily commits on weekends when markets are closed and data hasn't changed.
+
+### Pattern 7: Google Sheets Write Pattern
+
+All modules follow the same pattern:
+
+1. Ensure tab exists (create via `batchUpdate addSheet` if absent)
+2. Clear entire range (`sheets.values().clear()`)
+3. Write header + data (`sheets.values().update()` with `valueInputOption="USER_ENTERED"`)
+4. NaN values converted to empty string before push (never write `"nan"` strings)
+5. Protected tab guard: legacy tabs (`market_data`, `sentiment_data`) are never overwritten by new phases
+
+### Pattern 8: Rate Limiting with Exponential Backoff
+
+All API calls include configurable delays and exponential backoff on 429/5xx:
+
+| Source | Base Delay | Backoff | Max Retries |
+|---|---|---|---|
+| yfinance | 0.3s | — | 3 |
+| FRED | 0.6s | 2s, 4s, 8s, 16s, 32s | 5 |
+| OECD | 4s | 2s, 4s, 8s, 16s, 32s | 5 |
+| World Bank | 1s | 2s, 4s, 8s, 16s, 32s | 5 |
+| IMF | 1s | 2s, 4s, 8s, 16s, 32s | 5 |
+| ECB | 2s | 2s, 4s, 8s, 16s, 32s | 5 |
+
+---
+
+## 12. Environment Setup
+
+### Required Environment Variables
+
+| Variable | Where Set | Used By |
+|---|---|---|
+| `FRED_API_KEY` | GitHub Secret | fetch_data.py, fetch_macro_us_fred.py, fetch_hist.py, fetch_macro_international.py, compute_macro_market.py |
+| `GOOGLE_CREDENTIALS` | GitHub Secret | All modules that write to Sheets |
+
+`GOOGLE_CREDENTIALS` must be a JSON string of a Google service account key with editor access to the target spreadsheet.
+
+### Python Dependencies (`requirements.txt`)
+
+```
+yfinance
+pandas
+numpy
+requests
+google-auth
+google-api-python-client
+```
+
+### Running Locally
+
+```bash
+export FRED_API_KEY="your_key_here"
+export GOOGLE_CREDENTIALS='{"type": "service_account", ...}'
+python fetch_data.py
+```
+
+Individual modules can also be run standalone:
+
+```bash
+python fetch_macro_us_fred.py       # Phase A only
+python fetch_hist.py                # Historical only (requires FRED_MACRO_US from Phase A import)
+python fetch_macro_international.py # Phase C only
+python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
+```
+
+### GitHub Actions
+
+- **Schedule:** Daily at 06:00 UTC (cron `0 6 * * *`)
+- **Manual trigger:** workflow_dispatch — GitHub UI > Actions > "Update Market Data" > "Run workflow"
+- **Python version:** 3.11
+- **Timeout:** 120 minutes
+- **Post-run:** Auto-commits updated CSVs to `main` branch
+
+### GitHub Secrets
+
+| Secret | Status | Purpose |
+|---|---|---|
+| `FRED_API_KEY` | Exists | All FRED API calls |
+| `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
+| `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
+| `FMP_API_KEY` | Missing | Not currently needed — may be needed for future PMI data |
+
+---
+
+## 13. Known Issues & Status
+
+### Currently Broken / Returning No Data
+
+| Issue | Module | Notes |
+|---|---|---|
+| OECD DF_FINMARK (short-term interest rate) returning zero data | fetch_macro_international.py | Query key needs investigation |
+| IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | IMF country code may have changed |
+| OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
+| UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
+| EU_R1 metadata/code mismatch | compute_macro_market.py | INDICATOR_META says `log(SLXX.L / IGLT.L)` but code reads FRED Germany 10Y yield |
+
+### Tickers Confirmed Unavailable via yfinance
+
+| Ticker | Instrument | Reason |
+|---|---|---|
+| `^SXEP`, `^SXKP`, `^SX3P`, etc. | STOXX 600 sectors | yfinance doesn't serve STOXX sector index history |
+| `^IVX`, `^IGX` | S&P style indices | Not served via yfinance |
+| `^SML`, `^SP500-10`, `^SP500-20` | S&P size/sector | Not served via yfinance |
+| `^TX60` | S&P/TSX 60 | Not served via yfinance |
+| `^TOPX` | TOPIX (Japan) | Not served via yfinance |
+| `IMOEX.ME`, `RTSI.ME` | Russian indices | Data through mid-2022/2024 only (sanctions) |
+| `CYB` | WisdomTree Chinese Yuan ETF | Delisted Dec 2023; `CNYB.L` is replacement |
+| `DX-Y.NYB` | US Dollar Index | Data only from 2008 |
+
+### Metadata / Label Issues
+
+| Ticker | Issue | Recommended Fix |
+|---|---|---|
+| `^IRX` | Labeled "US 2Y Treasury Yield" but is 13-week T-bill (3-month) | Rename to "US 3-Month T-Bill" or swap ticker |
+| XLE, XLB, XLI etc. | Region "North America" | Should be "US" — S&P 500 sectors are US-only |
+| `IWF` | Region "North America" | Should be "US" — Russell 1000 Growth is US-only |
+| `^VIX` | Region "Global" | Should be "US" — measures S&P 500 implied vol |
+
+### Remaining Redundancy Items
+
+These are lower-severity structural issues documented in `METADATA_REDUNDANCY_REVIEW.md` (2026-03-20). Items 1, 2, 5, 6, 7, 9 have been resolved. Remaining:
+
+| # | Issue | Current State |
+|---|---|---|
+| 3 | Simple pipeline instrument list was hardcoded 3x | Resolved — now library-driven via `simple_dash` column |
+| 4 | `PENCE_TICKERS` hardcoded set | Resolved — replaced with dynamic `.endsWith(".L")` + median check |
+| 8 | "Broad Asset Class" computed in code | Resolved — now read from `broad_asset_class` CSV column |
+| 10 | Ratio/spread definitions hardcoded in comp pipeline | Resolved — moved to `compute_macro_market.py` as indicator functions |
+| 11 | `_ac_units` mapping hardcoded | Resolved — now read from `units` CSV column |
+| 12 | `build_market_meta_prefix()` used hardcoded lists | Resolved — metadata now read from instrument dicts populated from library |
+
+---
+
+*End of Technical Manual*
