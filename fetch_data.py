@@ -27,21 +27,7 @@ FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 
 # ─────────────────────────────────────────────
-# FX TICKERS — simple pipeline (subset of COMP_FX_TICKERS from library_utils)
-# ─────────────────────────────────────────────
-FX_TICKERS = {
-    "GBP": "GBPUSD=X",
-    "EUR": "EURUSD=X",
-    "JPY": "USDJPY=X",
-    "CNY": "USDCNY=X",
-    "INR": "USDINR=X",
-    "KRW": "USDKRW=X",
-    "TWD": "USDTWD=X",
-}
-FCY_PER_USD = {"JPY", "CNY", "INR", "KRW", "TWD"}
-
-# ─────────────────────────────────────────────
-# COMPREHENSIVE LIBRARY — constants for market_data_comp
+# COMPREHENSIVE LIBRARY — constants
 # ─────────────────────────────────────────────
 
 LIBRARY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "index_library.csv")
@@ -56,136 +42,6 @@ except Exception:
                                   "^VXEFA", "^VXEEM", "^GVZ", "^OVX"}
     print("WARNING: could not load level_change_tickers.csv — using built-in fallback")
 
-
-# ─────────────────────────────────────────────
-# ASSET DEFINITIONS
-# Each tuple: (ticker, display_name, region, asset_class, local_currency)
-# local_currency = None means already priced in USD
-# ─────────────────────────────────────────────
-
-EQUITY_INDEX = [
-    ("^GSPC",     "S&P 500",                       "North America", "Equity Index",   None),
-    ("^NDX",      "Nasdaq 100",                     "North America", "Equity Index",   None),
-    ("^RUT",      "Russell 2000",                   "North America", "Equity Index",   None),
-    ("^FTSE",     "FTSE 100",                       "UK",            "Equity Index",   "GBP"),
-    ("^FTMC",     "FTSE 250",                       "UK",            "Equity Index",   "GBP"),
-    ("^STOXX50E", "Euro Stoxx 50",                  "Europe",        "Equity Index",   "EUR"),
-    ("^GDAXI",    "DAX 40",                         "Europe",        "Equity Index",   "EUR"),
-    ("^N225",     "Nikkei 225",                     "Asia",          "Equity Index",   "JPY"),
-    ("^NSEI",     "Nifty 50",                       "Asia",          "Equity Index",   "INR"),
-    ("^BSESN",    "Sensex",                         "Asia",          "Equity Index",   "INR"),
-    ("000001.SS", "Shanghai Composite",             "Asia",          "Equity Index",   "CNY"),
-    ("399001.SZ", "Shenzhen Composite",             "Asia",          "Equity Index",   "CNY"),
-]
-
-EQUITY_ETF = [
-    ("IWDA.L",    "MSCI World ETF",                 "Global",        "Equity ETF",     "GBP"),
-    ("VFEM.L",    "MSCI EM ETF",                    "Global",        "Equity ETF",     "GBP"),
-    ("AAXJ",      "Asia ex-Japan ETF",              "Asia",          "Equity ETF",     None),
-    ("ILF",       "Latin America ETF",              "LatAm",         "Equity ETF",     None),
-    ("EWY",       "South Korea ETF",                "Asia",          "Equity ETF",     None),
-    ("EWT",       "Taiwan ETF",                     "Asia",          "Equity ETF",     None),
-    ("NDIA.L",    "India ETF",                      "Asia",          "Equity ETF",     "GBP"),
-    ("EWJ",       "Japan (TOPIX proxy) ETF",        "Asia",          "Equity ETF",     None),
-]
-
-SECTOR_ETF = [
-    ("XLE",       "Sector: Energy",                 "US",            "Sector ETF",     None),
-    ("XLB",       "Sector: Materials",              "US",            "Sector ETF",     None),
-    ("XLI",       "Sector: Industrials",            "US",            "Sector ETF",     None),
-    ("XLY",       "Sector: Consumer Discretionary", "US",            "Sector ETF",     None),
-    ("XLP",       "Sector: Consumer Staples",       "US",            "Sector ETF",     None),
-    ("XLV",       "Sector: Healthcare",             "US",            "Sector ETF",     None),
-    ("XLF",       "Sector: Financials",             "US",            "Sector ETF",     None),
-    ("XLK",       "Sector: Technology",             "US",            "Sector ETF",     None),
-    ("XLU",       "Sector: Utilities",              "US",            "Sector ETF",     None),
-    ("XLRE",      "Sector: Real Estate",            "US",            "Sector ETF",     None),
-    ("XLC",       "Sector: Communication Services", "US",            "Sector ETF",     None),
-    ("IWF",       "US Growth ETF (Russell 1000)",   "US",            "Style ETF",      None),
-    ("IWFV.L",    "MSCI World Value ETF",           "Global",        "Style ETF",      "GBP"),
-]
-
-FIXED_INCOME_ETF = [
-    ("AGGG.L",    "Global Agg Bond ETF",            "Global",        "Fixed Income ETF", "GBP"),
-    ("SLXX.L",    "US IG Corporate Bond ETF",       "North America", "Fixed Income ETF", "GBP"),
-    ("IHYU.L",    "US HY Bond ETF",                 "North America", "Fixed Income ETF", "GBP"),
-    ("VDET.L",    "EM Debt USD ETF",                "Global",        "Fixed Income ETF", "GBP"),
-    ("IGLT.L",    "UK Gilts ETF",                   "UK",            "Fixed Income ETF", "GBP"),
-    ("IGLS.L",    "UK Short Gilts ETF",             "UK",            "Fixed Income ETF", "GBP"),
-    ("EXX6.DE",   "German Bunds ETF",               "Europe",        "Fixed Income ETF", "EUR"),
-    ("IGOV",      "Intl Govt Bonds ETF",            "Global",        "Fixed Income ETF", None),
-    ("CNYB.L",    "Chinese Govt Bonds ETF",         "Asia",          "Fixed Income ETF", "GBP"),
-]
-
-COMMODITY = [
-    ("GC=F",      "Gold",                           "Global",        "Commodity Metal",  None),
-    ("SI=F",      "Silver",                         "Global",        "Commodity Metal",  None),
-    ("BZ=F",      "Brent Crude",                    "Global",        "Commodity Energy", None),
-    ("CL=F",      "WTI Crude Oil",                  "Global",        "Commodity Energy", None),
-    ("HG=F",      "Copper",                         "Global",        "Commodity Metal",  None),
-    ("ALI=F",     "Aluminium",                      "Global",        "Commodity Metal",  None),
-    ("CT=F",      "Cotton",                         "Global",        "Commodity Soft",   None),
-    ("KC=F",      "Coffee",                         "Global",        "Commodity Soft",   None),
-    ("CMOD.L",    "Bloomberg Commodity ETF",        "Global",        "Commodity ETF",    "GBP"),
-]
-
-FX_ASSETS = [
-    ("DX-Y.NYB",  "DXY Dollar Index",              "Global",        "FX",               None),
-    ("GBPUSD=X",  "GBP/USD",                       "Global",        "FX",               None),
-    ("EURUSD=X",  "EUR/USD",                       "Global",        "FX",               None),
-    ("USDJPY=X",  "USD/JPY",                       "Global",        "FX",               None),
-    ("USDCNY=X",  "USD/CNY",                       "Global",        "FX",               None),
-    ("USDINR=X",  "USD/INR",                       "Global",        "FX",               None),
-    ("USDKRW=X",  "USD/KRW",                       "Global",        "FX",               None),
-    ("USDTWD=X",  "USD/TWD",                       "Global",        "FX",               None),
-]
-
-VOLATILITY = [
-    ("^VIX",      "VIX (US Equity Vol)",           "US",            "Volatility",       None),
-    ("BTC-USD",   "Bitcoin",                       "Global",        "Crypto",           None),
-    ("ETH-USD",   "Ethereum",                      "Global",        "Crypto",           None),
-]
-
-# Yield tickers from yfinance (reported as basis points / 100, handled separately)
-YIELD_YF = [
-    ("^IRX",      "US 3-Month T-Bill",             "US",            "Yield",            None),
-    ("^FVX",      "US 5Y Treasury Yield",          "US",            "Yield",            None),
-    ("^TNX",      "US 10Y Treasury Yield",         "US",            "Yield",            None),
-    ("^TYX",      "US 30Y Treasury Yield",         "US",            "Yield",            None),
-]
-
-# All yfinance-sourced assets (yields handled separately below)
-ALL_YF_ASSETS = (
-    EQUITY_INDEX + EQUITY_ETF + SECTOR_ETF +
-    FIXED_INCOME_ETF + COMMODITY + FX_ASSETS + VOLATILITY
-)
-
-# Tickers treated as yields (show level + bps change, no USD conversion)
-YIELD_TICKERS = {t[0] for t in YIELD_YF}
-
-# Tickers that show absolute level change in points (not % change, not bps)
-# Use the same CSV-sourced set as the comp loop so the two tables are consistent.
-LEVEL_CHANGE_TICKERS = COMP_LEVEL_CHANGE_TICKERS
-
-# Tickers priced in pence on LSE (divide by 100 for GBP)
-PENCE_TICKERS = {
-    "IWDA.L", "VFEM.L", "NDIA.L",
-    "IWFV.L",
-    "AGGG.L", "SLXX.L", "IHYU.L", "VDET.L", "IGLT.L", "IGLS.L",
-    "CNYB.L", "CMOD.L",
-}
-
-# ─────────────────────────────────────────────
-# FRED SERIES DEFINITIONS
-# UK 2Y Gilt removed (FRED series retired/invalid)
-# China 10Y CGB removed (FRED series retired/invalid)
-# ─────────────────────────────────────────────
-FRED_YIELDS = {
-    "US 2Y Treasury Yield":   "DGS2",
-    "UK 10Y Gilt Yield":      "IRLTLT01GBM156N",
-    "Germany 10Y Bund Yield": "IRLTLT01DEM156N",
-    "Japan 10Y JGB Yield":    "IRLTLT01JPM156N",
-}
 
 # ─────────────────────────────────────────────
 # HELPER FUNCTIONS
@@ -316,32 +172,14 @@ def fetch_fred_series(series_id, retries=3):
     return None
 
 
-# ─────────────────────────────────────────────
-# MAIN DATA COLLECTION
-# ─────────────────────────────────────────────
-
-def build_fx_cache():
-    """Pre-fetch all FX rate histories needed for USD conversion."""
-    print("Fetching FX rates...")
-    cache = {}
-    for ccy, ticker in FX_TICKERS.items():
-        series = fetch_yf_history(ticker)
-        if series is not None:
-            cache[ccy] = series
-            print(f"  {ccy}: OK ({len(series)} rows)")
-        else:
-            print(f"  {ccy}: FAILED")
-    return cache
-
-
 def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache, fcy_per_usd=None):
     """Convert a local currency % return to USD % return.
 
     fcy_per_usd: set of currencies where the FX ticker is quoted as USD/FCY
-                 (i.e. 1 USD = X FCY, so we invert).  Defaults to FCY_PER_USD.
+                 (i.e. 1 USD = X FCY, so we invert).  Defaults to COMP_FCY_PER_USD.
     """
     if fcy_per_usd is None:
-        fcy_per_usd = FCY_PER_USD
+        fcy_per_usd = COMP_FCY_PER_USD
 
     if ccy is None or pd.isna(local_return_pct):
         return local_return_pct
@@ -364,242 +202,6 @@ def usd_adjusted_return(local_return_pct, ccy, period_key, fx_cache, fcy_per_usd
     return round(combined * 100, 2)
 
 
-def collect_yf_assets(fx_cache):
-    """Collect all yfinance-based assets."""
-    print("\nFetching yfinance assets...")
-    rows = []
-
-    all_assets = ALL_YF_ASSETS + YIELD_YF
-
-    for asset in all_assets:
-        ticker, name, region, asset_class, local_ccy = asset
-        is_yield = ticker in YIELD_TICKERS
-        is_level = ticker in LEVEL_CHANGE_TICKERS
-
-        print(f"  {ticker} ({name})...")
-        series = fetch_yf_history(ticker)
-
-        if series is None or series.empty:
-            print(f"    → No data")
-            row = {
-                "Symbol": ticker, "Name": name, "Region": region,
-                "Asset Class": asset_class, "Currency": local_ccy or "USD",
-                "Last Price": np.nan, "Last Date": np.nan,
-            }
-            for pk in PERIODS:
-                row[f"Local {pk}"] = np.nan
-                if not is_yield:
-                    row[f"USD {pk}"] = np.nan
-            rows.append(row)
-            continue
-
-        if ticker in PENCE_TICKERS:
-            series = series / 100
-
-        last_price = round(series.iloc[-1], 4)
-        last_date = series.index[-1].date()
-
-        row = {
-            "Symbol": ticker, "Name": name, "Region": region,
-            "Asset Class": asset_class,
-            "Currency": "USD" if local_ccy is None else local_ccy,
-            "Last Price": last_price, "Last Date": str(last_date),
-        }
-
-        for pk in PERIODS:
-            local_ret = calc_return(series, pk, is_yield=is_yield, is_level=is_level)
-            if is_yield:
-                row[f"Local {pk} (bps)"] = local_ret
-            else:
-                row[f"Local {pk}"] = local_ret
-                # Level-change tickers (e.g. VIX) are USD-denominated; no FX compounding
-                row[f"USD {pk}"] = local_ret if is_level else usd_adjusted_return(local_ret, local_ccy, pk, fx_cache)
-
-        rows.append(row)
-        time.sleep(0.3)
-
-    return rows
-
-
-def collect_fred_yields():
-    """Collect sovereign yields from FRED."""
-    print("\nFetching FRED yields...")
-    rows = []
-
-    for name, series_id in FRED_YIELDS.items():
-        print(f"  {series_id} ({name})...")
-        series = fetch_fred_series(series_id)
-
-        region = "US" if series_id == "DGS2" else "Sovereign"
-        row = {
-            "Symbol": series_id, "Name": name, "Region": region,
-            "Asset Class": "Yield", "Currency": "Local",
-            "Last Price": np.nan, "Last Date": np.nan,
-        }
-
-        if series is not None and not series.empty:
-            row["Last Price"] = round(series.iloc[-1], 3)
-            row["Last Date"] = str(series.index[-1].date())
-            for pk in PERIODS:
-                row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
-        else:
-            for pk in PERIODS:
-                row[f"Local {pk} (bps)"] = np.nan
-
-        rows.append(row)
-
-    return rows
-
-
-def build_calculated_fields(df):
-    """Add ratio-based sentiment/positioning indicators."""
-    print("\nCalculating ratio fields...")
-
-    def safe_ratio_return(num_ticker, den_ticker, period_key):
-        num_row = df[df["Symbol"] == num_ticker]
-        den_row = df[df["Symbol"] == den_ticker]
-        if num_row.empty or den_row.empty:
-            return np.nan
-        col = f"Local {period_key}"
-        if col not in df.columns:
-            return np.nan
-        n = num_row[col].values[0]
-        d = den_row[col].values[0]
-        if pd.isna(n) or pd.isna(d) or (1 + d / 100) == 0:
-            return np.nan
-        return round(((1 + n / 100) / (1 + d / 100) - 1) * 100, 2)
-
-    ratios = [
-        ("XLY",    "XLP",    "Cyclicals vs Defensives (US/Global proxy)", "Global",        "Sentiment Ratio"),
-        ("XLF",    "XLU",    "Financials vs Utilities",                   "Global",        "Sentiment Ratio"),
-        ("IHYU.L", "SLXX.L", "HY vs IG Credit (proxy)",                  "Global",        "Sentiment Ratio"),
-        ("^FTMC",  "^FTSE",  "Small Cap vs Large Cap (UK)",               "UK",            "Sentiment Ratio"),
-        ("IWF",    "IWFV.L", "Growth vs Value (proxy)",                   "Global",        "Sentiment Ratio"),
-    ]
-
-    ratio_rows = []
-    for num, den, name, region, asset_class in ratios:
-        row = {
-            "Symbol": f"{num}/{den}", "Name": name, "Region": region,
-            "Asset Class": asset_class, "Currency": "Ratio",
-            "Last Price": np.nan, "Last Date": np.nan,
-        }
-        for pk in PERIODS:
-            row[f"Local {pk}"] = safe_ratio_return(num, den, pk)
-            row[f"USD {pk}"] = np.nan
-        ratio_rows.append(row)
-
-    return ratio_rows
-
-
-def build_calculated_fields_comp(df_comp):
-    """Add ratio-based sentiment/positioning indicators to market_data_comp.
-
-    Mirrors build_calculated_fields() but uses the expanded ratio set and
-    the comp DataFrame column schema (which includes a 'Ticker Type' column
-    and yield rows named 'Local {pk} (bps)' rather than 'Local {pk}').
-
-    Where a symbol has both a Price Return and Total Return row, the Total
-    Return row is preferred for ratio computation.
-    """
-    print("\nCalculating comp ratio fields...")
-
-    # Build symbol lookup, letting Total Return rows overwrite Price Return rows.
-    sym_map = {}
-    for _, row in df_comp.iterrows():
-        sym = str(row.get("Symbol", "")).strip()
-        if not sym:
-            continue
-        ticker_type = str(row.get("Ticker Type", "")).lower()
-        if sym not in sym_map or "total" in ticker_type:
-            sym_map[sym] = row
-
-    def safe_ratio_return(num_ticker, den_ticker, period_key):
-        num_row = sym_map.get(num_ticker)
-        den_row = sym_map.get(den_ticker)
-        if num_row is None or den_row is None:
-            return np.nan
-        col = f"Local {period_key}"
-        n = num_row.get(col)
-        d = den_row.get(col)
-        if pd.isna(n) or pd.isna(d) or (1 + float(d) / 100) == 0:
-            return np.nan
-        return round(((1 + float(n) / 100) / (1 + float(d) / 100) - 1) * 100, 2)
-
-    def safe_bps_spread(a_ticker, b_ticker, period_key):
-        a_row = sym_map.get(a_ticker)
-        b_row = sym_map.get(b_ticker)
-        if a_row is None or b_row is None:
-            return np.nan
-        col = f"Local {period_key} (bps)"
-        a = a_row.get(col)
-        b = b_row.get(col)
-        if pd.isna(a) or pd.isna(b):
-            return np.nan
-        return round(float(a) - float(b), 1)
-
-    ratios = [
-        # (numerator, denominator, name, region, asset_class)
-        ("SPY",    "GOVT",   "Risk-On vs Risk-Off (Equities vs Treasuries)", "North America", "Sentiment Ratio"),
-        ("XLY",    "XLP",    "Cyclicals vs Defensives",                      "North America", "Sentiment Ratio"),
-        ("XLF",    "XLU",    "Financials vs Utilities",                      "North America", "Sentiment Ratio"),
-        ("HG=F",   "GC=F",   "Dr. Copper vs Gold (Industrial Growth Signal)","Global",        "Sentiment Ratio"),
-        ("IHYU.L", "SLXX.L", "HY vs IG Credit Spread Proxy",                 "North America", "Sentiment Ratio"),
-        ("IHYU.L", "GOVT",   "HY vs Treasuries (Credit Risk Proxy)",         "North America", "Sentiment Ratio"),
-        ("IVW",    "IVE",    "Growth vs Value (S&P 500)",                    "North America", "Sentiment Ratio"),
-        ("IWM",    "SPY",    "Small Cap vs Large Cap (US)",                  "North America", "Sentiment Ratio"),
-        ("^FTMC",  "^FTSE",  "Small Cap vs Large Cap (UK)",                  "Europe",        "Sentiment Ratio"),
-    ]
-    spreads = [
-        # (a_ticker, b_ticker, name, region, asset_class)  — uses bps columns
-        ("^TNX", "DGS2", "Yield Curve Slope (US 10Y minus 2Y, bps change)", "North America", "Sentiment Ratio"),
-    ]
-
-    ratio_rows = []
-    for num, den, name, region, asset_class in ratios:
-        row = {
-            "Symbol":            f"{num}/{den}",
-            "Name":              name,
-            "Ticker Type":       "Sentiment Ratio",
-            "Region":            region,
-            "Broad Asset Class": "Macro-Market Indicators",
-            "Sub-Category":      asset_class,
-            "Currency":          "Ratio",
-            "Last Price":        np.nan,
-            "Last Date":         np.nan,
-        }
-        for pk in PERIODS:
-            row[f"Local {pk}"] = safe_ratio_return(num, den, pk)
-            row[f"USD {pk}"]   = np.nan
-        ratio_rows.append(row)
-
-    for a, b, name, region, asset_class in spreads:
-        row = {
-            "Symbol":            f"{a}-{b}",
-            "Name":              name,
-            "Ticker Type":       "Sentiment Ratio",
-            "Region":            region,
-            "Broad Asset Class": "Macro-Market Indicators",
-            "Sub-Category":      asset_class,
-            "Currency":          "bps chg",
-            "Last Price":        np.nan,
-            "Last Date":         np.nan,
-        }
-        for pk in PERIODS:
-            row[f"Local {pk} (bps)"] = safe_bps_spread(a, b, pk)
-        ratio_rows.append(row)
-
-    n_added = len(ratio_rows)
-    missing = [sym for sym in
-               [t[0] for t in ratios] + [t[1] for t in ratios] +
-               [t[0] for t in spreads] + [t[1] for t in spreads]
-               if sym not in sym_map]
-    if missing:
-        print(f"  Comp ratios: added {n_added} rows "
-              f"(components not found — empty perfs: {sorted(set(missing))})")
-    else:
-        print(f"  Comp ratios: added {n_added} ratio/spread rows")
-    return ratio_rows
 
 
 # ─────────────────────────────────────────────
@@ -618,6 +220,173 @@ def build_comp_fx_cache():
         else:
             print(f"  {ccy} ({ticker}): FAILED — USD conversion unavailable for {ccy} assets")
     return cache
+
+
+def load_simple_library():
+    """Read index_library.csv filtered on simple_dash == True.
+
+    Returns instruments in the same dict format as load_instrument_library()
+    but only the single ticker each simple-pipeline row actually uses:
+      - yfinance PR rows → PR ticker (or TR ticker if PR absent)
+      - yfinance TR rows → TR ticker only
+      - FRED/UNAVAILABLE rows → handled separately via collect_simple_fred_assets()
+
+    The simple pipeline's display order matches the library sort order.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    simple = df[
+        (df["simple_dash"] == True) &
+        (df["data_source"].isin(["yfinance PR", "yfinance TR"])) &
+        (df["validation_status"] == "CONFIRMED")
+    ].copy()
+
+    simple["_sort"] = simple.apply(_lib_sort_key, axis=1)
+    simple = simple.sort_values("_sort").drop(columns=["_sort"])
+
+    instruments = []
+    seen = set()
+
+    def _clean(val):
+        s = str(val).strip()
+        return None if s in ("nan", "", "N/A") else s
+
+    for _, row in simple.iterrows():
+        name            = str(row["name"]).strip()
+        region          = str(row["region"]).strip()
+        asset_cls_raw   = str(row["asset_class"]).strip()
+        broad_ac        = str(row.get("broad_asset_class", asset_cls_raw)).strip()
+        asset_cls       = str(row["asset_subclass"]).strip()
+        ccy             = str(row["base_currency"]).strip()
+        src             = str(row["data_source"]).strip()
+        if ccy in ("nan", "", "N/A"):
+            ccy = "USD"
+        if ccy == "USX":
+            ccy = "USD"
+
+        pr = _clean(row["ticker_yfinance_pr"])
+        tr = _clean(row["ticker_yfinance_tr"])
+
+        def _entry(ticker, ticker_type):
+            return {
+                "ticker":            ticker,
+                "name":              name,
+                "region":            region,
+                "asset_class":       asset_cls,
+                "asset_class_raw":   asset_cls_raw,
+                "broad_asset_class": broad_ac,
+                "currency":          ccy,
+                "ticker_type":       ticker_type,
+                "pence":             ticker.endswith(".L"),
+                "usx":               str(row["base_currency"]).strip() == "USX",
+            }
+
+        if src == "yfinance PR":
+            # For PR rows, use the TR ticker if available (ETF/fund),
+            # otherwise use the PR ticker (index)
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
+            elif pr and pr not in seen:
+                instruments.append(_entry(pr, "Price Return (Index)"))
+                seen.add(pr)
+        elif src == "yfinance TR":
+            if tr and tr not in seen:
+                instruments.append(_entry(tr, "Total Return (ETF)"))
+                seen.add(tr)
+
+    print(f"  Simple library loaded: {len(instruments)} instruments "
+          f"({sum(1 for i in instruments if i['ticker_type'].startswith('Price'))} PR, "
+          f"{sum(1 for i in instruments if i['ticker_type'].startswith('Total'))} TR)")
+    return instruments
+
+
+def collect_simple_fred_assets():
+    """Collect FRED-sourced instruments for market_data (simple_dash == True only).
+
+    Uses the same pattern as collect_comp_fred_assets() but filters to
+    simple_dash rows.
+    """
+    df = pd.read_csv(LIBRARY_PATH)
+    fred_rows = df[
+        (df["simple_dash"] == True) &
+        (df["data_source"].isin(["FRED", "UNAVAILABLE"])) &
+        (df["validation_status"] == "CONFIRMED")
+    ].copy()
+
+    if fred_rows.empty:
+        return []
+
+    fred_rows["_s"] = fred_rows.apply(_lib_sort_key, axis=1)
+    fred_rows = fred_rows.sort_values("_s").drop(columns=["_s"])
+
+    print(f"\nFetching simple FRED series ({len(fred_rows)} rows)...")
+    rows = []
+
+    def _val(v):
+        s = str(v).strip()
+        return None if s in ("nan", "N/A", "") else s
+
+    for _, lib_row in fred_rows.iterrows():
+        name          = str(lib_row["name"]).strip()
+        region        = str(lib_row.get("region", "Global")).strip()
+        if region in ("nan", "", "N/A"):
+            region = "Global"
+        asset_cls_raw = str(lib_row["asset_class"]).strip()
+        broad_ac      = str(lib_row.get("broad_asset_class", asset_cls_raw)).strip()
+        asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
+
+        oas_id   = _val(lib_row.get("ticker_fred_oas"))
+        tr_id    = _val(lib_row.get("ticker_fred_tr"))
+        yield_id = _val(lib_row.get("ticker_fred_yield"))
+
+        if oas_id:
+            series_id = oas_id
+            is_yield  = True
+        elif tr_id:
+            series_id = tr_id
+            is_yield  = False
+        elif yield_id:
+            series_id = yield_id
+            is_yield  = True
+        else:
+            continue
+
+        print(f"  {series_id} ({name[:45]})...")
+        series = fetch_fred_series(series_id)
+
+        row = {
+            "Symbol":            series_id,
+            "Name":              name,
+            "Ticker Type":       "FRED",
+            "Region":            region,
+            "Broad Asset Class": broad_ac,
+            "Sub-Category":      asset_sub,
+            "Currency":          "USD",
+            "Last Price":        np.nan,
+            "Last Date":         np.nan,
+            "_sort_group":       _LIB_ASSET_CLASS_GROUP.get(asset_cls_raw, 99),
+        }
+
+        if series is not None and not series.empty:
+            row["Last Price"] = round(series.iloc[-1], 4)
+            row["Last Date"]  = str(series.index[-1].date())
+            for pk in PERIODS:
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = calc_return(series, pk, is_yield=True)
+                else:
+                    row[f"Local {pk}"] = calc_return(series, pk, is_yield=False)
+                    row[f"USD {pk}"]   = row[f"Local {pk}"]
+        else:
+            for pk in PERIODS:
+                if is_yield:
+                    row[f"Local {pk} (bps)"] = np.nan
+                else:
+                    row[f"Local {pk}"] = np.nan
+                    row[f"USD {pk}"]   = np.nan
+
+        rows.append(row)
+
+    return rows
 
 
 def load_instrument_library():
@@ -650,12 +419,13 @@ def load_instrument_library():
         return None if s in ("nan", "", "N/A") else s
 
     for _, row in confirmed_yf.iterrows():
-        name          = str(row["name"]).strip()
-        region        = str(row["region"]).strip()
-        asset_cls_raw = str(row["asset_class"]).strip()
-        asset_cls     = str(row["asset_subclass"]).strip()
-        ccy           = str(row["base_currency"]).strip()
-        src           = str(row["data_source"]).strip()
+        name            = str(row["name"]).strip()
+        region          = str(row["region"]).strip()
+        asset_cls_raw   = str(row["asset_class"]).strip()
+        broad_ac        = str(row.get("broad_asset_class", asset_cls_raw)).strip()
+        asset_cls       = str(row["asset_subclass"]).strip()
+        ccy             = str(row["base_currency"]).strip()
+        src             = str(row["data_source"]).strip()
         if ccy in ("nan", "", "N/A"):
             ccy = "USD"
         # USX = US cents (agricultural futures) → treat as USD after ÷100 correction
@@ -667,15 +437,16 @@ def load_instrument_library():
 
         def _entry(ticker, ticker_type):
             return {
-                "ticker":          ticker,
-                "name":            name,
-                "region":          region,
-                "asset_class":     asset_cls,
-                "asset_class_raw": asset_cls_raw,
-                "currency":        ccy,
-                "ticker_type":     ticker_type,
-                "pence":           ticker.endswith(".L"),
-                "usx":             str(row["base_currency"]).strip() == "USX",
+                "ticker":            ticker,
+                "name":              name,
+                "region":            region,
+                "asset_class":       asset_cls,
+                "asset_class_raw":   asset_cls_raw,
+                "broad_asset_class": broad_ac,
+                "currency":          ccy,
+                "ticker_type":       ticker_type,
+                "pence":             ticker.endswith(".L"),
+                "usx":               str(row["base_currency"]).strip() == "USX",
             }
 
         if src == "yfinance PR":
@@ -699,8 +470,8 @@ def load_instrument_library():
 def collect_comp_assets(instruments, comp_fx_cache):
     """Fetch prices and compute returns for every instrument in the library.
 
-    Mirrors collect_yf_assets() but uses the comprehensive FX cache and
-    level-change set, and adds a 'Ticker Type' column.
+    Fetch prices and compute returns for every instrument, using the
+    comprehensive FX cache and level-change set.  Adds a 'Ticker Type' column.
     """
     print(f"\nFetching comp library ({len(instruments)} instruments)...")
     rows = []
@@ -710,7 +481,8 @@ def collect_comp_assets(instruments, comp_fx_cache):
         name        = inst["name"]
         region      = inst["region"]
         asset_class = inst["asset_class"]      # asset_subclass (granular)
-        asset_class_raw = inst.get("asset_class_raw", asset_class)  # broad asset class
+        asset_class_raw = inst.get("asset_class_raw", asset_class)  # raw asset_class for sort/logic
+        broad_ac    = inst.get("broad_asset_class", asset_class_raw)  # display label
         ccy         = inst["currency"]
         ticker_type = inst["ticker_type"]
         is_pence    = inst["pence"]
@@ -729,7 +501,7 @@ def collect_comp_assets(instruments, comp_fx_cache):
             "Name":              name,
             "Ticker Type":       ticker_type,
             "Region":            region,
-            "Broad Asset Class": asset_class_raw,
+            "Broad Asset Class": broad_ac,
             "Sub-Category":      asset_class,
             "Currency":          ccy,
             "Last Price":        np.nan,
@@ -750,7 +522,9 @@ def collect_comp_assets(instruments, comp_fx_cache):
             continue
 
         if is_pence:
-            series = series / 100
+            median_val = series.dropna().median()
+            if pd.notna(median_val) and median_val > 50:
+                series = series / 100
         elif is_usx:
             # Agricultural futures quoted in US cents — convert to USD
             series = series / 100
@@ -810,6 +584,7 @@ def collect_comp_fred_assets():
         if region in ("nan", "", "N/A"):
             region = "Global"
         asset_cls_raw = str(lib_row["asset_class"]).strip()
+        broad_ac      = str(lib_row.get("broad_asset_class", asset_cls_raw)).strip()
         asset_sub     = str(lib_row.get("asset_subclass", "")).strip()
 
         # Determine which FRED ticker to use — priority: OAS > TR > yield
@@ -837,7 +612,7 @@ def collect_comp_fred_assets():
             "Name":              name,
             "Ticker Type":       "FRED",
             "Region":            region,
-            "Broad Asset Class": asset_cls_raw,
+            "Broad Asset Class": broad_ac,
             "Sub-Category":      asset_sub,
             "Currency":          "USD",
             "Last Price":        np.nan,
@@ -948,7 +723,7 @@ def push_to_google_sheets(df_main, df_comp=None):
     # - "sentiment_data": consolidated into macro_us + macro_intl
     # - "macro_surveys": consolidated into macro_us
     # - "macro_surveys_hist": consolidated into macro_us_hist
-    TABS_TO_DELETE = {"Market Data", "sentiment_data", "macro_surveys", "macro_surveys_hist"}
+    TABS_TO_DELETE = {"Market Data", "sentiment_data", "macro_surveys", "macro_surveys_hist", "market_data_hist"}
     try:
         meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
         delete_requests = []
@@ -981,6 +756,25 @@ def push_to_google_sheets(df_main, df_comp=None):
 # ENTRY POINT
 # ─────────────────────────────────────────────
 
+def _build_library_df(yf_rows, fred_rows):
+    """Assemble a library-driven DataFrame from yfinance + FRED row lists.
+
+    Common helper for both market_data and market_data_comp pipelines.
+    Sorts by _sort_group, enforces standard column order, adds row_id.
+    """
+    all_rows = yf_rows + fred_rows
+    all_rows.sort(key=lambda r: r.get("_sort_group", 99))
+    df = pd.DataFrame([
+        {k: v for k, v in r.items() if k != "_sort_group"}
+        for r in all_rows
+    ])
+    _leading = ["Symbol", "Name", "Ticker Type", "Broad Asset Class", "Region", "Sub-Category"]
+    _rest = [c for c in df.columns if c not in _leading]
+    df = df[_leading + _rest]
+    df.insert(0, "row_id", range(1, len(df) + 1))
+    return df
+
+
 def main():
     print("=" * 60)
     print(f"Market Dashboard Data Fetch — {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")
@@ -988,66 +782,32 @@ def main():
 
     os.makedirs("data", exist_ok=True)
 
-    # 1. FX cache
-    fx_cache = build_fx_cache()
+    # ── FX cache (shared by both pipelines) ──────────────────────────────
+    fx_cache = build_comp_fx_cache()
 
-    # 2. yfinance assets
-    yf_rows = collect_yf_assets(fx_cache)
+    # ── market_data (simple dashboard — simple_dash == True) ─────────────
+    print("\n" + "=" * 60)
+    print("SIMPLE DASHBOARD (market_data)")
+    print("=" * 60)
+    simple_instruments = load_simple_library()
+    simple_yf_rows     = collect_comp_assets(simple_instruments, fx_cache)
+    simple_fred_rows   = collect_simple_fred_assets()
+    df_main = _build_library_df(simple_yf_rows, simple_fred_rows)
 
-    # 3. FRED yields
-    fred_yield_rows = collect_fred_yields()
-
-    # 4. Build main dataframe
-    all_rows = yf_rows + fred_yield_rows
-    df_main = pd.DataFrame(all_rows)
-
-    # 5. Calculated ratio fields (need df_main to exist first)
-    ratio_rows = build_calculated_fields(df_main)
-    df_ratios = pd.DataFrame(ratio_rows)
-    df_main = pd.concat([df_main, df_ratios], ignore_index=True)
-
-    # Add row_id in column A after all sort/column ordering is finalised
-    df_main.insert(0, "row_id", range(1, len(df_main) + 1))
-
-    # 6. Save market_data output
     main_path = "data/market_data.csv"
     df_main.to_csv(main_path, index=False)
     print(f"\n✓ Saved {main_path} — {len(df_main)} instruments")
 
-    # ── Comprehensive library (market_data_comp) ──────────────────────────
-    # Loads index_library.csv, fetches all confirmed instruments, and writes
-    # to the market_data_comp Google Sheet tab.  The existing market_data tab
-    # is completely unaffected by this block.
+    # ── market_data_comp (full library) ──────────────────────────────────
     df_comp = None
     try:
         print("\n" + "=" * 60)
         print("COMPREHENSIVE LIBRARY (market_data_comp)")
         print("=" * 60)
-        comp_fx_cache   = build_comp_fx_cache()
         comp_instruments = load_instrument_library()
-        comp_yf_rows    = collect_comp_assets(comp_instruments, comp_fx_cache)
-        comp_fred_rows  = collect_comp_fred_assets()  # all 25 FRED Rates from library
-        all_comp_rows   = comp_yf_rows + comp_fred_rows
-        # Sort by _sort_group so FRED Rates appear adjacent to yfinance Rates rows
-        all_comp_rows.sort(key=lambda r: r.get("_sort_group", 99))
-        # Strip the internal sort key before building the DataFrame
-        df_comp = pd.DataFrame([
-            {k: v for k, v in r.items() if k != "_sort_group"}
-            for r in all_comp_rows
-        ])
-
-        # Calculated ratio/spread rows for comp (mirrors market_data behaviour)
-        comp_ratio_rows = build_calculated_fields_comp(df_comp)
-        df_comp = pd.concat([df_comp, pd.DataFrame(comp_ratio_rows)], ignore_index=True)
-
-        # Enforce column order: Symbol, Name, Ticker Type, Broad Asset Class,
-        # Region, Sub-Category, then remaining columns as they appear.
-        _leading = ["Symbol", "Name", "Ticker Type", "Broad Asset Class", "Region", "Sub-Category"]
-        _rest = [c for c in df_comp.columns if c not in _leading]
-        df_comp = df_comp[_leading + _rest]
-
-        # Add row_id in column A after all sort/column ordering is finalised
-        df_comp.insert(0, "row_id", range(1, len(df_comp) + 1))
+        comp_yf_rows     = collect_comp_assets(comp_instruments, fx_cache)
+        comp_fred_rows   = collect_comp_fred_assets()
+        df_comp = _build_library_df(comp_yf_rows, comp_fred_rows)
 
         comp_path = "data/market_data_comp.csv"
         df_comp.to_csv(comp_path, index=False)
@@ -1060,7 +820,7 @@ def main():
         print("  market_data will still be pushed; market_data_comp will be skipped.")
         df_comp = None
 
-    # 7. Push to Google Sheets (market_data always; market_data_comp if available)
+    # ── Push to Google Sheets ────────────────────────────────────────────
     push_to_google_sheets(df_main, df_comp=df_comp)
 
     print(f"\n✓ Completed at {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}")

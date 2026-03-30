@@ -128,10 +128,16 @@ INDICATOR_META = {
                   "log(XLY / XLP)"),
     "US_G2":     ("US & Neighbours", "Growth / broader cyclicals vs defensives",
                   "log((XLI+XLF) / (XLU+XLP))"),
+    "US_G2b":    ("US & Neighbours", "Growth / financials vs utilities",
+                  "log(XLF / XLU)"),
     "US_G3":     ("US & Neighbours", "Size cycle",
                   "log(IWM / IWB)"),
+    "US_G3b":    ("US & Neighbours", "Size cycle (S&P proxy)",
+                  "log(IWM / SPY)"),
     "US_G4":     ("US & Neighbours", "Style / value vs growth",
                   "log(IWD / IWF)"),
+    "US_G4b":    ("US & Neighbours", "Style / growth vs value (S&P 500)",
+                  "log(IVW / IVE)"),
     # US & Neighbours — Rates & Credit
     "US_I1":     ("US & Neighbours", "Yield-curve slope 10Y-3M",
                   "T10Y3M (FRED direct)"),
@@ -145,8 +151,16 @@ INDICATOR_META = {
                   "BAMLH0A0HYM2 - BAMLC0A0CM"),
     "US_I6":     ("US & Neighbours", "Yield-curve slope 2s10s",
                   "T10Y2Y (FRED direct)"),
+    "US_I6b":    ("US & Neighbours", "Yield-curve slope 2s10s (market)",
+                  "^TNX - DGS2 (yfinance 10Y level minus FRED 2Y level)"),
     "US_I7":     ("US & Neighbours", "10Y breakeven inflation",
                   "T10YIE (FRED direct)"),
+    "US_I8":     ("US & Neighbours", "Risk-on vs risk-off",
+                  "log(SPY / GOVT)"),
+    "US_I9":     ("US & Neighbours", "HY vs IG credit (ETF proxy)",
+                  "log(IHYU.L / SLXX.L)"),
+    "US_I10":    ("US & Neighbours", "HY vs treasuries (credit risk)",
+                  "log(IHYU.L / GOVT)"),
     # US & Neighbours — Volatility
     "US_R1":     ("US & Neighbours", "Vol term structure (equity)",
                   "VIX3M - VIX (arithmetic spread)"),
@@ -605,8 +619,11 @@ REGIME_RULES = {
     # US Growth
     "US_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth",       "defensive"),
     "US_G2":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "late-cycle"),
+    "US_G2b": lambda r, z: _r(r, z,  1, -1, "risk-on",          "defensive"),
     "US_G3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
+    "US_G3b": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
     "US_G4":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
+    "US_G4b": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
     "US_I1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
@@ -628,7 +645,15 @@ REGIME_RULES = {
         else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
+    "US_I6b": lambda r, z: (
+        "inverted" if (not np.isnan(r) and r < 0)
+        else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
+              else ("flat" if not np.isnan(z) and z < -1 else "normal"))
+    ),
     "US_I7":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
+    "US_I8":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
+    "US_I9":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
+    "US_I10": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     # Volatility
     "US_R1":  lambda r, z: (
         "stress" if not np.isnan(r) and r < 0
@@ -828,13 +853,28 @@ def _calc_US_G3(cp, **_):
     return _log_ratio(_p(cp, "IWM"), _p(cp, "IWB"))
 
 
+def _calc_US_G2b(cp, **_):
+    """Financials vs Utilities (2-ticker): log(XLF / XLU)."""
+    return _log_ratio(_p(cp, "XLF"), _p(cp, "XLU"))
+
+
+def _calc_US_G3b(cp, **_):
+    """Small Cap vs Large Cap (S&P proxy): log(IWM / SPY)."""
+    return _log_ratio(_p(cp, "IWM"), _p(cp, "SPY"))
+
+
 def _calc_US_G4(cp, **_):
     """Value vs Growth: log(IWD / IWF)."""
     return _log_ratio(_p(cp, "IWD"), _p(cp, "IWF"))
 
 
+def _calc_US_G4b(cp, **_):
+    """Growth vs Value (S&P 500): log(IVW / IVE)."""
+    return _log_ratio(_p(cp, "IVW"), _p(cp, "IVE"))
+
+
 # ---------------------------------------------------------------------------
-# CREDIT / FINANCIAL CONDITIONS  (US_I1–I7)
+# CREDIT / FINANCIAL CONDITIONS  (US_I1–I10)
 # ---------------------------------------------------------------------------
 
 def _calc_US_I1(mu, **_):
@@ -870,9 +910,32 @@ def _calc_US_I6(mu, **_):
     return _to_weekly_friday(_get_col(mu, "T10Y2Y"))
 
 
+def _calc_US_I6b(cp, mu, **_):
+    """10Y-2Y yield curve from market prices: ^TNX (yfinance) minus DGS2 (FRED).
+    Both are in % pa; result is in percentage points."""
+    tnx = _to_weekly_friday(_p(cp, "^TNX"))
+    dgs2 = _to_weekly_friday(_get_col(mu, "DGS2"))
+    return _arith_diff(tnx, dgs2)
+
+
 def _calc_US_I7(mu, **_):
     """10Y breakeven inflation: direct from FRED T10YIE."""
     return _to_weekly_friday(_get_col(mu, "T10YIE"))
+
+
+def _calc_US_I8(cp, **_):
+    """Risk-On vs Risk-Off: log(SPY / GOVT)."""
+    return _log_ratio(_p(cp, "SPY"), _p(cp, "GOVT"))
+
+
+def _calc_US_I9(cp, **_):
+    """HY vs IG Credit (ETF proxy): log(IHYU.L / SLXX.L)."""
+    return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "SLXX.L"))
+
+
+def _calc_US_I10(cp, **_):
+    """HY vs Treasuries (credit risk): log(IHYU.L / GOVT)."""
+    return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "GOVT"))
 
 
 # ---------------------------------------------------------------------------
@@ -1054,15 +1117,22 @@ def _calc_US_M2L1(mu, **_):
 _US_CALCULATORS = {
     "US_G1":      _calc_US_G1,
     "US_G2":      _calc_US_G2,
+    "US_G2b":     _calc_US_G2b,
     "US_G3":      _calc_US_G3,
+    "US_G3b":     _calc_US_G3b,
     "US_G4":      _calc_US_G4,
+    "US_G4b":     _calc_US_G4b,
     "US_I1":      _calc_US_I1,
     "US_I2":      _calc_US_I2,
     "US_I3":      _calc_US_I3,
     "US_I4":      _calc_US_I4,
     "US_I5":      _calc_US_I5,
     "US_I6":      _calc_US_I6,
+    "US_I6b":     _calc_US_I6b,
     "US_I7":      _calc_US_I7,
+    "US_I8":      _calc_US_I8,
+    "US_I9":      _calc_US_I9,
+    "US_I10":     _calc_US_I10,
     "US_R1":      _calc_US_R1,
     "US_R2":      _calc_US_R2,
     "US_RR1":     _calc_US_RR1,
