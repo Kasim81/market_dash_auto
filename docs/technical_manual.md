@@ -212,3 +212,349 @@ Both pipelines are now library-driven. The simple pipeline reads from `index_lib
 - **Auth:** None required
 - **Used for:** Euro IG credit spread (AAA govt 10Y yield) in `compute_macro_market.py`
 - **Rate limit:** 2s delay between calls
+
+---
+
+## 6. Google Sheets Tab Map
+
+All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`).
+
+| Tab Name | Written By | CSV Mirror | Contents |
+|---|---|---|---|
+| `market_data` | `fetch_data.py` | `data/market_data.csv` | ~70 simple-pipeline instruments, daily snapshot |
+| `market_data_comp` | `fetch_data.py` | `data/market_data_comp.csv` | ~390 comp-pipeline instruments, daily snapshot |
+| `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
+| `macro_us` | `fetch_macro_us_fred.py` | `data/macro_us.csv` | ~43 US FRED series snapshot |
+| `macro_us_hist` | `fetch_hist.py` | `data/macro_us_hist.csv` | Weekly FRED history from 1947 |
+| `macro_intl` | `fetch_macro_international.py` | `data/macro_intl.csv` | 11-country macro snapshot |
+| `macro_intl_hist` | `fetch_macro_international.py` | `data/macro_intl_hist.csv` | Weekly international history from 1960 |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 57-indicator snapshot (raw + z-score + regime) |
+| `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
+
+### Legacy Tabs (Auto-Deleted)
+
+The following tabs are automatically deleted on every run by `fetch_data.py` if they exist:
+
+| Tab | Reason |
+|---|---|
+| `Market Data` (with space) | Duplicate created by Apps Script; replaced by `market_data` |
+| `sentiment_data` | Content consolidated into `macro_us` + `macro_intl` |
+| `macro_surveys` | Content consolidated into `macro_us` |
+| `macro_surveys_hist` | Content consolidated into `macro_us_hist` |
+| `market_data_hist` | Simple-pipeline history removed; superseded by `market_data_comp_hist` |
+
+### Downstream Consumer
+
+`trigger.py` reads only `market_data` via CSV export URL:
+```
+https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac/export?format=csv&gid=68683176
+```
+
+---
+
+## 7. CSV File Inventory
+
+### Configuration Libraries (input — read by Python, never overwritten)
+
+| File | Rows | Consumed By | Purpose |
+|---|---|---|---|
+| `index_library.csv` | 390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments |
+| `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
+| `macro_library_fred.csv` | 46 | fetch_macro_us_fred.py, fetch_macro_international.py | FRED series definitions (US + international) |
+| `macro_library_oecd.csv` | 3 | fetch_macro_international.py | OECD indicator definitions (CLI, unemployment) |
+| `macro_library_worldbank.csv` | 1 | fetch_macro_international.py | World Bank indicator definition (CPI) |
+| `macro_library_imf.csv` | 1 | fetch_macro_international.py | IMF indicator definition (GDP growth) |
+| `macro_indicator_library.csv` | 57 | compute_macro_market.py | Macro-market indicator definitions (formulas, regime rules) |
+
+### Pipeline Outputs (generated daily by Python, committed to git)
+
+| File | Rows | Written By | Content |
+|---|---|---|---|
+| `market_data.csv` | ~76 | fetch_data.py | Simple-pipeline daily snapshot |
+| `market_data_comp.csv` | ~360 | fetch_data.py | Comp-pipeline daily snapshot |
+| `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 10 metadata prefix rows + data |
+| `macro_us.csv` | ~44 | fetch_macro_us_fred.py | US FRED macro snapshot |
+| `macro_us_hist.csv` | ~4,144 | fetch_hist.py | Weekly FRED history, 8 metadata prefix rows + data |
+| `macro_intl.csv` | ~59 | fetch_macro_international.py | International macro snapshot |
+| `macro_intl_hist.csv` | ~3,466 | fetch_macro_international.py | Weekly international history, 8 metadata prefix rows + data |
+| `macro_market.csv` | ~50 | compute_macro_market.py | Macro-market indicator snapshot |
+| `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
+
+---
+
+## 8. `index_library.csv` — Schema & Source of Truth
+
+The library has ~390 rows and 29 columns. It is the **single source of truth** for both pipelines — all instruments, metadata, and data source assignments live here.
+
+### Column Schema
+
+| Column | Type | Description |
+|---|---|---|
+| `name` | string | Human-readable instrument name |
+| `asset_class` | enum | Equity, Fixed Income, Rates, Spread, FX, Commodity, Crypto, Volatility |
+| `broad_asset_class` | string | Display grouping for Sheets output (Equity, Bonds, Commodities, FX, etc.) |
+| `units` | string | Display units (Index, Price, % pa, bps, Ratio, etc.) |
+| `asset_subclass` | string | e.g. "Equity Broad", "Govt Bond", "Corp HY", "Credit Spread" |
+| `region` | string | Global, North America, Europe, Japan, Asia Pacific, EM, etc. |
+| `country_market` | string | Specific country (e.g. "United States", "Japan") |
+| `sector_style` | string | Sector or style tag (e.g. "Energy", "Growth", "Blend") |
+| `market_cap_focus` | string | Large, Mid, Small, Broad |
+| `maturity_focus` | string | Short (1-3yr), Long (10yr+), Broad |
+| `credit_quality` | string | Investment Grade, High Yield |
+| `commodity_group` | string | Energy, Precious Metals, Agriculture, etc. |
+| `base_currency` | string | ISO currency code (USD, GBP, EUR, JPY, ...) |
+| `hedged` | bool | True if currency-hedged variant |
+| `hedge_currency` | string | Target hedge currency |
+| `proxy_flag` | bool | True if this is a proxy for an unavailable primary |
+| `proxy_type` | string | ETF, Total Return, etc. |
+| `data_source` | enum | `yfinance PR`, `yfinance TR`, `FRED` |
+| `validation_status` | enum | `CONFIRMED`, `PENDING`, `UNAVAILABLE` |
+| `ticker_yfinance_pr` | string | yfinance price return ticker (index) |
+| `ticker_yfinance_tr` | string | yfinance total return ticker (ETF proxy) |
+| `ticker_investiny` | string | Reserved — not currently used |
+| `ticker_fred_tr` | string | FRED total return index series ID |
+| `ticker_fred_yield` | string | FRED yield series ID |
+| `ticker_fred_oas` | string | FRED OAS spread series ID |
+| `ticker_fred_spread` | string | FRED spread series ID |
+| `ticker_fred_duration` | string | FRED duration series ID |
+| `data_start` | date | Earliest reliable data date for this instrument |
+| `simple_dash` | bool | True = included in the simple pipeline (~70 instruments) |
+
+### How the Pipelines Use the Library
+
+1. **Simple pipeline:** `load_simple_library()` reads the CSV and filters to `simple_dash == True` AND `validation_status == "CONFIRMED"`
+2. **Comp pipeline:** `load_instrument_library()` reads the CSV and filters to `validation_status == "CONFIRMED"` (all confirmed rows)
+3. Rows with `data_source` starting with `yfinance` are fetched via `collect_comp_assets()`
+4. Rows with FRED ticker columns populated are fetched via `collect_comp_fred_assets()` / `collect_comp_fred_rates()`
+5. Sort order follows `lib_sort_key()` from `library_utils.py`
+
+### Adding a New Instrument
+
+1. Add a row to `index_library.csv` with `validation_status = "CONFIRMED"`
+2. Set `data_source` to `yfinance PR` or `yfinance TR`
+3. Verify the ticker works: `python -c "import yfinance as yf; t = yf.Ticker('TICKER'); print(t.history(period='5d'))"`
+4. Set `base_currency` — needed for FX conversion to USD
+5. Set `broad_asset_class` and `units` — used for display in Sheets
+6. Optionally set `simple_dash = True` to include in the simple dashboard
+
+### Library Maintenance
+
+`index_library.csv` is itself built by a separate Claude project at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. Any changes to instrument metadata should be made in the CSV, not hardcoded in Python.
+
+---
+
+## 9. Module Reference
+
+### 9.1 `library_utils.py` (210 lines)
+
+**Role:** Shared constants and helpers — single authoritative source for sort logic and FX maps.
+
+| Export | Type | Purpose |
+|---|---|---|
+| `ASSET_CLASS_GROUP` | dict | Maps asset classes to sort order (1-7) |
+| `REGION_ORDER` | dict | Maps regions to sort order (1-9) |
+| `EQUITY_SUBCLASS_ORDER` | dict | Sort order for equity subcategories |
+| `FI_SUBCLASS_ORDER` | dict | Sort order for fixed income subcategories |
+| `MATURITY_ORDER` | dict | Sort order for bond maturities |
+| `COMMODITY_GROUP_ORDER` | dict | Sort order for commodity groups |
+| `VOL_SUBCLASS_ORDER` | dict | Sort order for volatility subcategories |
+| `RATES_SUBCLASS_ORDER` | dict | Sort order for rates subcategories |
+| `COMP_FX_TICKERS` | dict | Currency code -> yfinance ticker (18 currencies) |
+| `COMP_FCY_PER_USD` | set | Indirect-quote currencies (JPY, CNY, INR, etc.) — divide by FX rate |
+| `lib_sort_key(row)` | function | Returns sort tuple from instrument dict for consistent ordering |
+
+### 9.2 `fetch_data.py` (920 lines)
+
+**Role:** Master orchestrator + both snapshot pipelines (simple + comp).
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `build_comp_fx_cache()` | Pre-fetch FX rate histories for all 18 COMP_FX_TICKERS |
+| `load_simple_library()` | Read library, filter to `simple_dash=True` + `CONFIRMED` |
+| `load_instrument_library()` | Read library, filter to `CONFIRMED`, sort by `lib_sort_key` |
+| `collect_comp_assets(instruments, fx_cache)` | Fetch yfinance prices, compute 1W/1M/3M/6M/YTD/1Y returns in local + USD |
+| `collect_simple_fred_assets()` | Fetch FRED-sourced instruments for simple pipeline |
+| `collect_comp_fred_assets()` | Fetch FRED yields, spreads, OAS for comp pipeline |
+| `_build_library_df(yf_rows, fred_rows)` | Combine yfinance + FRED rows into output DataFrame |
+| `push_to_google_sheets(df_main, df_comp)` | Write both tabs to Sheets; delete legacy tabs |
+| `main()` | Entry point — runs simple + comp pipelines, then phases A-E |
+
+#### Key Constants
+
+| Constant | Source | Purpose |
+|---|---|---|
+| `LIBRARY_PATH` | Computed | Absolute path to `data/index_library.csv` |
+| `COMP_LEVEL_CHANGE_TICKERS` | `data/level_change_tickers.csv` | Vol tickers using absolute point change (with hardcoded fallback) |
+| `COMP_FX_TICKERS` | `library_utils.py` | 18 FX pairs for USD conversion |
+| `COMP_FCY_PER_USD` | `library_utils.py` | Indirect-quote currency set |
+| `TABS_TO_DELETE` | Hardcoded set | Legacy tabs cleaned up on every run |
+
+### 9.3 `fetch_macro_us_fred.py` (510 lines)
+
+**Role:** Phase A — US macro FRED indicators (snapshot).
+
+The indicator registry is loaded from `data/macro_library_fred.csv` at import time. The exported `FRED_MACRO_US` dict is imported by `fetch_hist.py` for building history.
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `_load_fred_us_library()` | Load `macro_library_fred.csv`, return US-only series as dicts |
+| `fred_fetch_with_backoff(series_id, api_key)` | Fetch single FRED series with exponential backoff |
+| `fetch_macro_us()` | Fetch all ~43 US FRED series, compute latest/prior/change |
+| `save_csv(df)` | Save to `data/macro_us.csv` (diff-check: skip if unchanged) |
+| `push_macro_us_to_sheets(df)` | Push to Google Sheets `macro_us` tab |
+| `run_phase_a()` | **Entry point** — validate, fetch, save, push |
+
+#### FRED Series Categories (43 total)
+
+| Category | Example Series |
+|---|---|
+| Growth / Yield Curve | T10Y2Y, T10Y3M |
+| Growth / Money Supply | M2SL |
+| Growth / Leading | USSLIND (LEI), PERMIT |
+| Growth / Labour | IC4WSA, PAYEMS, UNRATE |
+| Growth / Activity | INDPRO, RSXFS |
+| Growth / Credit | DRTSCILM (SLOOS C&I), STDSOTHCONS, SUBLPDRCSN |
+| Financial Conditions | NFCI |
+| Inflation | CPIAUCSL, CPILFESL, PCEPILFE, PPIACO, T10YIE |
+| Monetary Policy | DFEDTARU, WRESBAL |
+| Sentiment / Surveys | UMCSENT, UMCSC, UMCSE |
+| Regional Fed | GACDFSA066MSFRBPHI (Philly), MFRBSCOMP (Richmond), KCACTMFG (Kansas City) |
+
+### 9.4 `fetch_hist.py` (1,062 lines)
+
+**Role:** All historical time series — `macro_us_hist` and `market_data_comp_hist`.
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `get_friday_spine(start_str, end_date)` | Generate weekly Friday DatetimeIndex |
+| `align_to_friday_spine(series, spine)` | Reindex + forward-fill to Friday spine |
+| `fred_fetch_series_full(series_id, start)` | Fetch complete FRED series with backoff |
+| `build_macro_hist_df(spine)` | Build macro_us_hist by fetching all FRED series |
+| `build_macro_meta_prefix(df)` | Build 8 metadata prefix rows for macro_us_hist |
+| `run_hist()` | **Entry point A** — build + push macro_us_hist |
+| `load_comp_instruments()` | Load comp instruments from library |
+| `load_comp_fred_rates()` | Load FRED rate series for comp pipeline |
+| `fetch_comp_fx_cache(start)` | Pre-fetch FX histories for comp USD conversion |
+| `compute_comp_usd_series(local, ccy, fx_cache, fcy_per_usd)` | Convert local prices to USD |
+| `fetch_comp_yfinance_history(instruments, start, fx_cache)` | Fetch all yfinance histories |
+| `fetch_comp_fred_rates_history(rates, start)` | Fetch all FRED rate histories |
+| `build_comp_market_hist_df(yf_data, fred_data, spine)` | Combine + align to Friday spine |
+| `build_comp_market_meta_prefix(df, instruments, rates)` | Build 10 metadata prefix rows |
+| `run_comp_hist()` | **Entry point B** — build + push market_data_comp_hist |
+
+#### Key Constants
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `MACRO_HIST_START` | `"1947-01-01"` | Floor date for FRED macro history |
+| `COMP_HIST_START` | `"1950-01-01"` | Floor date for comp market history |
+| `YFINANCE_DELAY` | 0.3s | Delay between yfinance calls |
+| `FRED_DELAY` | 0.6s | Delay between FRED calls |
+
+#### Historical Output Format
+
+- **Rows** = dates (weekly Friday close)
+- **Columns** = instruments (local currency first, then USD)
+- **Metadata prefix rows** (in Sheets tabs, not in CSVs): ticker ID, variant, source, name, broad asset class, region, sub-category, currency, units, frequency — then column header row, then data
+
+### 9.5 `fetch_macro_international.py` (1,426 lines)
+
+**Role:** Phase C — International macro for 11 economies.
+
+#### Countries Covered
+
+`AUS, CAN, CHE, CHN, DEU, EA19, FRA, GBR, ITA, JPN, USA`
+
+(`EA19` = Eurozone. `CHN` and `EA19` have partial coverage.)
+
+#### Indicators
+
+| Indicator | Source | Frequency | Known Issues |
+|---|---|---|---|
+| Composite Leading Indicator (CLI) | OECD | Monthly | EA19 and CHE missing |
+| Unemployment Rate | OECD | Monthly | CHN, EA19 not published |
+| Short-term Interest Rate (3M) | OECD | Monthly | **Returning no data for all countries** |
+| CPI Headline YoY % | World Bank | Annual | EA19 uses WB code `EMU` |
+| Real GDP Growth % | IMF | Annual | EA19 (`XM` code) returning no data |
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `_load_oecd_indicators()` | Load OECD indicators from `macro_library_oecd.csv` |
+| `_load_wb_indicators()` | Load World Bank indicators from `macro_library_worldbank.csv` |
+| `_load_imf_indicators()` | Load IMF indicators from `macro_library_imf.csv` |
+| `_load_fred_intl_indicators()` | Load international FRED series from `macro_library_fred.csv` |
+| `build_snapshot(...)` | Build snapshot DataFrame (one row per country x indicator) |
+| `build_history(...)` | Build history DataFrame on Friday spine |
+| `run_phase_c()` | **Entry point** — validate, fetch, build snapshot + history, save + push |
+
+#### Rate Limiting
+
+| Source | Delay | Notes |
+|---|---|---|
+| OECD | 4s | Max ~20 calls/hour; module makes ~6 calls per run |
+| World Bank | 1s | Generous limits |
+| IMF | 1s | Full history in single call |
+| FRED (intl) | 0.6s | Same as US FRED |
+
+### 9.6 `compute_macro_market.py` (1,717 lines)
+
+**Role:** Phase E — 57 composite macro-market indicators with z-scores and regime classifications.
+
+#### Indicator Families (57 total)
+
+| Family | IDs | Description |
+|---|---|---|
+| US Growth / Cyclicals | US_G1, US_G2, US_G2b, US_G3, US_G3b, US_G4, US_G4b | Sector ratios (cyclicals vs defensives, size, style) |
+| US Rates / Credit | US_I1–US_I10 | Yield curves, HY/IG spreads, credit risk, risk-on/off |
+| US Vol / Real Rates | US_R1, US_R2, US_RR1 | Vol term structure, MOVE/VIX, TIPS real yield |
+| US FX | US_FX1, US_FX2 | Dollar vs EM, copper/gold |
+| US Momentum | M1–M5 | Trend-following, dual momentum, vol-filtered |
+| Europe | EU_G1–EU_G3, EU_I1–EU_I3, EU_R1, EU_FX1 | European cyclicals, credit, gilts, EUR composite |
+| Asia | AS_G1–AS_G3, AS_I1–AS_I2, AS_FX1–AS_FX2, AS_C1–AS_C2 | China/India size, rates, FX, iron ore |
+| US Leading / Macro | US_LEI1, US_JOBS1, US_LAB1, US_GROWTH1, US_HOUS1, US_M2L1 | LEI, jobless claims, labour composite, housing, M2 |
+| Regional CLI | REG_CLI1–REG_CLI5 | Cross-country growth differentials and breadth |
+
+#### How Each Indicator Works
+
+Each indicator goes through:
+1. **Calculator function** (`_calc_US_G1`, etc.) — computes raw weekly series from input data
+2. **Rolling z-score** — 260-week window (5 years), 52-week minimum warm-up
+3. **Regime classification** — discrete label based on z-score thresholds (e.g. "risk-on", "defensive", "neutral")
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `load_comp_hist()` | Load `market_data_comp_hist.csv` (weekly prices) |
+| `load_macro_us_hist()` | Load `macro_us_hist.csv` (skip 8 metadata rows) |
+| `load_macro_intl_hist()` | Load `macro_intl_hist.csv` (skip metadata rows) |
+| `fetch_supplemental_fred()` | Fetch 7 FRED series not in macro_us_hist (iron ore, Euro HY OAS, intl yields, DGS10) |
+| `fetch_ecb_euro_ig_spread()` | ECB Euro IG credit spread (with FRED fallback) |
+| `fetch_fxi_prices()` | yfinance FXI (China Large-Cap ETF) |
+| `_log_ratio(num, den)` | `log(num / den)` — primary indicator calculation |
+| `_arith_diff(a, b)` | `a - b` — for yield curve spreads |
+| `_sum_log_ratio(nums, dens)` | Average of multiple log-ratios — composite indicators |
+| `_rolling_zscore(series)` | Rolling z-score (260w window, 52w min) |
+| `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 57 indicator calculations |
+| `build_snapshot_df(results)` | One row per indicator (raw, zscore, regime) |
+| `build_hist_df(results)` | One row per date x 171 columns (57 indicators x 3 values) |
+| `run_phase_e()` | **Entry point** — load inputs, compute, save + push |
+
+#### Key Constants
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `ZSCORE_WINDOW` | 260 | 5-year rolling window for z-scores (weeks) |
+| `ZSCORE_MIN_PERIODS` | 52 | 1-year minimum warm-up (weeks) |
+| `HIST_START` | `"2000-01-01"` | Start date for weekly spine |
+| `INDICATOR_META` | dict | Maps 57 IDs to (region_block, category, formula_note) |
+| `REGIME_RULES` | dict | Maps 57 IDs to regime classification lambdas |
+| `_US_CALCULATORS` | dict | Maps 57 IDs to calculator functions |
