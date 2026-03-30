@@ -1,6 +1,6 @@
 id,region_block,category,last_date,raw,zscore,regime,formula_note
-US_G1,US & Neighbours,Growth / cyclicals vs defensives,2026-03-27,0.256383,0.211,neutral,log(XLY / XLP)
-US_G2,US & Neighbours,Growth / broader cyclicals vs defensives,2026-03-27,0.485671,1.1095,risk-on,log((XLI+XLF) / (XLU+XLP))
+US_G1,US & Neighbours,Growth / cyclicals vs defensives,2026-03-27,0.256383,0.1818,neutral,log(XLY / XLP)
+US_G2,US & Neighbours,Growth / broader cyclicals vs defensives,2026-03-27,0.485671,1.0854,risk-on,log((XLI+XLF) / (XLU+XLP))
 US_G3,US & Neighbours,Size cycle,2026-03-27,-0.358586,-0.7371,neutral,log(IWM / IWB)
 US_G4,US & Neighbours,Style / value vs growth,2026-03-27,-0.675642,-0.3277,mixed,log(IWD / IWF)
 US_I1,US & Neighbours,Yield-curve slope 10Y-3M,2026-03-27,0.71,0.655,mid-cycle,T10Y3M (FRED direct)
@@ -14,7 +14,7 @@ US_R1,US & Neighbours,Vol term structure (equity),2026-03-27,-1.779999,-2.7971,s
 US_R2,US & Neighbours,Rates vs equity vol,2026-03-27,1.282454,-1.1345,calm,log(MOVE / VIX)
 US_RR1,US & Neighbours,Real rates / valuation,2026-03-27,2.08,0.816,neutral,"DFII10 (TIPS 10Y real yield, FRED direct)"
 US_FX1,US & Neighbours,Dollar vs EM & commodities,2026-03-27,-0.595706,1.5673,weak-USD,log(EEM / DX-Y.NYB)
-US_FX2,US & Neighbours,Copper vs gold,2026-03-27,-6.71347,-1.916,recession-watch,log(HG=F / GC=F)
+US_FX2,US & Neighbours,Copper vs gold,2026-03-27,-6.711323,-1.9065,recession-watch,log(HG=F / GC=F)
 M1,US & Neighbours,Momentum – US equities trend,2026-03-27,-0.03999,-1.3174,risk-off,(S&P500 - 40wk SMA) / 40wk SMA
 M2,US & Neighbours,Momentum – multi-asset trend,2026-03-27,4.0,0.4228,risk-on,"fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"
 M3,US & Neighbours,Momentum – dual momentum equity/bond,2026-03-27,-0.098671,-1.7086,bond-regime,"max(SPY_12m, URTH_12m) - SHY_12m"
@@ -42,7 +42,7 @@ AS_I2,Asia (China-centred),India govts vs US Treasuries,,,,Insufficient Data,IRL
 AS_FX1,Asia (China-centred),USD vs CNY,2026-03-27,6.9107,-0.1201,neutral,CNY=X level z-score
 AS_FX2,Asia (China-centred),USD vs INR,2026-03-27,94.309502,2.5002,INR-weak,INR=X level z-score
 AS_C1,Asia (China-centred),China infrastructure proxy,2026-02-06,100.965,-0.7386,neutral,log(PIORECRUSDM / HG=F)
-AS_C2,Asia (China-centred),China vs global commodities,2026-03-27,-6.71347,-1.916,global-commodity-lead,log(PIORECRUSDM / DBC)
+AS_C2,Asia (China-centred),China vs global commodities,2026-03-27,-6.711323,-1.9065,global-commodity-lead,log(PIORECRUSDM / DBC)
 REG_CLI1,Global / Regional,Regional growth diff: US vs Eurozone,2026-03-27,100.8525,1.1711,US-leads-EU,"USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"
 REG_CLI2,Global / Regional,Regional growth diff: US vs China,2026-03-27,101.446,1.4326,US-leads-China,USA_CLI - CHN_CLI
 REG_CLI3,Global / Regional,Europe block CLI state,2026-03-27,100.1233,0.4025,near-trend,"avg(DEU_CLI, FRA_CLI, GBR_CLI, ITA_CLI)"
