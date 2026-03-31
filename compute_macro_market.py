@@ -991,32 +991,33 @@ def _calc_M1(cp, **_):
 
 def _calc_M2(cp, **_):
     """
-    Faber 5-asset TAA: count of assets above their 40-week SMA.
-    Assets: SPY, EEM, DBC, GOVT, GC=F.  Raw = count (0–5).
+    Multi-asset trend breadth: fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA.
+    Raw = fraction (0.0–1.0).  ≥0.6 → risk-on, <0.4 → defensive.
     """
-    assets = ["SPY", "EEM", "DBC", "GOVT", "GC=F"]
+    assets = ["SPY", "URTH", "GOVT", "REET", "DBC"]
     scores = []
     for ticker in assets:
         px = _to_weekly_friday(_p(cp, ticker))
         sma = px.rolling(40, min_periods=20).mean()
         above = (px > sma).astype(float)
         scores.append(above)
-    combined = pd.concat(scores, axis=1).sum(axis=1)
-    # Align index to a common weekly spine
-    combined = _to_weekly_friday(combined)
+    combined = pd.concat(scores, axis=1).mean(axis=1)
     return combined
 
 
 def _calc_M3(cp, **_):
     """
-    Dual momentum: log(SPY / EEM) 26-week momentum differential.
-    Positive → US outperforming EM on a 6-month look-back.
+    Antonacci Dual Momentum: max(SPY_12m, URTH_12m) - SHY_12m.
+    Positive → equity regime; negative → bond regime.
     """
-    spy = _to_weekly_friday(_p(cp, "SPY"))
-    eem = _to_weekly_friday(_p(cp, "EEM", usd=True))
-    spy_mom = spy / spy.shift(26) - 1
-    eem_mom = eem / eem.shift(26) - 1
-    return spy_mom.subtract(eem_mom).dropna()
+    spy  = _to_weekly_friday(_p(cp, "SPY"))
+    urth = _to_weekly_friday(_p(cp, "URTH"))
+    shy  = _to_weekly_friday(_p(cp, "SHY"))
+    spy_12m  = spy  / spy.shift(52)  - 1
+    urth_12m = urth / urth.shift(52) - 1
+    shy_12m  = shy  / shy.shift(52)  - 1
+    rel_mom = pd.concat([spy_12m, urth_12m], axis=1).max(axis=1)
+    return rel_mom.subtract(shy_12m).dropna()
 
 
 def _calc_M4(cp, mu, **_):
@@ -1325,20 +1326,26 @@ def _calc_AS_G3(cp, **_):
 
 def _calc_AS_I1(supp, **_):
     """
-    China 10Y govt yield: FRED IRLTLT01CNM156N (monthly, forward-filled).
-    Raw = yield level in %.
+    China 10Y yield spread vs US 10Y: IRLTLT01CNM156N − DGS10.
+    Both monthly/daily FRED series, forward-filled to weekly.
+    Positive spread → Chinese bonds offer premium over US Treasuries;
+    rising spread → capital-flow support for CNY and EM risk appetite.
     """
-    s = supp.get("IRLTLT01CNM156N", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    chn = _to_weekly_friday(supp.get("IRLTLT01CNM156N", pd.Series(dtype=float)))
+    us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
+    return _arith_diff(chn, us)
 
 
 def _calc_AS_I2(supp, **_):
     """
-    India 10Y govt yield: FRED IRLTLT01INM156N (monthly, forward-filled).
-    Raw = yield level in %.
+    India 10Y yield spread vs US 10Y: IRLTLT01INM156N − DGS10.
+    Both monthly/daily FRED series, forward-filled to weekly.
+    Positive spread → Indian bonds offer carry over US Treasuries;
+    rising spread widens EM carry opportunity (but also flags INR risk).
     """
-    s = supp.get("IRLTLT01INM156N", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    ind = _to_weekly_friday(supp.get("IRLTLT01INM156N", pd.Series(dtype=float)))
+    us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
+    return _arith_diff(ind, us)
 
 
 # ---------------------------------------------------------------------------
