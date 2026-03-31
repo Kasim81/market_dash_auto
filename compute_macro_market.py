@@ -313,7 +313,7 @@ def fetch_supplemental_fred() -> dict:
       BAMLHE00EHYIOAS  — ICE BofA Euro HY OAS (EU_I1 primary / fallback)
       IRLTLT01CNM156N  — China 10Y govt bond yield (OECD via FRED) [AS_I1]
       IRLTLT01INM156N  — India 10Y govt bond yield (OECD via FRED) [AS_I2]
-      IRLTLT01GBM156N  — UK 10Y Gilt yield (OECD via FRED) [EU_I2, EU_I3]
+      IRLTLT01GBM156N  — UK 10Y Gilt yield (OECD via FRED) [EU_I3]
       IRLTLT01DEM156N  — Germany 10Y Bund yield (OECD via FRED) [EU_I3]
       DGS10            — US 10Y Treasury yield (daily, FRED) [AS_I1, AS_I2]
 
@@ -1162,31 +1162,35 @@ _US_CALCULATORS = {
 
 def _calc_EU_G1(cp, **_):
     """
-    Euro Stoxx 50 vs FTSE 100: log(^STOXX50E / ^FTSE) — EU cyclical vs UK defensive.
-    Both in local currency; ratio reflects relative risk appetite.
+    STOXX 600 Cyclicals vs Defensives (Europe):
+    log((Industrials + Banks + Technology) / (Utilities + Consumer Staples))
+    Uses iShares STOXX 600 sector TR ETFs — all EUR-denominated on Xetra:
+      EXH4.DE = Industrials  EXV1.DE = Banks  EXV3.DE = Technology
+      EXH9.DE = Utilities    EXH3.DE = Consumer Staples
     """
-    return _log_ratio(_p(cp, "^STOXX50E"), _p(cp, "^FTSE"))
+    return _sum_log_ratio(
+        [_p(cp, "EXH4.DE"), _p(cp, "EXV1.DE"), _p(cp, "EXV3.DE")],
+        [_p(cp, "EXH9.DE"), _p(cp, "EXH3.DE")],
+    )
 
 
 def _calc_EU_G2(cp, **_):
     """
-    STOXX 600 Cyclicals vs Defensives:
-    log((Industrials_TR + Consumer_Disc_TR) / (Health_TR + Utilities_TR))
-    STOXX 600 sector ETFs: EXH4.DE (Industrials), EXV3.DE (Consumer Disc),
-                           EXV1.DE (Health Care), EXH9.DE (Utilities).
+    UK domestic vs global: log(^FTMC / ^FTSE).
+    FTSE 250 is predominantly domestic UK-revenue companies; FTSE 100 is
+    ~70% overseas earnings. Rising ratio → domestic UK confidence recovering.
     """
-    return _sum_log_ratio(
-        [_p(cp, "EXH4.DE"), _p(cp, "EXV3.DE")],
-        [_p(cp, "EXV1.DE"), _p(cp, "EXH9.DE")],
-    )
+    return _log_ratio(_p(cp, "^FTMC"), _p(cp, "^FTSE"))
 
 
 def _calc_EU_G3(cp, **_):
     """
-    FTSE 250 vs FTSE 100: log(^FTMC / ^FTSE) — UK mid/small vs large-cap.
-    Proxy for domestic UK growth appetite.
+    Eurozone vs US equity leadership: log(FEZ / SPY).
+    FEZ = iShares Euro Stoxx 50 ETF (USD-denominated); SPY = S&P 500 ETF.
+    Both in USD — ratio is purely relative fundamental/sentiment, no FX noise.
+    Rising → Eurozone equity outperformance; signals improving EU growth outlook.
     """
-    return _log_ratio(_p(cp, "^FTMC"), _p(cp, "^FTSE"))
+    return _log_ratio(_p(cp, "FEZ"), _p(cp, "SPY"))
 
 
 # ---------------------------------------------------------------------------
@@ -1206,45 +1210,59 @@ def _calc_EU_I1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_EU_I2(supp, **_):
+def _calc_EU_I2(cp, **_):
     """
-    Euro HY OAS (bps): FRED BAMLHE00EHYIOAS — ICE BofA Euro High Yield OAS.
+    UK inflation expectations proxy: log(INXG.L / IGLT.L).
+    INXG.L = iShares UK IL Gilt ETF (inflation-linked); IGLT.L = nominal gilt ETF.
+    Rising ratio → market pricing higher long-run UK inflation; falling → disinflation.
     """
-    s = supp.get("BAMLHE00EHYIOAS", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
 
 
-def _calc_EU_I3(cp, **_):
+def _calc_EU_I3(supp, **_):
     """
-    UK credit conditions: log(SLXX.L / IGLT.L) — UK IG Corp vs Gilt.
-    Widening spread (SLXX underperforming) → tighter conditions.
+    UK–Germany gilt-bund yield spread: IRLTLT01GBM156N − IRLTLT01DEM156N.
+    Both monthly OECD series via FRED, forward-filled to weekly.
+    Rising spread → UK-specific risk premium rising (fiscal/political/inflation premium).
+    """
+    uk = _to_weekly_friday(supp.get("IRLTLT01GBM156N", pd.Series(dtype=float)))
+    de = _to_weekly_friday(supp.get("IRLTLT01DEM156N", pd.Series(dtype=float)))
+    return _arith_diff(uk, de)
+
+
+# ---------------------------------------------------------------------------
+# EU CREDIT / RATES  (EU_R1)
+# ---------------------------------------------------------------------------
+
+def _calc_EU_R1(cp, **_):
+    """
+    UK credit conditions: log(SLXX.L / IGLT.L).
+    SLXX.L = iShares GBP Corporate Bond ETF; IGLT.L = UK Gilt ETF.
+    Rising ratio → credit spreads tightening, risk appetite improving in UK.
     """
     return _log_ratio(_p(cp, "SLXX.L"), _p(cp, "IGLT.L"))
 
 
 # ---------------------------------------------------------------------------
-# EU RATES  (EU_R1)
-# ---------------------------------------------------------------------------
-
-def _calc_EU_R1(supp, **_):
-    """
-    Germany 10Y yield: FRED IRLTLT01DEM156N (monthly, forward-filled weekly).
-    Raw = yield level in %.
-    """
-    s = supp.get("IRLTLT01DEM156N", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
-
-
-# ---------------------------------------------------------------------------
-# EU FX  (EU_FX1)
+# EU FX / MACRO COMPOSITE  (EU_FX1)
 # ---------------------------------------------------------------------------
 
 def _calc_EU_FX1(cp, **_):
     """
-    EUR/USD level z-score.
-    Raw = EURUSD=X spot rate; z-score driven by ZSCORE_WINDOW rolling window.
+    EUR macro composite: equal-weight z-score of EUR strength + EU cyclical tilt.
+    Component 1: log(EURUSD=X)           — EUR/USD spot level
+    Component 2: log(EXH4.DE / EXH9.DE) — EU Industrials vs Utilities (risk tilt)
+    Both components are individually z-scored then averaged.
+    Rising composite → EUR strengthening AND European cyclicals leading defensives.
     """
-    return _to_weekly_friday(_p(cp, "EURUSD=X"))
+    log_eurusd  = np.log(_to_weekly_friday(_p(cp, "EURUSD=X")).replace(0, np.nan))
+    log_cyc_def = _log_ratio(_p(cp, "EXH4.DE"), _p(cp, "EXH9.DE"))
+    z1 = _rolling_zscore(log_eurusd)
+    z2 = _rolling_zscore(log_cyc_def)
+    composite = pd.concat([z1, z2], axis=1).mean(axis=1)
+    # Return the composite z-score series; make_result will z-score it again,
+    # so we return the raw composite directly (before final standardisation)
+    return composite
 
 
 # ---------------------------------------------------------------------------
