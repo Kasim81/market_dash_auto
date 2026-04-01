@@ -922,3 +922,273 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 ---
 
 *End of Section 3a — US Macro Fundamentals (8 indicators: US_LEI1, US_JOBS1, US_LAB1, US_LAB2, US_GROWTH1, US_HOUS1, US_M2L1, US_ISM1)*
+
+---
+
+## 3b. Europe & UK Indicators
+
+*This group covers equity, rates, credit, FX and sovereign-stress signals for the Eurozone and United Kingdom. The European macro cycle has historically diverged from the US cycle due to structural differences: greater export dependency (Germany, Netherlands), energy import vulnerability, ECB mandate constraints, and fiscal fragmentation across sovereign states. These indicators capture both intra-European dynamics (periphery vs core, UK vs Eurozone) and European performance relative to the global cycle.*
+
+---
+
+### EU_G1 — European Cyclicals vs Defensives
+
+| | |
+|---|---|
+| **Formula** | `log((EXV1.DE + EXH1.DE + EXV3.DE) / (EXV2.DE + EXH3.DE))` |
+| **Data** | STOXX Europe 600 sector ETFs: Industrials, Banks, Technology vs Utilities, Consumer Staples — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+EU_G1 is the European analogue of US_G1/G2: relative performance of cyclical sectors (industrials, banks, technology) versus defensive sectors (utilities, consumer staples) as a real-time market-based assessment of the European growth outlook.
+
+The choice of European Banks as a cyclical component is particularly important and differs from the US construction. European banks are more directly tied to the sovereign credit cycle than US banks: their balance sheets carry significant sovereign bond holdings, and their lending spreads respond directly to ECB policy and peripheral sovereign stress (EU_I4). When banks outperform defensives in Europe, it signals improving credit conditions, a steepening yield curve and diminishing tail risk — all supportive of the broader European growth narrative.
+
+Fama & French (1989) showed that cyclical-to-defensive spread returns predict future economic conditions across markets, not just the US. Dimson, Marsh & Staunton (2002, *Triumph of the Optimists*) extended this analysis to European markets, confirming that sector rotation signals are robust across the UK, Germany and France. The European cycle is also highly sensitive to global trade volumes — particularly Chinese demand for German capital goods — making EU_G1 a dual signal for both European domestic conditions and global goods cycle strength.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `pro-growth-europe` | OW European cyclicals, financials, industrials |
+| −1 to +1 | `neutral` | Balanced European allocation |
+| < −1 | `defensive-europe` | OW European utilities, staples; reduce European bank exposure |
+
+---
+
+### EU_G2 — UK Domestic vs Global (FTSE 250 / FTSE 100)
+
+| | |
+|---|---|
+| **Formula** | `log(MCX.L / ISF.L)` — FTSE 250 ETF / FTSE 100 ETF |
+| **Data** | iShares FTSE 250 ETF (MCX.L) / iShares Core FTSE 100 ETF (ISF.L) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The FTSE 250/FTSE 100 ratio is one of the cleanest available signals for UK domestic economic conditions versus global macro. The FTSE 100 is dominated by globally-oriented mega-caps — energy majors (Shell, BP), mining companies (Rio Tinto, Anglo American), banks with large international operations (HSBC, Standard Chartered), and consumer staples (Unilever, Diageo) — approximately 75% of FTSE 100 revenues are generated outside the UK. In contrast, the FTSE 250 is predominantly composed of UK-domestic businesses: real estate, regional banks, retailers, media and professional services.
+
+This structural composition difference makes the ratio a powerful lens on relative confidence in UK domestic demand versus global earnings. When sterling weakens (as post-Brexit), the FTSE 100 typically outperforms because its foreign revenues are worth more in GBP terms. When sterling strengthens and the UK domestic economy grows, the FTSE 250 tends to lead. The ratio therefore also carries an implicit GBP signal.
+
+Dimson, Marsh & Staunton (2002) noted the UK equity market's historically high international exposure relative to other developed markets, which is why a domestic-vs-global decomposition provides more information in the UK than in most other countries. For post-Brexit UK, the ratio has taken on additional significance as a gauge of trade policy confidence and Bank of England credibility.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `uk-domestic-strength` | OW UK mid/small caps, domestic consumer, housebuilders |
+| −1 to +1 | `neutral` | Balanced UK allocation |
+| < −1 | `uk-global-preference` | OW FTSE 100 mega-caps; reduce UK-domestic exposure |
+
+---
+
+### EU_G3 — Eurozone vs US Equity Leadership
+
+| | |
+|---|---|
+| **Formula** | `log(FEZ / SPY)` — Euro Stoxx 50 ETF / S&P 500 ETF (both in USD) |
+| **Data** | SPDR Euro Stoxx 50 ETF (FEZ) / SPDR S&P 500 ETF (SPY) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+EU_G3 measures relative equity leadership between the Eurozone and the United States — one of the most important regional allocation decisions in a global multi-asset portfolio.
+
+The drivers of Eurozone-vs-US relative performance are well-documented in the academic literature on international equity premium differentials. Solnik (1974, *Journal of Finance*) established that international diversification reduces portfolio risk precisely because national equity cycles diverge — the Eurozone and US cycles correlate at approximately 0.75 over rolling 3-year periods but can diverge sharply at cycle inflection points. Asness, Moskowitz & Pedersen (2013) showed that cross-country equity momentum is one of the most persistent and risk-adjusted-efficient factors in international investing.
+
+Key structural drivers of Eurozone outperformance phases include: (1) EUR appreciation relative to USD (foreign earnings accrete in USD terms); (2) China stimulus (Eurozone, particularly Germany, has high export exposure to China capital goods demand); (3) ECB accommodation combined with Eurozone fiscal expansion (rare but powerful, as in 2021 and post-2023 fiscal plans); (4) relative earnings valuation — the Eurozone has historically traded at a 20–30% P/E discount to the US, creating mean-reversion opportunities. US dominance phases tend to coincide with strong-dollar regimes, US tech cycle leadership and European political stress.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `eurozone-outperform` | OW Eurozone vs US; hedge USD/EUR to capture local-currency return |
+| −1 to +1 | `neutral` | Balanced regional allocation |
+| < −1 | `us-dominance` | OW US large-cap; reduce Eurozone equity weight |
+
+---
+
+### EU_G4 — Eurozone vs Global Equities
+
+| | |
+|---|---|
+| **Formula** | `log(EZU / URTH)` — iShares MSCI Eurozone ETF / iShares MSCI World ETF (both USD) |
+| **Data** | EZU, URTH — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+EU_G4 broadens the Eurozone comparison from US-only (EU_G3) to the full global developed-market universe. This distinction matters: Eurozone outperformance relative to the US (EU_G3 positive) can coexist with Eurozone underperformance relative to MSCI World if Japan, UK or other developed markets are simultaneously strong. EU_G4 therefore answers the regional allocation question from the perspective of a globally diversified investor.
+
+The MSCI World benchmark (proxied by URTH) covers 23 developed markets with approximately 70% US weight, meaning EU_G4 is a less US-centric comparison than EU_G3. When EU_G4 is positive, Eurozone equities are genuinely outperforming the blended global developed market — capturing not just EUR/USD dynamics but also European fundamentals versus the broader international cycle.
+
+For a 6–9 month investor constructing a MSCI World-based equity allocation, EU_G4 provides the primary signal for whether to overweight or underweight European equities relative to the benchmark. A sustained positive z-score of EU_G4 combined with a positive EU_G1 (European cyclicals leading) and a compressed EU_I4 (BTP-Bund spread) constitutes a high-conviction Eurozone overweight signal.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `eurozone-outperform` | OW European equities vs global benchmark; supportive of EUR |
+| −1 to +1 | `neutral` | Benchmark-weight Europe |
+| < −1 | `eurozone-underperform` | UW Europe vs global; favour US/Japan/EM alternatives |
+
+---
+
+### EU_I1 — Euro Corporate vs Government Spread
+
+| | |
+|---|---|
+| **Formula** | `yield(ICE BofA Euro Corporate Index) − yield(ICE BofA Euro Government Index)` |
+| **Data** | FRED: BAMLHE00EHY0EY (Euro HY OAS) and BAMLHE4XEHYSIS (Euro IG OAS) — arithmetic difference |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+EU_I1 is the European equivalent of US_I2 (HY OAS): the spread between corporate bond yields and risk-free government yields captures the aggregate risk premium demanded for Euro corporate credit. This spread is one of the broadest and most liquid financial conditions indicators for the Eurozone economy.
+
+The credit channel of monetary policy in Europe is particularly important because European companies are far more bank-dependent than US companies: approximately 70–80% of Eurozone corporate financing comes from bank loans versus approximately 40% in the US. Bank lending rates closely track the corporate bond market's risk premium signal — when EU_I1 widens, it signals tighter bank lending conditions, which feed through to investment, hiring and production with a 2–4 quarter lag (ECB Lending Survey research, Altunbas et al. 2010, *Journal of Banking & Finance*).
+
+Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess bond premium (EBP) framework, showing that corporate spread widening beyond what can be explained by expected defaults is the most powerful predictor of future real activity — more powerful than the yield curve alone. EU_I1 captures a similar signal for the Eurozone: widening that exceeds the credit cycle's default-justified level indicates financial conditions tightening beyond fundamentals, a regime shift requiring defensive positioning.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `euro-credit-stress` | UW Euro corporate bonds; OW core government bonds (Bunds) |
+| −1 to +1 | `normal` | Standard allocation |
+| < −1 | `compressed-spreads` | Watch for late-cycle reach-for-yield; be cautious adding credit risk |
+
+---
+
+### EU_I2 — UK Inflation Expectations Proxy (Linker/Gilt Ratio)
+
+| | |
+|---|---|
+| **Formula** | `log(INXG.L / IGLT.L)` — iShares UK Inflation-Linked Gilt ETF / iShares UK Gilt ETF |
+| **Data** | INXG.L, IGLT.L — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The ratio of inflation-linked gilt (linker) prices to nominal gilt prices is a market-based proxy for UK inflation expectations and real rate dynamics. When linkers outperform nominal gilts, the market is pricing rising inflation breakevens or falling real rates — both signals that the inflation-adjusted return on nominal bonds is declining, a headwind for long-duration fixed income.
+
+The theoretical basis comes from the Fisher (1930) decomposition: nominal yield = real yield + expected inflation + term premium. The linker/gilt price ratio implicitly captures the inflation component: linkers pay a real coupon plus CPI uplift, so they outperform nominal gilts when inflation expectations rise or when real rates fall. This mirrors the TIPS-based US_RR1 and US_I7 indicators but uses the ETF price ratio rather than FRED yield data, since UK real yield data availability on FRED is limited.
+
+Post-Brexit, UK inflation dynamics have been structurally different from the Eurozone: UK CPI peaked at 11.1% in October 2022, driven by energy dependency and sterling weakness — the highest level among major developed economies. The Bank of England's (BoE) dual mandate complication — inflation control versus financial stability — makes the linker/gilt ratio a particularly important signal for UK rate risk and gilt market positioning.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `uk-inflation-elevated` | UW long gilts; OW UK real assets, inflation-linked bonds, commodities |
+| −1 to +1 | `neutral` | Standard UK fixed income |
+| < −1 | `uk-disinflation` | OW long gilts and duration; UW inflation-linked |
+
+---
+
+### EU_I3 — UK–Germany 10-Year Spread (Gilt–Bund)
+
+| | |
+|---|---|
+| **Formula** | `UK 10Y Gilt Yield − Germany 10Y Bund Yield` |
+| **Data** | FRED: IRLTLT01GBM156N (UK 10Y) − IRLTLT01DEM156N (Germany 10Y) |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The UK–Germany 10-year yield spread distils three distinct macro signals into a single number: (1) relative inflation expectations (UK has historically run higher inflation than Germany); (2) relative fiscal risk (UK deficit dynamics vs German Schuldenbremse fiscal rule); and (3) monetary policy divergence between the Bank of England and ECB.
+
+During normal periods, the spread reflects the structural inflation and growth premium of the UK over Germany — typically 50–150 bps. When the spread widens sharply above historical norms, it signals that UK-specific risk is being priced: fiscal credibility concerns (as in the 2022 Truss mini-budget, when the gilt–bund spread spiked 100 bps in days, forcing BoE intervention), inflation overshoot, or BoE policy lag risk. Conversely, a compressed spread can signal relative UK macro weakness or Eurozone stress.
+
+Blanchard & Summers (1984) showed that long-term yield differentials between developed countries embed both current and expected future short-rate differentials — meaning the gilt–bund spread also captures expectations about the future BoE/ECB policy divergence path over 2–5 years. For a multi-asset investor, sharp moves in EU_I3 are often early warnings of GBP volatility and UK equity risk repricing.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `uk-risk-premium` | Caution on long gilts vs Bunds; expect GBP weakness vs EUR |
+| −1 to +1 | `normal` | Standard UK/Germany allocation |
+| < −1 | `uk-relative-strength` | Gilts attractive vs Bunds; potential GBP strength |
+
+---
+
+### EU_I4 — BTP–Bund Spread (Peripheral Sovereign Stress)
+
+| | |
+|---|---|
+| **Formula** | `Italy 10Y Yield − Germany 10Y Bund Yield` |
+| **Data** | FRED: IRLTLT01ITM156N − IRLTLT01DEM156N |
+| **Lookback** | 260-week rolling z-score; raw level override at 2.5% |
+
+**Economic Rationale**
+
+The BTP–Bund spread is the defining gauge of Eurozone fiscal fragmentation risk and ECB credibility. Italy is the critical peripheral sovereign because it is the third-largest Eurozone economy and has the highest debt-to-GDP ratio (~140%) among major Eurozone members, making it the tail-risk node in the Eurozone system.
+
+The academic framework is the *sovereign debt crisis* literature: De Grauwe (2011, *CEPS*) argued that Eurozone sovereigns face a structural vulnerability absent in countries with their own central bank — they cannot unilaterally guarantee liquidity for their own debt, making self-fulfilling crisis equilibria possible. Arghyrou & Kontonikas (2012, *Journal of International Money and Finance*) showed that BTP–Bund spreads above ~200–250 bps have historically been associated with self-reinforcing dynamics requiring external intervention.
+
+In practice, the ECB has intervened twice with explicit backstops at critical BTP–Bund thresholds: Draghi's "whatever it takes" speech in 2012 (spread ~550 bps) and the PEPP pandemic programme in 2020 (spread ~280 bps). The 250 bps raw level threshold used in the regime rules therefore reflects the empirical ECB intervention zone — above this level, market stress escalates and European risk assets reprice. For EU equities and EUR, the BTP–Bund spread is a first-order risk variable.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| Raw > 2.5% OR z > +1.5 | `peripheral-stress` | Reduce EU periphery equities; reduce EUR; watch for ECB response |
+| −1 ≤ z ≤ +1.5 | `normal` | Standard Eurozone allocation |
+| z < −1 | `compressed` | Eurozone unity premium; favourable for EZU, EUR |
+
+---
+
+### EU_R1 — UK Credit Conditions (Corporates vs Gilts)
+
+| | |
+|---|---|
+| **Formula** | `log(SLXX.L / IGLT.L)` — iShares Core GBP Corporate Bond ETF / iShares UK Gilt ETF |
+| **Data** | SLXX.L, IGLT.L — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+EU_R1 measures the relative performance of GBP investment-grade corporate bonds versus UK government gilts — the UK equivalent of the US investment-grade credit spread signal. When corporates outperform gilts, it signals that investors are willing to accept lower incremental yield for UK credit risk; the financial conditions environment is supportive. When gilts outperform, it signals a flight to safety within the UK fixed income market.
+
+The UK corporate bond market is smaller and less liquid than the US market, which means EU_R1 tends to move more sharply at inflection points and can lead equity market stress. Longstaff & Schwartz (1995, *Journal of Finance*) showed that corporate–government spread dynamics are driven by both default risk and liquidity premiums, with the liquidity component dominating during stress — a feature particularly pronounced in the GBP corporate market.
+
+Post-Brexit, UK corporate spreads have also incorporated a structural UK-specific risk premium absent from EUR or USD corporate markets: sterling liquidity risk, UK political risk, and the reduced depth of the GBP investor base. EU_R1 therefore serves as both a domestic credit conditions indicator and a barometer of UK-specific macro risk relative to the global credit cycle.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `uk-credit-appetite` | GBP corporates outperforming; supportive of UK equities and risk |
+| −1 to +1 | `neutral` | Standard UK credit allocation |
+| < −1 | `uk-flight-to-quality` | Reduce GBP corporates; OW gilts; caution on UK risk assets |
+
+---
+
+### EU_FX1 — EUR Macro Composite (EUR/USD + European Cyclicals)
+
+| | |
+|---|---|
+| **Formula** | Average z-score of `log(EURUSD=X)` and `log(EXV1.DE / EXV2.DE)` (European industrials/utilities) |
+| **Data** | EUR/USD spot (EURUSD=X) + STOXX Europe 600 Industrials/Utilities ratio — yfinance |
+| **Lookback** | 260-week rolling z-score of composite |
+
+**Economic Rationale**
+
+EU_FX1 combines two complementary signals — the EUR exchange rate and European sector rotation — into a composite that distinguishes genuine Eurozone macro strength from currency-only moves. This design choice is deliberate: EUR appreciation alone can occur for reasons unrelated to European growth (e.g. USD weakness, safe-haven flows during non-European crises), but EUR appreciation *combined with European cyclicals outperforming defensives* is a stronger signal that Eurozone fundamentals are genuinely improving.
+
+The EUR is the second most important reserve currency globally and reflects the aggregate macro credibility of the Eurozone — fiscal discipline, ECB policy, and trade competitiveness. Frankel & Rose (1995, *Journal of International Economics*) documented that currency strength in export-oriented economies correlates with export-driven growth cycles; Obstfeld & Rogoff (1996, *Foundations of International Macroeconomics*) formalised the link between terms-of-trade improvement and currency appreciation for industrial exporters like Germany.
+
+The industrial/utilities sector component captures domestic capex and credit cycle conditions within Europe, filtering out external demand effects. When both legs of EU_FX1 are positive simultaneously — EUR strengthening AND European cyclicals leading defensives — the composite provides a high-conviction signal that European equity risk is well-compensated for the 6–9 month horizon.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `eurozone-macro-strong` | OW European equities and EUR; supportive of export-linked cyclicals |
+| −1 to +1 | `neutral` | Balanced European macro view |
+| < −1 | `eurozone-under-strain` | UW European cyclicals; hedge EUR exposure; favour core govts |
+
+---
+
+*End of Section 3b — Europe & UK (10 indicators: EU_G1, EU_G2, EU_G3, EU_G4, EU_I1, EU_I2, EU_I3, EU_I4, EU_R1, EU_FX1)*
