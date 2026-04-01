@@ -697,3 +697,228 @@ Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyn
 ---
 
 *End of Section 2b — US FX & Momentum (7 indicators: US_FX1, US_FX2, M1, M2, M3, M4, M5)*
+
+---
+
+## 3a. US Macro Fundamentals
+
+*These indicators draw on official economic data releases rather than market prices. They measure the underlying real economy — labour markets, production, credit, housing and liquidity — and provide the fundamental backdrop that ultimately drives asset price regimes over 6–9 months. Publication lags range from 1 week (jobless claims) to 6 weeks (ISM, JOLTS), so these signals are best combined with the market-based indicators in Sections 1–2.*
+
+---
+
+### US_LEI1 — Conference Board Leading Economic Index
+
+| | |
+|---|---|
+| **Formula** | `USSLIND` (Conference Board LEI) — 6-month annualised % change |
+| **Data** | FRED: USSLIND (monthly, released ~3 weeks after month-end) |
+| **Lookback** | 260-week rolling z-score of 6m annualised change |
+
+**Economic Rationale**
+
+The Conference Board Leading Economic Index (LEI) is a composite of ten sub-indicators designed to lead business cycle turning points by 6–9 months. Its components span financial conditions (S&P 500, yield curve), credit (ISM new orders, building permits), and labour markets (initial claims, average workweek). The breadth of coverage is its primary strength: no single data series dominates, making it more robust than any individual indicator.
+
+The academic foundation is Burns & Mitchell (1946, NBER), whose pioneering work on business cycle measurement established that leading indicators consistently precede cycle peaks and troughs. Diebold & Rudebusch (1989, *American Economic Review*) and Stock & Watson (1989, *JASA*) formalised the statistical evidence for composite leading indicators, showing that equal-weighted combinations of leading series outperform individual series for 3–6 month ahead GDP forecasts.
+
+The **6-month annualised change** is the Conference Board's own preferred signal transformation: it smooths monthly noise while remaining responsive to genuine trend reversals. Their research (Conference Board 2001) shows that a 6-month decline of roughly 4.3% or more, accompanied by broad diffusion, has preceded all post-war US recessions with only two false positives (1966, 1995). This threshold is incorporated directly into the regime rules.
+
+For a 6–9 month investor, LEI is the highest-level cycle signal available: a sustained negative trend (consecutive monthly declines, 6m change < −4%) is a strong signal to reduce gross risk, rotate toward quality and duration, and reduce EM/commodity exposure.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| 6m change < −4.3% AND z < −1.5 | `recession-risk` | Cap equity risk; OW high-quality bonds and defensives |
+| 6m change 0 to −4.3% | `late-cycle` | Selective; reduce cyclicals, monitor credit spreads |
+| 6m change > 0 | `expansion` | Normal equity risk budget |
+
+---
+
+### US_JOBS1 — Initial Jobless Claims (YoY Change)
+
+| | |
+|---|---|
+| **Formula** | YoY % change of `IC4WSA` (4-week moving average of initial claims) |
+| **Data** | FRED: IC4WSA (weekly, released Thursday for prior week) |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+Initial jobless claims are the most timely labour market indicator available, published weekly with a one-week lag. The 4-week moving average (IC4WSA) smooths the well-known seasonal noise in the weekly series. As a leading indicator, claims tend to rise 2–4 weeks before nonfarm payrolls turn negative and 4–8 weeks before the unemployment rate inflects upward, giving investors advance notice of labour market deterioration.
+
+The theoretical transmission is straightforward: a layoff wave reduces household incomes within weeks, triggering contraction in consumer spending (which accounts for approximately 70% of US GDP). Blanchard & Diamond (1990, *Quarterly Journal of Economics*) showed that the job-finding rate — closely related to claims — is the most cyclically sensitive component of unemployment dynamics. Gordon (2003) documented that the claims-to-employment ratio is among the best single-variable predictors of recession timing at 1–3 month horizons.
+
+The YoY transformation is preferred for two reasons: (1) it eliminates seasonal distortions without requiring seasonal adjustment factors that can be revised; (2) it captures the *direction* of the labour cycle, which matters more than the absolute level. A YoY rise of 20–30% in claims has been associated with every post-war recession.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `labour-deteriorating` | Tighten risk: UW US HY and small caps; OW defensives and duration |
+| −1 to +1 | `stable` | Standard allocation |
+| < −1 | `labour-tight` | Labour market overheating; watch for Fed tightening response |
+
+---
+
+### US_LAB1 — Labour Market Composite
+
+| | |
+|---|---|
+| **Formula** | Equal-weighted average of z-scores of: inverted `UNRATE`, `PAYEMS` YoY%, inverted `IC4WSA` |
+| **Data** | FRED: UNRATE (monthly), PAYEMS (monthly), IC4WSA (weekly) |
+| **Lookback** | 260-week rolling z-score of composite |
+
+**Economic Rationale**
+
+No single labour market series captures the full picture: unemployment is a lagging indicator, payrolls are coincident, and claims are leading. US_LAB1 synthesises all three into a single composite score that spans the lead-coincident-lag spectrum of labour market data — mimicking how the Federal Reserve's own staff models assess labour market conditions.
+
+The Federal Reserve's *Labour Market Conditions Index* (LMCI), developed by Hakkio & Willis (2014, *Kansas City Fed*) and extended by the Board of Governors, uses a factor model to extract a common latent state from 19 labour market indicators. US_LAB1 implements a simplified version of the same concept using three key series, with the inversions applied so that the composite is positive when labour markets are strong and negative when weak.
+
+Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labour market tightness is the primary transmission channel from monetary policy to inflation and growth — central banks tighten specifically to cool labour markets, and recessions begin when the cooling overshoots. For a 6–9 month investor, US_LAB1 captures the real-time state of this channel: high composite z-score implies continued consumer spending support; low composite z-score implies deteriorating income dynamics and rising recession probability.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `labour-strong` | Supports earnings/cyclicals; watch for rate-hike risk if inflation elevated |
+| −1 to +1 | `labour-balanced` | Mid-cycle allocation |
+| < −1 | `labour-weak` | Defensive tilt; OW duration and quality; UW cyclicals |
+
+---
+
+### US_LAB2 — JOLTS Labour Market Tightness *(Naturally Leading)*
+
+| | |
+|---|---|
+| **Formula** | `JTSJOL / UNEMPLOY` — ratio of job openings to unemployed persons |
+| **Data** | FRED: JTSJOL (monthly JOLTS), UNEMPLOY (monthly) |
+| **Lookback** | 260-week rolling z-score |
+| **Lead** | ~2 months ahead of reported unemployment; ~3–4 months ahead of wage inflation |
+
+**Economic Rationale**
+
+The job openings–to–unemployed ratio is the canonical measure of **labour market tightness** developed from search-and-matching theory. When openings exceed unemployed persons (ratio > 1), every unemployed worker notionally has more than one available job, implying strong wage bargaining power and accelerating wage growth.
+
+The theoretical framework is the Diamond-Mortensen-Pissarides (DMP) search model (Pissarides 1985, *Review of Economic Studies*; Mortensen & Pissarides 1994, *Review of Economic Studies*; both authors received the Nobel Prize in 2010). The DMP model predicts that the vacancy-unemployment ratio is a sufficient statistic for the tightness of the matching market: as it rises, workers find jobs faster, wages rise, and the employment rate increases. Shimer (2005, *American Economic Review*) further showed that vacancies are 10× more volatile than unemployment across the cycle — making the ratio a more sensitive early signal of cycle turns than unemployment alone.
+
+Practically, the JOLTS ratio leads reported unemployment by approximately 2 months and leads the Employment Cost Index (ECI, the broadest wage measure) by 3–4 months, making it *naturally leading*: the current reading already embeds the signal about labour market conditions 1–2 months ahead. This is why US_LAB2 is included in the `NATURALLY_LEADING` set, and its `fwd_regime` is tagged `[leading]`.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `labour-tight` | Wage pressure; consumer resilient; watch for inflation overshoot |
+| −1 to +1 | `balanced` | Equilibrium labour market; mid-cycle |
+| < −1 | `labour-slack` | Unemployment rising; consumer vulnerable; easing bias |
+
+---
+
+### US_GROWTH1 — Real Activity Composite (IP + Retail Sales)
+
+| | |
+|---|---|
+| **Formula** | Equal-weighted z-score composite of: `INDPRO` 12m % change + `RSXFS` 12m % change |
+| **Data** | FRED: INDPRO (Industrial Production, monthly), RSXFS (Retail Sales ex-Autos, monthly) |
+| **Lookback** | 260-week rolling z-score of composite |
+
+**Economic Rationale**
+
+US_GROWTH1 combines the two broadest real-activity measures spanning the supply and demand sides of the US economy: industrial production (supply/manufacturing) and retail sales ex-autos (consumer demand). Together they provide a coincident composite analogous to the NBER Business Cycle Dating Committee's own primary indicators.
+
+Industrial production (INDPRO), published by the Federal Reserve Board, covers manufacturing, mining and utilities — approximately 20% of GDP but highly cyclical and leading for corporate earnings. Bernanke (1983, *American Economic Review*) showed that industrial production is one of the first GDP components to inflect at cycle turning points. Its YoY change correlates closely with corporate earnings growth and is a core input into manufacturing PMI surveys.
+
+Retail sales ex-autos captures the broadest consumer spending signal available on a monthly basis (Autos are excluded because they introduce high serial correlation and measurement noise). Consumer spending accounts for approximately 70% of US GDP, and its YoY trend is one of the most reliable coincident indicators of recession and expansion (Hall et al. 2010, NBER recession-dating methodology).
+
+The composite z-score removes the need to interpret two series simultaneously, providing a single read on whether the real economy is running above or below its historical trend.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `strong-growth` | OW cyclicals and value; UW long nominal duration |
+| −1 to +1 | `normal` | Standard allocation |
+| < −1 | `weak-growth` | OW defensives, quality and duration |
+
+---
+
+### US_HOUS1 — Housing / Building Permits *(Naturally Leading)*
+
+| | |
+|---|---|
+| **Formula** | `PERMIT` — 12-month % change |
+| **Data** | FRED: PERMIT (Building Permits, monthly, released ~3 weeks after month-end) |
+| **Lookback** | 260-week rolling z-score |
+| **Lead** | Typically leads housing starts by 1–2 months; leads GDP by 2–4 quarters |
+
+**Economic Rationale**
+
+Building permits are one of the most reliable leading indicators in the NBER framework — they are included in the Conference Board LEI (US_LEI1) and are published earlier than housing starts, making them the first-available signal of construction cycle direction.
+
+The transmission mechanism is multilayered. First, housing construction has extremely high labour and material intensity — a single-family home creates approximately 3 person-years of employment across construction, materials and professional services. Second, new housing generates significant downstream spending: buyers purchase appliances, furniture and home improvement goods (the IKEA/Home Depot multiplier). Third, rising construction activity raises land and existing home prices, increasing household net worth and supporting the *wealth effect* on consumption (Case, Quigley & Shiller 2005, *Brookings Papers*).
+
+The interest-rate sensitivity of permits is also why US_HOUS1 is *naturally leading* for monetary policy transmission: permit applications collapse within months of rate rises (the 2022 experience saw permits fall 25% within 6 months of the first Fed hike) and recover months before the broader economy when rate cuts arrive. The current reading therefore already captures conditions 2–4 months ahead of when the impact will appear in GDP.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `housing-expanding` | OW REITs, homebuilders, building materials |
+| −1 to +1 | `neutral` | Standard allocation |
+| < −1 | `housing-contracting` | UW REITs vs broad equity; OW defensives and duration |
+
+---
+
+### US_M2L1 — M2 Money Supply Growth (Liquidity Indicator)
+
+| | |
+|---|---|
+| **Formula** | `M2SL` — YoY % change |
+| **Data** | FRED: M2SL (monthly, revised quarterly) |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+M2 money supply growth is the broadest practical measure of monetary liquidity available in real time. M2 includes currency, demand deposits, savings accounts, money market funds and small time deposits — the pool of readily deployable financial capital in the economy. Its YoY growth rate captures whether the banking system and Fed are expanding or contracting the available funding for investment, consumption and asset purchases.
+
+The *quantity theory of money* (Fisher 1911; Friedman & Schwartz 1963, *A Monetary History of the United States*) established that sustained changes in the money supply lead to changes in nominal spending 12–24 months later. While the simple quantity theory has been challenged by modern monetary economics, the empirical relationship between M2 growth and subsequent asset returns remains significant: Asness (1997) and DeSantis & Gérard (1997) documented that broad money growth is a statistically significant predictor of equity and bond returns over 6–18 month horizons.
+
+More directly relevant for markets, M2 contraction has historically been associated with financial stress: the 2022–23 M2 contraction (−4% YoY — the first since the 1930s) preceded a significant tightening of financial conditions, P/E multiple compression and EM outflows. Conversely, the post-2020 M2 expansion (+27% YoY peak) directly fuelled asset price inflation before the 2022 correction. For a 6–9 month investor, accelerating M2 growth is a permissive environment for risk assets; decelerating or negative M2 growth is a structural headwind.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `abundant-liquidity` | Tolerant of equity/credit/EM risk; OW gold if inflation rising |
+| −1 to +1 | `neutral` | Standard allocation |
+| < −1 | `tight-liquidity` | OW quality, short duration; UW EM/HY; reduce leverage |
+
+---
+
+### US_ISM1 — ISM Manufacturing New Orders *(Naturally Leading)*
+
+| | |
+|---|---|
+| **Formula** | `NAPMOI` — ISM New Orders Index level (published monthly by ISM) |
+| **Data** | FRED: NAPMOI (monthly, released first business day after month-end) |
+| **Lookback** | Regime based on level thresholds (50 = neutral, 52/48 boundaries); z-score supplemental |
+| **Lead** | Leads industrial production by approximately 6 weeks |
+
+**Economic Rationale**
+
+The ISM Manufacturing New Orders Index is the single most closely watched sub-component of the ISM Manufacturing PMI. It is a diffusion index — the percentage of companies reporting rising new orders minus those reporting falling orders, plus 50 — and is constructed from a monthly survey of approximately 300 purchasing managers across 18 industries.
+
+New orders are inherently *forward-looking*: a purchasing manager reports that new orders are rising before the actual production to fulfil those orders has begun, let alone before output data is measured and published. This makes the series *naturally leading*: the current reading already projects conditions 1–2 months ahead. Marquette (1992, *Business Economics*) showed that ISM New Orders leads the production component by approximately 6 weeks and leads industrial production (INDPRO) by 1–3 months.
+
+Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more recently Dueker (2005, *Federal Reserve Bank of St. Louis*) demonstrated that ISM New Orders crossing the 50 boundary is one of the most reliable coincident-to-leading markers of cycle transitions. The 52 threshold (slightly above neutral) is preferred to 50 for `expansion` labelling because the ISM survey exhibits slight upward drift — historically, the manufacturing sector grows when new orders are at or above 52 rather than exactly 50. The 48 threshold (below neutral but not sharply contractionary) marks the transition to `contraction`.
+
+**Regime Classification**
+
+| Level | Label | Positioning |
+|---|---|---|
+| > 52 | `ism-expansion` | Supports industrials, materials and HY carry |
+| 48–52 | `ism-neutral` | Transition zone; directional z-score trend guides positioning |
+| < 48 | `ism-contraction` | OW defensives, IG, Treasuries; reduce industrial/commodity exposure |
+
+---
+
+*End of Section 3a — US Macro Fundamentals (8 indicators: US_LEI1, US_JOBS1, US_LAB1, US_LAB2, US_GROWTH1, US_HOUS1, US_M2L1, US_ISM1)*
