@@ -1192,3 +1192,229 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 ---
 
 *End of Section 3b — Europe & UK (10 indicators: EU_G1, EU_G2, EU_G3, EU_G4, EU_I1, EU_I2, EU_I3, EU_I4, EU_R1, EU_FX1)*
+
+---
+
+## 4. Asia-Pacific, Japan & Global/Regional Indicators
+
+---
+
+## 4a. Asia — China & India
+
+*China and India together represent approximately 35% of global GDP on a purchasing-power-parity basis and are the two dominant growth engines of the 21st-century emerging market cycle. Their equity, rates and FX signals provide early information about EM risk appetite, commodity demand and global supply-chain dynamics that is not captured by the US and European indicators above. These indicators are grouped around the China-centred EM cycle, with India tracked as an increasingly independent growth pole.*
+
+---
+
+### AS_G1 — China Size Cycle (CSI 500 / CSI 300)
+
+| | |
+|---|---|
+| **Formula** | `log(000905.SS / 000300.SS)` — CSI 500 / CSI 300 |
+| **Data** | CSI 500 Index (000905.SS) / CSI 300 Index (000300.SS) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The CSI 300 covers the 300 largest A-share companies listed on the Shanghai and Shenzhen exchanges — dominated by state-owned enterprises (SOEs) in banking, energy and telecoms. The CSI 500 covers the next 500 by market cap — a more diverse mix of private-sector mid-cap companies in manufacturing, technology, consumer and healthcare. Their ratio therefore captures the *domestic breadth* of Chinese growth: SOE-led recovery versus private-sector dynamism.
+
+This decomposition is structurally important in China because the SOE and private-sector economies respond to different policy levers. SOE outperformance (CSI 300 leading) tends to occur during credit-driven infrastructure stimulus phases — the PBOC and policy banks direct lending to SOEs, which expand capacity. Private-sector outperformance (CSI 500 leading) tends to occur when consumption, technology and services are driving growth — a higher quality, more self-sustaining cycle. Lardy (2014, *Markets Over Mao*, Peterson Institute) documented this structural duality and its implications for sustainable Chinese growth.
+
+For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus is creating genuine domestic demand (CSI 500 leadership, positive for global consumer goods exporters) or infrastructure-only reflation (CSI 300 leadership, more directly positive for industrial metals). The ratio also serves as a proxy for Chinese risk appetite breadth: mid-cap leadership implies broader investor participation and confidence.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-domestic-breadth` | Favour China consumer/tech; domestic demand supports broader EM |
+| −1 to +1 | `neutral` | Balanced China allocation |
+| < −1 | `china-large-cap-safety` | Narrow leadership; caution on China risk assets; watch credit conditions |
+
+---
+
+### AS_G2 — China vs Global Developed Markets
+
+| | |
+|---|---|
+| **Formula** | `log(000001.SS / URTH)` — Shanghai Composite / iShares MSCI World ETF (USD-adjusted) |
+| **Data** | Shanghai Composite (000001.SS), iShares MSCI World ETF (URTH) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+AS_G2 compares Chinese equity performance to the global developed-market benchmark in USD terms, capturing the net effect of all China-specific macro forces — growth, policy, geopolitics, valuation and FX — relative to the global cycle. It is the primary signal for whether to overweight or underweight China versus a global DM baseline.
+
+The theoretical rationale draws on the *emerging market premium* literature. Bekaert & Harvey (1995, *Journal of Finance*) showed that EM equities carry a risk premium over DM equities that varies with openness, policy risk and integration with global capital markets. China's equity market is partially segmented from global markets (capital controls, A-share accessibility) meaning the A-share market often diverges significantly from global trends — creating genuine alpha opportunities when Chinese policy cycles diverge from the global cycle.
+
+Key drivers of China outperformance phases: (1) PBOC easing and credit expansion (RRR cuts, LPR reductions); (2) fiscal stimulus targeted at infrastructure and housing; (3) regulatory easing after crackdowns; (4) CNY stability or strengthening (AS_FX1 positive). Underperformance phases are typically associated with: regulatory tightening (2021 tech crackdown), property sector stress (Evergrande, 2021–23), US-China geopolitical escalation, or CNY depreciation pressure.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-outperform` | OW China/EM equities; positive for commodity-linked assets |
+| −1 to +1 | `neutral` | Benchmark-weight China |
+| < −1 | `china-underperform` | UW China; rotate to other EM or DM; reduce commodity-sensitive exposure |
+
+---
+
+### AS_G3 — India Domestic Growth Breadth (Nifty Mid/Smallcap vs Nifty 50)
+
+| | |
+|---|---|
+| **Formula** | `log(NIFTY_MIDCAP150 / ^NSEI)` and `log(NIFTY_SMALLCAP250 / ^NSEI)` — z-score of each |
+| **Data** | Nifty Midcap 150, Nifty Smallcap 250, Nifty 50 (^NSEI) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+India's equity market structure mirrors the UK dynamic (EU_G2) in one key respect: the Nifty 50 is dominated by globally competitive large-caps (Reliance Industries, TCS, Infosys, HDFC Bank) with significant international revenue exposure and institutional ownership, while the Nifty Midcap 150 and Smallcap 250 are primarily domestic businesses — regional banks, domestic consumer brands, real estate developers, infrastructure contractors.
+
+The mid/small-cap-to-large-cap ratio in India therefore captures domestic animal spirits and the *democratisation of the growth cycle*: when mid and small caps outperform, credit is flowing broadly through the domestic economy, consumption is strong, and smaller businesses are accessing capital and winning market share. This is characteristic of India's mid-cycle expansions. When large caps dominate, it signals selective institutional positioning in quality names — often coinciding with RBI tightening, INR depreciation or global risk-off reducing appetite for illiquid smaller stocks.
+
+India's structural growth story — demographics, formalisation of the economy via GST and Aadhaar, manufacturing relocation from China — creates a long-run tailwind for the ratio, but the cyclical overlay remains important for 6–9 month positioning. Patnaik & Shah (2012, *NIPFP*) and Gopinath (2015, *IMF*) documented India's growing but still-fragile integration with global capital flows, which makes domestic indicators like AS_G3 more informative than pure top-down EM signals.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `india-domestic-expansion` | OW Indian mid/small caps; domestic consumer and financials |
+| −1 to +1 | `neutral` | Balanced India allocation |
+| < −1 | `india-large-cap-safety` | OW Nifty 50 quality; reduce domestic-cyclical India exposure |
+
+---
+
+### AS_G4 — China vs Broad EM (FXI / EEM)
+
+| | |
+|---|---|
+| **Formula** | `log(FXI / EEM)` — iShares China Large-Cap ETF / iShares MSCI EM ETF (both USD) |
+| **Data** | FXI, EEM — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+AS_G4 measures whether China is driving or lagging the broader EM complex — an intra-EM rotation signal. Because China constitutes approximately 25–30% of the MSCI EM Index (and historically up to 40% prior to index reconstitutions), FXI/EEM measures China *relative* to the full EM basket including India (~18%), Taiwan (~16%), Korea (~12%), Brazil and South Africa.
+
+When FXI outperforms EEM, China is the marginal driver of EM returns — typically during domestic Chinese stimulus phases where commodity demand is rising and the PBOC is accommodating. This is directly positive for commodity-currency pairs (AUD/USD, BRL/USD, CLP/USD) since Chinese infrastructure demand is the primary marginal buyer of iron ore, copper and soybeans. When EEM outperforms FXI, other EM economies — particularly India, Korea (technology cycle) or Brazil (commodity producers) — are leading, indicating a more diversified EM expansion less dependent on Chinese credit.
+
+Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014, *The Dollar Trap*) documented the transmission channels from Chinese growth to EM commodity exporters, confirming that China-driven EM cycles have distinct sectoral signatures versus India or Korea-driven cycles. For an EM portfolio manager, AS_G4 determines whether to tilt toward China and commodity-linked EM (FXI outperformance) or diversified/non-China EM (EEM outperformance).
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-driving-EM` | OW China, commodity-linked EM (Brazil, Chile, Australia); positive for copper/iron ore |
+| −1 to +1 | `neutral` | Balanced EM allocation |
+| < −1 | `non-china-EM-leading` | Rotate to India, Korea, Taiwan-led EM; reduce commodity-sensitive exposure |
+
+---
+
+### AS_I1 — China–US Yield Spread (Carry Signal)
+
+| | |
+|---|---|
+| **Formula** | `IRLTLT01CNM156N − DGS10` — China 10Y Government Bond Yield minus US 10Y Treasury Yield |
+| **Data** | FRED: IRLTLT01CNM156N (China 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The China–US 10-year yield spread is the primary carry signal for CNY-denominated fixed income and a structural anchor for CNY exchange rate dynamics. When the spread is wide (China yields > US yields), foreign investors are incentivised to hold Chinese government bonds (CGBs) rather than US Treasuries — creating capital inflow pressure that supports the CNY and Chinese risk assets broadly. When the spread compresses or inverts (as in 2022–23, when the PBOC cut rates while the Fed hiked aggressively), carry incentives reverse, creating CNY depreciation pressure and EM capital outflows.
+
+The uncovered interest parity (UIP) framework (Fama 1984, *Journal of Monetary Economics*) predicts that yield differentials should be offset by expected exchange rate changes. In practice, however, carry trades persist because of risk premiums and capital account frictions — particularly in China, where capital controls partially segment the onshore from offshore CNY markets. Brunnermeier, Nagel & Pedersen (2009, *Quarterly Journal of Economics*) documented carry trade crash risk: when carry differentials collapse rapidly, the reversal is sharp and highly correlated across EM currencies.
+
+For a 6–9 month investor, the China–US spread therefore serves a dual purpose: (1) a direct signal for CGBs' attractiveness as a carry asset; (2) an indirect signal for CNY pressure and the risk of disorderly capital outflows that could destabilise Chinese equity markets and EM sentiment.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-carry-attractive` | Wide spread supports CNY inflows; constructive China risk appetite |
+| −1 to +1 | `neutral` | Carry neutral; standard China allocation |
+| < −1 | `china-carry-unattractive` | Spread compressed; CNY outflow risk; caution on China risk assets |
+
+---
+
+### AS_I2 — India–US Yield Spread (INR Carry Signal)
+
+| | |
+|---|---|
+| **Formula** | `IRLTLT01INM156N − DGS10` — India 10Y Government Bond Yield minus US 10Y Treasury Yield |
+| **Data** | FRED: IRLTLT01INM156N (India 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+India's sovereign 10-year yield incorporates a structural premium over US Treasuries reflecting: (1) India's higher trend inflation (CPI has averaged 5–6% versus ~2% in the US); (2) India's chronic current account deficit (typically −1.5% to −3% of GDP), requiring sustained foreign capital inflows; (3) India's fiscal deficit (~5–6% of GDP), meaning higher issuance supply. The spread over US Treasuries is therefore not purely cyclical — it has a structural floor — but the z-score of the spread captures cyclical deviations from this norm.
+
+When the spread widens above its historical average (positive z-score), Indian bonds are offering unusually attractive carry relative to their historical risk premium — typically coinciding with: RBI rate hikes in advance of the Fed, INR stability, or compression of India's fiscal risk premium. This supports foreign portfolio investment (FPI) inflows into Indian government securities, which strengthens the INR and underpins Indian equity performance by improving financial conditions.
+
+The risk scenario is spread compression driven by US rate rises (as in 2022) without offsetting RBI hikes — the spread falls to historical lows, FPI outflows from Indian bonds accelerate, INR depreciates (worsening the current account) and domestic financial conditions tighten involuntarily. Patnaik & Felman (2014, *IMF Working Paper*) documented this *imported tightening* channel for India specifically.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `india-carry-attractive` | Wide spread; supportive of INR bonds and India risk assets |
+| −1 to +1 | `neutral` | Standard India fixed income allocation |
+| < −1 | `india-carry-unattractive` | Compressed spread; INR depreciation risk; reduce India overweight |
+
+---
+
+### AS_FX1 — CNY Directional Momentum
+
+| | |
+|---|---|
+| **Formula** | `log(CNY=X / SMA_26w(CNY=X))` — CNY/USD spot vs its 26-week moving average |
+| **Data** | CNY=X (USD per CNY, so higher = stronger CNY) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+AS_FX1 measures the 6-month directional momentum of the Chinese yuan — whether the CNY is strengthening or weakening relative to its recent trend. This momentum framing is deliberate: the CNY is a managed currency (the PBOC sets a daily fixing within a ±2% band), meaning absolute FX levels are policy-controlled and less informative than the *direction* of the trend, which reflects the net of PBOC management intentions and market pressure.
+
+CNY strengthening momentum signals: (1) PBOC comfort with or active support of a stronger currency, typically associated with confidence in the domestic economy; (2) capital inflows driven by China's current account surplus or foreign portfolio investment; (3) reduced US-China trade tension (tariff escalation typically triggers CNY depreciation as a partial offset). CNY weakening momentum signals the reverse: PBOC allowing depreciation to cushion export competitiveness, capital flight, or external pressure.
+
+The 26-week SMA was chosen as the trend anchor because it represents approximately half a year — the typical horizon over which PBOC policy signals are visible and the period over which carry positions in CNY assets build or unwind. Cheung, Chinn & Fujii (2007, *Journal of International Money and Finance*) showed that CNY momentum is a stronger short-to-medium-term FX predictor than purchasing power parity models in the managed-float regime.
+
+For a global investor, CNY momentum is a direct signal for China equity positioning and an indirect signal for commodity-linked currencies (AUD, BRL) and EM sentiment broadly.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `CNY-strengthening` | OW China equities and EM assets; positive commodity signals |
+| −1 to +1 | `neutral` | Standard CNY exposure |
+| < −1 | `CNY-weakening` | Caution on China risk; watch for EM contagion; reduce AUD/BRL exposure |
+
+---
+
+### AS_FX2 — INR Directional Momentum
+
+| | |
+|---|---|
+| **Formula** | `log(INR=X / SMA_26w(INR=X))` — INR/USD spot vs its 26-week moving average |
+| **Data** | INR=X (USD per INR, higher = stronger INR) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+AS_FX2 mirrors AS_FX1 for India: 6-month INR directional momentum. The INR is also a managed float (the RBI intervenes via FX reserves to smooth volatility) but with less direct daily management than the CNY, making momentum signals somewhat more market-driven.
+
+INR strengthening momentum reflects: (1) strong FPI inflows — both equity (India's structural growth premium attracting global allocation) and debt (carry attractiveness from AS_I2); (2) RBI reserve accumulation and hawkish policy stance; (3) lower oil prices (India imports approximately 85% of its oil, so lower crude is a direct terms-of-trade benefit that reduces the current account deficit and supports INR). INR weakening momentum reflects: (1) elevated oil prices widening the current account deficit; (2) FPI outflows triggered by US rate rises or global risk-off; (3) domestic inflation overshooting RBI's 4% target, eroding real yield differentials.
+
+The 26-week SMA anchor captures the medium-term policy and flow dynamics for INR. Kohli (2015, *RBI Working Paper*) documented that INR momentum tracks the BoP capital account closely at 3–6 month horizons — making AS_FX2 an early indicator of whether foreign capital is building or reducing India exposure.
+
+For equity investors, INR strength is positively correlated with Indian equity returns in USD terms — it both signals risk appetite and improves the USD return on local equity positions.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `INR-strengthening` | OW India equities and bonds in USD terms; carry inflows supporting |
+| −1 to +1 | `neutral` | Standard INR exposure |
+| < −1 | `INR-weakening` | Hedge FX exposure or reduce India overweight; watch oil/BoP dynamics |
+
+---
+
+*End of Section 4a — Asia: China & India (8 indicators: AS_G1, AS_G2, AS_G3, AS_G4, AS_I1, AS_I2, AS_FX1, AS_FX2)*
