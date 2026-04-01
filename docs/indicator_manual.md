@@ -228,3 +228,274 @@ For a 6–9 month investor, this indicator is particularly useful as a *risk man
 ---
 
 *End of Section 1 — US Growth & Style Indicators (9 indicators: US_G1, US_G2, US_G2b, US_G3, US_G3b, US_G4, US_G4b, US_G5, US_G6)*
+
+---
+
+## 2. US Rates, Credit, Volatility & Momentum
+
+### Section 2a — US Rates & Credit (US_I1–I11, US_R1–R2, US_RR1)
+
+*Fixed-income and credit indicators are the backbone of macro regime identification. They reflect the cost and availability of capital — the single most important driver of business investment, housing, and consumer spending over a 6–9 month horizon. Unlike equity ratios, which can remain elevated for years on sentiment, credit spreads and yield curves have hard economic anchors in default rates and monetary policy.*
+
+---
+
+### US_I1 — Yield-Curve Slope 10Y–3M
+
+| | |
+|---|---|
+| **Formula** | `T10Y3M` — FRED direct (US 10-Year CMT minus US 3-Month CMT, in percentage points) |
+| **Data** | Federal Reserve H.15 release via FRED |
+| **Regime trigger** | Level-based: spread < 0 overrides z-score |
+
+**Economic Rationale**
+
+The 10Y–3M Treasury spread is the most empirically validated recession predictor in macroeconomics. The 3-month yield is almost entirely determined by the current Federal Funds Rate, while the 10-year yield blends expectations for future short rates (the *expectations hypothesis*) with a *term premium* compensating for duration risk.
+
+When the curve inverts (3M > 10Y), it signals that markets expect the Fed will need to *cut* rates materially in the future — which only happens in recessions. Estrella & Mishkin (1996, NBER) demonstrated that an inverted 10Y–3M curve outperforms all other single indicators in predicting US recessions 4–6 quarters ahead. The NY Fed publishes a recession probability model based solely on this spread, which has called every post-war recession.
+
+For a 6–9 month investor, the key insight is *where you are in the inversion cycle*: (1) initial inversion → caution; (2) sustained deep inversion → de-risk; (3) re-steepening after inversion → often the buy signal for equities (the *bull steepener* precedes the early-cycle recovery). The `fwd_regime` z-slope captures the re-steepening transition.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| Spread < 0 | `recession-watch` | Reduce equity beta; OW short-duration, quality |
+| Spread > 0, z > +1 | `early-cycle` | OW cyclicals, extend credit, add EM |
+| Spread > 0, −1 to +1 | `mid-cycle` | Balanced |
+| Spread > 0, z < −1 | `late-cycle` | Reduce duration; watch for inversion |
+
+---
+
+### US_I6 — Yield-Curve Slope 2s10s (FRED)
+
+| | |
+|---|---|
+| **Formula** | `T10Y2Y` — FRED direct (US 10-Year CMT minus US 2-Year CMT) |
+| **Data** | Federal Reserve H.15 via FRED |
+
+**Economic Rationale**
+
+The 2s10s curve is the market's benchmark measure of monetary policy stance vs. long-run growth expectations. The 2-year yield is highly sensitive to Fed policy expectations 1–2 years out; the 10-year reflects the longer-run nominal growth and inflation outlook.
+
+While the 10Y–3M spread (US_I1) is the better *recession predictor*, the 2s10s spread is more widely used by traders and market participants because it is more liquid and more reactive to near-term Fed policy shifts. Reinhart & Rogoff (2009) and Campbell Harvey's original dissertation (1986) document both curves' predictive power. The 2s10s is complementary to US_I1: divergence between the two signals can identify whether the inversion is driven by Fed overtightening (3M elevated) or by collapsing long-run growth expectations (10Y falling).
+
+### US_I6b — Yield-Curve Slope 2s10s (Market)
+
+| | |
+|---|---|
+| **Formula** | `^TNX (yfinance) − DGS2 (FRED)` |
+| **Data** | yfinance 10Y yield level + FRED 2Y CMT |
+
+Functionally identical to US_I1 in interpretation. Retained as a cross-check: the yfinance-sourced 10Y yield updates intraday, while FRED T10Y2Y has a 1-day publication lag. Any persistent divergence between US_I6 and US_I6b would indicate a data feed issue.
+
+---
+
+### US_I2 — US High-Yield Credit Spread (OAS)
+
+| | |
+|---|---|
+| **Formula** | `BAMLH0A0HYM2` — ICE BofA US High Yield Master II Option-Adjusted Spread |
+| **Data** | FRED (Federal Reserve Economic Data), St. Louis Fed |
+| **Regime trigger** | Level-based: OAS > 700 bps or z > +1.5 triggers `stress` |
+
+**Economic Rationale**
+
+The HY OAS measures the yield premium that sub-investment-grade (rated BB and below) corporate borrowers must pay over equivalent-maturity US Treasuries. It is one of the most sensitive real-time measures of *credit conditions* and *default risk expectations*.
+
+Altman (1968, JF) established the theoretical link between credit spreads and default probability via Z-score models. Subsequent work by Duffie & Singleton (1999) and the Merton (1974) structural credit model formalised the spread as compensation for expected loss (probability of default × loss given default) plus a *liquidity premium* and a *risk premium*.
+
+From a cycle perspective, HY spreads are *coincident-to-leading*: they tend to widen before official recession declarations because the corporate bond market prices deteriorating fundamentals faster than equity analysts revise earnings. The 400-bps level has historically divided benign from stressed environments; 700 bps marks systemic distress (2001 TMT bust, 2008 GFC, 2020 COVID shock).
+
+For a 6–9 month investor, *the direction of spreads matters more than the level*: a spread at 450 bps and widening is more dangerous than 600 bps and tightening.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| OAS > 700 or z > +1.5 | `stress` | De-risk HY; OW IG and Treasuries |
+| 400–700 bps, \|z\| ≤ 1 | `normal` | Carry regime; hold HY at benchmark |
+| OAS < 400, z < −1 | `frothy` | Consider UW HY; credit cycle late |
+
+---
+
+### US_I4 — US Investment-Grade Credit Spread (OAS)
+
+| | |
+|---|---|
+| **Formula** | `BAMLC0A0CM` — ICE BofA US Corporate Master Option-Adjusted Spread |
+| **Data** | FRED |
+
+**Economic Rationale**
+
+The IG OAS measures the spread demanded for investment-grade (BBB and above) corporate credit. IG spreads are structurally lower than HY and less volatile, reflecting the lower default probability of investment-grade issuers. However, they are highly sensitive to *liquidity conditions* and *risk appetite* in the institutional investor base (insurance companies, pension funds, foreign reserve managers all hold significant IG).
+
+The IG spread and HY spread together paint a complete picture of the credit cycle. When HY spreads widen significantly but IG remains contained, stress is isolated to lower-quality borrowers — a typical mid-cycle signal. When both widen simultaneously (tracked by US_I5), financial conditions are tightening broadly.
+
+---
+
+### US_I5 — HY–IG Spread Differential
+
+| | |
+|---|---|
+| **Formula** | `BAMLH0A0HYM2 − BAMLC0A0CM` — arithmetic difference |
+| **Data** | FRED |
+
+**Economic Rationale**
+
+This differential captures the *quality spread* — the additional compensation demanded specifically for default risk, net of liquidity and macro premia embedded in both HY and IG. When the HY–IG differential widens, it signals rising *discrimination* against lower-quality issuers, which precedes rising defaults by 6–12 months (Altman, NYU Stern annual default reports). When it narrows (compressed differential), it suggests complacency about credit quality — a signal associated with late-cycle over-extension.
+
+---
+
+### US_I3 — Commodities vs Bonds
+
+| | |
+|---|---|
+| **Formula** | `log(DBC / GOVT)` — Invesco DB Commodity Index Fund vs ICE BofA US Treasury Index ETF |
+| **Data** | yfinance TR |
+
+**Economic Rationale**
+
+The commodity/Treasury ratio is a *nominal growth vs. safety* barometer. Strong commodities relative to Treasuries occurs in *reflationary* environments where: real demand is growing, inflation is above target, and the risk-free rate is insufficient compensation for holding cash. Strong Treasuries relative to commodities occurs in *deflationary* or *growth-scare* environments.
+
+This relationship was formalised in asset allocation research by Bridgewater Associates in their *All Weather* framework (Dalio, 2004) and independently in the *inter-market analysis* tradition of John Murphy (1991). The DBC commodity basket diversifies across energy, metals, and agriculture, making it responsive to the global growth cycle rather than idiosyncratic commodity shocks.
+
+---
+
+### US_I7 — 10-Year Breakeven Inflation
+
+| | |
+|---|---|
+| **Formula** | `T10YIE` — FRED direct (10-Year Treasury Inflation-Indexed Security, Break-Even Inflation Rate) |
+| **Data** | FRED (Fed H.15 release) |
+
+**Economic Rationale**
+
+The 10-year breakeven inflation rate is derived from the difference between nominal 10-year Treasury yields and TIPS 10-year real yields. It represents the market's expectation of average CPI inflation over the next decade, and the price at which an investor is indifferent between holding nominal Treasuries and inflation-protected TIPS.
+
+Breakeven inflation is distinct from *realised* inflation: it reflects forward expectations and can diverge significantly in periods of uncertainty. During QE cycles, breakevens were suppressed by Fed asset purchases; during supply shocks (2021–2022), they surged ahead of realised CPI. For the 6–9 month investor, the *direction* of breakevens is more important than the absolute level: rising breakevens signal inflation-pricing-in, which supports inflation-linked assets (TIPS, real estate, commodities, gold) and pressures long nominal duration.
+
+---
+
+### US_I8 — Risk-On vs Risk-Off (Equities vs Treasuries)
+
+| | |
+|---|---|
+| **Formula** | `log(SPY / GOVT)` |
+| **Data** | SPY (SPDR S&P 500 ETF TR), GOVT (ICE BofA US Treasury Index ETF TR) |
+
+**Economic Rationale**
+
+The equity/Treasury ratio is the most fundamental *risk-on/risk-off* barometer in markets. In a classical *Capital Asset Pricing Model* framework, the equity risk premium (ERP) is the excess return of equities over the risk-free rate. The SPY/GOVT ratio in log-price terms tracks the *cumulative* realised ERP — rising when equities outperform (investors are willing to hold risk), falling when Treasuries outperform (flight to safety).
+
+Ibbotson & Sinquefield (1976) documented the long-run superiority of equities over bonds, while Shiller's (1981) excess-volatility puzzle showed equity prices move far more than dividends justify — implying that most of the variation in this ratio reflects *time-varying risk premia* rather than fundamental news. For a 6–9 month investor, z-score extremes are useful: deep z < −1 readings have historically marked moments of maximum pessimism from which equity returns are above average.
+
+---
+
+### US_I9 — HY vs IG Credit (ETF Ratio)
+
+| | |
+|---|---|
+| **Formula** | `log(IHYU.L / SLXX.L)` |
+| **Data** | iShares USD HY Corp Bond UCITS ETF (IHYU.L) / iShares Core GBP Corporate Bond UCITS ETF (SLXX.L) — yfinance TR |
+
+**Economic Rationale**
+
+This ratio uses European-listed ETFs to measure the *relative total return* of USD high-yield credit vs. investment-grade GBP corporate credit. Rising ratio = investors preferring speculative-grade over investment-grade = credit risk appetite. The use of ETF price ratios (rather than OAS levels as in US_I2 and US_I4) captures both spread changes *and* the duration and carry component, giving a more complete total-return perspective.
+
+---
+
+### US_I10 — HY vs Treasuries (Credit Risk)
+
+| | |
+|---|---|
+| **Formula** | `log(IHYU.L / GOVT)` |
+| **Data** | IHYU.L (iShares USD HY UCITS ETF) / GOVT (ICE BofA US Treasury Index ETF) |
+
+**Economic Rationale**
+
+The broadest total-return credit signal: HY vs. pure government bonds. This encompasses the full *credit risk premium* — compensation for default, liquidity, and economic uncertainty. Unlike the OAS measures (US_I2, US_I4) which use yield differentials, this log price ratio captures realised investor experience. During credit crises, IHYU.L falls sharply while GOVT rises — the ratio collapses, generating a strong `flight-to-quality` regime signal.
+
+---
+
+### US_I11 — Mortgage Credit Spread (Affordability Stress)
+
+| | |
+|---|---|
+| **Formula** | `MORTGAGE30US − DGS10` — arithmetic difference (bps) |
+| **Data** | FRED: 30-Year Fixed Mortgage Rate (MORTGAGE30US), 10-Year Treasury (DGS10) |
+
+**Economic Rationale**
+
+The spread between the 30-year mortgage rate and the 10-year Treasury yield reflects lender risk aversion and housing credit availability. In normal conditions, the spread runs 150–200 bps, compensating mortgage originators for prepayment risk, credit risk, and servicing costs. When the spread widens above 250 bps (as it did in 2022–2023), it signals that lenders are charging an elevated premium above risk-free rates — effectively tightening housing credit even if the Fed has stopped hiking.
+
+The MBA Mortgage Bankers Association and the National Association of Realtors track this spread as a primary affordability indicator. Academic work by Campbell & Cocco (2015, JF) documents the direct transmission from mortgage rates to housing turnover and consumer spending via the *home equity* channel. For a 6–9 month investor, this indicator leads building permits (US_HOUS1) by 3–6 months.
+
+---
+
+### US_R1 — VIX Term Structure (Equity Vol)
+
+| | |
+|---|---|
+| **Formula** | `VIX3M − VIX` — arithmetic spread (CBOE 3-Month VIX minus CBOE VIX) |
+| **Data** | yfinance: `^VIX3M`, `^VIX` |
+| **Regime trigger** | Level-based: spread < 0 (inversion) triggers `stress` |
+
+**Economic Rationale**
+
+The VIX measures the market's 30-day implied volatility expectation for the S&P 500, derived from option prices. The VIX3M (also called the VXMT) measures the same expectation over a 3-month horizon. In normal markets, the term structure is in *contango* — 3-month vol exceeds 1-month vol because there is more uncertainty over longer horizons. The spread VIX3M − VIX is therefore normally positive.
+
+When this spread *inverts* (VIX > VIX3M), it signals that near-term uncertainty exceeds longer-term expectations — a hallmark of *acute stress* events where investors are paying premium prices for immediate hedges. This inversion has preceded and coincided with most major market dislocations (2008 GFC, 2011 Euro crisis, 2015 China shock, 2020 COVID, 2022 rate shock).
+
+Whaley (2009, JFM) and subsequent CBOE research documents the term structure of implied volatility as a real-time fear gauge. Carr & Wu (2006) formalise the variance risk premium embedded in VIX, showing that the premium is highest precisely during inversions.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| VIX3M − VIX < 0 | `stress` | Tighten risk immediately; defensive positioning |
+| Spread > 0, z < −1 | `complacency` | Normal calm; watch for sudden spike |
+| Spread > 0, \|z\| ≤ 1 | `normal` | Standard risk budget |
+
+---
+
+### US_R2 — Rates vs Equity Vol (MOVE/VIX Ratio)
+
+| | |
+|---|---|
+| **Formula** | `log(MOVE / VIX)` |
+| **Data** | yfinance: `^MOVE` (ICE BofA MOVE Index), `^VIX` |
+
+**Economic Rationale**
+
+The MOVE Index (Merrill Lynch Option Volatility Estimate) measures 1-month implied volatility in the US Treasury market, constructed similarly to the VIX but for rates rather than equities. The MOVE/VIX ratio therefore captures whether macro/policy uncertainty (rates volatility) is elevated relative to equity-market fear.
+
+A high MOVE/VIX ratio — common during Fed tightening cycles and fiscal crises — indicates that rates are the dominant driver of uncertainty, not equity fundamentals. This is important for a multi-asset investor because in these environments, the traditional equity-bond diversification benefit breaks down: both assets can sell off simultaneously (as in 2022). Research by Goldman Sachs Global Investment Research and by Ilmanen (2011, *Expected Returns*) documents that equity-bond correlation flips positive during inflation regimes, precisely when MOVE/VIX is elevated.
+
+---
+
+### US_RR1 — Real Rates (TIPS 10-Year Yield)
+
+| | |
+|---|---|
+| **Formula** | `DFII10` — FRED direct (Market Yield on US Treasury Securities at 10-Year, Inflation-Indexed) |
+| **Data** | FRED (Federal Reserve H.15 release, daily) |
+
+**Economic Rationale**
+
+The 10-year real interest rate is arguably the single most important macro variable for valuing long-duration assets. It is the *risk-free real discount rate* that anchors equity multiples, real estate cap rates, and gold prices — all of which can be modelled as the present value of future real cash flows.
+
+Fisher (1930) established the decomposition of nominal rates into real rates and expected inflation. In modern macro-finance, the real rate is determined by: (1) the stance of monetary policy relative to the neutral rate (r*), (2) the term premium for holding duration, and (3) global safe-asset demand (the *global saving glut* identified by Bernanke 2005).
+
+For equity investors, the relationship between real rates and P/E multiples is direct: the Gordon Growth Model implies P/E = 1 / (r_real + ERP − g), so rising real rates compress multiples, particularly for long-duration growth stocks (US_G5, US_G4 rotate together with US_RR1). For a 6–9 month investor, the *direction* of real rates is the key variable: TIPS yields rising from negative to positive (-0.5% to +2% as in 2022) caused the most severe equity de-rating in decades.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `high-real-rates` | UW long-duration growth; OW value, short-duration; hold gold only as hedge |
+| −1 to +1 | `normal` | Standard allocation |
+| < −1 | `low-real-rates` | OW quality growth, duration, gold, EM carry |
+
+---
+
+*End of Section 2a — US Rates & Credit (14 indicators: US_I1, US_I2, US_I3, US_I4, US_I5, US_I6, US_I6b, US_I7, US_I8, US_I9, US_I10, US_I11, US_R1, US_R2, US_RR1)*
