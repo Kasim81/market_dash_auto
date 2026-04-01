@@ -183,7 +183,7 @@ INDICATOR_META = {
     "M4":        ("US & Neighbours", "Momentum – US HY vs Treasuries",
                   "(HY_TR_index - 40wk SMA) / 40wk SMA"),
     "M5":        ("US & Neighbours", "Momentum – vol-filtered equity",
-                  "VIX 10wk MA - VIX 30wk MA"),
+                  "log(VIX 13wk MA / VIX 52wk MA) — vol regime filter"),
     # US & Neighbours — Leading / Macro
     "US_LEI1":   ("US & Neighbours", "Growth / Leading indicators",
                   "USSLIND 6M annualised % change"),
@@ -246,10 +246,10 @@ INDICATOR_META = {
                   "IRLTLT01CNM156N - DGS10 (FRED)"),
     "AS_I2":     ("Asia (China-centred)", "India govts vs US Treasuries",
                   "IRLTLT01INM156N - DGS10 (FRED)"),
-    "AS_FX1":    ("Asia (China-centred)", "USD vs CNY",
-                  "CNY=X level z-score"),
-    "AS_FX2":    ("Asia (China-centred)", "USD vs INR",
-                  "INR=X level z-score"),
+    "AS_FX1":    ("Asia (China-centred)", "CNY directional momentum",
+                  "log(CNY=X / 26wk SMA) — CNY 6-month momentum"),
+    "AS_FX2":    ("Asia (China-centred)", "INR directional momentum",
+                  "log(INR=X / 26wk SMA) — INR 6-month momentum"),
     "AS_C1":     ("Asia (China-centred)", "China infrastructure proxy",
                   "log(PIORECRUSDM / HG=F)"),
     "AS_C2":     ("Asia (China-centred)", "China vs global commodities",
@@ -262,7 +262,7 @@ INDICATOR_META = {
     "REG_CLI2":  ("Global / Regional", "Regional growth diff: US vs China",
                   "USA_CLI - CHN_CLI"),
     "REG_CLI3":  ("Global / Regional", "Europe block CLI state",
-                  "avg(DEU_CLI, FRA_CLI, GBR_CLI, ITA_CLI)"),
+                  "avg(DEU_CLI, FRA_CLI, GBR_CLI)"),
     "REG_CLI4":  ("Global / Regional", "Asia CLI state",
                   "avg(CHN_CLI, JPN_CLI, AUS_CLI)"),
     "REG_CLI5":  ("Global / Regional", "Global growth breadth",
@@ -770,8 +770,8 @@ REGIME_RULES = {
     "AS_G3":  lambda r, z: _r(r, z,  1, -1, "India-domestic-strong","large-cap-safety"),
     "AS_I1":  lambda r, z: _r(r, z,  1, -1, "China-bonds-outperform","China-underperform"),
     "AS_I2":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
-    "AS_FX1": lambda r, z: _r(r, z,  1, -1, "CNY-weak",         "CNY-strong"),
-    "AS_FX2": lambda r, z: _r(r, z,  1, -1, "INR-weak",         "INR-strong"),
+    "AS_FX1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
+    "AS_FX2": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
     "AS_C1":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
     "AS_C2":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
     "AS_G4":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
@@ -1164,13 +1164,16 @@ def _calc_M4(cp, mu, **_):
 
 def _calc_M5(cp, **_):
     """
-    VIX moving-average cross: log(VIX_10w_SMA / VIX_30w_SMA).
-    Negative (short MA < long MA) → vol falling → risk-on.
+    VIX vol-regime filter: log(VIX_13w_SMA / VIX_52w_SMA).
+    Negative (3-month MA < 12-month MA) → vol trending down → equity-friendly.
+    Positive (3-month MA > 12-month MA) → vol expanding → defensive.
+    52-week anchor ensures the signal reflects sustained regime shifts
+    rather than short-term spikes.
     """
     vix = _to_weekly_friday(_p(cp, "^VIX"))
-    ma10 = vix.rolling(10, min_periods=5).mean()
-    ma30 = vix.rolling(30, min_periods=15).mean()
-    return _log_ratio(ma10, ma30)
+    ma13 = vix.rolling(13, min_periods=7).mean()
+    ma52 = vix.rolling(52, min_periods=26).mean()
+    return _log_ratio(ma13, ma52)
 
 
 # ---------------------------------------------------------------------------
@@ -1573,18 +1576,26 @@ def _calc_AS_I2(supp, **_):
 
 def _calc_AS_FX1(cp, **_):
     """
-    CNY/USD spot rate (indirect quote — 1 USD = X CNY): CNY=X.
-    Raw = CNY per USD; rising = CNY weakness.
+    CNY directional momentum: log(CNY=X / 26wk SMA).
+    CNY=X = USD per CNY (higher = CNY stronger).
+    Positive momentum → CNY strengthening (China macro-friendly);
+    negative momentum → CNY weakening (capital outflow pressure).
     """
-    return _to_weekly_friday(_p(cp, "CNY=X"))
+    cny = _to_weekly_friday(_p(cp, "CNY=X"))
+    sma26 = cny.rolling(26, min_periods=13).mean()
+    return np.log(cny / sma26.replace(0, np.nan))
 
 
 def _calc_AS_FX2(cp, **_):
     """
-    INR/USD spot rate (indirect quote — 1 USD = X INR): INR=X.
-    Raw = INR per USD; rising = INR weakness.
+    INR directional momentum: log(INR=X / 26wk SMA).
+    INR=X = USD per INR (higher = INR stronger).
+    Positive momentum → INR strengthening (India macro-friendly);
+    negative momentum → INR weakening (inflation/current-account pressure).
     """
-    return _to_weekly_friday(_p(cp, "INR=X"))
+    inr = _to_weekly_friday(_p(cp, "INR=X"))
+    sma26 = inr.rolling(26, min_periods=13).mean()
+    return np.log(inr / sma26.replace(0, np.nan))
 
 
 # ---------------------------------------------------------------------------
@@ -1614,45 +1625,70 @@ def _calc_AS_C2(cp, **_):
 
 def _calc_REG_CLI1(mi, **_):
     """
-    US OECD CLI: USA_CLI from macro_intl_hist. Raw = CLI level.
+    US vs Eurozone growth differential: USA_CLI − avg(DEU_CLI, FRA_CLI).
+    Positive → US momentum outpacing Europe; negative → Europe catching up or leading.
+    EA19 composite not available in OECD pull; DEU+FRA equal-weight used as proxy.
     """
-    return _to_weekly_friday(_get_col(mi, "USA_CLI"))
+    usa = _to_weekly_friday(_get_col(mi, "USA_CLI"))
+    deu = _to_weekly_friday(_get_col(mi, "DEU_CLI"))
+    fra = _to_weekly_friday(_get_col(mi, "FRA_CLI"))
+    eu_avg = pd.concat([deu, fra], axis=1).mean(axis=1)
+    eu_avg = _to_weekly_friday(eu_avg)
+    return _arith_diff(usa, eu_avg)
 
 
 def _calc_REG_CLI2(mi, **_):
     """
-    Eurozone CLI proxy: average of DEU_CLI and FRA_CLI.
-    Note: EA19_CLI is absent from the OECD pull; DEU+FRA average is used.
+    US vs China growth differential: USA_CLI − CHN_CLI.
+    Positive → US cycle outpacing China; negative → China leading.
     """
-    deu = _to_weekly_friday(_get_col(mi, "DEU_CLI"))
-    fra = _to_weekly_friday(_get_col(mi, "FRA_CLI"))
-    combined = pd.concat([deu, fra], axis=1).mean(axis=1)
-    return _to_weekly_friday(combined)
+    usa = _to_weekly_friday(_get_col(mi, "USA_CLI"))
+    chn = _to_weekly_friday(_get_col(mi, "CHN_CLI"))
+    return _arith_diff(usa, chn)
 
 
 def _calc_REG_CLI3(mi, **_):
     """
-    Japan OECD CLI: JPN_CLI from macro_intl_hist. Raw = CLI level.
+    Europe block CLI: equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI.
+    Above 100 = Europe running above long-run trend; below 100 = below trend.
+    ITA_CLI excluded as not consistently available in pull.
     """
-    return _to_weekly_friday(_get_col(mi, "JPN_CLI"))
+    cols = ["DEU_CLI", "FRA_CLI", "GBR_CLI"]
+    series_list = [_to_weekly_friday(_get_col(mi, c)) for c in cols]
+    return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
 def _calc_REG_CLI4(mi, **_):
     """
-    China OECD CLI: CHN_CLI from macro_intl_hist. Raw = CLI level.
+    Asia block CLI: equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI.
+    Above 100 = Asia running above long-run trend; below 100 = below trend.
     """
-    return _to_weekly_friday(_get_col(mi, "CHN_CLI"))
+    cols = ["CHN_CLI", "JPN_CLI", "AUS_CLI"]
+    series_list = [_to_weekly_friday(_get_col(mi, c)) for c in cols]
+    return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
 def _calc_REG_CLI5(mi, **_):
     """
-    Global CLI composite: equal-weight average of USA, DEU, FRA, JPN, CHN CLIs.
-    Broad leading indicator of global economic momentum.
+    Global growth breadth (diffusion): fraction of 9 countries where
+    CLI > 100 AND CLI > CLI_6M_ago (i.e. above trend AND improving).
+    Countries: USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN.
+    Raw = 0.0–1.0 fraction; >= 0.7 = broad expansion, < 0.4 = contracting.
     """
-    cols = ["USA_CLI", "DEU_CLI", "FRA_CLI", "JPN_CLI", "CHN_CLI"]
-    series_list = [_to_weekly_friday(_get_col(mi, c)) for c in cols]
-    combined = pd.concat(series_list, axis=1).mean(axis=1)
-    return _to_weekly_friday(combined)
+    cols = ["USA_CLI", "DEU_CLI", "FRA_CLI", "GBR_CLI", "ITA_CLI",
+            "JPN_CLI", "CHN_CLI", "AUS_CLI", "CAN_CLI"]
+    series_list = []
+    for c in cols:
+        try:
+            s = _to_weekly_friday(_get_col(mi, c))
+            lag26 = s.shift(26)
+            above = ((s > 100) & (s > lag26)).astype(float)
+            series_list.append(above)
+        except Exception:
+            pass  # skip countries not available in this pull
+    if not series_list:
+        return pd.Series(dtype=float)
+    return pd.concat(series_list, axis=1).mean(axis=1)
 
 
 def _calc_AS_G4(cp, **_):
