@@ -499,3 +499,201 @@ For equity investors, the relationship between real rates and P/E multiples is d
 ---
 
 *End of Section 2a — US Rates & Credit (14 indicators: US_I1, US_I2, US_I3, US_I4, US_I5, US_I6, US_I6b, US_I7, US_I8, US_I9, US_I10, US_I11, US_R1, US_R2, US_RR1)*
+
+---
+
+## 2b. US FX & Momentum Indicators
+
+*This group captures two distinct signals: (1) the **dollar cycle** and its effect on cross-asset pricing (US_FX1, US_FX2), and (2) **systematic trend/momentum** filters that determine whether the current price environment is conducive to risk-taking across equities, credit and multi-asset portfolios (M1–M5). These indicators sit at the boundary between fundamental macro and quantitative strategy.*
+
+---
+
+### US_FX1 — Dollar vs Emerging Markets
+
+| | |
+|---|---|
+| **Formula** | `log(EEM / DX-Y.NYB)` |
+| **Data** | iShares MSCI Emerging Markets ETF (EEM) / ICE US Dollar Index (DX-Y.NYB) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The US dollar is the world's primary reserve currency and the invoicing currency for the majority of global trade and commodity contracts. When the dollar strengthens, it creates three simultaneous headwinds for EM economies: (1) external debt denominated in USD becomes more expensive to service in local currency terms; (2) commodity prices (priced in USD) fall in absolute terms, hurting commodity-exporting EM nations; (3) the risk premium on EM assets rises as capital flows back toward the US.
+
+The theoretical foundation comes from *original sin* literature (Eichengreen & Hausmann 1999), which formalised why EM sovereigns and corporates are structurally exposed to dollar fluctuations. Bruno & Shin (2015, BIS) documented the *dollar credit channel*: a strong dollar tightens global financial conditions through the balance sheets of international banks even in countries with no direct dollar exposure.
+
+For a 6–9 month investor, the dollar cycle is one of the highest-impact multi-asset allocation signals available. The Hershey-Berge dollar cycle model suggests EM equities and commodities outperform by 5–8% per year on average in dollar downtrend phases versus dollar uptrend phases. The EEM/DXY ratio usefully combines the EM equity demand signal and the dollar strength signal into a single ratio: when positive, it confirms that both EM earnings and dollar tailwinds are aligned.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `weak-USD` | OW EM equities, commodities, gold; UW USD-denominated assets |
+| −1 to +1 | `neutral` | Neutral dollar allocation |
+| < −1 | `strong-USD` | UW EM; OW US large-cap, USD cash; reduce commodity exposure |
+
+---
+
+### US_FX2 — Copper/Gold Ratio (Global Growth Barometer)
+
+| | |
+|---|---|
+| **Formula** | `log(HG=F / GC=F)` |
+| **Data** | Copper Futures (HG=F) / Gold Futures (GC=F) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+The copper/gold ratio is one of the most closely watched cross-commodity signals in macro finance. Copper is the industrial bellwether: approximately 60% of global copper demand comes from construction, electrical grids and industrial machinery, making it highly sensitive to global capex cycles and Chinese infrastructure spending. Gold, by contrast, is the quintessential safe-haven asset — its price responds to risk aversion, real-rate declines and monetary system uncertainty.
+
+The ratio therefore distils a binary question: is the world's marginal capital seeking productive investment (high copper demand relative to safe haven) or protecting itself (high gold demand relative to copper)? Jeffrey Gundlach of DoubleLine popularised the copper/gold ratio as a predictor of 10-year Treasury yields — empirically, the ratio leads the 10-year yield by 6–12 months, because both respond to forward growth expectations. Erb & Harvey (2006, *FAJ*) documented that commodity returns are driven by roll yield, spot return and inflation — and copper's spot return is uniquely tied to the global manufacturing PMI.
+
+For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross-check on the yield curve and equity cyclicals signals: a rising copper/gold ratio alongside a steepening yield curve (US_I1 improving) and rising cyclicals/defensives (US_G1/G2 improving) is a high-conviction pro-growth signal.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `pro-growth` | OW cyclicals, industrials, EM commodities; UW gold, long-duration |
+| −1 to +1 | `neutral` | Balanced |
+| < −1 | `growth-scare` | OW gold, defensive duration; UW cyclicals, EM, copper-sensitive assets |
+
+---
+
+### M1 — US Equity Trend (S&P 500 vs 40-Week SMA)
+
+| | |
+|---|---|
+| **Formula** | `log(SPY / SMA_40w(SPY))` |
+| **Data** | SPDR S&P 500 ETF (SPY) — yfinance |
+| **Lookback** | 260-week rolling z-score of distance from SMA |
+
+**Economic Rationale**
+
+M1 is the foundational trend-following rule for US equities: hold when price is above its long-term moving average, exit when below. The empirical case for this rule is one of the most extensively documented in quantitative finance.
+
+Faber (2007, *JIAM*) showed that a 10-month SMA rule (equivalent to the 40-week SMA used here) applied to the S&P 500 from 1901–2006 produced a Sharpe ratio of approximately 0.77 versus 0.31 for buy-and-hold, while reducing maximum drawdown from −83% to −25%. The key mechanism is *persistence of momentum*: bear markets and bull markets last 12–36 months on average, far longer than can be explained by rational Bayesian updating — implying systematic under-reaction to macro fundamentals.
+
+The theoretical underpinning comes from the *Grossman-Stiglitz paradox* (1980): if markets were perfectly efficient, no one would pay for information. The existence of persistent trends suggests that the marginal investor processes macro information with a lag. Trend-following exploits this lag. Daniel, Hirshleifer & Subrahmanyam (1998) formalise this as investor overconfidence bias — self-attribution causes investors to anchor too long on prior narratives, generating autocorrelated returns.
+
+The 40-week window is the practitioner consensus for *slow trend* — long enough to filter noise and short-term corrections, short enough to exit bear markets before maximum damage. For a 6–9 month investment horizon, M1 acts as the primary binary filter: below-trend SPY (M1 regime = `trend-down`) is a signal to systematically reduce gross risk.
+
+**Regime Classification**
+
+| z-score / raw | Label | Positioning |
+|---|---|---|
+| log ratio > 0 (price above SMA) | `trend-up` | Risk-on for US equities; standard equity allocation |
+| log ratio < 0 (price below SMA) | `trend-down` | Risk-off; underweight US equities, reduce gross risk |
+
+---
+
+### M2 — Multi-Asset Trend Breadth (5-Asset Faber TAA)
+
+| | |
+|---|---|
+| **Formula** | Fraction of {SPY, URTH, GOVT, VNQ, DBC} above their 40-week SMA |
+| **Data** | SPY, iShares MSCI World (URTH), iShares US Treasury Bond (GOVT), Vanguard Real Estate (VNQ), Invesco DB Commodity (DBC) — yfinance |
+| **Lookback** | 260-week rolling z-score of breadth fraction |
+
+**Economic Rationale**
+
+M2 extends the single-asset trend rule of M1 into a **diversified trend breadth** framework across five major asset classes: US equities, global equities, bonds, real estate and commodities. The indicator answers: across the investable universe, how many asset classes are in uptrends simultaneously?
+
+The theoretical basis is Mebane Faber's *Quantitative Approach to Tactical Asset Allocation* (2007), which showed that applying a 10-month SMA rule to five asset classes and holding only those in uptrend reduced annual standard deviation from 10% to 7% while maintaining the same expected return. The key insight is that asset class trends are *partially independent*: commodities can be in uptrend while bonds are in downtrend, meaning breadth captures diversified macro regime information that no single-asset rule can.
+
+From a macro perspective, high trend breadth (4–5 assets above SMA) tends to occur in reflation phases or mid-cycle expansions where fiscal stimulus, accommodative monetary policy and earnings growth all contribute simultaneously. Low trend breadth (0–2 assets above SMA) is characteristic of late-cycle tightenings, recessions or financial crises. The reading of 3/5 often occurs at cycle inflection points — directional signal from other indicators becomes important.
+
+For a multi-asset portfolio manager, M2 is a *portfolio heat* indicator: when all five asset classes trend up, the macro environment rewards broad risk-taking; when most trend down, capital preservation dominates.
+
+**Regime Classification**
+
+| Breadth fraction | Label | Positioning |
+|---|---|---|
+| ≥ 0.6 (3+ assets above SMA) | `risk-on` | Full broad-asset risk allocation |
+| 0.4–0.6 (2–3 assets) | `mixed` | Selective; favour highest-trend-strength assets |
+| ≤ 0.4 (0–2 assets above SMA) | `risk-off` | Capital preservation; move to cash or short-duration |
+
+---
+
+### M3 — Dual Momentum (Antonacci Equity/Bond Regime)
+
+| | |
+|---|---|
+| **Formula** | `max(12m_return(SPY), 12m_return(URTH)) − 12m_return(SHY)` |
+| **Data** | SPY (US equity), URTH (global equity), SHY (1–3yr Treasuries as cash proxy) — yfinance |
+| **Lookback** | 260-week rolling z-score of excess return signal |
+
+**Economic Rationale**
+
+M3 implements Gary Antonacci's *Dual Momentum* framework (2014, *McGraw-Hill*), which combines two momentum signals:
+
+1. **Absolute momentum (time-series)**: Is the best-performing equity index beating cash? If not, shift to bonds — this is the primary risk-off trigger.
+2. **Relative momentum (cross-sectional)**: Between US equities (SPY) and global equities (URTH), which has higher 12-month return? This determines the equity allocation when the absolute signal is positive.
+
+The theoretical foundations span two literatures. *Absolute momentum* exploits the time-series autocorrelation documented by Moskowitz, Ooi & Pedersen (2012) in their *time-series momentum* paper — across 58 futures markets, past 12-month return strongly predicts next-month return with a t-stat > 5. *Relative momentum* exploits the cross-sectional momentum effect documented by Jegadeesh & Titman (1993, *Journal of Finance*) — the single most replicated finding in empirical asset pricing.
+
+For a 6–9 month investor, M3 provides a principled answer to two allocation questions simultaneously: whether to hold equities at all, and whether to tilt toward US or global equities. Because the 12-month lookback spans a full business cycle quarter, it captures sustained directional shifts rather than short-term noise. Antonacci documented that dual momentum strategies outperformed buy-and-hold by 3–5% annually from 1974–2013 with lower drawdowns, primarily by avoiding the worst of bear markets.
+
+**Regime Classification**
+
+| Signal | Label | Positioning |
+|---|---|---|
+| Both equity returns < SHY return | `bond-regime` | Exit equities; shift to intermediate Treasuries |
+| max(SPY, URTH) > SHY, SPY > URTH | `US-equity-regime` | OW US equities vs global |
+| max(SPY, URTH) > SHY, URTH > SPY | `global-equity-regime` | OW global/non-US equities vs US |
+
+---
+
+### M4 — High Yield Trend with Spread Override
+
+| | |
+|---|---|
+| **Formula** | `log(BAMLHYH0A0HYM2TRIV / SMA_40w(BAMLHYH0A0HYM2TRIV))`; forced to −1 if HY OAS (BAMLH0A0HYM2) > 600 bps |
+| **Data** | FRED: ICE BofA US HY Total Return Index, ICE BofA US HY Option-Adjusted Spread |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+M4 applies the same trend-following logic as M1 to the **high yield credit market** rather than equities. The distinction is important: HY total return combines price appreciation, coupon income and spread compression — meaning a trend-following signal on HY total return captures the credit cycle more directly than an equity signal.
+
+The academic basis comes from Ilmanen (2011, *Expected Returns*, Chapter 15): HY credit has historically offered a substantial risk premium — approximately 2–3% above investment grade — but with significant left-tail risk during credit events. Tactical allocation based on price trend (above/below 200-day or 40-week SMA) has been shown to dramatically reduce drawdowns: Asness, Moskowitz & Pedersen (2013) document that trend momentum in credit markets has a Sharpe ratio of ~0.6 independently from equity momentum.
+
+The **600 bps spread override** is a fundamental safety valve. Empirically, OAS spreads above 600 bps have historically corresponded to high default-cycle periods (e.g. 2002, 2009, 2020). When spreads exceed this threshold, the recovery from price trend signals is unreliable because forced selling, liquidity spirals and default clustering distort the price signal. Altman's (2002) research on default cycles shows that above-600-bps environments are associated with speculative-grade default rates exceeding 8%, making trend-following unreliable as a timing tool. The override provides a hard risk-management floor that cannot be over-ridden by a false positive trend reading.
+
+**Regime Classification**
+
+| Condition | Label | Positioning |
+|---|---|---|
+| Log ratio > 0 AND OAS ≤ 600 bps | `carry-regime` | Hold HY; collect carry |
+| Log ratio < 0 OR OAS > 600 bps | `stress-regime` | Exit HY; move to short-duration Treasuries |
+
+---
+
+### M5 — VIX Regime Filter (13-Week vs 52-Week MA)
+
+| | |
+|---|---|
+| **Formula** | `log(VIX_13w_MA / VIX_52w_MA)` |
+| **Data** | CBOE VIX Index (^VIX) — yfinance, resampled to weekly |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+M5 uses the *relative level* of short-term versus long-term implied volatility to determine whether the equity market's volatility regime is expanding or contracting. Unlike M1–M4 which use price trend, M5 uses the *second moment* of equity returns — implied volatility — as the regime signal.
+
+The theoretical foundation draws on Whaley (1993), who introduced VIX as the market's *fear gauge*, and Carr & Wu (2006), who documented that implied volatility contains information about future realised volatility beyond what can be extracted from historical returns alone. The critical insight for M5 is mean reversion of volatility (Bollerslev 1986, GARCH): volatility is not independently distributed but *clusters*, with prolonged low-vol and high-vol regimes. The ratio of short-term to long-term MA therefore captures whether the current vol cluster is in an expanding or contracting phase.
+
+The specific window choice — 13 weeks (~3 months) versus 52 weeks (1 year) — is calibrated for the 6–9 month investment horizon. The 52-week denominator anchors to the full recent business cycle and provides a stable mean, preventing short-term spikes from triggering false alarms. The 13-week numerator is responsive enough to capture genuine regime shifts (post-crisis vol compression, pre-crisis vol expansion) without over-reacting to single-event spikes. When log(13w/52w) < 0, short-term vol is running below its annual mean: conditions are conducive to equity risk-taking. When > 0, vol is trending above its annual mean: markets are pricing in persistent uncertainty, and risk reduction is warranted.
+
+Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyncratic-vol stocks underperform low-idiosyncratic-vol stocks in the following month — the "low-vol anomaly." M5 operationalises this as a systematic overlay: when the vol regime is unfavourable, even strong trend and fundamental signals should be discounted.
+
+**Regime Classification**
+
+| log ratio | Label | Positioning |
+|---|---|---|
+| < 0 (13w MA < 52w MA) | `vol-compressing` | Equity-friendly; add equity risk, reduce hedges |
+| > 0 (13w MA > 52w MA) | `vol-expanding` | Defensive; reduce equity exposure, add hedges, raise cash |
+
+---
+
+*End of Section 2b — US FX & Momentum (7 indicators: US_FX1, US_FX2, M1, M2, M3, M4, M5)*
