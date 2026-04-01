@@ -1418,3 +1418,126 @@ For equity investors, INR strength is positively correlated with Indian equity r
 ---
 
 *End of Section 4a — Asia: China & India (8 indicators: AS_G1, AS_G2, AS_G3, AS_G4, AS_I1, AS_I2, AS_FX1, AS_FX2)*
+
+---
+
+## 4b. Asia Commodities & Japan
+
+*This group covers two commodity signals tied to the Chinese infrastructure cycle (AS_C1, AS_C2) and two Japan-specific indicators (JP_G1, JP_FX1). The Japan indicators are among the most globally systemic in the entire library: the JPY carry trade (JP_FX1) is a first-order risk signal for global equities and EM assets, and BOJ policy surprises can simultaneously move US Treasuries, EM currencies and cross-asset volatility within hours.*
+
+---
+
+### AS_C1 — Iron Ore / Copper (China Infrastructure vs Broad Industrial)
+
+| | |
+|---|---|
+| **Formula** | `log(Iron Ore price / HG=F)` — Iron Ore spot / Copper Futures |
+| **Data** | Iron Ore (World Bank commodity price series or spot proxy) / Copper Futures (HG=F) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+Iron ore and copper are both industrial metals, but they serve distinct economic functions that create a highly informative ratio. Copper is a broad industrial bellwether used in electrical wiring, motors, plumbing and electronics across virtually every industry globally (hence its nickname "Dr Copper" for its diagnostic power). Iron ore is almost exclusively used in steel production, and China accounts for approximately 70% of global seaborne iron ore demand — making it uniquely sensitive to Chinese infrastructure investment and property construction.
+
+The iron ore / copper ratio therefore answers a specific question: is China's demand for steel (infrastructure, property) running ahead of or behind the global industrial cycle (capex, electronics, manufacturing)? When iron ore outperforms copper (ratio rising), it signals that China's heavy-industry and construction cycle is the dominant driver of commodity demand — typically coinciding with government-directed fiscal stimulus (fixed asset investment) or a property market recovery. When copper outperforms iron ore, global manufacturing and electronics are driving demand more broadly — a higher-quality global expansion rather than a China-specific credit-driven cycle.
+
+Kilian (2009, *American Economic Review*) showed that commodity price decompositions into supply vs demand components are essential for interpreting commodity signals correctly. Heap (2005, *Citigroup Metals Research*) first formalised the China commodity intensity thesis: that China's steel intensity per unit of GDP is structurally higher during urbanisation phases, creating a duration of iron ore demand that is decoupled from the global industrial cycle. For a 6–9 month investor, AS_C1 distinguishes between commodity exposure types: iron-ore-sensitive (Australian miners, bulk shippers, Brazil iron ore exporters) versus copper-sensitive (diversified industrials, electrical infrastructure).
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-infra-led` | OW iron ore miners, bulk shippers, China-construction-linked equities |
+| −1 to +1 | `neutral` | Balanced commodity allocation |
+| < −1 | `global-industrial-led` | OW copper, diversified industrials; iron ore/China construction risk elevated |
+
+---
+
+### AS_C2 — Iron Ore / Broad Commodities (China vs Global Commodity Cycle)
+
+| | |
+|---|---|
+| **Formula** | `log(Iron Ore / DBC)` — Iron Ore spot / Invesco DB Commodity Index ETF |
+| **Data** | Iron Ore spot / DBC (DBC covers energy ~55%, metals ~25%, agriculture ~20%) — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+AS_C2 compares the China-specific iron ore cycle against the full diversified commodity complex, which is dominated by energy (crude oil, natural gas, heating oil), industrial metals and agriculture. Where AS_C1 identifies the *composition* of industrial demand (China-heavy vs global manufacturing), AS_C2 identifies whether China's cycle is *leading or lagging* the broader commodity market.
+
+The DBC commodity index captures the global commodity cycle in its full breadth: energy prices driven by OPEC supply decisions and US shale output; agricultural prices driven by weather, fertiliser costs and food demand; and metals driven by both China and global industrial activity. When iron ore outperforms DBC, it means Chinese heavy-industry demand is running above the average commodity cycle — typically during fiscal stimulus phases where Chinese steel output and fixed asset investment are prioritised. When DBC outperforms iron ore, the global energy and agricultural cycle (driven by geopolitical supply shocks, US inflation, or weather events) is dominating, and China's contribution to global commodity demand is relatively subdued.
+
+The distinction is crucial for portfolio construction: an iron ore overweight versus DBC underweight is a China-specific, policy-driven bet. An iron ore underweight versus DBC overweight is an energy/inflation/global-supply-shock hedge. Frankel (2008, *Brookings*) showed that commodity price co-movements are driven by a combination of common factors (global growth, USD) and idiosyncratic supply factors — the iron ore/DBC ratio isolates the China-idiosyncratic demand component from the common commodity factor.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `china-commodity-leading` | China policy/construction driving cycle; OW China, bulk commodities, AUD |
+| −1 to +1 | `neutral` | China in line with global commodity cycle |
+| < −1 | `global-commodity-leading` | Energy/ag driving commodities; China heavy-industry subdued; OW energy/ag vs iron ore |
+
+---
+
+### JP_G1 — Japan vs Global Equities (EWJ / URTH)
+
+| | |
+|---|---|
+| **Formula** | `log(EWJ / URTH)` — iShares MSCI Japan ETF / iShares MSCI World ETF (both USD) |
+| **Data** | EWJ, URTH — yfinance |
+| **Lookback** | 260-week rolling z-score |
+
+**Economic Rationale**
+
+Japan equity relative to global equities in USD terms is driven by three distinct forces that make it unlike any other developed market: (1) the yen exchange rate; (2) BOJ monetary policy; and (3) China demand for Japanese capital goods.
+
+**Yen dynamics** are the most immediate driver. Japan's equity market is dominated by global exporters (Toyota, Sony, Keyence, Fanuc) whose yen-denominated earnings rise mechanically when JPY weakens against USD. Approximately 60% of Nikkei earnings are derived from overseas — meaning a 10% JPY depreciation mechanically adds approximately 4–5% to Nikkei earnings in JPY terms. In USD terms, EWJ partially offsets this (USD-denominated ETF), but the *local-currency outperformance* of Japan versus global benchmarks persists during yen-weakness phases. This creates a tight link between JP_G1 and JP_FX1 (JPY momentum).
+
+**BOJ policy** is the second driver. Japan has been the primary practitioner of unconventional monetary policy since the 1990s — yield curve control (YCC), quantitative and qualitative easing, and negative rates. When the BOJ maintains accommodation while other central banks tighten, the interest rate differential supports both yen weakness and Japanese equity multiples. Conversely, BOJ hawkish surprises (as in July/August 2024, when the BOJ raised rates and triggered the largest single-day Nikkei decline since 1987) cause sharp JPY appreciation and equity underperformance simultaneously.
+
+**China trade links** are the third driver: Japan is a major exporter of machine tools, semiconductor equipment and auto parts to China. China recovery phases (positive AS_G2) tend to lift Japanese capital-goods exporters.
+
+For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both are positive (Japan equities outperforming AND JPY weakening), the carry trade is ON and Japanese export earnings are supportive. If JP_G1 is positive but JP_FX1 is negative (JPY strengthening), it signals a higher-quality, domestically-driven Japanese expansion — rarer but more durable.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +1 | `japan-outperform` | OW Japan equities; hedge JPY if driven by yen weakness; monitor BOJ |
+| −1 to +1 | `neutral` | Benchmark-weight Japan |
+| < −1 | `japan-underperform` | Reduce Japan; watch for yen-driven risk-off contagion to global equities |
+
+---
+
+### JP_FX1 — JPY Carry Trade Signal (USD/JPY 26-Week Momentum) *(Naturally Leading)*
+
+| | |
+|---|---|
+| **Formula** | `log(USDJPY=X / SMA_26w(USDJPY=X))` — USD/JPY spot vs its 26-week moving average |
+| **Data** | USDJPY=X — yfinance (higher = JPY weaker / USD stronger) |
+| **Lookback** | 260-week rolling z-score |
+| **Lead** | JPY moves precede equity/EM impact by days to 2–4 weeks |
+
+**Economic Rationale**
+
+The Japanese yen carry trade is the most systematically important cross-asset transmission mechanism in global finance. The JPY carry trade works as follows: investors borrow cheaply in Japanese yen (historically near-zero or negative rates) and invest in higher-yielding assets globally — US equities, EM bonds, high-yield credit, commodity currencies. When carry is profitable (JPY weakening, stable high-yield assets), the trade generates positive carry plus FX gains, attracting ever-more leverage. When the trade reverses, it unwinds explosively.
+
+The academic documentation is extensive. Burnside et al. (2011, *Journal of Finance*) showed that carry trades earn a substantial risk premium that is compensation for rare but severe crash risk — periods of sudden JPY appreciation when risk appetite collapses globally. Brunnermeier, Nagel & Pedersen (2009, *Quarterly Journal of Economics*) formalised the *carry crash* mechanism: when global volatility spikes (VIX rises sharply), leveraged carry traders face margin calls and simultaneously unwind positions across all asset classes, generating correlations between apparently unrelated assets (EM currencies, US high yield, commodity markets) that are entirely carry-trade-driven.
+
+The **26-week SMA momentum** captures the *sustained direction* of the carry trade cycle rather than day-to-day JPY moves. When USD/JPY is running above its 26-week average (positive momentum = JPY weakening trend), carry trade positions are being added and global risk appetite is supported. When USD/JPY breaks below its 26-week average (negative momentum = JPY strengthening trend), the carry trade is being unwound — and the signal is *naturally leading* because the FX move precedes the equity and credit market impact by days to 2–4 weeks as positions are forced closed.
+
+The August 2024 carry unwind — triggered by a surprise BOJ rate hike — is the canonical recent example: USD/JPY fell from ~160 to ~142 within weeks, the Nikkei dropped 13% in a single day, EM currencies fell in tandem, and VIX spiked to 65. JP_FX1 would have been flashing a `carry-unwind` regime in the days before the equity damage arrived.
+
+For a global multi-asset investor, JP_FX1 is the single most important *systemic risk indicator* in the library for detecting forced deleveraging events.
+
+**Regime Classification**
+
+| z-score | Label | Positioning |
+|---|---|---|
+| > +0.5 | `carry-on` | Global risk appetite supported; favour EM and HY |
+| −1 to +0.5 | `neutral` | Monitor for carry build; standard allocation |
+| < −1 | `carry-unwind` | **Systemic risk-off signal**: expect equity/EM drawdown within 2–4 weeks; reduce gross risk, add JPY exposure, reduce HY/EM |
+
+---
+
+*End of Section 4b — Asia Commodities & Japan (4 indicators: AS_C1, AS_C2, JP_G1, JP_FX1)*
