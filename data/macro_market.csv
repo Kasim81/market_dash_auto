@@ -21,7 +21,7 @@ US_R1,US & Neighbours,Vol term structure (equity),2026-04-03,0.849998,-0.9652,no
 US_R2,US & Neighbours,Rates vs equity vol,2026-04-03,1.263063,-1.1972,calm,stable,log(MOVE / VIX)
 US_RR1,US & Neighbours,Real rates / valuation,2026-04-03,1.97,0.7123,neutral,stable,"DFII10 (TIPS 10Y real yield, FRED direct)"
 US_FX1,US & Neighbours,Dollar vs EM & commodities,2026-04-03,-0.569638,1.7038,weak-USD,stable,log(EEM / DX-Y.NYB)
-US_FX2,US & Neighbours,Copper vs gold,2026-04-03,-6.728807,-1.9598,recession-watch,stable,log(HG=F / GC=F)
+US_FX2,US & Neighbours,Copper vs gold,2026-04-03,-6.718677,-1.9153,recession-watch,stable,log(HG=F / GC=F)
 M1,US & Neighbours,Momentum – US equities trend,2026-04-03,-0.008027,-0.833,risk-off,stable,(S&P500 - 40wk SMA) / 40wk SMA
 M2,US & Neighbours,Momentum – multi-asset trend,2026-04-03,0.8,0.344,risk-on,stable,"fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"
 M3,US & Neighbours,Momentum – dual momentum equity/bond,2026-04-03,0.291964,0.9882,equity-regime,stable,"max(SPY_12m, URTH_12m) - SHY_12m"
@@ -58,7 +58,7 @@ AS_I2,Asia (China-centred),India govts vs US Treasuries,,,,Insufficient Data,n/a
 AS_FX1,Asia (China-centred),CNY directional momentum,2026-04-03,-0.018661,-1.0882,CNY-weakening,stable,log(CNY=X / 26wk SMA) — CNY 6-month momentum
 AS_FX2,Asia (China-centred),INR directional momentum,2026-04-03,0.02494,1.2598,INR-strengthening,stable,log(INR=X / 26wk SMA) — INR 6-month momentum
 AS_C1,Asia (China-centred),China infrastructure proxy,2026-02-06,100.965,-0.7386,neutral,stable,log(PIORECRUSDM / HG=F)
-AS_C2,Asia (China-centred),China vs global commodities,2026-04-03,-6.728807,-1.9598,global-commodity-lead,stable,log(PIORECRUSDM / DBC)
+AS_C2,Asia (China-centred),China vs global commodities,2026-04-03,-6.718677,-1.9153,global-commodity-lead,stable,log(PIORECRUSDM / DBC)
 AS_G4,Asia (China-centred),China vs broad EM divergence,,,,Insufficient Data,n/a,log(FXI / EEM)
 REG_CLI1,Global / Regional,Regional growth diff: US vs Eurozone,2026-04-03,-0.5935,-0.8849,neutral,stable [leading],"USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"
 REG_CLI2,Global / Regional,Regional growth diff: US vs China,2026-04-03,2.3131,1.5653,US-leads-China,stable [leading],USA_CLI - CHN_CLI
@@ -68,4 +68,4 @@ REG_CLI5,Global / Regional,Global growth breadth,2026-04-03,0.888889,1.8129,broa
 REG_RISK1,Global / Regional,Global multi-asset risk appetite,2026-04-03,1.807371,1.6429,risk-on,stable,log(ACWI / GOVT)
 REG_EM1,Global / Regional,EM vs DM equity relative cycle,2026-04-03,-1.166635,-0.1347,neutral,stable,log(EEM / URTH)
 REG_COMM1,Global / Regional,Global commodity cycle momentum,2026-04-03,0.369574,1.2268,commodity-bull,improving,log(DBC / DBC.shift(52)) — DBC 12-month return
-REG_COMM2,Global / Regional,Oil vs gold inflation regime,2026-04-03,-3.730562,-0.7696,neutral,improving,log(CL=F / GC=F)
+REG_COMM2,Global / Regional,Oil vs gold inflation regime,2026-04-03,-3.736858,-0.7848,neutral,improving,log(CL=F / GC=F)
