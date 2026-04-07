@@ -17,3 +17,7 @@ data/*.sqlite
 
 # OS
 .DS_Store
+
+# HTML builder intermediate payloads (embedded into final HTML in build step)
+docs/payload_main.json
+docs/payload_mkt.json
