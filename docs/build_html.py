@@ -1364,14 +1364,17 @@ function updateLegendPanel(){
     const { fullName, detail } = getSeriesDetail(s);
     const idEl = el('span','legend-row-id', s.id);
     idEl.style.color = s.color;
+    idEl.style.fontSize = STATE.fontSize.legend + 'px';
     idEl.title = s.id;
     const infoWrap = el('div','legend-row-info');
     const nmEl = el('span','legend-row-name', fullName);
     nmEl.title = fullName;
+    nmEl.style.fontSize = (STATE.fontSize.legend - 1) + 'px';
     infoWrap.appendChild(nmEl);
     if(detail){
       const fmEl = el('span','legend-row-formula', detail);
       fmEl.title = detail;
+      fmEl.style.fontSize = (STATE.fontSize.legend - 2) + 'px';
       fmEl.style.display = STATE.showDetail ? '' : 'none';
       infoWrap.appendChild(fmEl);
     }
