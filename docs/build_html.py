@@ -89,6 +89,17 @@ def _series_to_list(s: pd.Series) -> list:
     return [_clean(v) for v in s.tolist()]
 
 
+def _date_range(dates: list, values: list) -> tuple[str | None, str | None]:
+    """Return (first_non_null_date, last_non_null_date) from parallel lists."""
+    first = last = None
+    for d, v in zip(dates, values):
+        if v is not None:
+            if first is None:
+                first = d
+            last = d
+    return first, last
+
+
 def _parse_date_col(df: pd.DataFrame) -> tuple[list, pd.DataFrame]:
     """Return (date_strings_list, df_without_date_col)."""
     date_col = next(
@@ -144,6 +155,11 @@ def build_macro_market(ind_meta: dict) -> dict:
                 entry[suffix] = _series_to_list(df[col])
             else:
                 entry[suffix] = [None] * len(dates)
+        # use zscore column as the data-availability reference
+        ref = entry["zscore"] if any(v is not None for v in entry["zscore"]) else entry["raw"]
+        first, last = _date_range(dates, ref)
+        entry["first_date"] = first
+        entry["last_date"]  = last
         indicators[ind_id] = entry
 
     # build groups — only include IDs that are present in the file
@@ -186,10 +202,14 @@ def build_macro_us() -> dict:
 
     series = {}
     for col in df.columns:
-        col_s = str(col).strip()
+        col_s  = str(col).strip()
+        vals   = _series_to_list(df[col])
+        first, last = _date_range(dates, vals)
         series[col_s] = {
-            "meta":   series_meta.get(col_s, {"Series ID": col_s}),
-            "values": _series_to_list(df[col]),
+            "meta":       series_meta.get(col_s, {"Series ID": col_s}),
+            "values":     vals,
+            "first_date": first,
+            "last_date":  last,
         }
 
     return {"dates": dates, "series": series}
@@ -218,10 +238,14 @@ def build_macro_intl() -> dict:
 
     series = {}
     for col in df.columns:
-        col_s = str(col).strip()
+        col_s  = str(col).strip()
+        vals   = _series_to_list(df[col])
+        first, last = _date_range(dates, vals)
         series[col_s] = {
-            "meta":   series_meta.get(col_s, {"Column ID": col_s}),
-            "values": _series_to_list(df[col]),
+            "meta":       series_meta.get(col_s, {"Column ID": col_s}),
+            "values":     vals,
+            "first_date": first,
+            "last_date":  last,
         }
 
     return {"dates": dates, "series": series}
@@ -257,12 +281,16 @@ def build_market_comp() -> dict:
 
     for col in df.columns:
         col_s = str(col).strip()
-        m = series_meta.get(col_s, {})
+        m     = series_meta.get(col_s, {})
+        vals  = _series_to_list(df[col])
+        first, last = _date_range(dates, vals)
         asset_class = m.get("Broad Asset Class", "Other")
         groups.setdefault(asset_class, []).append(col_s)
         series[col_s] = {
-            "meta":   m,
-            "values": _series_to_list(df[col]),
+            "meta":       m,
+            "values":     vals,
+            "first_date": first,
+            "last_date":  last,
         }
 
     return {"dates": dates, "series": series, "groups": groups}
@@ -480,6 +508,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   border:1px solid #3d2f0d;border-radius:3px;
   padding:0 4px;flex-shrink:0
 }
+.series-dates{
+  font-size:9px;color:#484f58;white-space:nowrap;flex-shrink:0;
+  font-family:"SFMono-Regular",Consolas,monospace
+}
+.series-dates.warn{color:#d29922}
+.series-dates.error{color:#f85149}
+
+/* ── date coverage warning panel ── */
+#coverage-warn{
+  margin:6px 14px 0;padding:6px 9px;border-radius:5px;
+  background:#272115;border:1px solid #3d2f0d;
+  font-size:11px;color:#d29922;display:none;line-height:1.5
+}
+#coverage-warn.has-warn{display:block}
+#coverage-warn ul{margin:4px 0 0 14px;padding:0}
+#coverage-warn li{font-size:10px;color:#c9d1d9;font-family:"SFMono-Regular",Consolas,monospace}
 
 /* ── main content ── */
 #main-content{
@@ -564,6 +608,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <input class="date-input" id="date-to" type="text" placeholder="today">
     <button id="btn-apply-dates">Apply</button>
   </div>
+  <div id="coverage-warn"></div>
   <div id="sidebar-tree"><!-- populated by JS --></div>
 </div>
 
@@ -838,11 +883,35 @@ function refreshMarketItems(){
 }
 
 // ── Series item factory ────────────────────────────────────────────────────
+function getSeriesDateRange(source, key){
+  if(source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[key];
+    return ind ? {first: ind.first_date, last: ind.last_date} : {};
+  }
+  if(source === 'macro_us'){
+    const s = MAIN_DATA.macro_us.series[key];
+    return s ? {first: s.first_date, last: s.last_date} : {};
+  }
+  if(source === 'macro_intl'){
+    const s = MAIN_DATA.macro_intl.series[key];
+    return s ? {first: s.first_date, last: s.last_date} : {};
+  }
+  if(source === 'market_comp'){
+    const s = MKT_DATA.series[key];
+    return s ? {first: s.first_date, last: s.last_date} : {};
+  }
+  return {};
+}
+
 function makeSeriesItem({source, key, id, name, leading, variant}){
+  const {first, last} = getSeriesDateRange(source, key);
+
   const wrap = el('div','series-item');
   wrap.dataset.source  = source;
   wrap.dataset.key     = key;
-  if(variant) wrap.dataset.variant = variant;
+  if(variant)    wrap.dataset.variant   = variant;
+  if(first)      wrap.dataset.firstDate = first;
+  if(last)       wrap.dataset.lastDate  = last;
 
   const cb = document.createElement('input');
   cb.type  = 'checkbox';
@@ -862,7 +931,16 @@ function makeSeriesItem({source, key, id, name, leading, variant}){
     wrap.appendChild(badge);
   }
 
-  cb.addEventListener('change', () => onSeriesChecked(cb.checked, {source, key, id, name}));
+  // date range badge
+  if(first){
+    const yr1 = first.slice(0,4);
+    const yr2 = last  ? last.slice(0,4) : '…';
+    const dBadge = el('span','series-dates', yr1 + '–' + yr2);
+    dBadge.title = (first || '?') + ' → ' + (last || '?');
+    wrap.appendChild(dBadge);
+  }
+
+  cb.addEventListener('change', () => onSeriesChecked(cb.checked, {source, key, id, name, first_date: first, last_date: last}));
   wrap.addEventListener('click', e => {
     if(e.target !== cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
   });
@@ -926,6 +1004,7 @@ document.getElementById('btn-apply-dates').addEventListener('click', function(){
   if(to   && !dateRe.test(to))  { setStatus('Invalid To date (use YYYY-MM-DD)',  'error'); return; }
   STATE.dateFrom = from || null;
   STATE.dateTo   = to   || null;
+  checkDateCoverage();
   setStatus('Date range updated — chart will refresh on next series change');
   if(STATE.active.length) renderChart();
 });
@@ -945,6 +1024,44 @@ document.getElementById('btn-clear').addEventListener('click', function(){
   setStatus('Ready');
 });
 
+// ── Date coverage warning ──────────────────────────────────────────────────
+function checkDateCoverage(){
+  const warn  = document.getElementById('coverage-warn');
+  const from  = STATE.dateFrom;
+  const to    = STATE.dateTo;
+  const issues = [];
+
+  STATE.active.forEach(s => {
+    const msgs = [];
+    if(s.first_date && from && s.first_date > from)
+      msgs.push('starts ' + s.first_date + ' (after your From date)');
+    if(s.last_date  && to   && s.last_date  < to)
+      msgs.push('ends '   + s.last_date  + ' (before your To date)');
+    if(msgs.length) issues.push({id: s.id, msgs});
+  });
+
+  // also update date badges in sidebar to highlight out-of-range series
+  document.querySelectorAll('.series-dates').forEach(badge => {
+    const item  = badge.closest('.series-item');
+    if(!item) return;
+    const first = item.dataset.firstDate;
+    const last  = item.dataset.lastDate;
+    badge.classList.remove('warn','error');
+    if(first && from && first > from) badge.classList.add('warn');
+    if(last  && to   && last  < to)   badge.classList.add('warn');
+  });
+
+  if(!issues.length){ warn.className = 'coverage-warn'; warn.innerHTML = ''; return; }
+
+  warn.className = 'has-warn';
+  let html = '⚠ Data gap for ' + issues.length + ' selected series:<ul>';
+  issues.forEach(({id, msgs}) => {
+    html += '<li>' + id + ' — ' + msgs.join('; ') + '</li>';
+  });
+  html += '</ul>';
+  warn.innerHTML = html;
+}
+
 // ── Series checked callback (chart render wired in Step 3) ─────────────────
 function onSeriesChecked(checked, info){
   if(checked){
@@ -961,6 +1078,7 @@ function onSeriesChecked(checked, info){
   } else {
     STATE.active = STATE.active.filter(a => !(a.source === info.source && a.key === info.key));
   }
+  checkDateCoverage();
   updateLegendPanel();
   updateChartTitle();
   renderChart();   // no-op until Step 3 wires this up
