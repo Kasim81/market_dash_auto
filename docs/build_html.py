@@ -573,12 +573,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 /* ── legend panel — absolute overlay at bottom of chart area ── */
 #legend-panel{
   position:absolute;bottom:0;left:0;right:0;z-index:10;
-  background:rgba(22,27,34,0.94);backdrop-filter:blur(4px);
+  background:#161b22;
   border-top:1px solid #30363d;
   padding:0;overflow-y:auto;display:none;
-  max-height:35vh
+  max-height:40vh
 }
+#legend-panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:3px 10px;border-bottom:1px solid #21262d;
+  background:#161b22;position:sticky;top:0;z-index:1
+}
+#legend-panel-title{font-size:9px;color:#484f58;text-transform:uppercase;letter-spacing:.06em}
+#btn-detail-toggle{
+  font-size:9px;color:#8b949e;background:none;border:1px solid #30363d;
+  border-radius:3px;padding:1px 6px;cursor:pointer
+}
+#btn-detail-toggle:hover{color:#58a6ff;border-color:#58a6ff}
 #legend-panel-inner{ display:flex;flex-direction:column;gap:0 }
+/* inline regime strip inside legend */
+.inline-strip-row{
+  display:flex;align-items:center;
+  background:#0d1117;padding:2px 0;
+  border-top:1px solid #21262d
+}
+.inline-strip-row .strip-label{color:#484f58}
+.inline-strip-row .strip-canvas-wrap{flex:1;position:relative;overflow:hidden}
+.inline-strip-row .strip-canvas{display:block;width:100%;height:12px}
+.inline-strip-fwd .strip-canvas{height:8px}
+.inline-strip-fwd .strip-label{font-style:italic}
 .legend-row{
   display:flex;align-items:center;gap:7px;
   padding:5px 10px;border-bottom:1px solid #21262d;
@@ -653,11 +675,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 .leg-del:hover{color:#f85149}
 
-/* ── regime strip ── */
-#regime-strip-wrap{
-  border-top:1px solid #30363d;flex-shrink:0;
-  background:#0d1117;padding:4px 0 2px;display:none
-}
+/* ── regime strip (standalone wrap — now unused, strips are inline in legend) ── */
+#regime-strip-wrap{ display:none !important }
 .strip-row{
   display:flex;align-items:center;margin-bottom:2px
 }
@@ -728,19 +747,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       <div class="font-ctrl-group">
         <label>Tick</label>
         <button class="font-btn" data-target="tick" data-delta="-1">−</button>
-        <span class="font-val" id="fv-tick">10</span>
+        <span class="font-val" id="fv-tick">18</span>
         <button class="font-btn" data-target="tick" data-delta="1">+</button>
       </div>
       <div class="font-ctrl-group">
         <label>Title</label>
         <button class="font-btn" data-target="axisTitle" data-delta="-1">−</button>
-        <span class="font-val" id="fv-axisTitle">10</span>
+        <span class="font-val" id="fv-axisTitle">18</span>
         <button class="font-btn" data-target="axisTitle" data-delta="1">+</button>
       </div>
       <div class="font-ctrl-group">
         <label>Legend</label>
         <button class="font-btn" data-target="legend" data-delta="-1">−</button>
-        <span class="font-val" id="fv-legend">10</span>
+        <span class="font-val" id="fv-legend">18</span>
         <button class="font-btn" data-target="legend" data-delta="1">+</button>
       </div>
     </div>
@@ -755,7 +774,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       <p>Select indicators from the sidebar to plot</p>
     </div>
     <div id="plotly-chart"></div>
-    <div id="legend-panel"><div id="legend-panel-inner"></div></div>
+    <div id="legend-panel">
+      <div id="legend-panel-header">
+        <span id="legend-panel-title">Series</span>
+        <button id="btn-detail-toggle" title="Show/hide indicator descriptions">Detail ▾</button>
+      </div>
+      <div id="legend-panel-inner"></div>
+    </div>
   </div>
   <div id="regime-strip-wrap">
     <div id="regime-strip-inner"></div>
@@ -787,7 +812,9 @@ const STATE = {
   dateFrom: null,
   dateTo:   null,
   mktVariant: 'Local', // 'Local' | 'USD'
-  fontSize: {tick: 10, axisTitle: 10, legend: 10},
+  fontSize: {tick: 18, axisTitle: 18, legend: 18},
+  legendHeight: 0,
+  showDetail: true,   // global toggle for legend formula rows
   searchQuery: '',
 };
 
@@ -1301,12 +1328,19 @@ function getSeriesDetail(s){
   return { fullName: s.key, detail: '' };
 }
 
+let INLINE_STRIPS = [];   // [{canvas, dates, values}] rebuilt each updateLegendPanel call
+
 function updateLegendPanel(){
   const panel = document.getElementById('legend-panel');
   const inner = document.getElementById('legend-panel-inner');
-  if(!STATE.active.length){ panel.style.display = 'none'; return; }
+  if(!STATE.active.length){
+    panel.style.display = 'none';
+    STATE.legendHeight = 0;
+    return;
+  }
   panel.style.display = 'block';
   inner.innerHTML = '';
+  INLINE_STRIPS = [];   // will be repopulated below
 
   STATE.active.forEach((s, idx) => {
     const row = el('div','legend-row');
@@ -1338,6 +1372,7 @@ function updateLegendPanel(){
     if(detail){
       const fmEl = el('span','legend-row-formula', detail);
       fmEl.title = detail;
+      fmEl.style.display = STATE.showDetail ? '' : 'none';
       infoWrap.appendChild(fmEl);
     }
 
@@ -1433,8 +1468,7 @@ function updateLegendPanel(){
       if(s.showRegime) rBtn.classList.add('active');
       rBtn.addEventListener('click', () => {
         s.showRegime = !s.showRegime;
-        rBtn.classList.toggle('active', s.showRegime);
-        renderStrips();
+        updateLegendPanel();
       });
 
       const fBtn = el('button','leg-strip-btn','F');
@@ -1442,8 +1476,7 @@ function updateLegendPanel(){
       if(s.showFwd) fBtn.classList.add('active');
       fBtn.addEventListener('click', () => {
         s.showFwd = !s.showFwd;
-        fBtn.classList.toggle('active', s.showFwd);
-        renderStrips();
+        updateLegendPanel();
       });
 
       stripBtns.append(rBtn, fBtn);
@@ -1456,6 +1489,53 @@ function updateLegendPanel(){
     if(stripBtns) row.appendChild(stripBtns);
     row.appendChild(delBtn);
     inner.appendChild(row);
+
+    // ── inline regime strips (directly below this legend row) ─────
+    if(s.source === 'macro_market' && (s.showRegime || s.showFwd)){
+      const ind = MAIN_DATA.macro_market.indicators[s.key];
+      if(ind){
+        const mmDates = MAIN_DATA.macro_market.dates;
+        const from = STATE.dateFrom, to = STATE.dateTo;
+        const filtIdx   = mmDates.map((_,i)=>i).filter(i => {
+          const d = mmDates[i];
+          return (!from || d >= from) && (!to || d <= to);
+        });
+        const filtDates = filtIdx.map(i => mmDates[i]);
+
+        const addStripRow = (values, labelText, extraClass) => {
+          const srow = el('div', 'inline-strip-row' + (extraClass ? ' ' + extraClass : ''));
+          const closeB = el('button','strip-close-btn','×');
+          closeB.title = 'Remove strip';
+          closeB.addEventListener('click', () => {
+            if(extraClass === 'inline-strip-fwd') s.showFwd = false;
+            else s.showRegime = false;
+            updateLegendPanel();
+          });
+          const lbl = el('span','strip-label', labelText);
+          lbl.style.color = s.color;
+          const cwrap = el('div','strip-canvas-wrap');
+          const cv = document.createElement('canvas');
+          cv.className = 'strip-canvas';
+          cwrap.appendChild(cv);
+          srow.append(closeB, lbl, cwrap);
+          inner.appendChild(srow);
+          INLINE_STRIPS.push({canvas: cv, dates: filtDates, values});
+        };
+
+        if(s.showRegime){
+          addStripRow(filtIdx.map(i => ind.regime[i] ?? null), s.id, '');
+        }
+        if(s.showFwd){
+          addStripRow(filtIdx.map(i => (ind.fwd_regime||[])[i] ?? null), s.id + ' fwd', 'inline-strip-fwd');
+        }
+      }
+    }
+  });
+
+  // redraw canvases once layout is known, then update chart margin
+  requestAnimationFrame(() => {
+    redrawInlineStrips();
+    updateChartMargin();
   });
 }
 
@@ -1599,6 +1679,27 @@ function zRefShapes(){
   }));
 }
 
+// ── redraw all inline strip canvases (called after layout changes) ────
+function redrawInlineStrips(){
+  const geo = getXGeometry();
+  if(!geo || !INLINE_STRIPS.length) return;
+  INLINE_STRIPS.forEach(({canvas, dates, values}) =>
+    drawStripCanvas(canvas, dates, values, geo)
+  );
+}
+
+// ── adjust Plotly bottom margin to expose chart data above legend ─────
+function updateChartMargin(){
+  const panel = document.getElementById('legend-panel');
+  const div   = document.getElementById('plotly-chart');
+  if(!div || !div.data || !panel || panel.style.display === 'none') return;
+  const lh = panel.offsetHeight;
+  if(lh === STATE.legendHeight) return;
+  STATE.legendHeight = lh;
+  // relayout updates the plot area without a full re-render
+  Plotly.relayout(div, {'margin.b': lh + 10});
+}
+
 // ── main render function ──────────────────────────────────────────────
 function renderChart(){
   if(!STATE.active.length){
@@ -1677,10 +1778,11 @@ function renderChart(){
 
   Plotly.react(chartDiv, traces, layout, config)
     .then(() => {
-      renderStrips();
-      // re-render strips on zoom / pan
+      updateChartMargin();
+      redrawInlineStrips();
+      // redraw strips + re-check margin on zoom / pan
       chartDiv.removeAllListeners && chartDiv.removeAllListeners('plotly_relayout');
-      chartDiv.on('plotly_relayout', () => renderStrips());
+      chartDiv.on('plotly_relayout', () => redrawInlineStrips());
     })
     .catch(err => setStatus('Chart error: ' + err.message, 'error'));
 
@@ -1936,13 +2038,24 @@ document.getElementById('font-controls').addEventListener('click', e => {
   if(!btn) return;
   const target = btn.dataset.target;
   const delta  = parseInt(btn.dataset.delta);
-  STATE.fontSize[target] = Math.max(7, Math.min(18, (STATE.fontSize[target] || 10) + delta));
+  STATE.fontSize[target] = Math.max(8, Math.min(28, (STATE.fontSize[target] || 18) + delta));
   document.getElementById('fv-' + target).textContent = STATE.fontSize[target];
   // apply legend font size via CSS
   document.querySelectorAll('.legend-row-id').forEach(el => el.style.fontSize = STATE.fontSize.legend + 'px');
   document.querySelectorAll('.legend-row-name').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 1) + 'px');
   document.querySelectorAll('.legend-row-formula').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 2) + 'px');
   if(STATE.active.length) renderChart();
+});
+
+// ── Detail toggle ──────────────────────────────────────────────────────────
+document.getElementById('btn-detail-toggle').addEventListener('click', () => {
+  STATE.showDetail = !STATE.showDetail;
+  const btn = document.getElementById('btn-detail-toggle');
+  btn.textContent = STATE.showDetail ? 'Detail ▾' : 'Detail ▸';
+  document.querySelectorAll('.legend-row-formula').forEach(el => {
+    el.style.display = STATE.showDetail ? '' : 'none';
+  });
+  requestAnimationFrame(() => updateChartMargin());
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────
