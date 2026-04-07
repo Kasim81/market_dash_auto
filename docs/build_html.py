@@ -525,14 +525,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   border-bottom:1px solid #30363d;background:#161b22;flex-shrink:0
 }
 #chart-title{
-  font-size:13px;color:#8b949e;font-style:italic;flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+  font-size:13px;color:#c9d1d9;font-style:italic;flex:1;
+  background:transparent;border:none;outline:none;
+  min-width:0;
+  border-bottom:1px solid transparent;
+  padding:2px 4px;border-radius:3px;
 }
+#chart-title:hover{border-bottom-color:#30363d}
+#chart-title:focus{border-bottom-color:#58a6ff;font-style:normal;color:#f0f6fc}
 #btn-clear{
   padding:4px 10px;border-radius:5px;border:1px solid #30363d;
   background:transparent;color:#8b949e;font-size:11px;cursor:pointer
 }
 #btn-clear:hover{border-color:#f85149;color:#f85149}
+/* ── font size controls ── */
+#font-controls{
+  display:flex;align-items:center;gap:10px;flex-shrink:0
+}
+.font-ctrl-group{
+  display:flex;align-items:center;gap:3px;
+  font-size:9px;color:#484f58;white-space:nowrap
+}
+.font-ctrl-group label{color:#484f58;font-size:9px}
+.font-btn{
+  width:16px;height:16px;border-radius:3px;border:1px solid #30363d;
+  background:transparent;color:#8b949e;font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;line-height:1;padding:0
+}
+.font-btn:hover{border-color:#58a6ff;color:#58a6ff}
+.font-val{
+  min-width:18px;text-align:center;font-size:9px;
+  color:#8b949e;font-family:"SFMono-Regular",Consolas,monospace
+}
 
 /* ── chart area ── */
 #chart-wrap{
@@ -546,10 +570,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 #chart-placeholder p{font-size:13px}
 #plotly-chart{width:100%;height:100%;display:none}
 
-/* ── legend panel ── */
+/* ── legend panel — absolute overlay at bottom of chart area ── */
 #legend-panel{
-  border-top:1px solid #30363d;background:#161b22;
-  padding:0;max-height:220px;overflow-y:auto;flex-shrink:0;display:none
+  position:absolute;bottom:0;left:0;right:0;z-index:10;
+  background:rgba(22,27,34,0.94);backdrop-filter:blur(4px);
+  border-top:1px solid #30363d;
+  padding:0;overflow-y:auto;display:none;
+  max-height:35vh
 }
 #legend-panel-inner{ display:flex;flex-direction:column;gap:0 }
 .legend-row{
@@ -559,14 +586,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 .legend-row:last-child{border-bottom:none}
 
-/* colour swatch / picker */
+/* colour swatch button */
 .leg-color{
   width:20px;height:20px;border-radius:4px;border:2px solid #30363d;
   cursor:pointer;padding:0;background:none;flex-shrink:0;
   display:flex;align-items:center;justify-content:center
-}
-.leg-color input[type=color]{
-  opacity:0;position:absolute;width:20px;height:20px;cursor:pointer;border:none;padding:0
 }
 
 /* ID label */
@@ -575,10 +599,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-family:"SFMono-Regular",Consolas,monospace;
   min-width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
-/* name label */
+/* name + detail area */
+.legend-row-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .legend-row-name{
-  font-size:10px;color:#8b949e;flex:1;
+  font-size:10px;color:#8b949e;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.legend-row-formula{
+  font-size:9px;color:#484f58;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic
 }
 
 /* metric toggle (zscore / raw) */
@@ -632,6 +661,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .strip-row{
   display:flex;align-items:center;margin-bottom:2px
 }
+.strip-close-btn{
+  width:14px;height:14px;flex-shrink:0;
+  background:none;border:none;color:#484f58;cursor:pointer;
+  font-size:12px;line-height:1;padding:0;margin:0 3px 0 4px;
+  display:flex;align-items:center;justify-content:center
+}
+.strip-close-btn:hover{color:#f85149}
 .strip-label{
   font-size:9px;color:#8b949e;white-space:nowrap;
   font-family:"SFMono-Regular",Consolas,monospace;
@@ -687,7 +723,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 <!-- ════════════════════════ MAIN ════════════════════════ -->
 <div id="main-content">
   <div id="toolbar">
-    <span id="chart-title">Select indicators from the sidebar to begin</span>
+    <input id="chart-title" type="text" value="Select indicators from the sidebar to begin" spellcheck="false">
+    <div id="font-controls">
+      <div class="font-ctrl-group">
+        <label>Tick</label>
+        <button class="font-btn" data-target="tick" data-delta="-1">−</button>
+        <span class="font-val" id="fv-tick">10</span>
+        <button class="font-btn" data-target="tick" data-delta="1">+</button>
+      </div>
+      <div class="font-ctrl-group">
+        <label>Title</label>
+        <button class="font-btn" data-target="axisTitle" data-delta="-1">−</button>
+        <span class="font-val" id="fv-axisTitle">10</span>
+        <button class="font-btn" data-target="axisTitle" data-delta="1">+</button>
+      </div>
+      <div class="font-ctrl-group">
+        <label>Legend</label>
+        <button class="font-btn" data-target="legend" data-delta="-1">−</button>
+        <span class="font-val" id="fv-legend">10</span>
+        <button class="font-btn" data-target="legend" data-delta="1">+</button>
+      </div>
+    </div>
     <button id="btn-clear">Clear all</button>
   </div>
   <div id="chart-wrap">
@@ -699,8 +755,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       <p>Select indicators from the sidebar to plot</p>
     </div>
     <div id="plotly-chart"></div>
+    <div id="legend-panel"><div id="legend-panel-inner"></div></div>
   </div>
-  <div id="legend-panel"><div id="legend-panel-inner"></div></div>
   <div id="regime-strip-wrap">
     <div id="regime-strip-inner"></div>
     <div id="regime-color-key"></div>
@@ -731,6 +787,7 @@ const STATE = {
   dateFrom: null,
   dateTo:   null,
   mktVariant: 'Local', // 'Local' | 'USD'
+  fontSize: {tick: 10, axisTitle: 10, legend: 10},
   searchQuery: '',
 };
 
@@ -1059,14 +1116,14 @@ document.getElementById('search-box').addEventListener('input', function(){
 
 // ── Date controls ──────────────────────────────────────────────────────────
 (function initDates(){
-  // default: last 10 years
-  const now   = new Date();
-  const tenYr = new Date(now);
-  tenYr.setFullYear(tenYr.getFullYear() - 10);
+  // default: last 5 years
+  const now    = new Date();
+  const fiveYr = new Date(now);
+  fiveYr.setFullYear(fiveYr.getFullYear() - 5);
   const fmt = d => d.toISOString().slice(0,10);
-  document.getElementById('date-from').value = fmt(tenYr);
+  document.getElementById('date-from').value = fmt(fiveYr);
   document.getElementById('date-to').value   = fmt(now);
-  STATE.dateFrom = fmt(tenYr);
+  STATE.dateFrom = fmt(fiveYr);
   STATE.dateTo   = fmt(now);
 })();
 
@@ -1162,9 +1219,87 @@ function onSeriesChecked(checked, info){
   renderChart();   // no-op until Step 3 wires this up
 }
 
+// ── Swatch colour picker ───────────────────────────────────────────────────
+const SWATCHES = [
+  '#f85149','#ff7b72','#ffa657','#e3b341','#f0f6fc',
+  '#ff6b9d','#d2a8ff','#c9d1d9','#8b949e','#58a6ff',
+  '#79c0ff','#56d364','#3fb950','#1f6feb','#388bfd',
+  '#a5f3c9','#39d353','#ffd700','#ff8c00','#ff4500',
+  '#da3633','#b22222','#8b0000','#6a0dad','#4b0082',
+  '#0066cc','#0099cc','#00b4d8','#00c896','#00e676',
+  '#66ff99','#ccff33','#ffee58','#ffab40','#ff6d00',
+  '#ff1744','#d500f9','#651fff','#2979ff','#00b0ff',
+  '#00e5ff','#1de9b6','#76ff03','#c6ff00','#ffffff',
+];
+
+let _swatchPicker = null;
+function showSwatchPicker(anchor, current, onPick){
+  // close any existing picker
+  if(_swatchPicker){ _swatchPicker.remove(); _swatchPicker = null; }
+  const picker = document.createElement('div');
+  picker.style.cssText = [
+    'position:fixed;z-index:9999;background:#161b22;',
+    'border:1px solid #30363d;border-radius:6px;padding:8px;',
+    'display:grid;grid-template-columns:repeat(9,18px);gap:4px;',
+    'box-shadow:0 8px 24px rgba(0,0,0,.6)',
+  ].join('');
+  SWATCHES.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.style.cssText = `width:18px;height:18px;border-radius:3px;background:${hex};cursor:pointer;`;
+    sw.style.outline = hex === current ? '2px solid #fff' : 'none';
+    sw.addEventListener('click', e => {
+      e.stopPropagation();
+      onPick(hex);
+      picker.remove(); _swatchPicker = null;
+    });
+    picker.appendChild(sw);
+  });
+  // position below the anchor
+  const r = anchor.getBoundingClientRect();
+  picker.style.left = Math.min(r.left, window.innerWidth - 210) + 'px';
+  picker.style.top  = (r.bottom + 4) + 'px';
+  document.body.appendChild(picker);
+  _swatchPicker = picker;
+  // close on outside click
+  const closeOutside = e => { if(!picker.contains(e.target)){ picker.remove(); _swatchPicker = null; document.removeEventListener('click', closeOutside); } };
+  setTimeout(() => document.addEventListener('click', closeOutside), 0);
+}
+
+// ── CSS for leg-color (remove old input[type=color] rule) ─────────────────
+
 // ══════════════════════════════════════════════════════════════════════
 // STEP 4 — PER-SERIES LEGEND CONTROLS
 // ══════════════════════════════════════════════════════════════════════
+
+function getSeriesDetail(s){
+  // Returns {fullName, detail} for the legend info rows
+  if(s.source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[s.key];
+    const m   = ind?.meta || {};
+    return { fullName: m.category || s.key, detail: m.formula || m.interp || '' };
+  }
+  if(s.source === 'macro_us'){
+    const ser = MAIN_DATA.macro_us.series[s.key];
+    const m   = ser?.meta || {};
+    return { fullName: m['Name'] || m['Indicator'] || s.key,
+             detail: [m['Units'], m['Subcategory']].filter(Boolean).join(' · ') };
+  }
+  if(s.source === 'macro_intl'){
+    const ser = MAIN_DATA.macro_intl.series[s.key];
+    const m   = ser?.meta || {};
+    const country = m['Country'] || '';
+    const ind2    = m['Indicator'] || s.key;
+    return { fullName: country ? `${country} — ${ind2}` : ind2,
+             detail: [m['Units'], m['Subcategory']].filter(Boolean).join(' · ') };
+  }
+  if(s.source === 'market_comp'){
+    const ser = MKT_DATA.series[s.key];
+    const m   = ser?.meta || {};
+    return { fullName: m['Name'] || s.key,
+             detail: [m['Asset Class'], m['Subcategory'] || m['Region']].filter(Boolean).join(' · ') };
+  }
+  return { fullName: s.key, detail: '' };
+}
 
 function updateLegendPanel(){
   const panel = document.getElementById('legend-panel');
@@ -1177,27 +1312,34 @@ function updateLegendPanel(){
     const row = el('div','legend-row');
     row.dataset.idx = idx;
 
-    // ── colour picker ─────────────────────────────────────────────
+    // ── colour picker (swatch grid) ───────────────────────────────
     const colorBtn = el('div','leg-color');
     colorBtn.style.backgroundColor = s.color;
     colorBtn.title = 'Pick colour';
-    const colorInput = document.createElement('input');
-    colorInput.type  = 'color';
-    colorInput.value = s.color;
-    colorInput.addEventListener('input', e => {
-      s.color = e.target.value;
-      colorBtn.style.backgroundColor = s.color;
-      renderChart();
+    colorBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      showSwatchPicker(colorBtn, s.color, newColor => {
+        s.color = newColor;
+        colorBtn.style.backgroundColor = newColor;
+        idEl.style.color = newColor;
+        renderChart();
+      });
     });
-    colorBtn.appendChild(colorInput);
-    colorBtn.addEventListener('click', () => colorInput.click());
 
-    // ── ID + name ─────────────────────────────────────────────────
+    // ── ID + info (name + formula) ─────────────────────────────────
+    const { fullName, detail } = getSeriesDetail(s);
     const idEl = el('span','legend-row-id', s.id);
     idEl.style.color = s.color;
     idEl.title = s.id;
-    const nmEl = el('span','legend-row-name', s.name || '');
-    nmEl.title = s.name || '';
+    const infoWrap = el('div','legend-row-info');
+    const nmEl = el('span','legend-row-name', fullName);
+    nmEl.title = fullName;
+    infoWrap.appendChild(nmEl);
+    if(detail){
+      const fmEl = el('span','legend-row-formula', detail);
+      fmEl.title = detail;
+      infoWrap.appendChild(fmEl);
+    }
 
     // ── metric toggle (zscore / raw) — only for macro_market ──────
     let metricToggle = null;
@@ -1308,7 +1450,7 @@ function updateLegendPanel(){
     }
 
     // ── assemble row ──────────────────────────────────────────────
-    row.append(colorBtn, idEl, nmEl);
+    row.append(colorBtn, idEl, infoWrap);
     if(metricToggle) row.appendChild(metricToggle);
     row.append(axisToggle, styleEl, widthWrap);
     if(stripBtns) row.appendChild(stripBtns);
@@ -1318,10 +1460,34 @@ function updateLegendPanel(){
 }
 
 // ── Chart title ────────────────────────────────────────────────────────────
+function seriesFriendlyLabel(s){
+  if(s.source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[s.key];
+    const cat = ind?.meta?.category || s.key;
+    return cat.replace(/^[^/]+\/\s*/,'').replace(/\s*\(.*\)/,'').trim() || s.key;
+  }
+  if(s.source === 'macro_us'){
+    const ser = MAIN_DATA.macro_us.series[s.key];
+    return ser?.meta?.Name || s.key;
+  }
+  if(s.source === 'macro_intl'){
+    const ser = MAIN_DATA.macro_intl.series[s.key];
+    const country = ser?.meta?.Country || '';
+    const ind2    = ser?.meta?.Indicator || s.key;
+    return country ? `${country} ${ind2}` : ind2;
+  }
+  if(s.source === 'market_comp'){
+    const ser = MKT_DATA.series[s.key];
+    return ser?.meta?.Name || s.key;
+  }
+  return s.key;
+}
+
 function updateChartTitle(){
   const t = document.getElementById('chart-title');
-  t.textContent = STATE.active.length
-    ? STATE.active.map(s => s.id).join('  ·  ')
+  if(document.activeElement === t) return; // don't overwrite while user is typing
+  t.value = STATE.active.length
+    ? STATE.active.map(s => `${s.id}: ${seriesFriendlyLabel(s)}`).join('  ·  ')
     : 'Select indicators from the sidebar to begin';
 }
 
@@ -1452,11 +1618,16 @@ function renderChart(){
   const hasLeft  = STATE.active.some(s => s.axis === 'left');
   const hasRight = STATE.active.some(s => s.axis === 'right');
 
-  // left-axis title: list metric labels
-  const leftLabels  = [...new Set(STATE.active.filter(s=>s.axis==='left')
-    .map(s => s.metric === 'zscore' ? 'Z-Score' : 'Raw'))];
-  const rightLabels = [...new Set(STATE.active.filter(s=>s.axis==='right')
-    .map(s => s.id))].slice(0,3);
+  // axis titles: friendly name (ID) for each series
+  const leftSeries  = STATE.active.filter(s => s.axis === 'left');
+  const rightSeries = STATE.active.filter(s => s.axis === 'right');
+  const axisLabel = s => {
+    const friendly = seriesFriendlyLabel(s);
+    const metric   = (s.source === 'macro_market' && s.metric === 'zscore') ? ' z-score' : '';
+    return `${friendly}${metric} (${s.id})`;
+  };
+  const leftLabels  = leftSeries.map(axisLabel).slice(0,2);
+  const rightLabels = rightSeries.map(axisLabel).slice(0,2);
 
   const layout = {
     paper_bgcolor: '#0d1117',
@@ -1468,25 +1639,25 @@ function renderChart(){
     xaxis:{
       type:'date',
       gridcolor:'#21262d', linecolor:'#30363d',
-      tickfont:{color:'#8b949e', size:10},
+      tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       range: [STATE.dateFrom, STATE.dateTo].filter(Boolean),
       showspikes: true, spikecolor:'#484f58', spikethickness:1,
     },
     yaxis:{
       title: hasLeft ? leftLabels.join(' / ') : '',
       gridcolor:'#21262d', linecolor:'#30363d',
-      tickfont:{color:'#8b949e', size:10},
+      tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       zeroline:true, zerolinecolor:'#484f58', zerolinewidth:1,
-      titlefont:{color:'#8b949e', size:10},
+      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       visible: hasLeft,
     },
     yaxis2:{
       title: hasRight ? rightLabels.join(', ') : '',
       overlaying:'y', side:'right',
       gridcolor:'#21262d', linecolor:'#30363d',
-      tickfont:{color:'#8b949e', size:10},
+      tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       showgrid:false,
-      titlefont:{color:'#8b949e', size:10},
+      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       visible: hasRight,
     },
     shapes: hasLeft ? zRefShapes() : [],
@@ -1708,13 +1879,20 @@ function renderStrips(){
     if(s.showRegime){
       const regimes = filtIdx.map(i => ind.regime[i] ?? null);
       const row = el('div','strip-row');
+      const closeR = el('button','strip-close-btn','×');
+      closeR.title = 'Remove regime strip';
+      closeR.addEventListener('click', () => {
+        s.showRegime = false;
+        updateLegendPanel();
+        renderStrips();
+      });
       const lbl = el('span','strip-label', s.id);
       lbl.style.color = s.color;
       const wrap2 = el('div','strip-canvas-wrap');
       const cv    = document.createElement('canvas');
       cv.className = 'strip-canvas';
       wrap2.appendChild(cv);
-      row.append(lbl, wrap2);
+      row.append(closeR, lbl, wrap2);
       inner.appendChild(row);
       // defer drawing until layout is settled
       requestAnimationFrame(() => drawStripCanvas(cv, filtDates, regimes, geo));
@@ -1724,12 +1902,19 @@ function renderStrips(){
     if(s.showFwd){
       const fwds = filtIdx.map(i => (ind.fwd_regime || [])[i] ?? null);
       const row2 = el('div','strip-row strip-fwd');
+      const closeF = el('button','strip-close-btn','×');
+      closeF.title = 'Remove fwd regime strip';
+      closeF.addEventListener('click', () => {
+        s.showFwd = false;
+        updateLegendPanel();
+        renderStrips();
+      });
       const lbl2 = el('span','strip-label', s.id + ' fwd');
       const wrap3 = el('div','strip-canvas-wrap');
       const cv2   = document.createElement('canvas');
       cv2.className = 'strip-canvas';
       wrap3.appendChild(cv2);
-      row2.append(lbl2, wrap3);
+      row2.append(closeF, lbl2, wrap3);
       inner.appendChild(row2);
       requestAnimationFrame(() => drawStripCanvas(cv2, filtDates, fwds, geo));
     }
@@ -1744,6 +1929,21 @@ function setStatus(msg, level){
   sb.textContent = msg;
   sb.style.color = level === 'error' ? '#f85149' : '#484f58';
 }
+
+// ── Font size controls ──────────────────────────────────────────────────────
+document.getElementById('font-controls').addEventListener('click', e => {
+  const btn = e.target.closest('.font-btn');
+  if(!btn) return;
+  const target = btn.dataset.target;
+  const delta  = parseInt(btn.dataset.delta);
+  STATE.fontSize[target] = Math.max(7, Math.min(18, (STATE.fontSize[target] || 10) + delta));
+  document.getElementById('fv-' + target).textContent = STATE.fontSize[target];
+  // apply legend font size via CSS
+  document.querySelectorAll('.legend-row-id').forEach(el => el.style.fontSize = STATE.fontSize.legend + 'px');
+  document.querySelectorAll('.legend-row-name').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 1) + 'px');
+  document.querySelectorAll('.legend-row-formula').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 2) + 'px');
+  if(STATE.active.length) renderChart();
+});
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 buildSidebar();
