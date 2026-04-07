@@ -50,7 +50,7 @@ EU_I4,Europe & UK,Peripheral sovereign stress / BTP-Bund,2026-02-06,0.581333,-1.
 EU_G4,Europe & UK,Eurozone vs global equities,2026-04-03,-1.057588,0.2455,neutral,stable,log(EZU / URTH)
 JP_G1,Japan,Japan vs global equities,2026-04-03,-0.75641,0.1821,neutral,stable,log(EWJ / URTH)
 JP_FX1,Japan,JPY carry trade signal,2026-04-03,0.075488,0.5598,carry-on,stable [leading],log(USDJPY=X) 26-week momentum
-AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-10,-0.087241,-0.2022,neutral,stable,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
+AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-10,-0.081458,-0.1512,neutral,stable,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
 AS_G2,Asia (China-centred),China vs global DM,2026-04-03,0.860044,1.2273,China-outperform,stable,log(000001.SS_USD / URTH_USD)
 AS_G3,Asia (China-centred),India domestic growth breadth,2026-04-03,3.071197,-0.9476,neutral,stable,avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50
 AS_I1,Asia (China-centred),China rates vs US,,,,Insufficient Data,n/a,IRLTLT01CNM156N - DGS10 (FRED)
