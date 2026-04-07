@@ -1281,11 +1281,15 @@ function showSwatchPicker(anchor, current, onPick){
     });
     picker.appendChild(sw);
   });
-  // position below the anchor
-  const r = anchor.getBoundingClientRect();
-  picker.style.left = Math.min(r.left, window.innerWidth - 210) + 'px';
-  picker.style.top  = (r.bottom + 4) + 'px';
+  // smart positioning: flip above the anchor when near the bottom of the viewport
   document.body.appendChild(picker);
+  const r  = anchor.getBoundingClientRect();
+  const ph = picker.offsetHeight || 220;
+  const pw = picker.offsetWidth  || 210;
+  const top  = (r.bottom + 4 + ph > window.innerHeight) ? r.top - ph - 4 : r.bottom + 4;
+  const left = Math.min(Math.max(4, r.left), window.innerWidth - pw - 4);
+  picker.style.top  = Math.max(4, top) + 'px';
+  picker.style.left = left + 'px';
   _swatchPicker = picker;
   // close on outside click
   const closeOutside = e => { if(!picker.contains(e.target)){ picker.remove(); _swatchPicker = null; document.removeEventListener('click', closeOutside); } };
@@ -1740,7 +1744,11 @@ function renderChart(){
     paper_bgcolor: '#0d1117',
     plot_bgcolor:  '#0d1117',
     font:  {color:'#c9d1d9', family:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', size:11},
-    margin:{t:24, r: hasRight ? 70 : 20, b:44, l:60},
+    // Access offsetHeight here (sync, before Plotly.react) to force layout flush
+    // so legend height is accurate even on the very first render.
+    margin:{t:24, r: hasRight ? 70 : 20,
+            b: Math.max(44, (()=>{ const p=document.getElementById('legend-panel'); return p && p.style.display!=='none' ? (p.offsetHeight||0)+12 : 44; })()),
+            l:60},
     hovermode: 'x unified',
     hoverlabel:{bgcolor:'#161b22', bordercolor:'#30363d', font:{size:11, color:'#c9d1d9'}},
     xaxis:{
@@ -1784,12 +1792,8 @@ function renderChart(){
 
   Plotly.react(chartDiv, traces, layout, config)
     .then(() => {
-      // rAF ensures the browser has painted the legend before we measure its height
-      requestAnimationFrame(() => {
-        updateChartMargin();
-        redrawInlineStrips();
-      });
-      // redraw strips + re-check margin on zoom / pan
+      requestAnimationFrame(redrawInlineStrips);
+      // redraw strips on zoom / pan
       chartDiv.removeAllListeners && chartDiv.removeAllListeners('plotly_relayout');
       chartDiv.on('plotly_relayout', () => redrawInlineStrips());
     })
