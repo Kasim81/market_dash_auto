@@ -1535,10 +1535,14 @@ function updateLegendPanel(){
     }
   });
 
-  // redraw canvases once layout is known, then update chart margin
+  // redraw strip canvases; margin is handled by renderChart().then() rAF
+  // but also update it here for cases where chart is already rendered
+  // (e.g. toggling a strip row without adding/removing a series)
   requestAnimationFrame(() => {
     redrawInlineStrips();
-    updateChartMargin();
+    if(document.getElementById('plotly-chart').data){
+      updateChartMargin();
+    }
   });
 }
 
@@ -1696,11 +1700,10 @@ function updateChartMargin(){
   const panel = document.getElementById('legend-panel');
   const div   = document.getElementById('plotly-chart');
   if(!div || !div.data || !panel || panel.style.display === 'none') return;
-  const lh = panel.offsetHeight;
-  if(lh === STATE.legendHeight) return;
-  STATE.legendHeight = lh;
-  // relayout updates the plot area without a full re-render
-  Plotly.relayout(div, {'margin.b': lh + 10});
+  // getBoundingClientRect forces a synchronous layout flush so offsetHeight is accurate
+  const lh = panel.getBoundingClientRect().height;
+  if(lh < 1) return;
+  Plotly.relayout(div, {'margin.b': lh + 12});
 }
 
 // ── main render function ──────────────────────────────────────────────
@@ -1781,8 +1784,11 @@ function renderChart(){
 
   Plotly.react(chartDiv, traces, layout, config)
     .then(() => {
-      updateChartMargin();
-      redrawInlineStrips();
+      // rAF ensures the browser has painted the legend before we measure its height
+      requestAnimationFrame(() => {
+        updateChartMargin();
+        redrawInlineStrips();
+      });
       // redraw strips + re-check margin on zoom / pan
       chartDiv.removeAllListeners && chartDiv.removeAllListeners('plotly_relayout');
       chartDiv.on('plotly_relayout', () => redrawInlineStrips());
