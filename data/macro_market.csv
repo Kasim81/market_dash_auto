@@ -1,57 +1,71 @@
-id,region_block,category,last_date,raw,zscore,regime,formula_note
-US_G1,US & Neighbours,Growth / cyclicals vs defensives,2026-03-27,0.256383,0.1815,neutral,log(XLY / XLP)
-US_G2,US & Neighbours,Growth / broader cyclicals vs defensives,2026-03-27,0.485671,1.0938,risk-on,log((XLI+XLF) / (XLU+XLP))
-US_G2b,US & Neighbours,Growth / financials vs utilities,2026-03-27,0.047546,-1.0484,defensive,log(XLF / XLU)
-US_G3,US & Neighbours,Size cycle,2026-03-27,-0.358586,-0.7372,neutral,log(IWM / IWB)
-US_G3b,US & Neighbours,Size cycle (S&P proxy),2026-03-27,-0.958718,-0.7519,neutral,log(IWM / SPY)
-US_G4,US & Neighbours,Style / value vs growth,2026-03-27,-0.675642,-0.3278,mixed,log(IWD / IWF)
-US_G4b,US & Neighbours,Style / growth vs value (S&P 500),2026-03-27,-0.638723,0.573,mixed,log(IVW / IVE)
-US_I1,US & Neighbours,Yield-curve slope 10Y-3M,2026-03-27,0.71,0.655,mid-cycle,T10Y3M (FRED direct)
-US_I2,US & Neighbours,HY credit spread,2026-03-27,3.42,-0.2423,normal,"BAMLH0A0HYM2 (US HY OAS, FRED)"
-US_I3,US & Neighbours,Commodities vs bonds,2026-03-27,0.245294,2.1778,reflation,log(DBC / GOVT)
-US_I4,US & Neighbours,IG credit spread,2026-03-27,0.91,-0.6426,normal,"BAMLC0A0CM (US IG OAS, FRED)"
-US_I5,US & Neighbours,HY-IG differential,2026-03-27,2.51,-0.0176,neutral,BAMLH0A0HYM2 - BAMLC0A0CM
-US_I6,US & Neighbours,Yield-curve slope 2s10s,2026-03-27,0.56,0.6746,normal,T10Y2Y (FRED direct)
-US_I6b,US & Neighbours,Yield-curve slope 2s10s (market),2026-03-27,0.56,0.6796,normal,^TNX - DGS2 (yfinance 10Y level minus FRED 2Y level)
-US_I7,US & Neighbours,10Y breakeven inflation,2026-03-27,2.31,-0.315,neutral,T10YIE (FRED direct)
-US_I8,US & Neighbours,Risk-on vs risk-off,2026-03-27,3.326747,1.2991,risk-on,log(SPY / GOVT)
-US_I9,US & Neighbours,HY vs IG credit (ETF proxy),2026-03-27,-0.244364,1.1973,credit-appetite,log(IHYU.L / SLXX.L)
-US_I10,US & Neighbours,HY vs treasuries (credit risk),2026-03-27,-3.199306,1.3102,credit-appetite,log(IHYU.L / GOVT)
-US_R1,US & Neighbours,Vol term structure (equity),2026-03-27,-1.779999,-2.7948,stress,VIX3M - VIX (arithmetic spread)
-US_R2,US & Neighbours,Rates vs equity vol,2026-03-27,1.282454,-1.1367,calm,log(MOVE / VIX)
-US_RR1,US & Neighbours,Real rates / valuation,2026-03-27,2.13,0.86,neutral,"DFII10 (TIPS 10Y real yield, FRED direct)"
-US_FX1,US & Neighbours,Dollar vs EM & commodities,2026-03-27,-0.595706,1.5678,weak-USD,log(EEM / DX-Y.NYB)
-US_FX2,US & Neighbours,Copper vs gold,2026-03-27,-6.711323,-1.9036,recession-watch,log(HG=F / GC=F)
-M1,US & Neighbours,Momentum – US equities trend,2026-03-27,-0.039993,-1.3174,risk-off,(S&P500 - 40wk SMA) / 40wk SMA
-M2,US & Neighbours,Momentum – multi-asset trend,2026-03-27,4.0,0.4225,risk-on,"fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"
-M3,US & Neighbours,Momentum – dual momentum equity/bond,2026-03-27,-0.098671,-1.7095,bond-regime,"max(SPY_12m, URTH_12m) - SHY_12m"
-M4,US & Neighbours,Momentum – US HY vs Treasuries,2026-03-27,-0.001067,-0.522,stress,(HY_TR_index - 40wk SMA) / 40wk SMA
-M5,US & Neighbours,Momentum – vol-filtered equity,2026-03-27,0.19163,1.7014,defensive,VIX 10wk MA - VIX 30wk MA
-US_LEI1,US & Neighbours,Growth / Leading indicators,2026-03-27,0.0,0.0,expansion,USSLIND 6M annualised % change
-US_JOBS1,US & Neighbours,Labour market / Leading,2026-03-27,-5.921788,0.4207,stable,IC4WSA YoY % change
-US_LAB1,US & Neighbours,Labour market composite,2026-03-27,-0.70231,-3.0607,weak-labour,"avg_z[ inv(UNRATE), PAYEMS_YoY, inv(IC4WSA) ]"
-US_GROWTH1,US & Neighbours,Real activity / Growth,2026-03-27,-0.358003,-0.5663,neutral,"avg_z[ INDPRO_YoY, RSXFS_YoY ]"
-US_HOUS1,US & Neighbours,Housing / Construction,2026-03-27,-6.414585,-0.3904,neutral,PERMIT 12M % change
-US_M2L1,US & Neighbours,Liquidity,2026-03-27,4.488902,0.1627,neutral,M2SL YoY % change
-EU_G1,Europe & UK,Growth / cyclicals vs defensives (Europe),2026-03-27,-0.593518,-0.4401,neutral,log((EXH4.DE+EXV1.DE+EXV3.DE) / (EXH9.DE+EXH3.DE))
-EU_G2,Europe & UK,UK domestic vs global,2026-03-27,0.707744,-2.7887,global-preferred,log(FTMC / FTSE100)
-EU_G3,Europe & UK,Eurozone vs US leadership,2026-03-27,0.743525,-1.8645,US-dominance,log(EuroStoxx50_USD / SPY_USD)
-EU_I1,Europe & UK,Euro credit vs govts,2026-03-27,3.19,-0.6596,neutral,ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)
-EU_I2,Europe & UK,UK real-yield / inflation proxy,2026-03-27,3.19,-0.6596,neutral,log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio
-EU_I3,Europe & UK,UK–Germany gilt-bund spread,2026-03-27,-2.102912,1.1272,UK-premium,IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)
-EU_R1,Europe & UK,UK credit conditions,2026-01-02,2.806667,0.9907,neutral,log(SLXX.L / IGLT.L)
-EU_FX1,Europe & UK,EUR vs European cyclicals,2026-03-27,1.153509,0.8892,neutral,"composite_z(log(EURUSD), log(EXH4.DE/EXH9.DE))"
-AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-03,-0.089612,-0.2198,neutral,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
-AS_G2,Asia (China-centred),China vs global DM,2026-03-27,0.863174,1.2593,China-outperform,log(000001.SS_USD / URTH_USD)
-AS_G3,Asia (China-centred),India domestic growth breadth,2026-03-27,3.105062,-0.7437,neutral,avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50
-AS_I1,Asia (China-centred),China rates vs US,,,,Insufficient Data,IRLTLT01CNM156N - DGS10 (FRED)
-AS_I2,Asia (China-centred),India govts vs US Treasuries,,,,Insufficient Data,IRLTLT01INM156N - DGS10 (FRED)
-AS_FX1,Asia (China-centred),USD vs CNY,2026-03-27,6.9107,-0.1203,neutral,CNY=X level z-score
-AS_FX2,Asia (China-centred),USD vs INR,2026-03-27,94.309502,2.5028,INR-weak,INR=X level z-score
-AS_C1,Asia (China-centred),China infrastructure proxy,2026-02-06,100.965,-0.7386,neutral,log(PIORECRUSDM / HG=F)
-AS_C2,Asia (China-centred),China vs global commodities,2026-03-27,-6.711323,-1.9036,global-commodity-lead,log(PIORECRUSDM / DBC)
-REG_CLI1,Global / Regional,Regional growth diff: US vs Eurozone,2026-03-27,100.8525,1.1711,US-leads-EU,"USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"
-REG_CLI2,Global / Regional,Regional growth diff: US vs China,2026-03-27,101.446,1.4326,US-leads-China,USA_CLI - CHN_CLI
-REG_CLI3,Global / Regional,Europe block CLI state,2026-03-27,100.1233,0.4025,near-trend,"avg(DEU_CLI, FRA_CLI, GBR_CLI, ITA_CLI)"
-REG_CLI4,Global / Regional,Asia CLI state,2026-03-27,98.5394,-1.2391,Asia-below-trend,"avg(CHN_CLI, JPN_CLI, AUS_CLI)"
-REG_CLI5,Global / Regional,Global growth breadth,2026-03-27,100.48144,0.8316,broad-expansion,% of 9 countries where CLI>100 AND CLI>CLI_6M_ago
+id,region_block,category,last_date,raw,zscore,regime,fwd_regime,formula_note
+US_G1,US & Neighbours,Growth / cyclicals vs defensives,2026-04-03,0.278142,0.3605,neutral,stable,log(XLY / XLP)
+US_G2,US & Neighbours,Growth / broader cyclicals vs defensives,2026-04-03,0.508874,1.2875,risk-on,stable,log((XLI+XLF) / (XLU+XLP))
+US_G2b,US & Neighbours,Growth / financials vs utilities,2026-04-03,0.066573,-0.8657,neutral,deteriorating,log(XLF / XLU)
+US_G3,US & Neighbours,Size cycle,2026-04-03,-0.35908,-0.7361,neutral,stable,log(IWM / IWB)
+US_G3b,US & Neighbours,Size cycle (S&P proxy),2026-04-03,-0.959294,-0.7513,neutral,stable,log(IWM / SPY)
+US_G4,US & Neighbours,Style / value vs growth,2026-04-03,-0.690825,-0.4511,mixed,stable,log(IWD / IWF)
+US_G4b,US & Neighbours,Style / growth vs value (S&P 500),2026-04-03,-0.613954,0.8219,mixed,stable,log(IVW / IVE)
+US_I1,US & Neighbours,Yield-curve slope 10Y-3M,2026-04-03,0.64,0.5982,mid-cycle,stable,T10Y3M (FRED direct)
+US_I2,US & Neighbours,HY credit spread,2026-04-03,3.13,-0.6477,normal,stable,"BAMLH0A0HYM2 (US HY OAS, FRED)"
+US_I3,US & Neighbours,Commodities vs bonds,2026-04-03,0.248348,2.1769,reflation,improving,log(DBC / GOVT)
+US_I4,US & Neighbours,IG credit spread,2026-04-03,0.86,-0.8358,normal,stable,"BAMLC0A0CM (US IG OAS, FRED)"
+US_I5,US & Neighbours,HY-IG differential,2026-04-03,2.27,-0.5248,neutral,stable,BAMLH0A0HYM2 - BAMLC0A0CM
+US_I6,US & Neighbours,Yield-curve slope 2s10s,2026-04-03,0.51,0.6071,normal,stable,T10Y2Y (FRED direct)
+US_I6b,US & Neighbours,Yield-curve slope 2s10s (market),2026-04-03,0.473,0.5534,normal,stable,^TNX - DGS2 (yfinance 10Y level minus FRED 2Y level)
+US_I7,US & Neighbours,10Y breakeven inflation,2026-04-03,2.36,0.0065,neutral,stable,T10YIE (FRED direct)
+US_I8,US & Neighbours,Risk-on vs risk-off,2026-04-03,3.355639,1.4223,risk-on,stable,log(SPY / GOVT)
+US_I9,US & Neighbours,HY vs IG credit (ETF proxy),2026-04-03,-0.241094,1.2315,credit-appetite,stable,log(IHYU.L / SLXX.L)
+US_I10,US & Neighbours,HY vs treasuries (credit risk),2026-04-03,-3.186622,1.4327,credit-appetite,stable,log(IHYU.L / GOVT)
+US_R1,US & Neighbours,Vol term structure (equity),2026-04-03,0.849998,-0.9652,normal,stable,VIX3M - VIX (arithmetic spread)
+US_R2,US & Neighbours,Rates vs equity vol,2026-04-03,1.263063,-1.1972,calm,stable,log(MOVE / VIX)
+US_RR1,US & Neighbours,Real rates / valuation,2026-04-03,1.99,0.73,neutral,stable,"DFII10 (TIPS 10Y real yield, FRED direct)"
+US_FX1,US & Neighbours,Dollar vs EM & commodities,2026-04-03,-0.569638,1.7038,weak-USD,stable,log(EEM / DX-Y.NYB)
+US_FX2,US & Neighbours,Copper vs gold,2026-04-03,-6.728807,-1.9598,recession-watch,stable,log(HG=F / GC=F)
+M1,US & Neighbours,Momentum – US equities trend,2026-04-03,-0.008027,-0.833,risk-off,stable,(S&P500 - 40wk SMA) / 40wk SMA
+M2,US & Neighbours,Momentum – multi-asset trend,2026-04-03,0.8,0.344,risk-on,stable,"fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"
+M3,US & Neighbours,Momentum – dual momentum equity/bond,2026-04-03,0.291964,0.9882,equity-regime,stable,"max(SPY_12m, URTH_12m) - SHY_12m"
+M4,US & Neighbours,Momentum – US HY vs Treasuries,2026-04-03,0.00986,-0.1964,carry,stable,(HY_TR_index - 40wk SMA) / 40wk SMA
+M5,US & Neighbours,Momentum – vol-filtered equity,2026-04-03,0.119016,0.9578,defensive,improving,log(VIX 13wk MA / VIX 52wk MA) — vol regime filter
+US_LEI1,US & Neighbours,Growth / Leading indicators,2026-04-03,0.0,0.0,expansion,stable [leading],USSLIND 6M annualised % change
+US_JOBS1,US & Neighbours,Labour market / Leading,2026-04-03,-6.734007,0.3911,stable,stable,IC4WSA YoY % change
+US_LAB1,US & Neighbours,Labour market composite,2026-04-03,-0.641019,-2.872,weak-labour,stable,"avg_z[ inv(UNRATE), PAYEMS_YoY, inv(IC4WSA) ]"
+US_GROWTH1,US & Neighbours,Real activity / Growth,2026-04-03,-0.299021,-0.5152,neutral,stable,"avg_z[ INDPRO_YoY, RSXFS_YoY ]"
+US_HOUS1,US & Neighbours,Housing / Construction,2026-04-03,-2.531646,-0.0646,neutral,stable [leading],PERMIT 12M % change
+US_M2L1,US & Neighbours,Liquidity,2026-04-03,4.095428,0.1018,neutral,stable,M2SL YoY % change
+US_G5,US & Neighbours,Growth / technology leadership,2026-04-03,-0.114324,0.9267,neutral,stable,log(QQQ / SPY)
+US_G6,US & Neighbours,Growth / market breadth,2026-04-03,-1.222745,-1.2087,narrow-concentrated,stable,log(RSP / SPY)
+US_ISM1,US & Neighbours,Leading / ISM Manufacturing New Orders,,,,Insufficient Data,n/a,"NAPMOI level (monthly FRED, forward-filled)"
+US_I11,US & Neighbours,Rates & Credit / mortgage affordability,2026-04-03,2.11,-0.4731,neutral,stable,MORTGAGE30US - DGS10 (mortgage-Treasury spread)
+US_LAB2,US & Neighbours,Labour market / JOLTS tightness,2026-03-06,0.908995,-1.2413,labour-slack,stable [leading],JTSJOL / UNEMPLOY (job openings per unemployed person)
+EU_G1,Europe & UK,Growth / cyclicals vs defensives (Europe),2026-04-03,0.601629,0.9677,neutral,stable,log((EXH4.DE+EXV1.DE+EXV3.DE) / (EXH9.DE+EXH3.DE))
+EU_G2,Europe & UK,UK domestic vs global,2026-04-03,0.72936,-1.9772,global-preferred,stable,log(FTMC / FTSE100)
+EU_G3,Europe & UK,Eurozone vs US leadership,2026-04-03,-2.351535,0.1616,neutral,stable,log(EuroStoxx50_USD / SPY_USD)
+EU_I1,Europe & UK,Euro credit vs govts,2026-04-03,3.26,-0.5848,neutral,stable,ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)
+EU_I2,Europe & UK,UK real-yield / inflation proxy,2026-04-03,0.158969,-0.982,neutral,stable,log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio
+EU_I3,Europe & UK,UK–Germany gilt-bund spread,2026-02-06,1.625733,0.0866,neutral,stable,IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)
+EU_R1,Europe & UK,UK credit conditions,2026-04-03,-2.099686,1.1715,credit-appetite,stable,log(SLXX.L / IGLT.L)
+EU_FX1,Europe & UK,EUR vs European cyclicals,2026-04-03,-0.253324,-0.4246,neutral,stable,"composite_z(log(EURUSD), log(EXH4.DE/EXH9.DE))"
+EU_I4,Europe & UK,Peripheral sovereign stress / BTP-Bund,2026-02-06,0.581333,-1.9922,compressed,stable,IRLTLT01ITM156N - IRLTLT01DEM156N (FRED)
+EU_G4,Europe & UK,Eurozone vs global equities,2026-04-03,-1.057588,0.2455,neutral,stable,log(EZU / URTH)
+JP_G1,Japan,Japan vs global equities,2026-04-03,-0.75641,0.1821,neutral,stable,log(EWJ / URTH)
+JP_FX1,Japan,JPY carry trade signal,2026-04-03,0.075488,0.5598,carry-on,stable [leading],log(USDJPY=X) 26-week momentum
+AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-10,-0.081458,-0.1512,neutral,stable,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
+AS_G2,Asia (China-centred),China vs global DM,2026-04-03,0.860044,1.2273,China-outperform,stable,log(000001.SS_USD / URTH_USD)
+AS_G3,Asia (China-centred),India domestic growth breadth,2026-04-03,3.071197,-0.9476,neutral,stable,avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50
+AS_I1,Asia (China-centred),China rates vs US,,,,Insufficient Data,n/a,IRLTLT01CNM156N - DGS10 (FRED)
+AS_I2,Asia (China-centred),India govts vs US Treasuries,,,,Insufficient Data,n/a,IRLTLT01INM156N - DGS10 (FRED)
+AS_FX1,Asia (China-centred),CNY directional momentum,2026-04-03,-0.018661,-1.0882,CNY-weakening,stable,log(CNY=X / 26wk SMA) — CNY 6-month momentum
+AS_FX2,Asia (China-centred),INR directional momentum,2026-04-03,0.02494,1.2598,INR-strengthening,stable,log(INR=X / 26wk SMA) — INR 6-month momentum
+AS_C1,Asia (China-centred),China infrastructure proxy,2026-02-06,100.965,-0.7386,neutral,stable,log(PIORECRUSDM / HG=F)
+AS_C2,Asia (China-centred),China vs global commodities,2026-04-03,-6.728807,-1.9598,global-commodity-lead,stable,log(PIORECRUSDM / DBC)
+AS_G4,Asia (China-centred),China vs broad EM divergence,,,,Insufficient Data,n/a,log(FXI / EEM)
+REG_CLI1,Global / Regional,Regional growth diff: US vs Eurozone,2026-04-03,-0.5935,-0.8849,neutral,stable [leading],"USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"
+REG_CLI2,Global / Regional,Regional growth diff: US vs China,2026-04-03,2.3131,1.5653,US-leads-China,stable [leading],USA_CLI - CHN_CLI
+REG_CLI3,Global / Regional,Europe block CLI state,2026-04-03,101.3722,1.3013,EU-above-trend,stable [leading],"avg(DEU_CLI, FRA_CLI, GBR_CLI)"
+REG_CLI4,Global / Regional,Asia CLI state,2026-04-03,99.805033,-0.4779,near-trend,stable [leading],"avg(CHN_CLI, JPN_CLI, AUS_CLI)"
+REG_CLI5,Global / Regional,Global growth breadth,2026-04-03,0.888889,1.8129,broad-expansion,stable [leading],% of 9 countries where CLI>100 AND CLI>CLI_6M_ago
+REG_RISK1,Global / Regional,Global multi-asset risk appetite,2026-04-03,1.807371,1.6429,risk-on,stable,log(ACWI / GOVT)
+REG_EM1,Global / Regional,EM vs DM equity relative cycle,2026-04-03,-1.166635,-0.1347,neutral,stable,log(EEM / URTH)
+REG_COMM1,Global / Regional,Global commodity cycle momentum,2026-04-03,0.369574,1.2268,commodity-bull,improving,log(DBC / DBC.shift(52)) — DBC 12-month return
+REG_COMM2,Global / Regional,Oil vs gold inflation regime,2026-04-03,-3.730562,-0.7696,neutral,improving,log(CL=F / GC=F)
