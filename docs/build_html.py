@@ -561,23 +561,80 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 /* ── legend panel ── */
 #legend-panel{
   border-top:1px solid #30363d;background:#161b22;
-  padding:0;max-height:160px;overflow-y:auto;flex-shrink:0;display:none
+  padding:0;max-height:220px;overflow-y:auto;flex-shrink:0;display:none
 }
-#legend-panel-inner{
-  display:flex;flex-direction:column;gap:0
-}
+#legend-panel-inner{ display:flex;flex-direction:column;gap:0 }
 .legend-row{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 12px;border-bottom:1px solid #21262d
+  display:flex;align-items:center;gap:7px;
+  padding:5px 10px;border-bottom:1px solid #21262d;
+  min-height:36px
 }
 .legend-row:last-child{border-bottom:none}
+
+/* colour swatch / picker */
+.leg-color{
+  width:20px;height:20px;border-radius:4px;border:2px solid #30363d;
+  cursor:pointer;padding:0;background:none;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center
+}
+.leg-color input[type=color]{
+  opacity:0;position:absolute;width:20px;height:20px;cursor:pointer;border:none;padding:0
+}
+
+/* ID label */
 .legend-row-id{
   font-size:11px;font-weight:600;color:#f0f6fc;
-  font-family:"SFMono-Regular",Consolas,monospace;min-width:100px
+  font-family:"SFMono-Regular",Consolas,monospace;
+  min-width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
-.legend-row-name{font-size:10px;color:#8b949e;flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* colour/style controls added in Step 4 */
+/* name label */
+.legend-row-name{
+  font-size:10px;color:#8b949e;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+
+/* metric toggle (zscore / raw) */
+.leg-metric{
+  display:flex;border:1px solid #30363d;border-radius:4px;overflow:hidden;flex-shrink:0
+}
+.leg-metric button{
+  font-size:9px;padding:2px 6px;background:transparent;
+  border:none;color:#8b949e;cursor:pointer;line-height:1.4
+}
+.leg-metric button.active{background:#1f6feb;color:#f0f6fc}
+
+/* axis toggle (L / R) */
+.leg-axis{
+  display:flex;border:1px solid #30363d;border-radius:4px;overflow:hidden;flex-shrink:0
+}
+.leg-axis button{
+  font-size:9px;padding:2px 7px;background:transparent;
+  border:none;color:#8b949e;cursor:pointer;line-height:1.4
+}
+.leg-axis button.active{background:#388bfd;color:#f0f6fc}
+
+/* style dropdown */
+.leg-style{
+  font-size:9px;background:#21262d;color:#c9d1d9;
+  border:1px solid #30363d;border-radius:4px;padding:2px 4px;
+  cursor:pointer;flex-shrink:0
+}
+
+/* width control */
+.leg-width{
+  display:flex;align-items:center;gap:3px;flex-shrink:0
+}
+.leg-width input[type=range]{
+  width:52px;height:3px;accent-color:#58a6ff;cursor:pointer
+}
+.leg-width-val{font-size:9px;color:#8b949e;min-width:20px;text-align:right}
+
+/* delete button */
+.leg-del{
+  background:none;border:none;color:#484f58;cursor:pointer;
+  font-size:14px;line-height:1;padding:0 2px;flex-shrink:0
+}
+.leg-del:hover{color:#f85149}
 
 /* ── regime strip ── */
 #regime-strip-wrap{
@@ -1086,19 +1143,127 @@ function onSeriesChecked(checked, info){
   renderChart();   // no-op until Step 3 wires this up
 }
 
-// ── Legend panel (styling controls wired in Step 4) ───────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// STEP 4 — PER-SERIES LEGEND CONTROLS
+// ══════════════════════════════════════════════════════════════════════
+
 function updateLegendPanel(){
   const panel = document.getElementById('legend-panel');
   const inner = document.getElementById('legend-panel-inner');
   if(!STATE.active.length){ panel.style.display = 'none'; return; }
   panel.style.display = 'block';
   inner.innerHTML = '';
-  STATE.active.forEach(s => {
-    const row   = el('div','legend-row');
-    const idEl  = el('span','legend-row-id', s.id);
-    const nmEl  = el('span','legend-row-name', s.name || '');
+
+  STATE.active.forEach((s, idx) => {
+    const row = el('div','legend-row');
+    row.dataset.idx = idx;
+
+    // ── colour picker ─────────────────────────────────────────────
+    const colorBtn = el('div','leg-color');
+    colorBtn.style.backgroundColor = s.color;
+    colorBtn.title = 'Pick colour';
+    const colorInput = document.createElement('input');
+    colorInput.type  = 'color';
+    colorInput.value = s.color;
+    colorInput.addEventListener('input', e => {
+      s.color = e.target.value;
+      colorBtn.style.backgroundColor = s.color;
+      renderChart();
+    });
+    colorBtn.appendChild(colorInput);
+    colorBtn.addEventListener('click', () => colorInput.click());
+
+    // ── ID + name ─────────────────────────────────────────────────
+    const idEl = el('span','legend-row-id', s.id);
     idEl.style.color = s.color;
-    row.append(idEl, nmEl);
+    idEl.title = s.id;
+    const nmEl = el('span','legend-row-name', s.name || '');
+    nmEl.title = s.name || '';
+
+    // ── metric toggle (zscore / raw) — only for macro_market ──────
+    let metricToggle = null;
+    if(s.source === 'macro_market'){
+      metricToggle = el('div','leg-metric');
+      ['zscore','raw'].forEach(m => {
+        const btn = el('button', null, m);
+        if(s.metric === m) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          s.metric = m;
+          metricToggle.querySelectorAll('button').forEach(b =>
+            b.classList.toggle('active', b.textContent === m));
+          renderChart();
+        });
+        metricToggle.appendChild(btn);
+      });
+    }
+
+    // ── axis toggle (L / R) ───────────────────────────────────────
+    const axisToggle = el('div','leg-axis');
+    ['left','right'].forEach(ax => {
+      const btn = el('button', null, ax === 'left' ? 'L' : 'R');
+      btn.title = ax === 'left' ? 'Left axis' : 'Right axis';
+      if(s.axis === ax) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        s.axis = ax;
+        axisToggle.querySelectorAll('button').forEach(b =>
+          b.classList.toggle('active', b.textContent === (ax === 'left' ? 'L' : 'R')));
+        renderChart();
+      });
+      axisToggle.appendChild(btn);
+    });
+
+    // ── line style dropdown ───────────────────────────────────────
+    const styleEl = document.createElement('select');
+    styleEl.className = 'leg-style';
+    styleEl.title = 'Line style';
+    ['solid','dashed','dotted','dash-dot'].forEach(st => {
+      const opt = document.createElement('option');
+      opt.value = st; opt.textContent = st;
+      if(s.style === st) opt.selected = true;
+      styleEl.appendChild(opt);
+    });
+    styleEl.addEventListener('change', () => {
+      s.style = styleEl.value;
+      renderChart();
+    });
+
+    // ── line width slider ─────────────────────────────────────────
+    const widthWrap = el('div','leg-width');
+    const widthSlider = document.createElement('input');
+    widthSlider.type  = 'range';
+    widthSlider.min   = '0.5';
+    widthSlider.max   = '4';
+    widthSlider.step  = '0.5';
+    widthSlider.value = s.width;
+    widthSlider.title = 'Line width';
+    const widthVal = el('span','leg-width-val', s.width + 'px');
+    widthSlider.addEventListener('input', () => {
+      s.width = parseFloat(widthSlider.value);
+      widthVal.textContent = s.width + 'px';
+      renderChart();
+    });
+    widthWrap.append(widthSlider, widthVal);
+
+    // ── delete button ─────────────────────────────────────────────
+    const delBtn = el('button','leg-del','✕');
+    delBtn.title = 'Remove series';
+    delBtn.addEventListener('click', () => {
+      // uncheck sidebar checkbox
+      const cb = document.querySelector(
+        `.series-cb[data-source="${s.source}"][data-key="${CSS.escape(s.key)}"]`
+      );
+      if(cb){ cb.checked = false; }
+      STATE.active = STATE.active.filter((_,i) => i !== idx);
+      checkDateCoverage();
+      updateLegendPanel();
+      updateChartTitle();
+      renderChart();
+    });
+
+    // ── assemble row ──────────────────────────────────────────────
+    row.append(colorBtn, idEl, nmEl);
+    if(metricToggle) row.appendChild(metricToggle);
+    row.append(axisToggle, styleEl, widthWrap, delBtn);
     inner.appendChild(row);
   });
 }
