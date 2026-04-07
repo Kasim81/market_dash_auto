@@ -1400,16 +1400,19 @@ function updateLegendPanel(){
       });
     }
 
-    // ── axis toggle (L / R) ───────────────────────────────────────
+    // ── axis toggle (L1 / L2 / R1 / R2) ─────────────────────────
+    const AXES = [{val:'left',label:'L1'},{val:'left2',label:'L2'},
+                  {val:'right',label:'R1'},{val:'right2',label:'R2'}];
     const axisToggle = el('div','leg-axis');
-    ['left','right'].forEach(ax => {
-      const btn = el('button', null, ax === 'left' ? 'L' : 'R');
-      btn.title = ax === 'left' ? 'Left axis' : 'Right axis';
-      if(s.axis === ax) btn.classList.add('active');
+    AXES.forEach(({val, label}) => {
+      const btn = el('button', null, label);
+      btn.title = {left:'Left axis (L1)',left2:'Left axis 2 (L2)',
+                   right:'Right axis (R1)',right2:'Right axis 2 (R2)'}[val];
+      if(s.axis === val) btn.classList.add('active');
       btn.addEventListener('click', () => {
-        s.axis = ax;
+        s.axis = val;
         axisToggle.querySelectorAll('button').forEach(b =>
-          b.classList.toggle('active', b.textContent === (ax === 'left' ? 'L' : 'R')));
+          b.classList.toggle('active', b.textContent === label));
         renderChart();
       });
       axisToggle.appendChild(btn);
@@ -1643,7 +1646,8 @@ function buildTrace(s){
   if(!d || !d.dates.length) return null;
 
   const isMacro   = s.source === 'macro_market';
-  const yaxis     = s.axis === 'left' ? 'y' : 'y2';
+  const AXIS_MAP  = {left:'y', right:'y2', left2:'y3', right2:'y4'};
+  const yaxis     = AXIS_MAP[s.axis] || 'y';
   const dashStyle = DASH_MAP[s.style] || 'solid';
 
   // customdata: [raw, zscore, regime, fwd_regime] for macro; [value] otherwise
@@ -1699,14 +1703,20 @@ function redrawInlineStrips(){
   );
 }
 
-// ── adjust Plotly bottom margin to expose chart data above legend ─────
+// ── adjust Plotly margins (bottom for legend, l/r for outer axes) ────
 function updateChartMargin(){
   const panel = document.getElementById('legend-panel');
   const div   = document.getElementById('plotly-chart');
   if(!div || !div.data || !panel) return;
-  const lh = (panel.style.display !== 'none') ? panel.getBoundingClientRect().height : 0;
-  // margin.b = legend height + base x-axis space (44px for tick labels/marks)
-  Plotly.relayout(div, {'margin.b': lh + 44});
+  const lh      = (panel.style.display !== 'none') ? panel.getBoundingClientRect().height : 0;
+  const hasL2   = STATE.active.some(s => s.axis === 'left2');
+  const hasR2   = STATE.active.some(s => s.axis === 'right2');
+  const hasR    = STATE.active.some(s => s.axis === 'right');
+  Plotly.relayout(div, {
+    'margin.b': lh + 44,
+    'margin.l': hasL2 ? 110 : 60,
+    'margin.r': hasR2 ? 110 : (hasR ? 70 : 20),
+  });
 }
 
 // ── main render function ──────────────────────────────────────────────
@@ -1725,29 +1735,34 @@ function renderChart(){
     setStatus('No data in selected date range', 'error'); return;
   }
 
-  const hasLeft  = STATE.active.some(s => s.axis === 'left');
-  const hasRight = STATE.active.some(s => s.axis === 'right');
+  const hasLeft   = STATE.active.some(s => s.axis === 'left');
+  const hasRight  = STATE.active.some(s => s.axis === 'right');
+  const hasLeft2  = STATE.active.some(s => s.axis === 'left2');
+  const hasRight2 = STATE.active.some(s => s.axis === 'right2');
 
   // axis titles: friendly name (ID) for each series
-  const leftSeries  = STATE.active.filter(s => s.axis === 'left');
-  const rightSeries = STATE.active.filter(s => s.axis === 'right');
   const axisLabel = s => {
     const friendly = seriesFriendlyLabel(s);
     const metric   = (s.source === 'macro_market' && s.metric === 'zscore') ? ' z-score' : '';
     return `${friendly}${metric} (${s.id})`;
   };
-  const leftLabels  = leftSeries.map(axisLabel).slice(0,2);
-  const rightLabels = rightSeries.map(axisLabel).slice(0,2);
+  const leftLabels   = STATE.active.filter(s => s.axis === 'left').map(axisLabel).slice(0,2);
+  const rightLabels  = STATE.active.filter(s => s.axis === 'right').map(axisLabel).slice(0,2);
+  const left2Labels  = STATE.active.filter(s => s.axis === 'left2').map(axisLabel).slice(0,2);
+  const right2Labels = STATE.active.filter(s => s.axis === 'right2').map(axisLabel).slice(0,2);
+
+  // dynamic margins: widen l/r when outer axes (L2/R2) are active
+  const mL = hasLeft2  ? 110 : 60;
+  const mR = hasRight2 ? 110 : (hasRight ? 70 : 20);
+
+  // legend height measured synchronously (forces layout flush before Plotly.react)
+  const legendH = (()=>{ const p=document.getElementById('legend-panel'); return (p && p.style.display!=='none') ? (p.offsetHeight||0) : 0; })();
 
   const layout = {
     paper_bgcolor: '#0d1117',
     plot_bgcolor:  '#0d1117',
     font:  {color:'#c9d1d9', family:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', size:11},
-    // Access offsetHeight here (sync, before Plotly.react) to force layout flush
-    // so legend height is accurate even on the very first render.
-    margin:{t:24, r: hasRight ? 70 : 20,
-            b: (()=>{ const p=document.getElementById('legend-panel'); const lh = (p && p.style.display!=='none') ? (p.offsetHeight||0) : 0; return lh + 44; })(),
-            l:60},
+    margin:{t:24, r:mR, b:legendH + 44, l:mL},
     hovermode: 'x unified',
     hoverlabel:{bgcolor:'#161b22', bordercolor:'#30363d', font:{size:11, color:'#c9d1d9'}},
     xaxis:{
@@ -1766,13 +1781,31 @@ function renderChart(){
       visible: hasLeft,
     },
     yaxis2:{
-      title: hasRight ? rightLabels.join(', ') : '',
+      title: hasRight ? rightLabels.join(' / ') : '',
       overlaying:'y', side:'right',
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       showgrid:false,
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       visible: hasRight,
+    },
+    yaxis3:{
+      title: hasLeft2 ? left2Labels.join(' / ') : '',
+      overlaying:'y', side:'left', anchor:'free', position:0,
+      tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
+      showgrid:false,
+      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
+      zeroline:false,
+      visible: hasLeft2,
+    },
+    yaxis4:{
+      title: hasRight2 ? right2Labels.join(' / ') : '',
+      overlaying:'y', side:'right', anchor:'free', position:1,
+      tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
+      showgrid:false,
+      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
+      zeroline:false,
+      visible: hasRight2,
     },
     shapes: hasLeft ? zRefShapes() : [],
     modebar:{bgcolor:'transparent', color:'#484f58', activecolor:'#58a6ff'},
