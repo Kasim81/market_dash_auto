@@ -1154,7 +1154,7 @@ document.getElementById('search-box').addEventListener('input', function(){
   STATE.dateTo   = fmt(now);
 })();
 
-document.getElementById('btn-apply-dates').addEventListener('click', function(){
+function applyDates(){
   const from = document.getElementById('date-from').value.trim();
   const to   = document.getElementById('date-to').value.trim();
   const dateRe = /^\d{4}-\d{2}-\d{2}$/;
@@ -1163,9 +1163,12 @@ document.getElementById('btn-apply-dates').addEventListener('click', function(){
   STATE.dateFrom = from || null;
   STATE.dateTo   = to   || null;
   checkDateCoverage();
-  setStatus('Date range updated — chart will refresh on next series change');
   if(STATE.active.length) renderChart();
-});
+}
+document.getElementById('btn-apply-dates').addEventListener('click', applyDates);
+['date-from','date-to'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key === 'Enter') applyDates(); })
+);
 
 // ── Clear all ──────────────────────────────────────────────────────────────
 document.getElementById('btn-clear').addEventListener('click', function(){
@@ -1751,9 +1754,12 @@ function renderChart(){
   const left2Labels  = STATE.active.filter(s => s.axis === 'left2').map(axisLabel).slice(0,2);
   const right2Labels = STATE.active.filter(s => s.axis === 'right2').map(axisLabel).slice(0,2);
 
-  // dynamic margins: widen l/r when outer axes (L2/R2) are active
+  // dynamic margins & domain: separate L1/L2 and R1/R2 so tick labels don't overlap
   const mL = hasLeft2  ? 110 : 60;
   const mR = hasRight2 ? 110 : (hasRight ? 70 : 20);
+  // xaxis.domain pushes the plot area inward; outer axes sit in the freed space
+  const domainL = hasLeft2  ? 0.10 : 0;
+  const domainR = hasRight2 ? 0.90 : 1;
 
   // legend height measured synchronously (forces layout flush before Plotly.react)
   const legendH = (()=>{ const p=document.getElementById('legend-panel'); return (p && p.style.display!=='none') ? (p.offsetHeight||0) : 0; })();
@@ -1766,46 +1772,51 @@ function renderChart(){
     hovermode: 'x unified',
     hoverlabel:{bgcolor:'#161b22', bordercolor:'#30363d', font:{size:11, color:'#c9d1d9'}},
     xaxis:{
-      type:'date',
+      type:'date', domain:[domainL, domainR],
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       range: [STATE.dateFrom, STATE.dateTo].filter(Boolean),
       showspikes: true, spikecolor:'#484f58', spikethickness:1,
     },
+    // yaxis / yaxis2 are always visible=true so overlay axes (yaxis3/4) have a
+    // stable reference frame. Visual elements are hidden when no series use them.
     yaxis:{
       title: hasLeft ? leftLabels.join(' / ') : '',
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
-      zeroline:true, zerolinecolor:'#484f58', zerolinewidth:1,
+      zeroline:hasLeft, zerolinecolor:'#484f58', zerolinewidth:1,
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
-      visible: hasLeft,
+      showticklabels: hasLeft, showline: hasLeft,
+      showgrid: hasLeft,   // grid from L1 only when it has data
+      visible: true,
     },
     yaxis2:{
       title: hasRight ? rightLabels.join(' / ') : '',
       overlaying:'y', side:'right',
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
-      showgrid:false,
+      showgrid:false, showticklabels: hasRight, showline: hasRight,
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
-      visible: hasRight,
+      visible: true,
     },
     yaxis3:{
       title: hasLeft2 ? left2Labels.join(' / ') : '',
       overlaying:'y', side:'left', anchor:'free', position:0,
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
-      showgrid:false,
+      // show gridlines from L2 only when L1 has no series
+      showgrid: hasLeft2 && !hasLeft,
+      gridcolor:'#21262d',
+      showticklabels: hasLeft2, showline: hasLeft2,
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
-      zeroline:false,
-      visible: hasLeft2,
+      zeroline:false, visible: true,
     },
     yaxis4:{
       title: hasRight2 ? right2Labels.join(' / ') : '',
       overlaying:'y', side:'right', anchor:'free', position:1,
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
-      showgrid:false,
+      showgrid:false, showticklabels: hasRight2, showline: hasRight2,
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
-      zeroline:false,
-      visible: hasRight2,
+      zeroline:false, visible: true,
     },
     shapes: hasLeft ? zRefShapes() : [],
     modebar:{bgcolor:'transparent', color:'#484f58', activecolor:'#58a6ff'},
