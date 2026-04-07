@@ -32,6 +32,10 @@ jobs:
       run: |
         git pull --rebase
         python fetch_data.py
+    - name: Rebuild indicator explorer
+      run: |
+        cd docs
+        python build_html.py
     - name: Commit and push if changed
       run: |
         git config --global user.name 'GitHub Actions Bot'
@@ -45,7 +49,9 @@ jobs:
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true
         [ -f data/macro_market.csv ] && git add -f data/macro_market.csv || true
         [ -f data/macro_market_hist.csv ] && git add -f data/macro_market_hist.csv || true
+        [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
+        [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
         git diff --staged --quiet || (
-          git commit -m "Update market data - $(date -u '+%Y-%m-%d %H:%M UTC')" &&
+          git commit -m "Update market data + explorer - $(date -u '+%Y-%m-%d %H:%M UTC')" &&
           git push
         )
