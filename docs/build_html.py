@@ -1019,6 +1019,8 @@ document.getElementById('btn-clear').addEventListener('click', function(){
   document.getElementById('chart-placeholder').style.display = 'flex';
   document.getElementById('plotly-chart').style.display = 'none';
   document.getElementById('legend-panel').style.display = 'none';
+  document.getElementById('coverage-warn').className = '';
+  document.getElementById('coverage-warn').innerHTML = '';
   if(typeof Plotly !== 'undefined')
     Plotly.purge(document.getElementById('plotly-chart'));
   setStatus('Ready');
@@ -1109,11 +1111,192 @@ function updateChartTitle(){
     : 'Select indicators from the sidebar to begin';
 }
 
-// ── Chart render stub (full implementation in Step 3) ─────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// STEP 3 — PLOTLY CHART RENDERING ENGINE
+// ══════════════════════════════════════════════════════════════════════
+
+// ── line-dash mapping ─────────────────────────────────────────────────
+const DASH_MAP = {solid:'solid', dashed:'dash', dotted:'dot', 'dash-dot':'dashdot'};
+
+// ── extract & date-filter data for one active series entry ────────────
+function getSeriesData(s){
+  let srcDates, values, raw=[], zscore=[], regime=[], fwd_regime=[];
+
+  if(s.source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[s.key];
+    if(!ind) return null;
+    srcDates   = MAIN_DATA.macro_market.dates;
+    const metric = s.metric || 'zscore';
+    values     = ind[metric] || [];
+    raw        = ind.raw        || [];
+    zscore     = ind.zscore     || [];
+    regime     = ind.regime     || [];
+    fwd_regime = ind.fwd_regime || [];
+  } else if(s.source === 'macro_us'){
+    const ser = MAIN_DATA.macro_us.series[s.key];
+    if(!ser) return null;
+    srcDates = MAIN_DATA.macro_us.dates;
+    values   = ser.values;
+  } else if(s.source === 'macro_intl'){
+    const ser = MAIN_DATA.macro_intl.series[s.key];
+    if(!ser) return null;
+    srcDates = MAIN_DATA.macro_intl.dates;
+    values   = ser.values;
+  } else if(s.source === 'market_comp'){
+    const ser = MKT_DATA.series[s.key];
+    if(!ser) return null;
+    srcDates = MKT_DATA.dates;
+    values   = ser.values;
+  } else { return null; }
+
+  // apply date range filter
+  const from = STATE.dateFrom, to = STATE.dateTo;
+  const fd=[], fv=[], fr=[], fz=[], freg=[], ffwd=[];
+  srcDates.forEach((d,i) => {
+    if(from && d < from) return;
+    if(to   && d > to)   return;
+    fd.push(d);
+    fv.push(values[i]   ?? null);
+    fr.push(raw[i]        ?? null);
+    fz.push(zscore[i]     ?? null);
+    freg.push(regime[i]   ?? null);
+    ffwd.push(fwd_regime[i] ?? null);
+  });
+
+  return {dates:fd, values:fv, raw:fr, zscore:fz, regime:freg, fwd_regime:ffwd};
+}
+
+// ── build a single Plotly trace ───────────────────────────────────────
+function buildTrace(s){
+  const d = getSeriesData(s);
+  if(!d || !d.dates.length) return null;
+
+  const isMacro   = s.source === 'macro_market';
+  const yaxis     = s.axis === 'left' ? 'y' : 'y2';
+  const dashStyle = DASH_MAP[s.style] || 'solid';
+
+  // customdata: [raw, zscore, regime, fwd_regime] for macro; [value] otherwise
+  let customdata, hovertemplate;
+  if(isMacro){
+    customdata = d.dates.map((_,i) => [d.raw[i], d.zscore[i], d.regime[i], d.fwd_regime[i]]);
+    hovertemplate =
+      '<b>' + s.id + '</b><br>' +
+      'Raw: %{customdata[0]}<br>' +
+      'Z-Score: %{customdata[1]:.3f}<br>' +
+      'Regime: %{customdata[2]}<br>' +
+      'Fwd: %{customdata[3]}' +
+      '<extra></extra>';
+  } else {
+    customdata = d.values.map(v => [v]);
+    hovertemplate =
+      '<b>' + s.id + '</b><br>' +
+      '%{x}<br>Value: %{customdata[0]:.4f}' +
+      '<extra></extra>';
+  }
+
+  return {
+    x:            d.dates,
+    y:            d.values,
+    name:         s.id,
+    type:         'scatter',
+    mode:         'lines',
+    connectgaps:  false,
+    line:         {color: s.color, dash: dashStyle, width: s.width},
+    yaxis,
+    customdata,
+    hovertemplate,
+    showlegend:   false,
+  };
+}
+
+// ── z-score reference lines (±1, ±2) ─────────────────────────────────
+function zRefShapes(){
+  const levels = [{v:1,dash:'dot'},{v:-1,dash:'dot'},{v:2,dash:'dot'},{v:-2,dash:'dot'}];
+  return levels.map(({v,dash}) => ({
+    type:'line', xref:'paper', yref:'y',
+    x0:0, x1:1, y0:v, y1:v,
+    line:{color:'#30363d', width:1, dash},
+  }));
+}
+
+// ── main render function ──────────────────────────────────────────────
 function renderChart(){
-  // stub — replaced in Step 3
-  if(!STATE.active.length) return;
-  setStatus(`${STATE.active.length} series selected — chart rendering coming in Step 3`);
+  if(!STATE.active.length){
+    document.getElementById('chart-placeholder').style.display = 'flex';
+    document.getElementById('plotly-chart').style.display      = 'none';
+    return;
+  }
+
+  const chartDiv   = document.getElementById('plotly-chart');
+  const placeholder= document.getElementById('chart-placeholder');
+
+  const traces = STATE.active.map(buildTrace).filter(Boolean);
+  if(!traces.length){
+    setStatus('No data in selected date range', 'error'); return;
+  }
+
+  const hasLeft  = STATE.active.some(s => s.axis === 'left');
+  const hasRight = STATE.active.some(s => s.axis === 'right');
+
+  // left-axis title: list metric labels
+  const leftLabels  = [...new Set(STATE.active.filter(s=>s.axis==='left')
+    .map(s => s.metric === 'zscore' ? 'Z-Score' : 'Raw'))];
+  const rightLabels = [...new Set(STATE.active.filter(s=>s.axis==='right')
+    .map(s => s.id))].slice(0,3);
+
+  const layout = {
+    paper_bgcolor: '#0d1117',
+    plot_bgcolor:  '#0d1117',
+    font:  {color:'#c9d1d9', family:'-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', size:11},
+    margin:{t:24, r: hasRight ? 70 : 20, b:44, l:60},
+    hovermode: 'x unified',
+    hoverlabel:{bgcolor:'#161b22', bordercolor:'#30363d', font:{size:11, color:'#c9d1d9'}},
+    xaxis:{
+      type:'date',
+      gridcolor:'#21262d', linecolor:'#30363d',
+      tickfont:{color:'#8b949e', size:10},
+      range: [STATE.dateFrom, STATE.dateTo].filter(Boolean),
+      showspikes: true, spikecolor:'#484f58', spikethickness:1,
+    },
+    yaxis:{
+      title: hasLeft ? leftLabels.join(' / ') : '',
+      gridcolor:'#21262d', linecolor:'#30363d',
+      tickfont:{color:'#8b949e', size:10},
+      zeroline:true, zerolinecolor:'#484f58', zerolinewidth:1,
+      titlefont:{color:'#8b949e', size:10},
+      visible: hasLeft,
+    },
+    yaxis2:{
+      title: hasRight ? rightLabels.join(', ') : '',
+      overlaying:'y', side:'right',
+      gridcolor:'#21262d', linecolor:'#30363d',
+      tickfont:{color:'#8b949e', size:10},
+      showgrid:false,
+      titlefont:{color:'#8b949e', size:10},
+      visible: hasRight,
+    },
+    shapes: hasLeft ? zRefShapes() : [],
+    modebar:{bgcolor:'transparent', color:'#484f58', activecolor:'#58a6ff'},
+    dragmode:'zoom',
+  };
+
+  const config = {
+    responsive:   true,
+    displaylogo:  false,
+    modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d'],
+    toImageButtonOptions:{format:'png', filename:'macro_chart', scale:2},
+  };
+
+  placeholder.style.display = 'none';
+  chartDiv.style.display     = 'block';
+
+  Plotly.react(chartDiv, traces, layout, config).catch(err => {
+    setStatus('Chart error: ' + err.message, 'error');
+  });
+
+  const n = traces.length;
+  const pts = traces.reduce((s,t) => s + (t.x ? t.x.length : 0), 0);
+  setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}`);
 }
 
 // ── Status bar ─────────────────────────────────────────────────────────────
