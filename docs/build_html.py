@@ -1703,11 +1703,10 @@ function redrawInlineStrips(){
 function updateChartMargin(){
   const panel = document.getElementById('legend-panel');
   const div   = document.getElementById('plotly-chart');
-  if(!div || !div.data || !panel || panel.style.display === 'none') return;
-  // getBoundingClientRect forces a synchronous layout flush so offsetHeight is accurate
-  const lh = panel.getBoundingClientRect().height;
-  if(lh < 1) return;
-  Plotly.relayout(div, {'margin.b': lh + 12});
+  if(!div || !div.data || !panel) return;
+  const lh = (panel.style.display !== 'none') ? panel.getBoundingClientRect().height : 0;
+  // margin.b = legend height + base x-axis space (44px for tick labels/marks)
+  Plotly.relayout(div, {'margin.b': lh + 44});
 }
 
 // ── main render function ──────────────────────────────────────────────
@@ -1747,7 +1746,7 @@ function renderChart(){
     // Access offsetHeight here (sync, before Plotly.react) to force layout flush
     // so legend height is accurate even on the very first render.
     margin:{t:24, r: hasRight ? 70 : 20,
-            b: Math.max(44, (()=>{ const p=document.getElementById('legend-panel'); return p && p.style.display!=='none' ? (p.offsetHeight||0)+12 : 44; })()),
+            b: (()=>{ const p=document.getElementById('legend-panel'); const lh = (p && p.style.display!=='none') ? (p.offsetHeight||0) : 0; return lh + 44; })(),
             l:60},
     hovermode: 'x unified',
     hoverlabel:{bgcolor:'#161b22', bordercolor:'#30363d', font:{size:11, color:'#c9d1d9'}},
