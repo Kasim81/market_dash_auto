@@ -638,9 +638,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 
 /* ── regime strip ── */
 #regime-strip-wrap{
-  border-top:1px solid #30363d;flex-shrink:0;display:none
+  border-top:1px solid #30363d;flex-shrink:0;
+  background:#0d1117;padding:4px 0 2px;display:none
 }
-/* expanded in Step 5 */
+.strip-row{
+  display:flex;align-items:center;margin-bottom:2px
+}
+.strip-label{
+  font-size:9px;color:#8b949e;white-space:nowrap;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  width:60px;text-align:right;padding-right:6px;flex-shrink:0
+}
+.strip-canvas-wrap{flex:1;position:relative;overflow:hidden}
+.strip-canvas{display:block;width:100%;height:14px}
+.strip-fwd .strip-canvas{height:9px}
+.strip-fwd .strip-label{color:#484f58;font-style:italic}
+#regime-color-key{
+  display:flex;flex-wrap:wrap;gap:6px 14px;
+  padding:4px 66px;margin-top:2px;border-top:1px solid #21262d
+}
+.key-item{display:flex;align-items:center;gap:4px;font-size:9px;color:#8b949e}
+.key-swatch{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+
+/* regime + fwd toggle buttons in legend row */
+.leg-strip-btns{display:flex;gap:3px;flex-shrink:0}
+.leg-strip-btn{
+  font-size:9px;padding:2px 5px;
+  background:transparent;border:1px solid #30363d;
+  border-radius:3px;color:#8b949e;cursor:pointer;line-height:1.4
+}
+.leg-strip-btn.active{background:#1f3a5c;color:#79c0ff;border-color:#388bfd}
 
 /* ── status bar ── */
 #statusbar{
@@ -686,7 +713,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <div id="plotly-chart"></div>
   </div>
   <div id="legend-panel"><div id="legend-panel-inner"></div></div>
-  <div id="regime-strip-wrap"></div>
+  <div id="regime-strip-wrap">
+    <div id="regime-strip-inner"></div>
+    <div id="regime-color-key"></div>
+  </div>
   <div id="statusbar" id="statusbar">Ready</div>
 </div>
 
@@ -1076,6 +1106,8 @@ document.getElementById('btn-clear').addEventListener('click', function(){
   document.getElementById('chart-placeholder').style.display = 'flex';
   document.getElementById('plotly-chart').style.display = 'none';
   document.getElementById('legend-panel').style.display = 'none';
+  document.getElementById('regime-strip-wrap').style.display = 'none';
+  document.getElementById('regime-strip-inner').innerHTML = '';
   document.getElementById('coverage-warn').className = '';
   document.getElementById('coverage-warn').innerHTML = '';
   if(typeof Plotly !== 'undefined')
@@ -1260,10 +1292,40 @@ function updateLegendPanel(){
       renderChart();
     });
 
+    // ── regime strip toggles (macro_market only) ──────────────────
+    let stripBtns = null;
+    if(s.source === 'macro_market'){
+      if(s.showRegime === undefined) s.showRegime = false;
+      if(s.showFwd    === undefined) s.showFwd    = false;
+      stripBtns = el('div','leg-strip-btns');
+
+      const rBtn = el('button','leg-strip-btn','R');
+      rBtn.title = 'Toggle regime strip';
+      if(s.showRegime) rBtn.classList.add('active');
+      rBtn.addEventListener('click', () => {
+        s.showRegime = !s.showRegime;
+        rBtn.classList.toggle('active', s.showRegime);
+        renderStrips();
+      });
+
+      const fBtn = el('button','leg-strip-btn','F');
+      fBtn.title = 'Toggle fwd_regime strip';
+      if(s.showFwd) fBtn.classList.add('active');
+      fBtn.addEventListener('click', () => {
+        s.showFwd = !s.showFwd;
+        fBtn.classList.toggle('active', s.showFwd);
+        renderStrips();
+      });
+
+      stripBtns.append(rBtn, fBtn);
+    }
+
     // ── assemble row ──────────────────────────────────────────────
     row.append(colorBtn, idEl, nmEl);
     if(metricToggle) row.appendChild(metricToggle);
-    row.append(axisToggle, styleEl, widthWrap, delBtn);
+    row.append(axisToggle, styleEl, widthWrap);
+    if(stripBtns) row.appendChild(stripBtns);
+    row.appendChild(delBtn);
     inner.appendChild(row);
   });
 }
@@ -1455,13 +1517,238 @@ function renderChart(){
   placeholder.style.display = 'none';
   chartDiv.style.display     = 'block';
 
-  Plotly.react(chartDiv, traces, layout, config).catch(err => {
-    setStatus('Chart error: ' + err.message, 'error');
-  });
+  Plotly.react(chartDiv, traces, layout, config)
+    .then(() => {
+      renderStrips();
+      // re-render strips on zoom / pan
+      chartDiv.removeAllListeners && chartDiv.removeAllListeners('plotly_relayout');
+      chartDiv.on('plotly_relayout', () => renderStrips());
+    })
+    .catch(err => setStatus('Chart error: ' + err.message, 'error'));
 
   const n = traces.length;
   const pts = traces.reduce((s,t) => s + (t.x ? t.x.length : 0), 0);
   setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}`);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// STEP 5 — REGIME STRIP ENGINE
+// ══════════════════════════════════════════════════════════════════════
+
+// ── semantic colour mapping ───────────────────────────────────────────
+const REGIME_PALETTE = {
+  // explicit label overrides (substring match, checked in order)
+  positive: [
+    'pro-growth','risk-on','carry-on','bull','expansion','broad-expansion',
+    'overperform','outperform','above-trend','vol-compressing','trend-up',
+    'us-equity-regime','global-equity-regime','carry-regime','labour-strong',
+    'labour-tight','china-carry-attractive','india-carry-attractive',
+    'weak-usd','commodity-bull','growth-inflation','ism-expansion',
+    'housing-expanding','abundant','strong','improving','leading',
+    'cny-strengthening','inr-strengthening','japan-outperform',
+    'eurozone-outperform','eu-above','asia-above','china-outperform',
+    'em-outperform','global-risk-on','uk-domestic','uk-credit-appetite',
+    'china-domestic','india-domestic',
+  ],
+  negative: [
+    'defensive','stress','contraction','risk-off','carry-unwind','bear',
+    'below-trend','vol-expanding','trend-down','bond-regime','labour-weak',
+    'labour-slack','unattractive','recession','commodity-bear','deflation',
+    'ism-contraction','housing-contracting','tight-liquidity','deteriorating',
+    'cny-weakening','inr-weakening','japan-underperform','eurozone-underperform',
+    'eu-below','asia-below','china-underperform','em-outperform',
+    'global-risk-off','peripheral-stress','uk-risk','flight-to-quality',
+    'high-real-rates','dm-outperform','carry-unattractive',
+    'strong-usd','eu-leads','china-leads',
+  ],
+  neutral: [
+    'neutral','balanced','mixed','normal','near-trend','stable',
+    'ism-neutral','labour-balanced',
+  ],
+};
+
+// Fill colours (dark-theme friendly, semi-transparent feel via hex)
+const STRIP_COLORS = {
+  positive: '#1a4731',   // dark green
+  negative: '#4a1515',   // dark red
+  neutral:  '#1c2128',   // mid grey
+  na:       '#161b22',   // near-background
+};
+
+function regimeCategory(label){
+  if(!label || label === 'null') return 'na';
+  const l = label.toLowerCase();
+  for(const kw of REGIME_PALETTE.positive){ if(l.includes(kw)) return 'positive'; }
+  for(const kw of REGIME_PALETTE.negative){ if(l.includes(kw)) return 'negative'; }
+  for(const kw of REGIME_PALETTE.neutral) { if(l.includes(kw)) return 'neutral';  }
+  return 'neutral';
+}
+function regimeColor(label){ return STRIP_COLORS[regimeCategory(label)]; }
+
+// ── get Plotly axis pixel geometry ───────────────────────────────────
+function getXGeometry(){
+  const div = document.getElementById('plotly-chart');
+  if(!div || !div._fullLayout) return null;
+  const fl  = div._fullLayout;
+  const xa  = fl.xaxis;
+  if(!xa || !xa.range) return null;
+  return {
+    t0:    new Date(xa.range[0]).getTime(),
+    t1:    new Date(xa.range[1]).getTime(),
+    left:  fl.margin.l,
+    right: fl.margin.r,
+    totalW: fl.width,
+  };
+}
+
+function dateToFrac(dateStr, geo){
+  const t = new Date(dateStr).getTime();
+  return (t - geo.t0) / (geo.t1 - geo.t0);
+}
+
+// ── draw one strip canvas ─────────────────────────────────────────────
+function drawStripCanvas(canvas, dates, labels, geo){
+  const plotW = geo.totalW - geo.left - geo.right;
+  const dpr   = window.devicePixelRatio || 1;
+  const cssW  = canvas.parentElement.clientWidth;
+  const cssH  = canvas.offsetHeight || 14;
+  canvas.width  = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  // The strip spans the full cssW; the plot area starts at geo.left px
+  // from the left of the Plotly chart div, which is the same left offset
+  // we need to apply to the strip canvas.
+  const stripPlotW = cssW - geo.left - geo.right;
+  if(stripPlotW <= 0) return;
+
+  dates.forEach((d, i) => {
+    const frac0 = dateToFrac(d, geo);
+    const frac1 = i < dates.length - 1 ? dateToFrac(dates[i+1], geo) : 1.0;
+    if(frac1 < 0 || frac0 > 1) return;
+    const x0 = geo.left + Math.max(0, frac0) * stripPlotW;
+    const x1 = geo.left + Math.min(1, frac1) * stripPlotW;
+    if(x1 <= x0) return;
+    ctx.fillStyle = regimeColor(labels[i]);
+    ctx.fillRect(x0, 0, x1 - x0, cssH);
+  });
+
+  // faint border between plot area and margins
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0,        0, geo.left,      cssH);
+  ctx.fillRect(cssW - geo.right, 0, geo.right, cssH);
+}
+
+// ── build or update the color key ────────────────────────────────────
+function updateColorKey(){
+  const key = document.getElementById('regime-color-key');
+  if(!key) return;
+  const seenLabels = new Set();
+  STATE.active.forEach(s => {
+    if(s.source !== 'macro_market' || (!s.showRegime && !s.showFwd)) return;
+    const ind = MAIN_DATA.macro_market.indicators[s.key];
+    if(!ind) return;
+    (ind.regime || []).forEach(r => { if(r) seenLabels.add(r); });
+    (ind.fwd_regime || []).forEach(r => { if(r && !r.includes('n/a')) seenLabels.add(r); });
+  });
+
+  key.innerHTML = '';
+  if(!seenLabels.size){ key.style.display = 'none'; return; }
+  key.style.display = 'flex';
+
+  // group by category for a clean legend
+  const byCat = {positive:[], negative:[], neutral:[]};
+  seenLabels.forEach(lbl => {
+    const cat = regimeCategory(lbl);
+    if(cat !== 'na' && byCat[cat]) byCat[cat].push(lbl);
+  });
+
+  ['positive','negative','neutral'].forEach(cat => {
+    if(!byCat[cat].length) return;
+    const catDiv = el('div','key-cat');
+    catDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px;';
+    byCat[cat].forEach(lbl => {
+      const item   = el('div','key-item');
+      const swatch = el('div','key-swatch');
+      swatch.style.background = STRIP_COLORS[cat];
+      swatch.style.border     = '1px solid #30363d';
+      item.append(swatch, document.createTextNode(lbl));
+      catDiv.appendChild(item);
+    });
+    key.appendChild(catDiv);
+  });
+}
+
+// ── main strip render ─────────────────────────────────────────────────
+function renderStrips(){
+  const wrap  = document.getElementById('regime-strip-wrap');
+  const inner = document.getElementById('regime-strip-inner');
+  if(!inner) return;
+
+  const geo = getXGeometry();
+  const stripSeries = STATE.active.filter(
+    s => s.source === 'macro_market' && (s.showRegime || s.showFwd)
+  );
+
+  if(!geo || !stripSeries.length){
+    wrap.style.display = 'none';
+    inner.innerHTML    = '';
+    return;
+  }
+
+  wrap.style.display  = 'block';
+  inner.innerHTML     = '';
+
+  const mmDates = MAIN_DATA.macro_market.dates;
+  // filter dates to current date range (same logic as getSeriesData)
+  const from = STATE.dateFrom, to = STATE.dateTo;
+  const filtIdx = mmDates.map((_,i)=>i).filter(i => {
+    const d = mmDates[i];
+    return (!from || d >= from) && (!to || d <= to);
+  });
+  const filtDates = filtIdx.map(i => mmDates[i]);
+
+  stripSeries.forEach(s => {
+    const ind = MAIN_DATA.macro_market.indicators[s.key];
+    if(!ind) return;
+
+    // regime row
+    if(s.showRegime){
+      const regimes = filtIdx.map(i => ind.regime[i] ?? null);
+      const row = el('div','strip-row');
+      const lbl = el('span','strip-label', s.id);
+      lbl.style.color = s.color;
+      const wrap2 = el('div','strip-canvas-wrap');
+      const cv    = document.createElement('canvas');
+      cv.className = 'strip-canvas';
+      wrap2.appendChild(cv);
+      row.append(lbl, wrap2);
+      inner.appendChild(row);
+      // defer drawing until layout is settled
+      requestAnimationFrame(() => drawStripCanvas(cv, filtDates, regimes, geo));
+    }
+
+    // fwd_regime row
+    if(s.showFwd){
+      const fwds = filtIdx.map(i => (ind.fwd_regime || [])[i] ?? null);
+      const row2 = el('div','strip-row strip-fwd');
+      const lbl2 = el('span','strip-label', s.id + ' fwd');
+      const wrap3 = el('div','strip-canvas-wrap');
+      const cv2   = document.createElement('canvas');
+      cv2.className = 'strip-canvas';
+      wrap3.appendChild(cv2);
+      row2.append(lbl2, wrap3);
+      inner.appendChild(row2);
+      requestAnimationFrame(() => drawStripCanvas(cv2, filtDates, fwds, geo));
+    }
+  });
+
+  updateColorKey();
 }
 
 // ── Status bar ─────────────────────────────────────────────────────────────
