@@ -115,7 +115,7 @@ HIST_START = "2000-01-01"
 #   ZSCORE_WINDOW = None
 # pandas rolling(window=None, min_periods=...) becomes an expanding window.
 # ===========================================================================
-ZSCORE_WINDOW      = 260    # 5-year rolling window (weeks)
+ZSCORE_WINDOW      = 156    # 3-year rolling window (weeks)
 ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
@@ -547,7 +547,7 @@ REGIME_RULES = {
     "US_EQ_F3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
     "US_EQ_F4": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
     "US_EQ_F1":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
-    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
+    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
     "US_R1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
@@ -839,8 +839,8 @@ def _calc_US_EQ_F3(cp, **_):
 
 
 def _calc_US_G3(cp, **_):
-    """Financials vs Utilities (2-ticker): log(XLF / XLU)."""
-    return _log_ratio(_p(cp, "XLF"), _p(cp, "XLU"))
+    """Banks vs Utilities: log(^SP500-4010 / XLU)."""
+    return _log_ratio(_p(cp, "^SP500-4010"), _p(cp, "XLU"))
 
 
 def _calc_US_EQ_F4(cp, **_):
@@ -854,8 +854,8 @@ def _calc_US_EQ_F1(cp, **_):
 
 
 def _calc_US_EQ_F2(cp, **_):
-    """Growth vs Value (S&P 500): log(IVW / IVE)."""
-    return _log_ratio(_p(cp, "IVW"), _p(cp, "IVE"))
+    """Value vs Growth (S&P 500): log(IVE / IVW)."""
+    return _log_ratio(_p(cp, "IVE"), _p(cp, "IVW"))
 
 
 # ---------------------------------------------------------------------------
