@@ -1860,8 +1860,12 @@ function renderChart(){
   const config = {
     responsive:   true,
     displaylogo:  false,
-    modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d'],
-    toImageButtonOptions:{format:'png', filename:'macro_chart', scale:2},
+    modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d','toImage'],
+    modeBarButtonsToAdd: [{
+      name: 'Download as PNG',
+      icon: Plotly.Icons.camera,
+      click: () => downloadFullSnapshot(),
+    }],
   };
 
   placeholder.style.display = 'none';
@@ -1881,6 +1885,99 @@ function renderChart(){
   setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}`);
 }
 
+// ── Full snapshot (title + chart + legend + regime strips) ────────────
+function downloadFullSnapshot(){
+  const scale = 2;
+  const chartDiv = document.getElementById('plotly-chart');
+  if(!chartDiv) return;
+
+  Plotly.toImage(chartDiv, {format:'png', scale, width: chartDiv.offsetWidth, height: chartDiv.offsetHeight})
+    .then(plotDataUrl => {
+      const plotImg = new Image();
+      plotImg.onload = () => {
+        const W = plotImg.width;
+        const titleH   = 40 * scale;
+        const legendH  = buildLegendHeight() * scale;
+        const stripH   = buildStripHeight() * scale;
+        const totalH   = titleH + plotImg.height + legendH + stripH;
+
+        const c = document.createElement('canvas');
+        c.width  = W;
+        c.height = totalH;
+        const ctx = c.getContext('2d');
+
+        // background
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(0, 0, W, totalH);
+
+        // title
+        const titleText = document.getElementById('chart-title').value || '';
+        ctx.fillStyle = '#c9d1d9';
+        ctx.font = `${14 * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(titleText, 12 * scale, titleH / 2);
+
+        // plot image
+        ctx.drawImage(plotImg, 0, titleH);
+
+        // legend
+        let yOff = titleH + plotImg.height;
+        const active = STATE.active;
+        if(active.length){
+          ctx.font = `${11 * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif`;
+          const lineH = 18 * scale;
+          const pad = 12 * scale;
+          active.forEach(s => {
+            const {fullName} = getSeriesDetail(s);
+            ctx.fillStyle = s.color;
+            ctx.fillRect(pad, yOff + 4*scale, 10*scale, 10*scale);
+            ctx.fillStyle = '#c9d1d9';
+            ctx.fillText(`${s.id} — ${fullName}`, pad + 14*scale, yOff + lineH/2);
+            yOff += lineH;
+          });
+        }
+
+        // regime color key
+        const keyEl = document.getElementById('regime-color-key');
+        if(keyEl && keyEl.style.display !== 'none'){
+          yOff += 4 * scale;
+          ctx.font = `${10 * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif`;
+          let xOff = 12 * scale;
+          keyEl.querySelectorAll('.key-item').forEach(item => {
+            const swatch = item.querySelector('.key-swatch');
+            const label  = item.textContent.trim();
+            const swatchColor = swatch ? swatch.style.background : '#1c2128';
+            ctx.fillStyle = swatchColor;
+            ctx.fillRect(xOff, yOff + 2*scale, 8*scale, 8*scale);
+            ctx.fillStyle = '#8b949e';
+            const textW = ctx.measureText(label).width;
+            ctx.fillText(label, xOff + 10*scale, yOff + 7*scale);
+            xOff += 10*scale + textW + 12*scale;
+            if(xOff > W - 50*scale){ xOff = 12*scale; yOff += 14*scale; }
+          });
+        }
+
+        // download
+        const a = document.createElement('a');
+        a.download = 'macro_chart.png';
+        a.href = c.toDataURL('image/png');
+        a.click();
+      };
+      plotImg.src = plotDataUrl;
+    });
+}
+
+function buildLegendHeight(){
+  const n = STATE.active.length;
+  const keyEl = document.getElementById('regime-color-key');
+  const keyH = (keyEl && keyEl.style.display !== 'none') ? 20 : 0;
+  return n * 18 + keyH + 8;
+}
+
+function buildStripHeight(){
+  return 0; // strips are overlay canvases, captured via the plot image
+}
+
 // ══════════════════════════════════════════════════════════════════════
 // STEP 5 — REGIME STRIP ENGINE
 // ══════════════════════════════════════════════════════════════════════
@@ -1898,10 +1995,11 @@ const REGIME_PALETTE = {
     'cny-strengthening','inr-strengthening','japan-outperform',
     'eurozone-outperform','eu-above','asia-above','china-outperform',
     'em-outperform','global-risk-on','uk-domestic','uk-credit-appetite',
-    'china-domestic','india-domestic',
+    'china-domestic','india-domestic','opportunity',
   ],
   negative: [
     'defensive','stress','contraction','risk-off','carry-unwind','bear',
+    'frothy',
     'below-trend','vol-expanding','trend-down','bond-regime','labour-weak',
     'labour-slack','unattractive','recession','commodity-bear','deflation',
     'ism-contraction','housing-contracting','tight-liquidity','deteriorating',
@@ -1915,12 +2013,16 @@ const REGIME_PALETTE = {
     'neutral','balanced','mixed','normal','near-trend','stable',
     'ism-neutral','labour-balanced',
   ],
+  amber: [
+    'complacent','caution','elevated','late-cycle',
+  ],
 };
 
 // Fill colours (dark-theme friendly, semi-transparent feel via hex)
 const STRIP_COLORS = {
   positive: '#1a4731',   // dark green
   negative: '#4a1515',   // dark red
+  amber:    '#4a3a15',   // dark amber/yellow
   neutral:  '#1c2128',   // mid grey
   na:       '#161b22',   // near-background
 };
@@ -1930,6 +2032,7 @@ function regimeCategory(label){
   const l = label.toLowerCase();
   for(const kw of REGIME_PALETTE.positive){ if(l.includes(kw)) return 'positive'; }
   for(const kw of REGIME_PALETTE.negative){ if(l.includes(kw)) return 'negative'; }
+  for(const kw of REGIME_PALETTE.amber)   { if(l.includes(kw)) return 'amber';    }
   for(const kw of REGIME_PALETTE.neutral) { if(l.includes(kw)) return 'neutral';  }
   return 'neutral';
 }
@@ -2012,13 +2115,13 @@ function updateColorKey(){
   key.style.display = 'flex';
 
   // group by category for a clean legend
-  const byCat = {positive:[], negative:[], neutral:[]};
+  const byCat = {positive:[], negative:[], amber:[], neutral:[]};
   seenLabels.forEach(lbl => {
     const cat = regimeCategory(lbl);
     if(cat !== 'na' && byCat[cat]) byCat[cat].push(lbl);
   });
 
-  ['positive','negative','neutral'].forEach(cat => {
+  ['positive','negative','amber','neutral'].forEach(cat => {
     if(!byCat[cat].length) return;
     const catDiv = el('div','key-cat');
     catDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px;';

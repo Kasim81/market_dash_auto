@@ -554,9 +554,11 @@ REGIME_RULES = {
         else _r(r, z, 1, -1, "early-cycle", "late-cycle", "mid-cycle")
     ),
     "US_Cr2":  lambda r, z: (
-        "stress"  if (not np.isnan(r) and r > 700) or (not np.isnan(z) and z > 1.5)
-        else ("frothy" if not np.isnan(z) and z < -1 and not np.isnan(r) and r < 400
-              else "normal")
+        "opportunity" if (not np.isnan(r) and r > 800) or (not np.isnan(z) and z > 2)
+        else ("stress" if not np.isnan(z) and z > 1 and not np.isnan(r) and r > 500
+              else ("frothy" if not np.isnan(r) and r < 300 and not np.isnan(z) and z < -1
+                    else ("complacent" if not np.isnan(r) and r < 400 and not np.isnan(z) and z < -0.5
+                          else "normal")))
     ),
     "GL_CA_I1":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
     "US_Cr1":  lambda r, z: (
