@@ -36,12 +36,12 @@ US_M2L1,US & Neighbours,Liquidity,2026-04-03,4.095428,0.1018,neutral,stable,M2SL
 US_G5,US & Neighbours,Growth / technology leadership,2026-04-03,-0.114324,0.9267,neutral,stable,log(QQQ / SPY)
 US_G6,US & Neighbours,Growth / market breadth,2026-04-03,-1.222745,-1.2087,narrow-concentrated,stable,log(RSP / SPY)
 US_ISM1,US & Neighbours,Leading / ISM Manufacturing New Orders,,,,Insufficient Data,n/a,"NAPMOI level (monthly FRED, forward-filled)"
-US_I11,US & Neighbours,Rates & Credit / mortgage affordability,2026-04-03,2.11,-0.4731,neutral,stable,MORTGAGE30US - DGS10 (mortgage-Treasury spread)
+US_I11,US & Neighbours,Rates & Credit / mortgage affordability,2026-04-10,2.12,-0.4603,neutral,stable,MORTGAGE30US - DGS10 (mortgage-Treasury spread)
 US_LAB2,US & Neighbours,Labour market / JOLTS tightness,2026-03-06,0.908995,-1.2413,labour-slack,stable [leading],JTSJOL / UNEMPLOY (job openings per unemployed person)
 EU_G1,Europe & UK,Growth / cyclicals vs defensives (Europe),2026-04-03,0.601629,0.9677,neutral,stable,log((EXH4.DE+EXV1.DE+EXV3.DE) / (EXH9.DE+EXH3.DE))
 EU_G2,Europe & UK,UK domestic vs global,2026-04-03,0.72936,-1.9772,global-preferred,stable,log(FTMC / FTSE100)
 EU_G3,Europe & UK,Eurozone vs US leadership,2026-04-03,-2.351535,0.1616,neutral,stable,log(EuroStoxx50_USD / SPY_USD)
-EU_I1,Europe & UK,Euro credit vs govts,2026-04-03,3.26,-0.5848,neutral,stable,ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)
+EU_I1,Europe & UK,Euro credit vs govts,2026-04-10,3.26,-0.5867,neutral,stable,ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)
 EU_I2,Europe & UK,UK real-yield / inflation proxy,2026-04-03,0.158969,-0.982,neutral,stable,log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio
 EU_I3,Europe & UK,UK–Germany gilt-bund spread,2026-02-06,1.625733,0.0866,neutral,stable,IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)
 EU_R1,Europe & UK,UK credit conditions,2026-04-03,-2.099686,1.1715,credit-appetite,stable,log(SLXX.L / IGLT.L)
@@ -50,7 +50,7 @@ EU_I4,Europe & UK,Peripheral sovereign stress / BTP-Bund,2026-02-06,0.581333,-1.
 EU_G4,Europe & UK,Eurozone vs global equities,2026-04-03,-1.057588,0.2455,neutral,stable,log(EZU / URTH)
 JP_G1,Japan,Japan vs global equities,2026-04-03,-0.75641,0.1821,neutral,stable,log(EWJ / URTH)
 JP_FX1,Japan,JPY carry trade signal,2026-04-03,0.075488,0.5598,carry-on,stable [leading],log(USDJPY=X) 26-week momentum
-AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-10,-0.081458,-0.1512,neutral,stable,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
+AS_G1,Asia (China-centred),China size / domestic cycle,2026-04-10,-0.087241,-0.2022,neutral,stable,log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy
 AS_G2,Asia (China-centred),China vs global DM,2026-04-03,0.860044,1.2273,China-outperform,stable,log(000001.SS_USD / URTH_USD)
 AS_G3,Asia (China-centred),India domestic growth breadth,2026-04-03,3.071197,-0.9476,neutral,stable,avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50
 AS_I1,Asia (China-centred),China rates vs US,,,,Insufficient Data,n/a,IRLTLT01CNM156N - DGS10 (FRED)
