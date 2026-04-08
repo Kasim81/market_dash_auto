@@ -1,16 +1,19 @@
 """
 library_utils.py
 ================
-Shared constants and helpers for fetch_data.py and fetch_hist.py.
+Shared constants and helpers for the pipeline.
 
 Contains:
   - Sort order dicts (asset class, region, subclass, sector, etc.)
+  - INDICATOR_GROUP_ORDER / INDICATOR_SUB_GROUP_ORDER — display order for
+    macro-market indicator groups and sub-groups (used by build_html.py,
+    compute_macro_market.py, and any future consumers)
   - lib_sort_key() — sort key function for index_library.csv rows
   - COMP_FX_TICKERS — single authoritative currency → yfinance ticker map
   - COMP_FCY_PER_USD — set of indirect-quote currencies (1 USD = X FCY)
 
-Both fetch_data.py and fetch_hist.py import from here.
-Do NOT duplicate these definitions in those files.
+Imported by fetch_data.py, fetch_hist.py, build_html.py, and
+compute_macro_market.py.  Do NOT duplicate these definitions elsewhere.
 """
 
 # ---------------------------------------------------------------------------
@@ -117,6 +120,60 @@ RATES_SUBCLASS_ORDER = {
 
 SPREAD_SUBCLASS_ORDER = {
     "Corp IG": 1, "Credit Spread": 2, "Corp HY": 3,
+}
+
+# ---------------------------------------------------------------------------
+# INDICATOR GROUP / SUB-GROUP ORDER
+# Controls display order in build_html.py (indicator explorer sidebar)
+# and any future consumers.  Follows the same pattern as ASSET_CLASS_GROUP,
+# REGION_ORDER, etc.
+# ---------------------------------------------------------------------------
+
+INDICATOR_GROUP_ORDER = {
+    "US":               1,
+    "UK":               2,
+    "Europe":           3,
+    "Japan":            4,
+    "Asia":             5,
+    "Global":           6,
+    "FX & Commodities": 7,
+}
+
+INDICATOR_SUB_GROUP_ORDER = {
+    # ── US ──
+    "Equity - Growth":          1,
+    "Equity - Factor (Style)":  2,
+    "Equity - Factor (Size)":   3,
+    "CrossAsset - Growth":      4,
+    "CrossAsset - Inflation":   5,
+    "Credit":                   6,
+    "Rates - Growth":           7,
+    "Rates - Inflation":        8,
+    "Rates":                    9,
+    "Volatility":              10,
+    "Macro":                   11,
+    "Macro - Survey":          12,
+    "Mmtm - Equity":           13,
+    "Mmtm - CrossAsset":       14,
+    "Mmtm - Credit":           15,
+    "Mmtm - Volatility":       16,
+    # ── UK ──  (shared labels reuse the same sort key above)
+    # ── Europe ──
+    "CLI":                     17,
+    # ── Asia ──
+    "China - Equity (Growth)":        18,
+    "China - Equity - Factor (Size)": 19,
+    "China - Rates":                  20,
+    "India - Equity - Factor (Size)": 21,
+    "India - Rates":                  22,
+    # ── FX & Commodities ──
+    "China - FX Mmtm":         23,
+    "India - FX Mmtm":         24,
+    "Japan - FX Mmtm":         25,
+    "Growth (China infra)":    26,
+    "Growth (China broad)":    27,
+    "Growth Mmtm":             28,
+    "Inflation":               29,
 }
 
 # ---------------------------------------------------------------------------
