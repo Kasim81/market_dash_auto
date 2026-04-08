@@ -74,18 +74,18 @@ The combination of four sectors creates a more robust signal than US_G1 alone, l
 
 ---
 
-### US_G2b — Financials vs Utilities
+### US_G3 — Banks vs Utilities
 
 | | |
 |---|---|
-| **Formula** | `log(XLF / XLU)` |
-| **Data** | XLF (Financials), XLU (Utilities) — yfinance TR |
+| **Formula** | `log(^SP500-4010 / XLU)` |
+| **Data** | S&P 500 Banks Industry Group (^SP500-4010) / SPDR S&P 500 Utilities ETF (XLU) — yfinance TR |
 
 **Economic Rationale**
 
-A focused two-ticker version of US_G2 that isolates the *credit and rates* dimension of the cycle. Financials earn more when the yield curve is steep (NIM expands as they borrow short and lend long), when loan demand is strong, and when credit losses are low — all conditions associated with early and mid-cycle expansion. Utilities are explicitly rate-sensitive: their dividend yields compete with bonds, so they outperform in falling-rate or growth-scare environments.
+A focused two-ticker version of US_G2 that isolates the *credit and rates* dimension of the cycle using the S&P 500 Banks industry group rather than broad financials (XLF). Banks are more directly leveraged to the yield curve, loan demand, and credit losses than the broader financials sector (which includes insurance, fintech, and asset management). Banks earn more when the yield curve is steep (NIM expands as they borrow short and lend long), when loan demand is strong, and when credit losses are low — all conditions associated with early and mid-cycle expansion. Utilities are explicitly rate-sensitive: their dividend yields compete with bonds, so they outperform in falling-rate or growth-scare environments.
 
-The XLF/XLU ratio is therefore a combined proxy for (1) yield curve steepness, (2) credit demand, and (3) risk appetite — making it a compact recession indicator. Borio & Lowe (2002, BIS) document that banking sector underperformance relative to defensive sectors reliably precedes credit-cycle downturns.
+The banks/utilities ratio is therefore a combined proxy for (1) yield curve steepness, (2) credit demand, and (3) risk appetite — making it a compact recession indicator. Borio & Lowe (2002, BIS) document that banking sector underperformance relative to defensive sectors reliably precedes credit-cycle downturns.
 
 **Regime Classification**
 
@@ -96,7 +96,7 @@ The XLF/XLU ratio is therefore a combined proxy for (1) yield curve steepness, (
 
 ---
 
-### US_G3 — Size Cycle (Russell 2000 / Russell 1000)
+### US_EQ_F3 — Size Cycle (Russell 2000 / Russell 1000)
 
 | | |
 |---|---|
@@ -120,7 +120,7 @@ Research by Ibbotson et al. (2013) and more recently AQR (2018) confirms that sm
 
 ---
 
-### US_G3b — Size Cycle S&P Proxy (Russell 2000 / S&P 500)
+### US_EQ_F4 — Size Cycle S&P Proxy (Russell 2000 / S&P 500)
 
 | | |
 |---|---|
@@ -129,11 +129,11 @@ Research by Ibbotson et al. (2013) and more recently AQR (2018) confirms that sm
 
 **Economic Rationale**
 
-Functionally identical in economic meaning to US_G3 but benchmarks the Russell 2000 against the most widely followed large-cap index rather than the Russell 1000. The S&P 500 includes a large weight in mega-cap technology and platform companies — which have near-zero correlation with the domestic credit cycle — making this ratio slightly more sensitive to the cyclical vs secular-growth distinction than the Russell 2000/1000 pair. Both indicators are retained as they can diverge at tech cycle peaks.
+Functionally identical in economic meaning to US_EQ_F3 but benchmarks the Russell 2000 against the most widely followed large-cap index rather than the Russell 1000. The S&P 500 includes a large weight in mega-cap technology and platform companies — which have near-zero correlation with the domestic credit cycle — making this ratio slightly more sensitive to the cyclical vs secular-growth distinction than the Russell 2000/1000 pair. Both indicators are retained as they can diverge at tech cycle peaks.
 
 ---
 
-### US_G4 — Style: Value vs Growth (Russell 1000)
+### US_EQ_F1 — Style: Value vs Growth (Russell 1000)
 
 | | |
 |---|---|
@@ -146,7 +146,7 @@ The *value premium* — the historical tendency of cheap stocks (high book/price
 
 Growth stocks (technology, biotech, platform companies) have long-duration cash flows heavily weighted to the distant future. Like long-duration bonds, their present value is highly sensitive to the discount rate. When real rates rise, the PV of those distant cash flows falls more than the PV of near-term value cash flows — causing growth to underperform value. When real rates fall or remain low, the opposite holds.
 
-This relationship was quantified by Lettau & Wachter (2007, JF) and has been consistently confirmed in practitioner research by AQR, GMO, and Research Affiliates. For a 6–9 month investor, the key variable is the *direction* of real rates (US_RR1), which US_G4 tends to anticipate in price.
+This relationship was quantified by Lettau & Wachter (2007, JF) and has been consistently confirmed in practitioner research by AQR, GMO, and Research Affiliates. For a 6–9 month investor, the key variable is the *direction* of real rates (US_R5), which US_EQ_F1 tends to anticipate in price.
 
 **Regime Classification**
 
@@ -158,18 +158,16 @@ This relationship was quantified by Lettau & Wachter (2007, JF) and has been con
 
 ---
 
-### US_G4b — Style: Growth vs Value (S&P 500)
+### US_EQ_F2 — Style: Value vs Growth (S&P 500)
 
 | | |
 |---|---|
-| **Formula** | `log(IVW / IVE)` |
-| **Data** | iShares S&P 500 Growth ETF (IVW) / iShares S&P 500 Value ETF (IVE) — yfinance TR |
+| **Formula** | `log(IVE / IVW)` |
+| **Data** | iShares S&P 500 Value ETF (IVE) / iShares S&P 500 Growth ETF (IVW) — yfinance TR |
 
 **Economic Rationale**
 
-The inverse of US_G4 using the S&P 500 decomposition rather than the Russell 1000. The S&P 500 growth/value split weights mega-cap technology more heavily (Apple, Microsoft, NVIDIA etc. dominate IVW) than the Russell 1000 equivalent. This means US_G4b is particularly sensitive to AI/technology cycle dynamics that may not show up as strongly in the broader Russell series. Both indicators are retained: US_G4 gives the broad style signal, US_G4b isolates the mega-cap-tech dimension.
-
-Note that because this is *growth/value* (inverted relative to US_G4), z > +1 here means the *growth regime*, not the value regime.
+The S&P 500 counterpart to US_EQ_F1, using the same value/growth convention (positive z = value regime). The S&P 500 growth/value split weights mega-cap technology more heavily (Apple, Microsoft, NVIDIA etc. dominate IVW) than the Russell 1000 equivalent. This means US_EQ_F2 is particularly sensitive to AI/technology cycle dynamics that may not show up as strongly in the broader Russell series. Both indicators are retained: US_EQ_F1 gives the broad style signal, US_EQ_F2 isolates the mega-cap-tech dimension.
 
 ---
 
@@ -200,7 +198,7 @@ For a 6–9 month investor, the signal is most actionable *at the inflection* �
 
 ---
 
-### US_G6 — Market Breadth (Equal-Weight vs Cap-Weight S&P 500)
+### US_G4 — Market Breadth (Equal-Weight vs Cap-Weight S&P 500)
 
 | | |
 |---|---|
@@ -227,19 +225,19 @@ For a 6–9 month investor, this indicator is particularly useful as a *risk man
 
 ---
 
-*End of Section 1 — US Growth & Style Indicators (9 indicators: US_G1, US_G2, US_G2b, US_G3, US_G3b, US_G4, US_G4b, US_G5, US_G6)*
+*End of Section 1 — US Growth & Style Indicators (9 indicators: US_G1, US_G2, US_G3, US_EQ_F3, US_EQ_F4, US_EQ_F1, US_EQ_F2, US_G5, US_G4)*
 
 ---
 
 ## 2. US Rates, Credit, Volatility & Momentum
 
-### Section 2a — US Rates & Credit (US_I1–I11, US_R1–R2, US_RR1)
+### Section 2a — US Rates, Credit & Volatility (US_R1–R6, US_Cr1–Cr4, US_V1–V2, US_CA_G1, GL_CA_I1)
 
 *Fixed-income and credit indicators are the backbone of macro regime identification. They reflect the cost and availability of capital — the single most important driver of business investment, housing, and consumer spending over a 6–9 month horizon. Unlike equity ratios, which can remain elevated for years on sentiment, credit spreads and yield curves have hard economic anchors in default rates and monetary policy.*
 
 ---
 
-### US_I1 — Yield-Curve Slope 10Y–3M
+### US_R1 — Yield-Curve Slope 10Y–3M
 
 | | |
 |---|---|
@@ -266,7 +264,7 @@ For a 6–9 month investor, the key insight is *where you are in the inversion c
 
 ---
 
-### US_I6 — Yield-Curve Slope 2s10s (FRED)
+### US_R2 — Yield-Curve Slope 2s10s (FRED)
 
 | | |
 |---|---|
@@ -277,48 +275,48 @@ For a 6–9 month investor, the key insight is *where you are in the inversion c
 
 The 2s10s curve is the market's benchmark measure of monetary policy stance vs. long-run growth expectations. The 2-year yield is highly sensitive to Fed policy expectations 1–2 years out; the 10-year reflects the longer-run nominal growth and inflation outlook.
 
-While the 10Y–3M spread (US_I1) is the better *recession predictor*, the 2s10s spread is more widely used by traders and market participants because it is more liquid and more reactive to near-term Fed policy shifts. Reinhart & Rogoff (2009) and Campbell Harvey's original dissertation (1986) document both curves' predictive power. The 2s10s is complementary to US_I1: divergence between the two signals can identify whether the inversion is driven by Fed overtightening (3M elevated) or by collapsing long-run growth expectations (10Y falling).
+While the 10Y–3M spread (US_R1) is the better *recession predictor*, the 2s10s spread is more widely used by traders and market participants because it is more liquid and more reactive to near-term Fed policy shifts. Reinhart & Rogoff (2009) and Campbell Harvey's original dissertation (1986) document both curves' predictive power. The 2s10s is complementary to US_R1: divergence between the two signals can identify whether the inversion is driven by Fed overtightening (3M elevated) or by collapsing long-run growth expectations (10Y falling).
 
-### US_I6b — Yield-Curve Slope 2s10s (Market)
+### US_R3 — Yield-Curve Slope 2s10s (Market)
 
 | | |
 |---|---|
 | **Formula** | `^TNX (yfinance) − DGS2 (FRED)` |
 | **Data** | yfinance 10Y yield level + FRED 2Y CMT |
 
-Functionally identical to US_I1 in interpretation. Retained as a cross-check: the yfinance-sourced 10Y yield updates intraday, while FRED T10Y2Y has a 1-day publication lag. Any persistent divergence between US_I6 and US_I6b would indicate a data feed issue.
+Functionally identical to US_R1 in interpretation. Retained as a cross-check: the yfinance-sourced 10Y yield updates intraday, while FRED T10Y2Y has a 1-day publication lag. Any persistent divergence between US_R2 and US_R3 would indicate a data feed issue.
 
 ---
 
-### US_I2 — US High-Yield Credit Spread (OAS)
+### US_Cr2 — US High-Yield Credit Spread (5-Regime Framework)
 
 | | |
 |---|---|
-| **Formula** | `BAMLH0A0HYM2` — ICE BofA US High Yield Master II Option-Adjusted Spread |
-| **Data** | FRED (Federal Reserve Economic Data), St. Louis Fed |
-| **Regime trigger** | Level-based: OAS > 700 bps or z > +1.5 triggers `stress` |
+| **Formula** | `yield(ICE BofA US High Yield Index) − US 10-Year Treasury Yield` |
+| **Data** | FRED: BAMLH0A0HYM2 (HY OAS) and DGS10 (10Y Treasury) |
+| **Regime trigger** | 5-regime framework based on raw spread level + z-score (see below) |
 
 **Economic Rationale**
 
-The HY OAS measures the yield premium that sub-investment-grade (rated BB and below) corporate borrowers must pay over equivalent-maturity US Treasuries. It is one of the most sensitive real-time measures of *credit conditions* and *default risk expectations*.
+The HY spread measures the yield premium that sub-investment-grade (rated BB and below) corporate borrowers must pay over US Treasuries. It is one of the most sensitive real-time measures of *credit conditions* and *default risk expectations*.
 
 Altman (1968, JF) established the theoretical link between credit spreads and default probability via Z-score models. Subsequent work by Duffie & Singleton (1999) and the Merton (1974) structural credit model formalised the spread as compensation for expected loss (probability of default × loss given default) plus a *liquidity premium* and a *risk premium*.
 
-From a cycle perspective, HY spreads are *coincident-to-leading*: they tend to widen before official recession declarations because the corporate bond market prices deteriorating fundamentals faster than equity analysts revise earnings. The 400-bps level has historically divided benign from stressed environments; 700 bps marks systemic distress (2001 TMT bust, 2008 GFC, 2020 COVID shock).
-
-For a 6–9 month investor, *the direction of spreads matters more than the level*: a spread at 450 bps and widening is more dangerous than 600 bps and tightening.
+The regime framework uses two key structural pivots from practitioner research: **500 bps** is the pivot between normal and stressed conditions (PitchBook/LCD research shows this threshold separates default-cycle regimes); **800 bps** is a historically compelling contrarian buy level (T. Rowe Price research shows median 23.6% one-year forward return from this level, per CFA Institute analysis of post-crisis recoveries).
 
 **Regime Classification**
 
 | Condition | Label | Positioning |
 |---|---|---|
-| OAS > 700 or z > +1.5 | `stress` | De-risk HY; OW IG and Treasuries |
-| 400–700 bps, \|z\| ≤ 1 | `normal` | Carry regime; hold HY at benchmark |
-| OAS < 400, z < −1 | `frothy` | Consider UW HY; credit cycle late |
+| Spread > 800 bps or z > +2 | `opportunity` | Contrarian buy — historically strong forward returns |
+| Spread > 500 bps and z > +1 | `stress` | De-risk HY; OW IG and Treasuries |
+| 400–600 bps, \|z\| < 1 | `normal` | Carry regime; hold HY at benchmark |
+| Spread < 400 bps, z < −0.5 | `complacent` | Below-average compensation; tighten risk |
+| Spread < 300 bps, z < −1 | `frothy` | Asymmetric downside; consider UW HY |
 
 ---
 
-### US_I4 — US Investment-Grade Credit Spread (OAS)
+### US_Cr1 — US Investment-Grade Credit Spread (OAS)
 
 | | |
 |---|---|
@@ -329,11 +327,11 @@ For a 6–9 month investor, *the direction of spreads matters more than the leve
 
 The IG OAS measures the spread demanded for investment-grade (BBB and above) corporate credit. IG spreads are structurally lower than HY and less volatile, reflecting the lower default probability of investment-grade issuers. However, they are highly sensitive to *liquidity conditions* and *risk appetite* in the institutional investor base (insurance companies, pension funds, foreign reserve managers all hold significant IG).
 
-The IG spread and HY spread together paint a complete picture of the credit cycle. When HY spreads widen significantly but IG remains contained, stress is isolated to lower-quality borrowers — a typical mid-cycle signal. When both widen simultaneously (tracked by US_I5), financial conditions are tightening broadly.
+The IG spread and HY spread together paint a complete picture of the credit cycle. When HY spreads widen significantly but IG remains contained, stress is isolated to lower-quality borrowers — a typical mid-cycle signal. When both widen simultaneously (tracked by US_Cr3), financial conditions are tightening broadly.
 
 ---
 
-### US_I5 — HY–IG Spread Differential
+### US_Cr3 — HY–IG Spread Differential
 
 | | |
 |---|---|
@@ -346,7 +344,7 @@ This differential captures the *quality spread* — the additional compensation 
 
 ---
 
-### US_I3 — Commodities vs Bonds
+### GL_CA_I1 — Commodities vs Bonds
 
 | | |
 |---|---|
@@ -361,7 +359,7 @@ This relationship was formalised in asset allocation research by Bridgewater Ass
 
 ---
 
-### US_I7 — 10-Year Breakeven Inflation
+### US_R4 — 10-Year Breakeven Inflation
 
 | | |
 |---|---|
@@ -376,7 +374,7 @@ Breakeven inflation is distinct from *realised* inflation: it reflects forward e
 
 ---
 
-### US_I8 — Risk-On vs Risk-Off (Equities vs Treasuries)
+### US_CA_G1 — Risk-On vs Risk-Off (Equities vs Treasuries)
 
 | | |
 |---|---|
@@ -391,20 +389,7 @@ Ibbotson & Sinquefield (1976) documented the long-run superiority of equities ov
 
 ---
 
-### US_I9 — HY vs IG Credit (ETF Ratio)
-
-| | |
-|---|---|
-| **Formula** | `log(IHYU.L / SLXX.L)` |
-| **Data** | iShares USD HY Corp Bond UCITS ETF (IHYU.L) / iShares Core GBP Corporate Bond UCITS ETF (SLXX.L) — yfinance TR |
-
-**Economic Rationale**
-
-This ratio uses European-listed ETFs to measure the *relative total return* of USD high-yield credit vs. investment-grade GBP corporate credit. Rising ratio = investors preferring speculative-grade over investment-grade = credit risk appetite. The use of ETF price ratios (rather than OAS levels as in US_I2 and US_I4) captures both spread changes *and* the duration and carry component, giving a more complete total-return perspective.
-
----
-
-### US_I10 — HY vs Treasuries (Credit Risk)
+### US_Cr4 — HY vs Treasuries (Credit Risk)
 
 | | |
 |---|---|
@@ -413,11 +398,11 @@ This ratio uses European-listed ETFs to measure the *relative total return* of U
 
 **Economic Rationale**
 
-The broadest total-return credit signal: HY vs. pure government bonds. This encompasses the full *credit risk premium* — compensation for default, liquidity, and economic uncertainty. Unlike the OAS measures (US_I2, US_I4) which use yield differentials, this log price ratio captures realised investor experience. During credit crises, IHYU.L falls sharply while GOVT rises — the ratio collapses, generating a strong `flight-to-quality` regime signal.
+The broadest total-return credit signal: HY vs. pure government bonds. This encompasses the full *credit risk premium* — compensation for default, liquidity, and economic uncertainty. Unlike the OAS measures (US_Cr2, US_Cr1) which use yield differentials, this log price ratio captures realised investor experience. During credit crises, IHYU.L falls sharply while GOVT rises — the ratio collapses, generating a strong `flight-to-quality` regime signal.
 
 ---
 
-### US_I11 — Mortgage Credit Spread (Affordability Stress)
+### US_R6 — Mortgage Credit Spread (Affordability Stress)
 
 | | |
 |---|---|
@@ -432,7 +417,7 @@ The MBA Mortgage Bankers Association and the National Association of Realtors tr
 
 ---
 
-### US_R1 — VIX Term Structure (Equity Vol)
+### US_V1 — VIX Term Structure (Equity Vol)
 
 | | |
 |---|---|
@@ -458,7 +443,7 @@ Whaley (2009, JFM) and subsequent CBOE research documents the term structure of 
 
 ---
 
-### US_R2 — Rates vs Equity Vol (MOVE/VIX Ratio)
+### US_V2 — Rates vs Equity Vol (MOVE/VIX Ratio)
 
 | | |
 |---|---|
@@ -473,7 +458,7 @@ A high MOVE/VIX ratio — common during Fed tightening cycles and fiscal crises 
 
 ---
 
-### US_RR1 — Real Rates (TIPS 10-Year Yield)
+### US_R5 — Real Rates (TIPS 10-Year Yield)
 
 | | |
 |---|---|
@@ -486,7 +471,7 @@ The 10-year real interest rate is arguably the single most important macro varia
 
 Fisher (1930) established the decomposition of nominal rates into real rates and expected inflation. In modern macro-finance, the real rate is determined by: (1) the stance of monetary policy relative to the neutral rate (r*), (2) the term premium for holding duration, and (3) global safe-asset demand (the *global saving glut* identified by Bernanke 2005).
 
-For equity investors, the relationship between real rates and P/E multiples is direct: the Gordon Growth Model implies P/E = 1 / (r_real + ERP − g), so rising real rates compress multiples, particularly for long-duration growth stocks (US_G5, US_G4 rotate together with US_RR1). For a 6–9 month investor, the *direction* of real rates is the key variable: TIPS yields rising from negative to positive (-0.5% to +2% as in 2022) caused the most severe equity de-rating in decades.
+For equity investors, the relationship between real rates and P/E multiples is direct: the Gordon Growth Model implies P/E = 1 / (r_real + ERP − g), so rising real rates compress multiples, particularly for long-duration growth stocks (US_G5, US_EQ_F1 rotate together with US_R5). For a 6–9 month investor, the *direction* of real rates is the key variable: TIPS yields rising from negative to positive (-0.5% to +2% as in 2022) caused the most severe equity de-rating in decades.
 
 **Regime Classification**
 
@@ -498,7 +483,7 @@ For equity investors, the relationship between real rates and P/E multiples is d
 
 ---
 
-*End of Section 2a — US Rates & Credit (14 indicators: US_I1, US_I2, US_I3, US_I4, US_I5, US_I6, US_I6b, US_I7, US_I8, US_I9, US_I10, US_I11, US_R1, US_R2, US_RR1)*
+*End of Section 2a — US Rates, Credit & Volatility (13 indicators: US_R1, US_R2, US_R3, US_Cr2, US_Cr1, US_Cr3, GL_CA_I1, US_R4, US_CA_G1, US_Cr4, US_R6, US_V1, US_V2, US_R5)*
 
 ---
 
