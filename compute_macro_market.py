@@ -549,45 +549,45 @@ REGIME_RULES = {
     "US_EQ_F1":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
     "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
-    "US_I1":  lambda r, z: (
+    "US_R1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
         else _r(r, z, 1, -1, "early-cycle", "late-cycle", "mid-cycle")
     ),
-    "US_I2":  lambda r, z: (
+    "US_Cr2":  lambda r, z: (
         "stress"  if (not np.isnan(r) and r > 700) or (not np.isnan(z) and z > 1.5)
         else ("frothy" if not np.isnan(z) and z < -1 and not np.isnan(r) and r < 400
               else "normal")
     ),
-    "US_I3":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
-    "US_I4":  lambda r, z: (
+    "GL_CA_I1":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
+    "US_Cr1":  lambda r, z: (
         "IG-stress" if (not np.isnan(r) and r > 200) or (not np.isnan(z) and z > 1.5)
         else ("frothy" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "US_I5":  lambda r, z: _r(r, z,  1, -1, "quality-spread",   "complacent"),
-    "US_I6":  lambda r, z: (
+    "US_Cr3":  lambda r, z: _r(r, z,  1, -1, "quality-spread",   "complacent"),
+    "US_R2":  lambda r, z: (
         "inverted" if (not np.isnan(r) and r < 0)
         else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
-    "US_I6b": lambda r, z: (
+    "US_R3": lambda r, z: (
         "inverted" if (not np.isnan(r) and r < 0)
         else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
-    "US_I7":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
+    "US_R4":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
     "US_CA_G1":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
     "US_I9":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
-    "US_I10": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
+    "US_Cr4": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     # Volatility
-    "US_R1":  lambda r, z: (
+    "US_V1":  lambda r, z: (
         "stress" if not np.isnan(r) and r < 0
         else ("complacency" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "US_R2":  lambda r, z: _r(r, z,  1, -1, "macro-uncertainty", "calm"),
+    "US_V2":  lambda r, z: _r(r, z,  1, -1, "macro-uncertainty", "calm"),
     # Real rates / FX
-    "US_RR1": lambda r, z: _r(r, z,  1, -1, "high-real-rates",  "low-real-rates"),
-    "US_FX1": lambda r, z: _r(r, z,  1, -1, "weak-USD",         "strong-USD"),
-    "US_FX2": lambda r, z: _r(r, z,  1, -1, "global-growth",    "recession-watch"),
+    "US_R5": lambda r, z: _r(r, z,  1, -1, "high-real-rates",  "low-real-rates"),
+    "FX_CMD2": lambda r, z: _r(r, z,  1, -1, "weak-USD",         "strong-USD"),
+    "FX_CMD1": lambda r, z: _r(r, z,  1, -1, "global-growth",    "recession-watch"),
     # Momentum — raw value encodes the signal directly (not a ratio)
     "M1":     lambda r, z: ("risk-on" if not np.isnan(r) and r > 0 else "risk-off"),
     "M2":     lambda r, z: (
@@ -613,7 +613,7 @@ REGIME_RULES = {
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
-    "US_I11":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
+    "US_R6":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
     "US_JOBS2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
     # Europe
     "EU_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
@@ -863,27 +863,27 @@ def _calc_US_EQ_F2(cp, **_):
 # CREDIT / FINANCIAL CONDITIONS  (US_I1–I10)
 # ---------------------------------------------------------------------------
 
-def _calc_US_I1(mu, **_):
+def _calc_US_R1(mu, **_):
     """10Y–3M yield-curve spread (bps), direct from FRED T10Y3M."""
     return _to_weekly_friday(_get_col(mu, "T10Y3M"))
 
 
-def _calc_US_I2(mu, **_):
+def _calc_US_Cr2(mu, **_):
     """US HY OAS spread (bps), direct from FRED BAMLH0A0HYM2."""
     return _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2"))
 
 
-def _calc_US_I3(cp, **_):
+def _calc_GL_CA_I1(cp, **_):
     """Commodities vs Bonds: log(DBC / GOVT) — inflation vs deflation signal."""
     return _log_ratio(_p(cp, "DBC"), _p(cp, "GOVT"))
 
 
-def _calc_US_I4(mu, **_):
+def _calc_US_Cr1(mu, **_):
     """US IG OAS spread (bps), direct from FRED BAMLC0A0CM."""
     return _to_weekly_friday(_get_col(mu, "BAMLC0A0CM"))
 
 
-def _calc_US_I5(mu, **_):
+def _calc_US_Cr3(mu, **_):
     """HY–IG spread differential: BAMLH0A0HYM2 − BAMLC0A0CM."""
     return _arith_diff(
         _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2")),
@@ -891,12 +891,12 @@ def _calc_US_I5(mu, **_):
     )
 
 
-def _calc_US_I6(mu, **_):
+def _calc_US_R2(mu, **_):
     """10Y–2Y yield curve: direct from FRED T10Y2Y."""
     return _to_weekly_friday(_get_col(mu, "T10Y2Y"))
 
 
-def _calc_US_I6b(cp, mu, **_):
+def _calc_US_R3(cp, mu, **_):
     """10Y-2Y yield curve from market prices: ^TNX (yfinance) minus DGS2 (FRED).
     Both are in % pa; result is in percentage points."""
     tnx = _to_weekly_friday(_p(cp, "^TNX"))
@@ -904,7 +904,7 @@ def _calc_US_I6b(cp, mu, **_):
     return _arith_diff(tnx, dgs2)
 
 
-def _calc_US_I7(mu, **_):
+def _calc_US_R4(mu, **_):
     """10Y breakeven inflation: direct from FRED T10YIE."""
     return _to_weekly_friday(_get_col(mu, "T10YIE"))
 
@@ -919,7 +919,7 @@ def _calc_US_I9(cp, **_):
     return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "SLXX.L"))
 
 
-def _calc_US_I10(cp, **_):
+def _calc_US_Cr4(cp, **_):
     """HY vs Treasuries (credit risk): log(IHYU.L / GOVT)."""
     return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "GOVT"))
 
@@ -928,12 +928,12 @@ def _calc_US_I10(cp, **_):
 # RISK / VOLATILITY REGIME  (US_R1–R2)
 # ---------------------------------------------------------------------------
 
-def _calc_US_R1(cp, **_):
+def _calc_US_V1(cp, **_):
     """VIX term structure: ^VIX3M − ^VIX (bps; positive = contango = calm)."""
     return _arith_diff(_p(cp, "^VIX3M"), _p(cp, "^VIX"))
 
 
-def _calc_US_R2(cp, **_):
+def _calc_US_V2(cp, **_):
     """Cross-asset vol: log(^MOVE / ^VIX) — bond vol relative to equity vol."""
     return _log_ratio(_p(cp, "^MOVE"), _p(cp, "^VIX"))
 
@@ -942,7 +942,7 @@ def _calc_US_R2(cp, **_):
 # REAL RATES  (US_RR1)
 # ---------------------------------------------------------------------------
 
-def _calc_US_RR1(mu, **_):
+def _calc_US_R5(mu, **_):
     """10Y TIPS real yield: direct from FRED DFII10."""
     return _to_weekly_friday(_get_col(mu, "DFII10"))
 
@@ -951,12 +951,12 @@ def _calc_US_RR1(mu, **_):
 # FX / COMMODITIES  (US_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_US_FX1(cp, **_):
+def _calc_FX_CMD2(cp, **_):
     """EM vs DXY: log(EEM_USD / DX-Y.NYB) — EM risk appetite vs dollar."""
     return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "DX-Y.NYB"))
 
 
-def _calc_US_FX2(cp, **_):
+def _calc_FX_CMD1(cp, **_):
     """Copper vs Gold: log(HG=F / GC=F) — industrial demand vs safe-haven."""
     return _log_ratio(_p(cp, "HG=F"), _p(cp, "GC=F"))
 
@@ -1125,7 +1125,7 @@ def _calc_US_ISM1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_US_I11(supp, **_):
+def _calc_US_R6(supp, **_):
     """
     Mortgage affordability / credit stress: MORTGAGE30US − DGS10.
     Wider spread = lender risk aversion / tight housing credit; leads housing activity.
@@ -1158,22 +1158,22 @@ _US_CALCULATORS = {
     "US_EQ_F4":     _calc_US_EQ_F4,
     "US_EQ_F1":      _calc_US_EQ_F1,
     "US_EQ_F2":     _calc_US_EQ_F2,
-    "US_I1":      _calc_US_I1,
-    "US_I2":      _calc_US_I2,
-    "US_I3":      _calc_US_I3,
-    "US_I4":      _calc_US_I4,
-    "US_I5":      _calc_US_I5,
-    "US_I6":      _calc_US_I6,
-    "US_I6b":     _calc_US_I6b,
-    "US_I7":      _calc_US_I7,
+    "US_R1":      _calc_US_R1,
+    "US_Cr2":      _calc_US_Cr2,
+    "GL_CA_I1":      _calc_GL_CA_I1,
+    "US_Cr1":      _calc_US_Cr1,
+    "US_Cr3":      _calc_US_Cr3,
+    "US_R2":      _calc_US_R2,
+    "US_R3":     _calc_US_R3,
+    "US_R4":      _calc_US_R4,
     "US_CA_G1":      _calc_US_CA_G1,
     "US_I9":      _calc_US_I9,
-    "US_I10":     _calc_US_I10,
-    "US_R1":      _calc_US_R1,
-    "US_R2":      _calc_US_R2,
-    "US_RR1":     _calc_US_RR1,
-    "US_FX1":     _calc_US_FX1,
-    "US_FX2":     _calc_US_FX2,
+    "US_Cr4":     _calc_US_Cr4,
+    "US_V1":      _calc_US_V1,
+    "US_V2":      _calc_US_V2,
+    "US_R5":     _calc_US_R5,
+    "FX_CMD2":     _calc_FX_CMD2,
+    "FX_CMD1":     _calc_FX_CMD1,
     "M1":         _calc_M1,
     "M2":         _calc_M2,
     "M3":         _calc_M3,
@@ -1188,7 +1188,7 @@ _US_CALCULATORS = {
     "US_G5":      _calc_US_G5,
     "US_G4":      _calc_US_G4,
     "US_ISM1":    _calc_US_ISM1,
-    "US_I11":     _calc_US_I11,
+    "US_R6":     _calc_US_R6,
     "US_JOBS2":    _calc_US_JOBS2,
 }
 
