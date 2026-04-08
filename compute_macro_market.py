@@ -631,36 +631,36 @@ REGIME_RULES = {
     "EU_G1":  lambda r, z: _r(r, z,  1, -1, "eurozone-outperform", "eurozone-underperform"),
     # Japan
     "JP_G1":  lambda r, z: _r(r, z,  1, -1, "japan-outperform",    "japan-underperform"),
-    "JP_FX1": lambda r, z: (
+    "FX_2": lambda r, z: (
         "carry-unwind" if not np.isnan(z) and z < -1
         else ("carry-on" if not np.isnan(z) and z > 0.5 else "neutral")
     ),
     # Asia
-    "AS_G1":  lambda r, z: _r(r, z,  1, -1, "mid-cap-lead",     "large-cap-safety"),
-    "AS_G2":  lambda r, z: _r(r, z,  1, -1, "China-outperform", "China-cautious"),
-    "AS_G3":  lambda r, z: _r(r, z,  1, -1, "India-domestic-strong","large-cap-safety"),
-    "AS_I1":  lambda r, z: _r(r, z,  1, -1, "China-bonds-outperform","China-underperform"),
-    "AS_I2":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
-    "AS_FX1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
-    "AS_FX2": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
-    "AS_C1":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
-    "AS_C2":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
-    "AS_G4":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
+    "AS_CN_G3":  lambda r, z: _r(r, z,  1, -1, "mid-cap-lead",     "large-cap-safety"),
+    "AS_CN_G2":  lambda r, z: _r(r, z,  1, -1, "China-outperform", "China-cautious"),
+    "AS_IN_G1":  lambda r, z: _r(r, z,  1, -1, "India-domestic-strong","large-cap-safety"),
+    "AS_CN_R1":  lambda r, z: _r(r, z,  1, -1, "China-bonds-outperform","China-underperform"),
+    "AS_IN_R1":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
+    "FX_CN1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
+    "FX_1": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
+    "FX_CMD5":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
+    "FX_CMD4":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
+    "AS_CN_G1":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
     # Regional CLI
-    "REG_CLI1": lambda r, z: _r(r, z,  1, -1, "US-leads-EU",    "EU-leads-US"),
-    "REG_CLI2": lambda r, z: _r(r, z,  1, -1, "US-leads-China", "China-leads-US"),
-    "REG_CLI3": lambda r, z: _r(r, z,  1, -1, "EU-above-trend", "EU-below-trend",  "near-trend"),
-    "REG_CLI4": lambda r, z: _r(r, z,  1, -1, "Asia-above-trend","Asia-below-trend","near-trend"),
+    "GL_CLI1": lambda r, z: _r(r, z,  1, -1, "US-leads-EU",    "EU-leads-US"),
+    "GL_CLI2": lambda r, z: _r(r, z,  1, -1, "US-leads-China", "China-leads-US"),
+    "EU_CLI1": lambda r, z: _r(r, z,  1, -1, "EU-above-trend", "EU-below-trend",  "near-trend"),
+    "AS_CLI1": lambda r, z: _r(r, z,  1, -1, "Asia-above-trend","Asia-below-trend","near-trend"),
     # REG_CLI5 uses raw breadth value, not z-score
-    "REG_CLI5": lambda r, z: (
+    "GL_CLI5": lambda r, z: (
         "broad-expansion" if not np.isnan(r) and r >= 0.7
         else ("contracting" if not np.isnan(r) and r < 0.4 else "mixed")
     ),
     # Global multi-asset & commodity
-    "REG_RISK1": lambda r, z: _r(r, z,  1, -1, "risk-on",            "risk-off"),
-    "REG_EM1":   lambda r, z: _r(r, z,  1, -1, "em-outperform",      "dm-outperform"),
-    "REG_COMM1": lambda r, z: _r(r, z,  1, -1, "commodity-bull",     "commodity-bear"),
-    "REG_COMM2": lambda r, z: _r(r, z,  1, -1, "growth-inflation",   "deflation-risk"),
+    "GL_G2": lambda r, z: _r(r, z,  1, -1, "risk-on",            "risk-off"),
+    "GL_G1":   lambda r, z: _r(r, z,  1, -1, "em-outperform",      "dm-outperform"),
+    "FX_CMD6": lambda r, z: _r(r, z,  1, -1, "commodity-bull",     "commodity-bear"),
+    "FX_CMD3": lambda r, z: _r(r, z,  1, -1, "growth-inflation",   "deflation-risk"),
 }
 
 
@@ -1334,7 +1334,7 @@ def _calc_JP_G1(cp, **_):
     return _log_ratio(_p(cp, "EWJ"), _p(cp, "URTH"))
 
 
-def _calc_JP_FX1(cp, **_):
+def _calc_FX_2(cp, **_):
     """
     JPY carry trade signal: USDJPY=X 26-week log momentum.
     Positive z → yen weakening → carry trade ON.
@@ -1360,7 +1360,7 @@ _EU_CALCULATORS = {
     "EU_R1":  _calc_EU_R1,
     "EU_G1":  _calc_EU_G1,
     "JP_G1":  _calc_JP_G1,
-    "JP_FX1": _calc_JP_FX1,
+    "FX_2": _calc_FX_2,
 }
 
 
@@ -1372,7 +1372,7 @@ _EU_CALCULATORS = {
 # ASIA GROWTH / RISK APPETITE  (AS_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_G1(cp, supp, **_):
+def _calc_AS_CN_G3(cp, supp, **_):
     """
     China small vs large cap: log(ASHR / FXI).
     ASHR = CSI 300 ETF (large-cap proxy); FXI = iShares China Large-Cap ETF.
@@ -1385,7 +1385,7 @@ def _calc_AS_G1(cp, supp, **_):
     return _log_ratio(ashr, fxi)
 
 
-def _calc_AS_G2(cp, **_):
+def _calc_AS_CN_G2(cp, **_):
     """
     India mid vs large cap: log(^CRSMID / ^NSEI).
     ^CRSMID = Nifty Midcap 100; ^NSEI = Nifty 50.
@@ -1393,7 +1393,7 @@ def _calc_AS_G2(cp, **_):
     return _log_ratio(_p(cp, "^CRSMID"), _p(cp, "^NSEI"))
 
 
-def _calc_AS_G3(cp, **_):
+def _calc_AS_IN_G1(cp, **_):
     """
     Japan: TOPIX (^N225 proxy) — z-score of log returns used as risk gauge.
     Raw = log(000001.SS / URTH) i.e. Shanghai Comp vs World equity.
@@ -1406,7 +1406,7 @@ def _calc_AS_G3(cp, **_):
 # ASIA FINANCIAL CONDITIONS  (AS_I1–I2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_I1(supp, **_):
+def _calc_AS_CN_R1(supp, **_):
     """
     China 10Y yield spread vs US 10Y: IRLTLT01CNM156N − DGS10.
     Both monthly/daily FRED series, forward-filled to weekly.
@@ -1418,7 +1418,7 @@ def _calc_AS_I1(supp, **_):
     return _arith_diff(chn, us)
 
 
-def _calc_AS_I2(supp, **_):
+def _calc_AS_IN_R1(supp, **_):
     """
     India 10Y yield spread vs US 10Y: IRLTLT01INM156N − DGS10.
     Both monthly/daily FRED series, forward-filled to weekly.
@@ -1434,7 +1434,7 @@ def _calc_AS_I2(supp, **_):
 # ASIA FX  (AS_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_FX1(cp, **_):
+def _calc_FX_CN1(cp, **_):
     """
     CNY directional momentum: log(CNY=X / 26wk SMA).
     CNY=X = USD per CNY (higher = CNY stronger).
@@ -1446,7 +1446,7 @@ def _calc_AS_FX1(cp, **_):
     return np.log(cny / sma26.replace(0, np.nan))
 
 
-def _calc_AS_FX2(cp, **_):
+def _calc_FX_1(cp, **_):
     """
     INR directional momentum: log(INR=X / 26wk SMA).
     INR=X = USD per INR (higher = INR stronger).
@@ -1462,7 +1462,7 @@ def _calc_AS_FX2(cp, **_):
 # ASIA COMMODITIES  (AS_C1–C2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_C1(supp, **_):
+def _calc_FX_CMD5(supp, **_):
     """
     Iron ore price (USD/tonne): FRED PIORECRUSDM (monthly, forward-filled).
     Raw = price level; z-score reflects steel demand cycle.
@@ -1471,7 +1471,7 @@ def _calc_AS_C1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_AS_C2(cp, **_):
+def _calc_FX_CMD4(cp, **_):
     """
     Copper/Gold ratio: log(HG=F / GC=F) — same as US_FX2, EM-demand lens.
     Captures Asian industrial cycle vs safe-haven demand.
@@ -1483,7 +1483,7 @@ def _calc_AS_C2(cp, **_):
 # REGIONAL CLI COMPOSITES  (REG_CLI1–CLI5)
 # ---------------------------------------------------------------------------
 
-def _calc_REG_CLI1(mi, **_):
+def _calc_GL_CLI1(mi, **_):
     """
     US vs Eurozone growth differential: USA_CLI − avg(DEU_CLI, FRA_CLI).
     Positive → US momentum outpacing Europe; negative → Europe catching up or leading.
@@ -1497,7 +1497,7 @@ def _calc_REG_CLI1(mi, **_):
     return _arith_diff(usa, eu_avg)
 
 
-def _calc_REG_CLI2(mi, **_):
+def _calc_GL_CLI2(mi, **_):
     """
     US vs China growth differential: USA_CLI − CHN_CLI.
     Positive → US cycle outpacing China; negative → China leading.
@@ -1507,7 +1507,7 @@ def _calc_REG_CLI2(mi, **_):
     return _arith_diff(usa, chn)
 
 
-def _calc_REG_CLI3(mi, **_):
+def _calc_EU_CLI1(mi, **_):
     """
     Europe block CLI: equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI.
     Above 100 = Europe running above long-run trend; below 100 = below trend.
@@ -1518,7 +1518,7 @@ def _calc_REG_CLI3(mi, **_):
     return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
-def _calc_REG_CLI4(mi, **_):
+def _calc_AS_CLI1(mi, **_):
     """
     Asia block CLI: equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI.
     Above 100 = Asia running above long-run trend; below 100 = below trend.
@@ -1528,7 +1528,7 @@ def _calc_REG_CLI4(mi, **_):
     return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
-def _calc_REG_CLI5(mi, **_):
+def _calc_GL_CLI5(mi, **_):
     """
     Global growth breadth (diffusion): fraction of 9 countries where
     CLI > 100 AND CLI > CLI_6M_ago (i.e. above trend AND improving).
@@ -1551,7 +1551,7 @@ def _calc_REG_CLI5(mi, **_):
     return pd.concat(series_list, axis=1).mean(axis=1)
 
 
-def _calc_AS_G4(cp, **_):
+def _calc_AS_CN_G1(cp, **_):
     """
     China vs broad EM divergence: log(FXI / EEM).
     Positive → China large-caps outperforming broad EM (policy support, credit easing).
@@ -1560,7 +1560,7 @@ def _calc_AS_G4(cp, **_):
     return _log_ratio(_p(cp, "FXI"), _p(cp, "EEM", usd=True))
 
 
-def _calc_REG_RISK1(cp, **_):
+def _calc_GL_G2(cp, **_):
     """
     Global multi-asset risk appetite: log(ACWI / GOVT).
     ACWI = iShares MSCI All Country World ETF; GOVT = US Treasury bond ETF.
@@ -1570,7 +1570,7 @@ def _calc_REG_RISK1(cp, **_):
     return _log_ratio(_p(cp, "ACWI"), _p(cp, "GOVT"))
 
 
-def _calc_REG_EM1(cp, **_):
+def _calc_GL_G1(cp, **_):
     """
     EM vs DM equity relative cycle: log(EEM / URTH).
     Positive → emerging markets outperforming MSCI World (requires: weak USD +
@@ -1580,7 +1580,7 @@ def _calc_REG_EM1(cp, **_):
     return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "URTH"))
 
 
-def _calc_REG_COMM1(cp, **_):
+def _calc_FX_CMD6(cp, **_):
     """
     Global commodity cycle: DBC 12-month log return.
     Positive z → commodities in a multi-month bull cycle; leads EM equity outperformance
@@ -1590,7 +1590,7 @@ def _calc_REG_COMM1(cp, **_):
     return np.log(dbc / dbc.shift(52).replace(0, np.nan))
 
 
-def _calc_REG_COMM2(cp, **_):
+def _calc_FX_CMD3(cp, **_):
     """
     Oil vs gold inflation regime: log(CL=F / GC=F).
     Positive → oil outpacing gold = growth-driven inflation (bullish cyclicals).
@@ -1605,25 +1605,25 @@ def _calc_REG_COMM2(cp, **_):
 # ---------------------------------------------------------------------------
 
 _ASIA_REGIONAL_CALCULATORS = {
-    "AS_G1":    _calc_AS_G1,
-    "AS_G2":    _calc_AS_G2,
-    "AS_G3":    _calc_AS_G3,
-    "AS_I1":    _calc_AS_I1,
-    "AS_I2":    _calc_AS_I2,
-    "AS_FX1":   _calc_AS_FX1,
-    "AS_FX2":   _calc_AS_FX2,
-    "AS_C1":    _calc_AS_C1,
-    "AS_C2":    _calc_AS_C2,
-    "AS_G4":    _calc_AS_G4,
-    "REG_CLI1": _calc_REG_CLI1,
-    "REG_CLI2": _calc_REG_CLI2,
-    "REG_CLI3":  _calc_REG_CLI3,
-    "REG_CLI4":  _calc_REG_CLI4,
-    "REG_CLI5":  _calc_REG_CLI5,
-    "REG_RISK1": _calc_REG_RISK1,
-    "REG_EM1":   _calc_REG_EM1,
-    "REG_COMM1": _calc_REG_COMM1,
-    "REG_COMM2": _calc_REG_COMM2,
+    "AS_CN_G3":    _calc_AS_CN_G3,
+    "AS_CN_G2":    _calc_AS_CN_G2,
+    "AS_IN_G1":    _calc_AS_IN_G1,
+    "AS_CN_R1":    _calc_AS_CN_R1,
+    "AS_IN_R1":    _calc_AS_IN_R1,
+    "FX_CN1":   _calc_FX_CN1,
+    "FX_1":   _calc_FX_1,
+    "FX_CMD5":    _calc_FX_CMD5,
+    "FX_CMD4":    _calc_FX_CMD4,
+    "AS_CN_G1":    _calc_AS_CN_G1,
+    "GL_CLI1": _calc_GL_CLI1,
+    "GL_CLI2": _calc_GL_CLI2,
+    "EU_CLI1":  _calc_EU_CLI1,
+    "AS_CLI1":  _calc_AS_CLI1,
+    "GL_CLI5":  _calc_GL_CLI5,
+    "GL_G2": _calc_GL_G2,
+    "GL_G1":   _calc_GL_G1,
+    "FX_CMD6": _calc_FX_CMD6,
+    "FX_CMD3": _calc_FX_CMD3,
 }
 
 # Master dispatcher — union of all regional dicts
