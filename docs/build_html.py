@@ -116,9 +116,10 @@ def build_macro_market(ind_meta: dict) -> dict:
     # discover which indicator IDs are present
     present_ids = set()
     for col in df.columns:
-        for suffix in ("_raw", "_zscore", "_regime", "_fwd_regime"):
+        for suffix in ("_fwd_regime", "_raw", "_zscore", "_regime"):
             if col.endswith(suffix):
                 present_ids.add(col[: -len(suffix)])
+                break
 
     indicators = {}
     for ind_id in present_ids:
