@@ -92,7 +92,6 @@ def load_indicator_meta() -> dict:
         if not ind_id:
             continue
         meta[ind_id] = {
-            "region":      str(row.get("region_block", "")).strip(),
             "category":    str(row.get("category", "")).strip(),
             "group":       str(row.get("group", "")).strip(),
             "sub_group":   str(row.get("sub_group", "")).strip(),
