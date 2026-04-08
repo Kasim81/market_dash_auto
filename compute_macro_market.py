@@ -576,7 +576,6 @@ REGIME_RULES = {
     ),
     "US_R4":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
     "US_CA_G1":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
-    "US_I9":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     "US_Cr4": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     # Volatility
     "US_V1":  lambda r, z: (
@@ -914,11 +913,6 @@ def _calc_US_CA_G1(cp, **_):
     return _log_ratio(_p(cp, "SPY"), _p(cp, "GOVT"))
 
 
-def _calc_US_I9(cp, **_):
-    """HY vs IG Credit (ETF proxy): log(IHYU.L / SLXX.L)."""
-    return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "SLXX.L"))
-
-
 def _calc_US_Cr4(cp, **_):
     """HY vs Treasuries (credit risk): log(IHYU.L / GOVT)."""
     return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "GOVT"))
@@ -1167,7 +1161,6 @@ _US_CALCULATORS = {
     "US_R3":     _calc_US_R3,
     "US_R4":      _calc_US_R4,
     "US_CA_G1":      _calc_US_CA_G1,
-    "US_I9":      _calc_US_I9,
     "US_Cr4":     _calc_US_Cr4,
     "US_V1":      _calc_US_V1,
     "US_V2":      _calc_US_V2,
