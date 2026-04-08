@@ -543,11 +543,11 @@ REGIME_RULES = {
     # US Growth
     "US_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth",       "defensive"),
     "US_G2":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "late-cycle"),
-    "US_G2b": lambda r, z: _r(r, z,  1, -1, "risk-on",          "defensive"),
-    "US_G3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
-    "US_G3b": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
-    "US_G4":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
-    "US_G4b": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
+    "US_G3": lambda r, z: _r(r, z,  1, -1, "risk-on",          "defensive"),
+    "US_EQ_F3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
+    "US_EQ_F4": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
+    "US_EQ_F1":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
+    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
     "US_I1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
@@ -575,7 +575,7 @@ REGIME_RULES = {
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
     "US_I7":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
-    "US_I8":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
+    "US_CA_G1":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
     "US_I9":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     "US_I10": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     # Volatility
@@ -603,18 +603,18 @@ REGIME_RULES = {
         else ("late-cycle" if not np.isnan(r) and r < 0 else "expansion")
     ),
     "US_JOBS1":  lambda r, z: _r(r, z,  1, -1, "labour-deteriorating", "overheating", "stable"),
-    "US_LAB1":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
-    "US_GROWTH1":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
+    "US_JOBS3":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
+    "US_G6":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
     "US_HOUS1":  lambda r, z: _r(r, z,  1, -1, "housing-expanding",    "housing-contracting"),
-    "US_M2L1":   lambda r, z: _r(r, z,  1, -1, "abundant-liquidity",   "tight-liquidity"),
+    "US_M2":   lambda r, z: _r(r, z,  1, -1, "abundant-liquidity",   "tight-liquidity"),
     "US_G5":     lambda r, z: _r(r, z,  1, -1, "tech-led",             "defensive-rotation"),
-    "US_G6":     lambda r, z: _r(r, z,  1, -1, "broad-rally",          "narrow-concentrated"),
+    "US_G4":     lambda r, z: _r(r, z,  1, -1, "broad-rally",          "narrow-concentrated"),
     "US_ISM1":   lambda r, z: (
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
     "US_I11":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
-    "US_LAB2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
+    "US_JOBS2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
     # Europe
     "EU_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
     "EU_G2":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
@@ -834,27 +834,27 @@ def _calc_US_G2(cp, **_):
     )
 
 
-def _calc_US_G3(cp, **_):
+def _calc_US_EQ_F3(cp, **_):
     """Small Cap vs Large Cap: log(IWM / IWB)."""
     return _log_ratio(_p(cp, "IWM"), _p(cp, "IWB"))
 
 
-def _calc_US_G2b(cp, **_):
+def _calc_US_G3(cp, **_):
     """Financials vs Utilities (2-ticker): log(XLF / XLU)."""
     return _log_ratio(_p(cp, "XLF"), _p(cp, "XLU"))
 
 
-def _calc_US_G3b(cp, **_):
+def _calc_US_EQ_F4(cp, **_):
     """Small Cap vs Large Cap (S&P proxy): log(IWM / SPY)."""
     return _log_ratio(_p(cp, "IWM"), _p(cp, "SPY"))
 
 
-def _calc_US_G4(cp, **_):
+def _calc_US_EQ_F1(cp, **_):
     """Value vs Growth: log(IWD / IWF)."""
     return _log_ratio(_p(cp, "IWD"), _p(cp, "IWF"))
 
 
-def _calc_US_G4b(cp, **_):
+def _calc_US_EQ_F2(cp, **_):
     """Growth vs Value (S&P 500): log(IVW / IVE)."""
     return _log_ratio(_p(cp, "IVW"), _p(cp, "IVE"))
 
@@ -909,7 +909,7 @@ def _calc_US_I7(mu, **_):
     return _to_weekly_friday(_get_col(mu, "T10YIE"))
 
 
-def _calc_US_I8(cp, **_):
+def _calc_US_CA_G1(cp, **_):
     """Risk-On vs Risk-Off: log(SPY / GOVT)."""
     return _log_ratio(_p(cp, "SPY"), _p(cp, "GOVT"))
 
@@ -1056,7 +1056,7 @@ def _calc_US_JOBS1(mu, **_):
     return _yoy(ic)
 
 
-def _calc_US_LAB1(mu, **_):
+def _calc_US_JOBS3(mu, **_):
     """
     Labour market composite z-score.
     Components: UNRATE (inverted), PAYEMS YoY, IC4WSA YoY (inverted).
@@ -1074,7 +1074,7 @@ def _calc_US_LAB1(mu, **_):
     return composite
 
 
-def _calc_US_GROWTH1(mu, **_):
+def _calc_US_G6(mu, **_):
     """
     US Growth composite: equal-weight z-score of INDPRO YoY and RSXFS YoY.
     """
@@ -1094,7 +1094,7 @@ def _calc_US_HOUS1(mu, **_):
     return _yoy(permit)
 
 
-def _calc_US_M2L1(mu, **_):
+def _calc_US_M2(mu, **_):
     """M2 liquidity YoY: M2SL year-on-year % change."""
     m2 = _to_weekly_friday(_get_col(mu, "M2SL"))
     return _yoy(m2)
@@ -1108,7 +1108,7 @@ def _calc_US_G5(cp, **_):
     return _log_ratio(_p(cp, "QQQ"), _p(cp, "SPY"))
 
 
-def _calc_US_G6(cp, **_):
+def _calc_US_G4(cp, **_):
     """
     Market breadth: log(RSP / SPY) — S&P 500 equal-weight vs cap-weight.
     Positive → broad participation; negative → rally concentrated in mega-caps.
@@ -1135,7 +1135,7 @@ def _calc_US_I11(supp, **_):
     return _arith_diff(mort, us10)
 
 
-def _calc_US_LAB2(supp, **_):
+def _calc_US_JOBS2(supp, **_):
     """
     JOLTS labour market tightness: JTSJOL / UNEMPLOY (openings per unemployed person).
     Ratio > 1 = more openings than unemployed → wage pressure; leads CPI by ~2 months.
@@ -1153,11 +1153,11 @@ def _calc_US_LAB2(supp, **_):
 _US_CALCULATORS = {
     "US_G1":      _calc_US_G1,
     "US_G2":      _calc_US_G2,
-    "US_G2b":     _calc_US_G2b,
-    "US_G3":      _calc_US_G3,
-    "US_G3b":     _calc_US_G3b,
-    "US_G4":      _calc_US_G4,
-    "US_G4b":     _calc_US_G4b,
+    "US_G3":     _calc_US_G3,
+    "US_EQ_F3":      _calc_US_EQ_F3,
+    "US_EQ_F4":     _calc_US_EQ_F4,
+    "US_EQ_F1":      _calc_US_EQ_F1,
+    "US_EQ_F2":     _calc_US_EQ_F2,
     "US_I1":      _calc_US_I1,
     "US_I2":      _calc_US_I2,
     "US_I3":      _calc_US_I3,
@@ -1166,7 +1166,7 @@ _US_CALCULATORS = {
     "US_I6":      _calc_US_I6,
     "US_I6b":     _calc_US_I6b,
     "US_I7":      _calc_US_I7,
-    "US_I8":      _calc_US_I8,
+    "US_CA_G1":      _calc_US_CA_G1,
     "US_I9":      _calc_US_I9,
     "US_I10":     _calc_US_I10,
     "US_R1":      _calc_US_R1,
@@ -1181,15 +1181,15 @@ _US_CALCULATORS = {
     "M5":         _calc_M5,
     "US_LEI1":    _calc_US_LEI1,
     "US_JOBS1":   _calc_US_JOBS1,
-    "US_LAB1":    _calc_US_LAB1,
-    "US_GROWTH1": _calc_US_GROWTH1,
+    "US_JOBS3":    _calc_US_JOBS3,
+    "US_G6": _calc_US_G6,
     "US_HOUS1":   _calc_US_HOUS1,
-    "US_M2L1":    _calc_US_M2L1,
+    "US_M2":    _calc_US_M2,
     "US_G5":      _calc_US_G5,
-    "US_G6":      _calc_US_G6,
+    "US_G4":      _calc_US_G4,
     "US_ISM1":    _calc_US_ISM1,
     "US_I11":     _calc_US_I11,
-    "US_LAB2":    _calc_US_LAB2,
+    "US_JOBS2":    _calc_US_JOBS2,
 }
 
 
