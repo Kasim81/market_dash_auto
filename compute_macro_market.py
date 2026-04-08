@@ -467,7 +467,6 @@ def _yoy(series: pd.Series, freq: int = 52) -> pd.Series:
 def _annualised_change(series: pd.Series, periods: int = 6) -> pd.Series:
     """
     Annualised percentage change over `periods` months of a monthly series.
-    Used for US_LEI1 (USSLIND 6-month annualised change).
     Formula: ((x / x_n_periods_ago) ^ (12/periods) - 1) * 100
     """
     prior = series.shift(periods)
@@ -599,10 +598,6 @@ REGIME_RULES = {
     "M4":     lambda r, z: ("carry" if not np.isnan(r) and r > 0 else "stress"),
     "M5":     lambda r, z: ("equity-friendly" if not np.isnan(r) and r < 0 else "defensive"),
     # US Macro
-    "US_LEI1": lambda r, z: (
-        "recession-risk" if not np.isnan(r) and r < -4.3 and not np.isnan(z) and z < -1.5
-        else ("late-cycle" if not np.isnan(r) and r < 0 else "expansion")
-    ),
     "US_JOBS1":  lambda r, z: _r(r, z,  1, -1, "labour-deteriorating", "overheating", "stable"),
     "US_JOBS3":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
     "US_G6":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
@@ -1033,17 +1028,9 @@ def _calc_M5(cp, **_):
 
 
 # ---------------------------------------------------------------------------
-# US MACRO FUNDAMENTALS  (US_LEI1, US_JOBS1, US_LAB1, US_GROWTH1,
-#                          US_HOUS1, US_M2L1)
+# US MACRO FUNDAMENTALS  (US_JOBS1, US_JOBS2, US_JOBS3, US_G6, US_GROWTH1,
+#                          US_HOUS1, US_M2, US_ISM1)
 # ---------------------------------------------------------------------------
-
-def _calc_US_LEI1(mu, **_):
-    """
-    Conference Board LEI 6-month annualised change: USSLIND.
-    Raw = annualised % change over last 6 months (26 weekly periods).
-    """
-    lei = _to_weekly_friday(_get_col(mu, "USSLIND"))
-    return _annualised_change(lei, periods=26)
 
 
 def _calc_US_JOBS1(mu, **_):
@@ -1174,7 +1161,6 @@ _US_CALCULATORS = {
     "M3":         _calc_M3,
     "M4":         _calc_M4,
     "M5":         _calc_M5,
-    "US_LEI1":    _calc_US_LEI1,
     "US_JOBS1":   _calc_US_JOBS1,
     "US_JOBS3":    _calc_US_JOBS3,
     "US_G6": _calc_US_G6,
