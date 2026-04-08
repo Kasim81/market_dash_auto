@@ -1,10 +1,10 @@
 # Macro-Market Indicator Manual
 
-> **Purpose:** Educational reference for all 70 composite indicators computed by `compute_macro_market.py`. Each entry covers the formula, data sources, economic rationale drawn from academic and practitioner research, and regime interpretation calibrated for a **6–9 month investment horizon**.
+> **Purpose:** Educational reference for all 68 composite indicators computed by `compute_macro_market.py`. Each entry covers the formula, data sources, economic rationale drawn from academic and practitioner research, and regime interpretation calibrated for a **6–9 month investment horizon**.
 >
-> **Output columns per indicator:** `raw` (the computed series), `zscore` (260-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
+> **Output columns per indicator:** `raw` (the computed series), `zscore` (156-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
 >
-> Last updated: 2026-04-01
+> Last updated: 2026-04-08
 
 ---
 
@@ -29,7 +29,7 @@
 |---|---|
 | **Formula** | `log(XLY / XLP)` |
 | **Data** | SPDR S&P 500 Consumer Discretionary ETF (XLY) / SPDR S&P 500 Consumer Staples ETF (XLP) — yfinance TR |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -514,7 +514,7 @@ For equity investors, the relationship between real rates and P/E multiples is d
 |---|---|
 | **Formula** | `log(EEM / DX-Y.NYB)` |
 | **Data** | iShares MSCI Emerging Markets ETF (EEM) / ICE US Dollar Index (DX-Y.NYB) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -540,7 +540,7 @@ For a 6–9 month investor, the dollar cycle is one of the highest-impact multi-
 |---|---|
 | **Formula** | `log(HG=F / GC=F)` |
 | **Data** | Copper Futures (HG=F) / Gold Futures (GC=F) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -566,7 +566,7 @@ For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross
 |---|---|
 | **Formula** | `log(SPY / SMA_40w(SPY))` |
 | **Data** | SPDR S&P 500 ETF (SPY) — yfinance |
-| **Lookback** | 260-week rolling z-score of distance from SMA |
+| **Lookback** | 156-week rolling z-score of distance from SMA |
 
 **Economic Rationale**
 
@@ -593,7 +593,7 @@ The 40-week window is the practitioner consensus for *slow trend* — long enoug
 |---|---|
 | **Formula** | Fraction of {SPY, URTH, GOVT, VNQ, DBC} above their 40-week SMA |
 | **Data** | SPY, iShares MSCI World (URTH), iShares US Treasury Bond (GOVT), Vanguard Real Estate (VNQ), Invesco DB Commodity (DBC) — yfinance |
-| **Lookback** | 260-week rolling z-score of breadth fraction |
+| **Lookback** | 156-week rolling z-score of breadth fraction |
 
 **Economic Rationale**
 
@@ -621,7 +621,7 @@ For a multi-asset portfolio manager, M2 is a *portfolio heat* indicator: when al
 |---|---|
 | **Formula** | `max(12m_return(SPY), 12m_return(URTH)) − 12m_return(SHY)` |
 | **Data** | SPY (US equity), URTH (global equity), SHY (1–3yr Treasuries as cash proxy) — yfinance |
-| **Lookback** | 260-week rolling z-score of excess return signal |
+| **Lookback** | 156-week rolling z-score of excess return signal |
 
 **Economic Rationale**
 
@@ -650,7 +650,7 @@ For a 6–9 month investor, M3 provides a principled answer to two allocation qu
 |---|---|
 | **Formula** | `log(BAMLHYH0A0HYM2TRIV / SMA_40w(BAMLHYH0A0HYM2TRIV))`; forced to −1 if HY OAS (BAMLH0A0HYM2) > 600 bps |
 | **Data** | FRED: ICE BofA US HY Total Return Index, ICE BofA US HY Option-Adjusted Spread |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -675,7 +675,7 @@ The **600 bps spread override** is a fundamental safety valve. Empirically, OAS 
 |---|---|
 | **Formula** | `log(VIX_13w_MA / VIX_52w_MA)` |
 | **Data** | CBOE VIX Index (^VIX) — yfinance, resampled to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -712,7 +712,7 @@ Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyn
 |---|---|
 | **Formula** | `USSLIND` (Conference Board LEI) — 6-month annualised % change |
 | **Data** | FRED: USSLIND (monthly, released ~3 weeks after month-end) |
-| **Lookback** | 260-week rolling z-score of 6m annualised change |
+| **Lookback** | 156-week rolling z-score of 6m annualised change |
 
 **Economic Rationale**
 
@@ -740,7 +740,7 @@ For a 6–9 month investor, LEI is the highest-level cycle signal available: a s
 |---|---|
 | **Formula** | YoY % change of `IC4WSA` (4-week moving average of initial claims) |
 | **Data** | FRED: IC4WSA (weekly, released Thursday for prior week) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -766,7 +766,7 @@ The YoY transformation is preferred for two reasons: (1) it eliminates seasonal 
 |---|---|
 | **Formula** | Equal-weighted average of z-scores of: inverted `UNRATE`, `PAYEMS` YoY%, inverted `IC4WSA` |
 | **Data** | FRED: UNRATE (monthly), PAYEMS (monthly), IC4WSA (weekly) |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
@@ -792,7 +792,7 @@ Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labo
 |---|---|
 | **Formula** | `JTSJOL / UNEMPLOY` — ratio of job openings to unemployed persons |
 | **Data** | FRED: JTSJOL (monthly JOLTS), UNEMPLOY (monthly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | ~2 months ahead of reported unemployment; ~3–4 months ahead of wage inflation |
 
 **Economic Rationale**
@@ -819,7 +819,7 @@ Practically, the JOLTS ratio leads reported unemployment by approximately 2 mont
 |---|---|
 | **Formula** | Equal-weighted z-score composite of: `INDPRO` 12m % change + `RSXFS` 12m % change |
 | **Data** | FRED: INDPRO (Industrial Production, monthly), RSXFS (Retail Sales ex-Autos, monthly) |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
@@ -847,7 +847,7 @@ The composite z-score removes the need to interpret two series simultaneously, p
 |---|---|
 | **Formula** | `PERMIT` — 12-month % change |
 | **Data** | FRED: PERMIT (Building Permits, monthly, released ~3 weeks after month-end) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | Typically leads housing starts by 1–2 months; leads GDP by 2–4 quarters |
 
 **Economic Rationale**
@@ -874,7 +874,7 @@ The interest-rate sensitivity of permits is also why US_HOUS1 is *naturally lead
 |---|---|
 | **Formula** | `M2SL` — YoY % change |
 | **Data** | FRED: M2SL (monthly, revised quarterly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -937,7 +937,7 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 |---|---|
 | **Formula** | `log((EXV1.DE + EXH1.DE + EXV3.DE) / (EXV2.DE + EXH3.DE))` |
 | **Data** | STOXX Europe 600 sector ETFs: Industrials, Banks, Technology vs Utilities, Consumer Staples — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -963,7 +963,7 @@ Fama & French (1989) showed that cyclical-to-defensive spread returns predict fu
 |---|---|
 | **Formula** | `log(MCX.L / ISF.L)` — FTSE 250 ETF / FTSE 100 ETF |
 | **Data** | iShares FTSE 250 ETF (MCX.L) / iShares Core FTSE 100 ETF (ISF.L) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -989,7 +989,7 @@ Dimson, Marsh & Staunton (2002) noted the UK equity market's historically high i
 |---|---|
 | **Formula** | `log(FEZ / SPY)` — Euro Stoxx 50 ETF / S&P 500 ETF (both in USD) |
 | **Data** | SPDR Euro Stoxx 50 ETF (FEZ) / SPDR S&P 500 ETF (SPY) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1015,7 +1015,7 @@ Key structural drivers of Eurozone outperformance phases include: (1) EUR apprec
 |---|---|
 | **Formula** | `log(EZU / URTH)` — iShares MSCI Eurozone ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EZU, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1041,7 +1041,7 @@ For a 6–9 month investor constructing a MSCI World-based equity allocation, EU
 |---|---|
 | **Formula** | `yield(ICE BofA Euro Corporate Index) − yield(ICE BofA Euro Government Index)` |
 | **Data** | FRED: BAMLHE00EHY0EY (Euro HY OAS) and BAMLHE4XEHYSIS (Euro IG OAS) — arithmetic difference |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1067,7 +1067,7 @@ Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess b
 |---|---|
 | **Formula** | `log(INXG.L / IGLT.L)` — iShares UK Inflation-Linked Gilt ETF / iShares UK Gilt ETF |
 | **Data** | INXG.L, IGLT.L — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1093,7 +1093,7 @@ Post-Brexit, UK inflation dynamics have been structurally different from the Eur
 |---|---|
 | **Formula** | `UK 10Y Gilt Yield − Germany 10Y Bund Yield` |
 | **Data** | FRED: IRLTLT01GBM156N (UK 10Y) − IRLTLT01DEM156N (Germany 10Y) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1119,7 +1119,7 @@ Blanchard & Summers (1984) showed that long-term yield differentials between dev
 |---|---|
 | **Formula** | `Italy 10Y Yield − Germany 10Y Bund Yield` |
 | **Data** | FRED: IRLTLT01ITM156N − IRLTLT01DEM156N |
-| **Lookback** | 260-week rolling z-score; raw level override at 2.5% |
+| **Lookback** | 156-week rolling z-score; raw level override at 2.5% |
 
 **Economic Rationale**
 
@@ -1145,7 +1145,7 @@ In practice, the ECB has intervened twice with explicit backstops at critical BT
 |---|---|
 | **Formula** | `log(SLXX.L / IGLT.L)` — iShares Core GBP Corporate Bond ETF / iShares UK Gilt ETF |
 | **Data** | SLXX.L, IGLT.L — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1171,7 +1171,7 @@ Post-Brexit, UK corporate spreads have also incorporated a structural UK-specifi
 |---|---|
 | **Formula** | Average z-score of `log(EURUSD=X)` and `log(EXV1.DE / EXV2.DE)` (European industrials/utilities) |
 | **Data** | EUR/USD spot (EURUSD=X) + STOXX Europe 600 Industrials/Utilities ratio — yfinance |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
@@ -1211,7 +1211,7 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 |---|---|
 | **Formula** | `log(000905.SS / 000300.SS)` — CSI 500 / CSI 300 |
 | **Data** | CSI 500 Index (000905.SS) / CSI 300 Index (000300.SS) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1237,7 +1237,7 @@ For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus
 |---|---|
 | **Formula** | `log(000001.SS / URTH)` — Shanghai Composite / iShares MSCI World ETF (USD-adjusted) |
 | **Data** | Shanghai Composite (000001.SS), iShares MSCI World ETF (URTH) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1263,7 +1263,7 @@ Key drivers of China outperformance phases: (1) PBOC easing and credit expansion
 |---|---|
 | **Formula** | `log(NIFTY_MIDCAP150 / ^NSEI)` and `log(NIFTY_SMALLCAP250 / ^NSEI)` — z-score of each |
 | **Data** | Nifty Midcap 150, Nifty Smallcap 250, Nifty 50 (^NSEI) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1289,7 +1289,7 @@ India's structural growth story — demographics, formalisation of the economy v
 |---|---|
 | **Formula** | `log(FXI / EEM)` — iShares China Large-Cap ETF / iShares MSCI EM ETF (both USD) |
 | **Data** | FXI, EEM — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1315,7 +1315,7 @@ Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014,
 |---|---|
 | **Formula** | `IRLTLT01CNM156N − DGS10` — China 10Y Government Bond Yield minus US 10Y Treasury Yield |
 | **Data** | FRED: IRLTLT01CNM156N (China 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1341,7 +1341,7 @@ For a 6–9 month investor, the China–US spread therefore serves a dual purpos
 |---|---|
 | **Formula** | `IRLTLT01INM156N − DGS10` — India 10Y Government Bond Yield minus US 10Y Treasury Yield |
 | **Data** | FRED: IRLTLT01INM156N (India 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1367,7 +1367,7 @@ The risk scenario is spread compression driven by US rate rises (as in 2022) wit
 |---|---|
 | **Formula** | `log(CNY=X / SMA_26w(CNY=X))` — CNY/USD spot vs its 26-week moving average |
 | **Data** | CNY=X (USD per CNY, so higher = stronger CNY) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1395,7 +1395,7 @@ For a global investor, CNY momentum is a direct signal for China equity position
 |---|---|
 | **Formula** | `log(INR=X / SMA_26w(INR=X))` — INR/USD spot vs its 26-week moving average |
 | **Data** | INR=X (USD per INR, higher = stronger INR) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1433,7 +1433,7 @@ For equity investors, INR strength is positively correlated with Indian equity r
 |---|---|
 | **Formula** | `log(Iron Ore price / HG=F)` — Iron Ore spot / Copper Futures |
 | **Data** | Iron Ore (World Bank commodity price series or spot proxy) / Copper Futures (HG=F) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1459,7 +1459,7 @@ Kilian (2009, *American Economic Review*) showed that commodity price decomposit
 |---|---|
 | **Formula** | `log(Iron Ore / DBC)` — Iron Ore spot / Invesco DB Commodity Index ETF |
 | **Data** | Iron Ore spot / DBC (DBC covers energy ~55%, metals ~25%, agriculture ~20%) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1485,7 +1485,7 @@ The distinction is crucial for portfolio construction: an iron ore overweight ve
 |---|---|
 | **Formula** | `log(EWJ / URTH)` — iShares MSCI Japan ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EWJ, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1515,7 +1515,7 @@ For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both 
 |---|---|
 | **Formula** | `log(USDJPY=X / SMA_26w(USDJPY=X))` — USD/JPY spot vs its 26-week moving average |
 | **Data** | USDJPY=X — yfinance (higher = JPY weaker / USD stronger) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | JPY moves precede equity/EM impact by days to 2–4 weeks |
 
 **Economic Rationale**
@@ -1556,7 +1556,7 @@ For a global multi-asset investor, JP_FX1 is the single most important *systemic
 |---|---|
 | **Formula** | `USA_CLI − avg(DEU_CLI, FRA_CLI)` |
 | **Data** | OECD Composite Leading Indicators: USA, DEU, FRA (monthly, ~6-week publication lag) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1582,7 +1582,7 @@ For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozon
 |---|---|
 | **Formula** | `USA_CLI − CHN_CLI` |
 | **Data** | OECD Composite Leading Indicators: USA, CHN (monthly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1608,7 +1608,7 @@ The OECD China CLI is constructed from industrial production, business surveys, 
 |---|---|
 | **Formula** | `avg(DEU_CLI, FRA_CLI, GBR_CLI)` — equal-weighted average |
 | **Data** | OECD CLIs: Germany, France, United Kingdom (monthly) |
-| **Lookback** | 260-week rolling z-score; regime also references CLI level vs 100 |
+| **Lookback** | 156-week rolling z-score; regime also references CLI level vs 100 |
 
 **Economic Rationale**
 
@@ -1634,7 +1634,7 @@ The significance of the 100-level threshold is directly from OECD methodology: C
 |---|---|
 | **Formula** | `avg(CHN_CLI, JPN_CLI, AUS_CLI)` — equal-weighted average |
 | **Data** | OECD CLIs: China, Japan, Australia (monthly) |
-| **Lookback** | 260-week rolling z-score; regime also references CLI level vs 100 |
+| **Lookback** | 156-week rolling z-score; regime also references CLI level vs 100 |
 
 **Economic Rationale**
 
@@ -1663,7 +1663,7 @@ For a global investor, a high REG_CLI4 reading is one of the most bullish signal
 | **Formula** | Fraction of {USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN} where `CLI > 100 AND CLI > CLI_26w_ago` |
 | **Data** | OECD CLIs: all 9 countries (monthly) |
 | **Output range** | 0.0 (no country above trend and improving) to 1.0 (all 9 countries above trend and improving) |
-| **Lookback** | 260-week rolling z-score; regime also references raw fraction |
+| **Lookback** | 156-week rolling z-score; regime also references raw fraction |
 
 **Economic Rationale**
 
@@ -1693,7 +1693,7 @@ Because CLIs are themselves designed to lead economic activity, REG_CLI5 is *nat
 |---|---|
 | **Formula** | `log(ACWI / GOVT)` — iShares MSCI ACWI ETF / iShares US Treasury Bond ETF |
 | **Data** | ACWI (iShares MSCI ACWI — 47-country global equity), GOVT (iShares US Treasury) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1721,7 +1721,7 @@ For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when
 |---|---|
 | **Formula** | `log(EEM / URTH)` — iShares MSCI EM ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EEM, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1747,7 +1747,7 @@ Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven b
 |---|---|
 | **Formula** | `log(DBC / DBC_52w_ago)` — Invesco DB Commodity Index 52-week log return |
 | **Data** | DBC (Invesco DB Commodity Index Tracking Fund) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1773,7 +1773,7 @@ For a multi-asset investor, REG_COMM1 serves as the primary signal for whether t
 |---|---|
 | **Formula** | `log(CL=F / GC=F)` — WTI Crude Oil Futures / Gold Futures |
 | **Data** | CL=F (WTI Crude), GC=F (Gold) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1799,4 +1799,4 @@ The oil/gold ratio complements US_FX2 (copper/gold) by adding the energy dimensi
 
 ---
 
-*End of Manual — 70 indicators total across Sections 1, 2a, 2b, 3a, 3b, 4a, 4b, 4c*
+*End of Manual — 68 indicators total across Sections 1, 2a, 2b, 3a, 3b, 4a, 4b, 4c*
