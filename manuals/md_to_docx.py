@@ -1,5 +1,11 @@
-"""Convert macro_market_cheat_sheet.md to a print-friendly .docx."""
-import re
+"""Convert a markdown file to a print-friendly .docx.
+
+Usage:
+    python md_to_docx.py                          # converts cheat sheet (default)
+    python md_to_docx.py path/to/file.md          # converts any .md file
+    python md_to_docx.py file1.md file2.md ...    # converts multiple files
+"""
+import re, sys
 from pathlib import Path
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -7,8 +13,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 
-MD = Path(__file__).parent / "macro_market_cheat_sheet.md"
-OUT = Path(__file__).parent / "macro_market_cheat_sheet.docx"
+DEFAULT_MD = Path(__file__).parent / "macro_market_cheat_sheet.md"
 
 
 def set_cell_shading(cell, color_hex):
@@ -104,8 +109,11 @@ def add_formatted_paragraph(doc, text, style="Normal", bold=False):
     return p
 
 
-def main():
-    lines = MD.read_text().splitlines()
+def convert(md_path):
+    """Convert a single .md file to .docx."""
+    md_path = Path(md_path)
+    out_path = md_path.with_suffix(".docx")
+    lines = md_path.read_text().splitlines()
     doc = Document()
 
     # Page setup — narrower margins for print
@@ -178,8 +186,17 @@ def main():
         add_formatted_paragraph(doc, stripped)
         i += 1
 
-    doc.save(str(OUT))
-    print(f"Saved: {OUT}")
+    doc.save(str(out_path))
+    print(f"Saved: {out_path}")
+
+
+def main():
+    if len(sys.argv) > 1:
+        paths = [Path(a) for a in sys.argv[1:]]
+    else:
+        paths = [DEFAULT_MD]
+    for p in paths:
+        convert(p)
 
 
 if __name__ == "__main__":
