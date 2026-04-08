@@ -888,7 +888,7 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 
 ---
 
-### EU_G1 — European Cyclicals vs Defensives
+### EU_G3 — European Cyclicals vs Defensives
 
 | | |
 |---|---|
@@ -898,9 +898,9 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 
 **Economic Rationale**
 
-EU_G1 is the European analogue of US_G1/G2: relative performance of cyclical sectors (industrials, banks, technology) versus defensive sectors (utilities, consumer staples) as a real-time market-based assessment of the European growth outlook.
+EU_G3 is the European analogue of US_G1/G2: relative performance of cyclical sectors (industrials, banks, technology) versus defensive sectors (utilities, consumer staples) as a real-time market-based assessment of the European growth outlook.
 
-The choice of European Banks as a cyclical component is particularly important and differs from the US construction. European banks are more directly tied to the sovereign credit cycle than US banks: their balance sheets carry significant sovereign bond holdings, and their lending spreads respond directly to ECB policy and peripheral sovereign stress (EU_I4). When banks outperform defensives in Europe, it signals improving credit conditions, a steepening yield curve and diminishing tail risk — all supportive of the broader European growth narrative.
+The choice of European Banks as a cyclical component is particularly important and differs from the US construction. European banks are more directly tied to the sovereign credit cycle than US banks: their balance sheets carry significant sovereign bond holdings, and their lending spreads respond directly to ECB policy and peripheral sovereign stress (EU_R1). When banks outperform defensives in Europe, it signals improving credit conditions, a steepening yield curve and diminishing tail risk — all supportive of the broader European growth narrative.
 
 Fama & French (1989) showed that cyclical-to-defensive spread returns predict future economic conditions across markets, not just the US. Dimson, Marsh & Staunton (2002, *Triumph of the Optimists*) extended this analysis to European markets, confirming that sector rotation signals are robust across the UK, Germany and France. The European cycle is also highly sensitive to global trade volumes — particularly Chinese demand for German capital goods — making EU_G1 a dual signal for both European domestic conditions and global goods cycle strength.
 
@@ -914,7 +914,7 @@ Fama & French (1989) showed that cyclical-to-defensive spread returns predict fu
 
 ---
 
-### EU_G2 — UK Domestic vs Global (FTSE 250 / FTSE 100)
+### UK_G1 — UK Domestic vs Global (FTSE 250 / FTSE 100)
 
 | | |
 |---|---|
@@ -940,7 +940,7 @@ Dimson, Marsh & Staunton (2002) noted the UK equity market's historically high i
 
 ---
 
-### EU_G3 — Eurozone vs US Equity Leadership
+### EU_G2 — Eurozone vs US Equity Leadership
 
 | | |
 |---|---|
@@ -950,7 +950,7 @@ Dimson, Marsh & Staunton (2002) noted the UK equity market's historically high i
 
 **Economic Rationale**
 
-EU_G3 measures relative equity leadership between the Eurozone and the United States — one of the most important regional allocation decisions in a global multi-asset portfolio.
+EU_G2 measures relative equity leadership between the Eurozone and the United States — one of the most important regional allocation decisions in a global multi-asset portfolio.
 
 The drivers of Eurozone-vs-US relative performance are well-documented in the academic literature on international equity premium differentials. Solnik (1974, *Journal of Finance*) established that international diversification reduces portfolio risk precisely because national equity cycles diverge — the Eurozone and US cycles correlate at approximately 0.75 over rolling 3-year periods but can diverge sharply at cycle inflection points. Asness, Moskowitz & Pedersen (2013) showed that cross-country equity momentum is one of the most persistent and risk-adjusted-efficient factors in international investing.
 
@@ -966,7 +966,7 @@ Key structural drivers of Eurozone outperformance phases include: (1) EUR apprec
 
 ---
 
-### EU_G4 — Eurozone vs Global Equities
+### EU_G1 — Eurozone vs Global Equities
 
 | | |
 |---|---|
@@ -976,11 +976,11 @@ Key structural drivers of Eurozone outperformance phases include: (1) EUR apprec
 
 **Economic Rationale**
 
-EU_G4 broadens the Eurozone comparison from US-only (EU_G3) to the full global developed-market universe. This distinction matters: Eurozone outperformance relative to the US (EU_G3 positive) can coexist with Eurozone underperformance relative to MSCI World if Japan, UK or other developed markets are simultaneously strong. EU_G4 therefore answers the regional allocation question from the perspective of a globally diversified investor.
+EU_G1 broadens the Eurozone comparison from US-only (EU_G2) to the full global developed-market universe. This distinction matters: Eurozone outperformance relative to the US (EU_G2 positive) can coexist with Eurozone underperformance relative to MSCI World if Japan, UK or other developed markets are simultaneously strong. EU_G1 therefore answers the regional allocation question from the perspective of a globally diversified investor.
 
-The MSCI World benchmark (proxied by URTH) covers 23 developed markets with approximately 70% US weight, meaning EU_G4 is a less US-centric comparison than EU_G3. When EU_G4 is positive, Eurozone equities are genuinely outperforming the blended global developed market — capturing not just EUR/USD dynamics but also European fundamentals versus the broader international cycle.
+The MSCI World benchmark (proxied by URTH) covers 23 developed markets with approximately 70% US weight, meaning EU_G1 is a less US-centric comparison than EU_G2. When EU_G1 is positive, Eurozone equities are genuinely outperforming the blended global developed market — capturing not just EUR/USD dynamics but also European fundamentals versus the broader international cycle.
 
-For a 6–9 month investor constructing a MSCI World-based equity allocation, EU_G4 provides the primary signal for whether to overweight or underweight European equities relative to the benchmark. A sustained positive z-score of EU_G4 combined with a positive EU_G1 (European cyclicals leading) and a compressed EU_I4 (BTP-Bund spread) constitutes a high-conviction Eurozone overweight signal.
+For a 6–9 month investor constructing a MSCI World-based equity allocation, EU_G1 provides the primary signal for whether to overweight or underweight European equities relative to the benchmark. A sustained positive z-score of EU_G1 combined with a positive EU_G3 (European cyclicals leading) and a compressed EU_R1 (BTP-Bund spread) constitutes a high-conviction Eurozone overweight signal.
 
 **Regime Classification**
 
@@ -992,7 +992,7 @@ For a 6–9 month investor constructing a MSCI World-based equity allocation, EU
 
 ---
 
-### EU_I1 — Euro Corporate vs Government Spread
+### EU_Cr1 — Euro Corporate vs Government Spread
 
 | | |
 |---|---|
@@ -1002,11 +1002,11 @@ For a 6–9 month investor constructing a MSCI World-based equity allocation, EU
 
 **Economic Rationale**
 
-EU_I1 is the European equivalent of US_I2 (HY OAS): the spread between corporate bond yields and risk-free government yields captures the aggregate risk premium demanded for Euro corporate credit. This spread is one of the broadest and most liquid financial conditions indicators for the Eurozone economy.
+EU_Cr1 is the European equivalent of US_Cr2 (HY spread): the spread between corporate bond yields and risk-free government yields captures the aggregate risk premium demanded for Euro corporate credit. This spread is one of the broadest and most liquid financial conditions indicators for the Eurozone economy.
 
-The credit channel of monetary policy in Europe is particularly important because European companies are far more bank-dependent than US companies: approximately 70–80% of Eurozone corporate financing comes from bank loans versus approximately 40% in the US. Bank lending rates closely track the corporate bond market's risk premium signal — when EU_I1 widens, it signals tighter bank lending conditions, which feed through to investment, hiring and production with a 2–4 quarter lag (ECB Lending Survey research, Altunbas et al. 2010, *Journal of Banking & Finance*).
+The credit channel of monetary policy in Europe is particularly important because European companies are far more bank-dependent than US companies: approximately 70–80% of Eurozone corporate financing comes from bank loans versus approximately 40% in the US. Bank lending rates closely track the corporate bond market's risk premium signal — when EU_Cr1 widens, it signals tighter bank lending conditions, which feed through to investment, hiring and production with a 2–4 quarter lag (ECB Lending Survey research, Altunbas et al. 2010, *Journal of Banking & Finance*).
 
-Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess bond premium (EBP) framework, showing that corporate spread widening beyond what can be explained by expected defaults is the most powerful predictor of future real activity — more powerful than the yield curve alone. EU_I1 captures a similar signal for the Eurozone: widening that exceeds the credit cycle's default-justified level indicates financial conditions tightening beyond fundamentals, a regime shift requiring defensive positioning.
+Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess bond premium (EBP) framework, showing that corporate spread widening beyond what can be explained by expected defaults is the most powerful predictor of future real activity — more powerful than the yield curve alone. EU_Cr1 captures a similar signal for the Eurozone: widening that exceeds the credit cycle's default-justified level indicates financial conditions tightening beyond fundamentals, a regime shift requiring defensive positioning.
 
 **Regime Classification**
 
@@ -1018,7 +1018,7 @@ Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess b
 
 ---
 
-### EU_I2 — UK Inflation Expectations Proxy (Linker/Gilt Ratio)
+### UK_R2 — UK Inflation Expectations Proxy (Linker/Gilt Ratio)
 
 | | |
 |---|---|
@@ -1030,7 +1030,7 @@ Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess b
 
 The ratio of inflation-linked gilt (linker) prices to nominal gilt prices is a market-based proxy for UK inflation expectations and real rate dynamics. When linkers outperform nominal gilts, the market is pricing rising inflation breakevens or falling real rates — both signals that the inflation-adjusted return on nominal bonds is declining, a headwind for long-duration fixed income.
 
-The theoretical basis comes from the Fisher (1930) decomposition: nominal yield = real yield + expected inflation + term premium. The linker/gilt price ratio implicitly captures the inflation component: linkers pay a real coupon plus CPI uplift, so they outperform nominal gilts when inflation expectations rise or when real rates fall. This mirrors the TIPS-based US_RR1 and US_I7 indicators but uses the ETF price ratio rather than FRED yield data, since UK real yield data availability on FRED is limited.
+The theoretical basis comes from the Fisher (1930) decomposition: nominal yield = real yield + expected inflation + term premium. The linker/gilt price ratio implicitly captures the inflation component: linkers pay a real coupon plus CPI uplift, so they outperform nominal gilts when inflation expectations rise or when real rates fall. This mirrors the TIPS-based US_R5 and US_R4 indicators but uses the ETF price ratio rather than FRED yield data, since UK real yield data availability on FRED is limited.
 
 Post-Brexit, UK inflation dynamics have been structurally different from the Eurozone: UK CPI peaked at 11.1% in October 2022, driven by energy dependency and sterling weakness — the highest level among major developed economies. The Bank of England's (BoE) dual mandate complication — inflation control versus financial stability — makes the linker/gilt ratio a particularly important signal for UK rate risk and gilt market positioning.
 
@@ -1044,7 +1044,7 @@ Post-Brexit, UK inflation dynamics have been structurally different from the Eur
 
 ---
 
-### EU_I3 — UK–Germany 10-Year Spread (Gilt–Bund)
+### UK_R1 — UK–Germany 10-Year Spread (Gilt–Bund)
 
 | | |
 |---|---|
@@ -1058,7 +1058,7 @@ The UK–Germany 10-year yield spread distils three distinct macro signals into 
 
 During normal periods, the spread reflects the structural inflation and growth premium of the UK over Germany — typically 50–150 bps. When the spread widens sharply above historical norms, it signals that UK-specific risk is being priced: fiscal credibility concerns (as in the 2022 Truss mini-budget, when the gilt–bund spread spiked 100 bps in days, forcing BoE intervention), inflation overshoot, or BoE policy lag risk. Conversely, a compressed spread can signal relative UK macro weakness or Eurozone stress.
 
-Blanchard & Summers (1984) showed that long-term yield differentials between developed countries embed both current and expected future short-rate differentials — meaning the gilt–bund spread also captures expectations about the future BoE/ECB policy divergence path over 2–5 years. For a multi-asset investor, sharp moves in EU_I3 are often early warnings of GBP volatility and UK equity risk repricing.
+Blanchard & Summers (1984) showed that long-term yield differentials between developed countries embed both current and expected future short-rate differentials — meaning the gilt–bund spread also captures expectations about the future BoE/ECB policy divergence path over 2–5 years. For a multi-asset investor, sharp moves in UK_R1 are often early warnings of GBP volatility and UK equity risk repricing.
 
 **Regime Classification**
 
@@ -1070,7 +1070,7 @@ Blanchard & Summers (1984) showed that long-term yield differentials between dev
 
 ---
 
-### EU_I4 — BTP–Bund Spread (Peripheral Sovereign Stress)
+### EU_R1 — BTP–Bund Spread (Peripheral Sovereign Stress)
 
 | | |
 |---|---|
@@ -1096,7 +1096,7 @@ In practice, the ECB has intervened twice with explicit backstops at critical BT
 
 ---
 
-### EU_R1 — UK Credit Conditions (Corporates vs Gilts)
+### UK_Cr1 — UK Credit Conditions (Corporates vs Gilts)
 
 | | |
 |---|---|
@@ -1106,11 +1106,11 @@ In practice, the ECB has intervened twice with explicit backstops at critical BT
 
 **Economic Rationale**
 
-EU_R1 measures the relative performance of GBP investment-grade corporate bonds versus UK government gilts — the UK equivalent of the US investment-grade credit spread signal. When corporates outperform gilts, it signals that investors are willing to accept lower incremental yield for UK credit risk; the financial conditions environment is supportive. When gilts outperform, it signals a flight to safety within the UK fixed income market.
+UK_Cr1 measures the relative performance of GBP investment-grade corporate bonds versus UK government gilts — the UK equivalent of the US investment-grade credit spread signal. When corporates outperform gilts, it signals that investors are willing to accept lower incremental yield for UK credit risk; the financial conditions environment is supportive. When gilts outperform, it signals a flight to safety within the UK fixed income market.
 
-The UK corporate bond market is smaller and less liquid than the US market, which means EU_R1 tends to move more sharply at inflection points and can lead equity market stress. Longstaff & Schwartz (1995, *Journal of Finance*) showed that corporate–government spread dynamics are driven by both default risk and liquidity premiums, with the liquidity component dominating during stress — a feature particularly pronounced in the GBP corporate market.
+The UK corporate bond market is smaller and less liquid than the US market, which means UK_Cr1 tends to move more sharply at inflection points and can lead equity market stress. Longstaff & Schwartz (1995, *Journal of Finance*) showed that corporate–government spread dynamics are driven by both default risk and liquidity premiums, with the liquidity component dominating during stress — a feature particularly pronounced in the GBP corporate market.
 
-Post-Brexit, UK corporate spreads have also incorporated a structural UK-specific risk premium absent from EUR or USD corporate markets: sterling liquidity risk, UK political risk, and the reduced depth of the GBP investor base. EU_R1 therefore serves as both a domestic credit conditions indicator and a barometer of UK-specific macro risk relative to the global credit cycle.
+Post-Brexit, UK corporate spreads have also incorporated a structural UK-specific risk premium absent from EUR or USD corporate markets: sterling liquidity risk, UK political risk, and the reduced depth of the GBP investor base. UK_Cr1 therefore serves as both a domestic credit conditions indicator and a barometer of UK-specific macro risk relative to the global credit cycle.
 
 **Regime Classification**
 
@@ -1122,7 +1122,7 @@ Post-Brexit, UK corporate spreads have also incorporated a structural UK-specifi
 
 ---
 
-### EU_FX1 — EUR Macro Composite (EUR/USD + European Cyclicals)
+### EU_G4 — EUR Macro Composite (EUR/USD + European Cyclicals)
 
 | | |
 |---|---|
@@ -1132,11 +1132,11 @@ Post-Brexit, UK corporate spreads have also incorporated a structural UK-specifi
 
 **Economic Rationale**
 
-EU_FX1 combines two complementary signals — the EUR exchange rate and European sector rotation — into a composite that distinguishes genuine Eurozone macro strength from currency-only moves. This design choice is deliberate: EUR appreciation alone can occur for reasons unrelated to European growth (e.g. USD weakness, safe-haven flows during non-European crises), but EUR appreciation *combined with European cyclicals outperforming defensives* is a stronger signal that Eurozone fundamentals are genuinely improving.
+EU_G4 combines two complementary signals — the EUR exchange rate and European sector rotation — into a composite that distinguishes genuine Eurozone macro strength from currency-only moves. This design choice is deliberate: EUR appreciation alone can occur for reasons unrelated to European growth (e.g. USD weakness, safe-haven flows during non-European crises), but EUR appreciation *combined with European cyclicals outperforming defensives* is a stronger signal that Eurozone fundamentals are genuinely improving.
 
 The EUR is the second most important reserve currency globally and reflects the aggregate macro credibility of the Eurozone — fiscal discipline, ECB policy, and trade competitiveness. Frankel & Rose (1995, *Journal of International Economics*) documented that currency strength in export-oriented economies correlates with export-driven growth cycles; Obstfeld & Rogoff (1996, *Foundations of International Macroeconomics*) formalised the link between terms-of-trade improvement and currency appreciation for industrial exporters like Germany.
 
-The industrial/utilities sector component captures domestic capex and credit cycle conditions within Europe, filtering out external demand effects. When both legs of EU_FX1 are positive simultaneously — EUR strengthening AND European cyclicals leading defensives — the composite provides a high-conviction signal that European equity risk is well-compensated for the 6–9 month horizon.
+The industrial/utilities sector component captures domestic capex and credit cycle conditions within Europe, filtering out external demand effects. When both legs of EU_G4 are positive simultaneously — EUR strengthening AND European cyclicals leading defensives — the composite provides a high-conviction signal that European equity risk is well-compensated for the 6–9 month horizon.
 
 **Regime Classification**
 
@@ -1148,7 +1148,7 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 
 ---
 
-*End of Section 3b — Europe & UK (10 indicators: EU_G1, EU_G2, EU_G3, EU_G4, EU_I1, EU_I2, EU_I3, EU_I4, EU_R1, EU_FX1)*
+*End of Section 3b — Europe & UK (10 indicators: EU_G3, UK_G1, EU_G2, EU_G1, EU_Cr1, UK_R2, UK_R1, EU_R1, UK_Cr1, EU_G4)*
 
 ---
 
@@ -1162,7 +1162,7 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 
 ---
 
-### AS_G1 — China Size Cycle (CSI 500 / CSI 300)
+### AS_CN_G3 — China Size Cycle (CSI 500 / CSI 300)
 
 | | |
 |---|---|
@@ -1176,7 +1176,7 @@ The CSI 300 covers the 300 largest A-share companies listed on the Shanghai and 
 
 This decomposition is structurally important in China because the SOE and private-sector economies respond to different policy levers. SOE outperformance (CSI 300 leading) tends to occur during credit-driven infrastructure stimulus phases — the PBOC and policy banks direct lending to SOEs, which expand capacity. Private-sector outperformance (CSI 500 leading) tends to occur when consumption, technology and services are driving growth — a higher quality, more self-sustaining cycle. Lardy (2014, *Markets Over Mao*, Peterson Institute) documented this structural duality and its implications for sustainable Chinese growth.
 
-For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus is creating genuine domestic demand (CSI 500 leadership, positive for global consumer goods exporters) or infrastructure-only reflation (CSI 300 leadership, more directly positive for industrial metals). The ratio also serves as a proxy for Chinese risk appetite breadth: mid-cap leadership implies broader investor participation and confidence.
+For a 6–9 month international investor, AS_CN_G3 signals whether Chinese stimulus is creating genuine domestic demand (CSI 500 leadership, positive for global consumer goods exporters) or infrastructure-only reflation (CSI 300 leadership, more directly positive for industrial metals). The ratio also serves as a proxy for Chinese risk appetite breadth: mid-cap leadership implies broader investor participation and confidence.
 
 **Regime Classification**
 
@@ -1188,7 +1188,7 @@ For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus
 
 ---
 
-### AS_G2 — China vs Global Developed Markets
+### AS_CN_G2 — China vs Global Developed Markets
 
 | | |
 |---|---|
@@ -1198,11 +1198,11 @@ For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus
 
 **Economic Rationale**
 
-AS_G2 compares Chinese equity performance to the global developed-market benchmark in USD terms, capturing the net effect of all China-specific macro forces — growth, policy, geopolitics, valuation and FX — relative to the global cycle. It is the primary signal for whether to overweight or underweight China versus a global DM baseline.
+AS_CN_G2 compares Chinese equity performance to the global developed-market benchmark in USD terms, capturing the net effect of all China-specific macro forces — growth, policy, geopolitics, valuation and FX — relative to the global cycle. It is the primary signal for whether to overweight or underweight China versus a global DM baseline.
 
 The theoretical rationale draws on the *emerging market premium* literature. Bekaert & Harvey (1995, *Journal of Finance*) showed that EM equities carry a risk premium over DM equities that varies with openness, policy risk and integration with global capital markets. China's equity market is partially segmented from global markets (capital controls, A-share accessibility) meaning the A-share market often diverges significantly from global trends — creating genuine alpha opportunities when Chinese policy cycles diverge from the global cycle.
 
-Key drivers of China outperformance phases: (1) PBOC easing and credit expansion (RRR cuts, LPR reductions); (2) fiscal stimulus targeted at infrastructure and housing; (3) regulatory easing after crackdowns; (4) CNY stability or strengthening (AS_FX1 positive). Underperformance phases are typically associated with: regulatory tightening (2021 tech crackdown), property sector stress (Evergrande, 2021–23), US-China geopolitical escalation, or CNY depreciation pressure.
+Key drivers of China outperformance phases: (1) PBOC easing and credit expansion (RRR cuts, LPR reductions); (2) fiscal stimulus targeted at infrastructure and housing; (3) regulatory easing after crackdowns; (4) CNY stability or strengthening (FX_CN1 positive). Underperformance phases are typically associated with: regulatory tightening (2021 tech crackdown), property sector stress (Evergrande, 2021–23), US-China geopolitical escalation, or CNY depreciation pressure.
 
 **Regime Classification**
 
@@ -1214,7 +1214,7 @@ Key drivers of China outperformance phases: (1) PBOC easing and credit expansion
 
 ---
 
-### AS_G3 — India Domestic Growth Breadth (Nifty Mid/Smallcap vs Nifty 50)
+### AS_IN_G1 — India Domestic Growth Breadth (Nifty Mid/Smallcap vs Nifty 50)
 
 | | |
 |---|---|
@@ -1224,11 +1224,11 @@ Key drivers of China outperformance phases: (1) PBOC easing and credit expansion
 
 **Economic Rationale**
 
-India's equity market structure mirrors the UK dynamic (EU_G2) in one key respect: the Nifty 50 is dominated by globally competitive large-caps (Reliance Industries, TCS, Infosys, HDFC Bank) with significant international revenue exposure and institutional ownership, while the Nifty Midcap 150 and Smallcap 250 are primarily domestic businesses — regional banks, domestic consumer brands, real estate developers, infrastructure contractors.
+India's equity market structure mirrors the UK dynamic (UK_G1) in one key respect: the Nifty 50 is dominated by globally competitive large-caps (Reliance Industries, TCS, Infosys, HDFC Bank) with significant international revenue exposure and institutional ownership, while the Nifty Midcap 150 and Smallcap 250 are primarily domestic businesses — regional banks, domestic consumer brands, real estate developers, infrastructure contractors.
 
 The mid/small-cap-to-large-cap ratio in India therefore captures domestic animal spirits and the *democratisation of the growth cycle*: when mid and small caps outperform, credit is flowing broadly through the domestic economy, consumption is strong, and smaller businesses are accessing capital and winning market share. This is characteristic of India's mid-cycle expansions. When large caps dominate, it signals selective institutional positioning in quality names — often coinciding with RBI tightening, INR depreciation or global risk-off reducing appetite for illiquid smaller stocks.
 
-India's structural growth story — demographics, formalisation of the economy via GST and Aadhaar, manufacturing relocation from China — creates a long-run tailwind for the ratio, but the cyclical overlay remains important for 6–9 month positioning. Patnaik & Shah (2012, *NIPFP*) and Gopinath (2015, *IMF*) documented India's growing but still-fragile integration with global capital flows, which makes domestic indicators like AS_G3 more informative than pure top-down EM signals.
+India's structural growth story — demographics, formalisation of the economy via GST and Aadhaar, manufacturing relocation from China — creates a long-run tailwind for the ratio, but the cyclical overlay remains important for 6–9 month positioning. Patnaik & Shah (2012, *NIPFP*) and Gopinath (2015, *IMF*) documented India's growing but still-fragile integration with global capital flows, which makes domestic indicators like AS_IN_G1 more informative than pure top-down EM signals.
 
 **Regime Classification**
 
@@ -1240,7 +1240,7 @@ India's structural growth story — demographics, formalisation of the economy v
 
 ---
 
-### AS_G4 — China vs Broad EM (FXI / EEM)
+### AS_CN_G1 — China vs Broad EM (FXI / EEM)
 
 | | |
 |---|---|
@@ -1250,11 +1250,11 @@ India's structural growth story — demographics, formalisation of the economy v
 
 **Economic Rationale**
 
-AS_G4 measures whether China is driving or lagging the broader EM complex — an intra-EM rotation signal. Because China constitutes approximately 25–30% of the MSCI EM Index (and historically up to 40% prior to index reconstitutions), FXI/EEM measures China *relative* to the full EM basket including India (~18%), Taiwan (~16%), Korea (~12%), Brazil and South Africa.
+AS_CN_G1 measures whether China is driving or lagging the broader EM complex — an intra-EM rotation signal. Because China constitutes approximately 25–30% of the MSCI EM Index (and historically up to 40% prior to index reconstitutions), FXI/EEM measures China *relative* to the full EM basket including India (~18%), Taiwan (~16%), Korea (~12%), Brazil and South Africa.
 
 When FXI outperforms EEM, China is the marginal driver of EM returns — typically during domestic Chinese stimulus phases where commodity demand is rising and the PBOC is accommodating. This is directly positive for commodity-currency pairs (AUD/USD, BRL/USD, CLP/USD) since Chinese infrastructure demand is the primary marginal buyer of iron ore, copper and soybeans. When EEM outperforms FXI, other EM economies — particularly India, Korea (technology cycle) or Brazil (commodity producers) — are leading, indicating a more diversified EM expansion less dependent on Chinese credit.
 
-Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014, *The Dollar Trap*) documented the transmission channels from Chinese growth to EM commodity exporters, confirming that China-driven EM cycles have distinct sectoral signatures versus India or Korea-driven cycles. For an EM portfolio manager, AS_G4 determines whether to tilt toward China and commodity-linked EM (FXI outperformance) or diversified/non-China EM (EEM outperformance).
+Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014, *The Dollar Trap*) documented the transmission channels from Chinese growth to EM commodity exporters, confirming that China-driven EM cycles have distinct sectoral signatures versus India or Korea-driven cycles. For an EM portfolio manager, AS_CN_G1 determines whether to tilt toward China and commodity-linked EM (FXI outperformance) or diversified/non-China EM (EEM outperformance).
 
 **Regime Classification**
 
@@ -1266,7 +1266,7 @@ Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014,
 
 ---
 
-### AS_I1 — China–US Yield Spread (Carry Signal)
+### AS_CN_R1 — China–US Yield Spread (Carry Signal)
 
 | | |
 |---|---|
@@ -1292,7 +1292,7 @@ For a 6–9 month investor, the China–US spread therefore serves a dual purpos
 
 ---
 
-### AS_I2 — India–US Yield Spread (INR Carry Signal)
+### AS_IN_R1 — India–US Yield Spread (INR Carry Signal)
 
 | | |
 |---|---|
@@ -1318,7 +1318,7 @@ The risk scenario is spread compression driven by US rate rises (as in 2022) wit
 
 ---
 
-### AS_FX1 — CNY Directional Momentum
+### FX_CN1 — CNY Directional Momentum
 
 | | |
 |---|---|
@@ -1328,7 +1328,7 @@ The risk scenario is spread compression driven by US rate rises (as in 2022) wit
 
 **Economic Rationale**
 
-AS_FX1 measures the 6-month directional momentum of the Chinese yuan — whether the CNY is strengthening or weakening relative to its recent trend. This momentum framing is deliberate: the CNY is a managed currency (the PBOC sets a daily fixing within a ±2% band), meaning absolute FX levels are policy-controlled and less informative than the *direction* of the trend, which reflects the net of PBOC management intentions and market pressure.
+FX_CN1 measures the 6-month directional momentum of the Chinese yuan — whether the CNY is strengthening or weakening relative to its recent trend. This momentum framing is deliberate: the CNY is a managed currency (the PBOC sets a daily fixing within a ±2% band), meaning absolute FX levels are policy-controlled and less informative than the *direction* of the trend, which reflects the net of PBOC management intentions and market pressure.
 
 CNY strengthening momentum signals: (1) PBOC comfort with or active support of a stronger currency, typically associated with confidence in the domestic economy; (2) capital inflows driven by China's current account surplus or foreign portfolio investment; (3) reduced US-China trade tension (tariff escalation typically triggers CNY depreciation as a partial offset). CNY weakening momentum signals the reverse: PBOC allowing depreciation to cushion export competitiveness, capital flight, or external pressure.
 
@@ -1346,7 +1346,7 @@ For a global investor, CNY momentum is a direct signal for China equity position
 
 ---
 
-### AS_FX2 — INR Directional Momentum
+### FX_1 — INR Directional Momentum
 
 | | |
 |---|---|
@@ -1356,11 +1356,11 @@ For a global investor, CNY momentum is a direct signal for China equity position
 
 **Economic Rationale**
 
-AS_FX2 mirrors AS_FX1 for India: 6-month INR directional momentum. The INR is also a managed float (the RBI intervenes via FX reserves to smooth volatility) but with less direct daily management than the CNY, making momentum signals somewhat more market-driven.
+FX_1 mirrors FX_CN1 for India: 6-month INR directional momentum. The INR is also a managed float (the RBI intervenes via FX reserves to smooth volatility) but with less direct daily management than the CNY, making momentum signals somewhat more market-driven.
 
-INR strengthening momentum reflects: (1) strong FPI inflows — both equity (India's structural growth premium attracting global allocation) and debt (carry attractiveness from AS_I2); (2) RBI reserve accumulation and hawkish policy stance; (3) lower oil prices (India imports approximately 85% of its oil, so lower crude is a direct terms-of-trade benefit that reduces the current account deficit and supports INR). INR weakening momentum reflects: (1) elevated oil prices widening the current account deficit; (2) FPI outflows triggered by US rate rises or global risk-off; (3) domestic inflation overshooting RBI's 4% target, eroding real yield differentials.
+INR strengthening momentum reflects: (1) strong FPI inflows — both equity (India's structural growth premium attracting global allocation) and debt (carry attractiveness from AS_IN_R1); (2) RBI reserve accumulation and hawkish policy stance; (3) lower oil prices (India imports approximately 85% of its oil, so lower crude is a direct terms-of-trade benefit that reduces the current account deficit and supports INR). INR weakening momentum reflects: (1) elevated oil prices widening the current account deficit; (2) FPI outflows triggered by US rate rises or global risk-off; (3) domestic inflation overshooting RBI's 4% target, eroding real yield differentials.
 
-The 26-week SMA anchor captures the medium-term policy and flow dynamics for INR. Kohli (2015, *RBI Working Paper*) documented that INR momentum tracks the BoP capital account closely at 3–6 month horizons — making AS_FX2 an early indicator of whether foreign capital is building or reducing India exposure.
+The 26-week SMA anchor captures the medium-term policy and flow dynamics for INR. Kohli (2015, *RBI Working Paper*) documented that INR momentum tracks the BoP capital account closely at 3–6 month horizons — making FX_1 an early indicator of whether foreign capital is building or reducing India exposure.
 
 For equity investors, INR strength is positively correlated with Indian equity returns in USD terms — it both signals risk appetite and improves the USD return on local equity positions.
 
@@ -1374,17 +1374,17 @@ For equity investors, INR strength is positively correlated with Indian equity r
 
 ---
 
-*End of Section 4a — Asia: China & India (8 indicators: AS_G1, AS_G2, AS_G3, AS_G4, AS_I1, AS_I2, AS_FX1, AS_FX2)*
+*End of Section 4a — Asia: China & India (8 indicators: AS_CN_G3, AS_CN_G2, AS_IN_G1, AS_CN_G1, AS_CN_R1, AS_IN_R1, FX_CN1, FX_1)*
 
 ---
 
 ## 4b. Asia Commodities & Japan
 
-*This group covers two commodity signals tied to the Chinese infrastructure cycle (AS_C1, AS_C2) and two Japan-specific indicators (JP_G1, JP_FX1). The Japan indicators are among the most globally systemic in the entire library: the JPY carry trade (JP_FX1) is a first-order risk signal for global equities and EM assets, and BOJ policy surprises can simultaneously move US Treasuries, EM currencies and cross-asset volatility within hours.*
+*This group covers two commodity signals tied to the Chinese infrastructure cycle (FX_CMD5, FX_CMD4) and two Japan-specific indicators (JP_G1, FX_2). The Japan indicators are among the most globally systemic in the entire library: the JPY carry trade (FX_2) is a first-order risk signal for global equities and EM assets, and BOJ policy surprises can simultaneously move US Treasuries, EM currencies and cross-asset volatility within hours.*
 
 ---
 
-### AS_C1 — Iron Ore / Copper (China Infrastructure vs Broad Industrial)
+### FX_CMD5 — Iron Ore / Copper (China Infrastructure vs Broad Industrial)
 
 | | |
 |---|---|
@@ -1398,7 +1398,7 @@ Iron ore and copper are both industrial metals, but they serve distinct economic
 
 The iron ore / copper ratio therefore answers a specific question: is China's demand for steel (infrastructure, property) running ahead of or behind the global industrial cycle (capex, electronics, manufacturing)? When iron ore outperforms copper (ratio rising), it signals that China's heavy-industry and construction cycle is the dominant driver of commodity demand — typically coinciding with government-directed fiscal stimulus (fixed asset investment) or a property market recovery. When copper outperforms iron ore, global manufacturing and electronics are driving demand more broadly — a higher-quality global expansion rather than a China-specific credit-driven cycle.
 
-Kilian (2009, *American Economic Review*) showed that commodity price decompositions into supply vs demand components are essential for interpreting commodity signals correctly. Heap (2005, *Citigroup Metals Research*) first formalised the China commodity intensity thesis: that China's steel intensity per unit of GDP is structurally higher during urbanisation phases, creating a duration of iron ore demand that is decoupled from the global industrial cycle. For a 6–9 month investor, AS_C1 distinguishes between commodity exposure types: iron-ore-sensitive (Australian miners, bulk shippers, Brazil iron ore exporters) versus copper-sensitive (diversified industrials, electrical infrastructure).
+Kilian (2009, *American Economic Review*) showed that commodity price decompositions into supply vs demand components are essential for interpreting commodity signals correctly. Heap (2005, *Citigroup Metals Research*) first formalised the China commodity intensity thesis: that China's steel intensity per unit of GDP is structurally higher during urbanisation phases, creating a duration of iron ore demand that is decoupled from the global industrial cycle. For a 6–9 month investor, FX_CMD5 distinguishes between commodity exposure types: iron-ore-sensitive (Australian miners, bulk shippers, Brazil iron ore exporters) versus copper-sensitive (diversified industrials, electrical infrastructure).
 
 **Regime Classification**
 
@@ -1410,7 +1410,7 @@ Kilian (2009, *American Economic Review*) showed that commodity price decomposit
 
 ---
 
-### AS_C2 — Iron Ore / Broad Commodities (China vs Global Commodity Cycle)
+### FX_CMD4 — Iron Ore / Broad Commodities (China vs Global Commodity Cycle)
 
 | | |
 |---|---|
@@ -1420,7 +1420,7 @@ Kilian (2009, *American Economic Review*) showed that commodity price decomposit
 
 **Economic Rationale**
 
-AS_C2 compares the China-specific iron ore cycle against the full diversified commodity complex, which is dominated by energy (crude oil, natural gas, heating oil), industrial metals and agriculture. Where AS_C1 identifies the *composition* of industrial demand (China-heavy vs global manufacturing), AS_C2 identifies whether China's cycle is *leading or lagging* the broader commodity market.
+FX_CMD4 compares the China-specific iron ore cycle against the full diversified commodity complex, which is dominated by energy (crude oil, natural gas, heating oil), industrial metals and agriculture. Where FX_CMD5 identifies the *composition* of industrial demand (China-heavy vs global manufacturing), FX_CMD4 identifies whether China's cycle is *leading or lagging* the broader commodity market.
 
 The DBC commodity index captures the global commodity cycle in its full breadth: energy prices driven by OPEC supply decisions and US shale output; agricultural prices driven by weather, fertiliser costs and food demand; and metals driven by both China and global industrial activity. When iron ore outperforms DBC, it means Chinese heavy-industry demand is running above the average commodity cycle — typically during fiscal stimulus phases where Chinese steel output and fixed asset investment are prioritised. When DBC outperforms iron ore, the global energy and agricultural cycle (driven by geopolitical supply shocks, US inflation, or weather events) is dominating, and China's contribution to global commodity demand is relatively subdued.
 
@@ -1448,13 +1448,13 @@ The distinction is crucial for portfolio construction: an iron ore overweight ve
 
 Japan equity relative to global equities in USD terms is driven by three distinct forces that make it unlike any other developed market: (1) the yen exchange rate; (2) BOJ monetary policy; and (3) China demand for Japanese capital goods.
 
-**Yen dynamics** are the most immediate driver. Japan's equity market is dominated by global exporters (Toyota, Sony, Keyence, Fanuc) whose yen-denominated earnings rise mechanically when JPY weakens against USD. Approximately 60% of Nikkei earnings are derived from overseas — meaning a 10% JPY depreciation mechanically adds approximately 4–5% to Nikkei earnings in JPY terms. In USD terms, EWJ partially offsets this (USD-denominated ETF), but the *local-currency outperformance* of Japan versus global benchmarks persists during yen-weakness phases. This creates a tight link between JP_G1 and JP_FX1 (JPY momentum).
+**Yen dynamics** are the most immediate driver. Japan's equity market is dominated by global exporters (Toyota, Sony, Keyence, Fanuc) whose yen-denominated earnings rise mechanically when JPY weakens against USD. Approximately 60% of Nikkei earnings are derived from overseas — meaning a 10% JPY depreciation mechanically adds approximately 4–5% to Nikkei earnings in JPY terms. In USD terms, EWJ partially offsets this (USD-denominated ETF), but the *local-currency outperformance* of Japan versus global benchmarks persists during yen-weakness phases. This creates a tight link between JP_G1 and FX_2 (JPY momentum).
 
 **BOJ policy** is the second driver. Japan has been the primary practitioner of unconventional monetary policy since the 1990s — yield curve control (YCC), quantitative and qualitative easing, and negative rates. When the BOJ maintains accommodation while other central banks tighten, the interest rate differential supports both yen weakness and Japanese equity multiples. Conversely, BOJ hawkish surprises (as in July/August 2024, when the BOJ raised rates and triggered the largest single-day Nikkei decline since 1987) cause sharp JPY appreciation and equity underperformance simultaneously.
 
-**China trade links** are the third driver: Japan is a major exporter of machine tools, semiconductor equipment and auto parts to China. China recovery phases (positive AS_G2) tend to lift Japanese capital-goods exporters.
+**China trade links** are the third driver: Japan is a major exporter of machine tools, semiconductor equipment and auto parts to China. China recovery phases (positive AS_CN_G2) tend to lift Japanese capital-goods exporters.
 
-For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both are positive (Japan equities outperforming AND JPY weakening), the carry trade is ON and Japanese export earnings are supportive. If JP_G1 is positive but JP_FX1 is negative (JPY strengthening), it signals a higher-quality, domestically-driven Japanese expansion — rarer but more durable.
+For a 6–9 month investor, JP_G1 is best interpreted alongside FX_2: if both are positive (Japan equities outperforming AND JPY weakening), the carry trade is ON and Japanese export earnings are supportive. If JP_G1 is positive but FX_2 is negative (JPY strengthening), it signals a higher-quality, domestically-driven Japanese expansion — rarer but more durable.
 
 **Regime Classification**
 
@@ -1466,7 +1466,7 @@ For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both 
 
 ---
 
-### JP_FX1 — JPY Carry Trade Signal (USD/JPY 26-Week Momentum) *(Naturally Leading)*
+### FX_2 — JPY Carry Trade Signal (USD/JPY 26-Week Momentum) *(Naturally Leading)*
 
 | | |
 |---|---|
@@ -1483,9 +1483,9 @@ The academic documentation is extensive. Burnside et al. (2011, *Journal of Fina
 
 The **26-week SMA momentum** captures the *sustained direction* of the carry trade cycle rather than day-to-day JPY moves. When USD/JPY is running above its 26-week average (positive momentum = JPY weakening trend), carry trade positions are being added and global risk appetite is supported. When USD/JPY breaks below its 26-week average (negative momentum = JPY strengthening trend), the carry trade is being unwound — and the signal is *naturally leading* because the FX move precedes the equity and credit market impact by days to 2–4 weeks as positions are forced closed.
 
-The August 2024 carry unwind — triggered by a surprise BOJ rate hike — is the canonical recent example: USD/JPY fell from ~160 to ~142 within weeks, the Nikkei dropped 13% in a single day, EM currencies fell in tandem, and VIX spiked to 65. JP_FX1 would have been flashing a `carry-unwind` regime in the days before the equity damage arrived.
+The August 2024 carry unwind — triggered by a surprise BOJ rate hike — is the canonical recent example: USD/JPY fell from ~160 to ~142 within weeks, the Nikkei dropped 13% in a single day, EM currencies fell in tandem, and VIX spiked to 65. FX_2 would have been flashing a `carry-unwind` regime in the days before the equity damage arrived.
 
-For a global multi-asset investor, JP_FX1 is the single most important *systemic risk indicator* in the library for detecting forced deleveraging events.
+For a global multi-asset investor, FX_2 is the single most important *systemic risk indicator* in the library for detecting forced deleveraging events.
 
 **Regime Classification**
 
@@ -1497,7 +1497,7 @@ For a global multi-asset investor, JP_FX1 is the single most important *systemic
 
 ---
 
-*End of Section 4b — Asia Commodities & Japan (4 indicators: AS_C1, AS_C2, JP_G1, JP_FX1)*
+*End of Section 4b — Asia Commodities & Japan (4 indicators: FX_CMD5, FX_CMD4, JP_G1, FX_2)*
 
 ---
 
