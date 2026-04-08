@@ -119,167 +119,38 @@ ZSCORE_WINDOW      = 260    # 5-year rolling window (weeks)
 ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
-# INDICATOR METADATA  (id → region_block, category, formula_note)
-# Matches data/macro_indicator_library.csv
+# INDICATOR METADATA — loaded from data/macro_indicator_library.csv
 # ---------------------------------------------------------------------------
-INDICATOR_META = {
-    # US & Neighbours — Growth
-    "US_G1":     ("US & Neighbours", "Growth / cyclicals vs defensives",
-                  "log(XLY / XLP)"),
-    "US_G2":     ("US & Neighbours", "Growth / broader cyclicals vs defensives",
-                  "log((XLI+XLF) / (XLU+XLP))"),
-    "US_G2b":    ("US & Neighbours", "Growth / financials vs utilities",
-                  "log(XLF / XLU)"),
-    "US_G3":     ("US & Neighbours", "Size cycle",
-                  "log(IWM / IWB)"),
-    "US_G3b":    ("US & Neighbours", "Size cycle (S&P proxy)",
-                  "log(IWM / SPY)"),
-    "US_G4":     ("US & Neighbours", "Style / value vs growth",
-                  "log(IWD / IWF)"),
-    "US_G4b":    ("US & Neighbours", "Style / growth vs value (S&P 500)",
-                  "log(IVW / IVE)"),
-    # US & Neighbours — Rates & Credit
-    "US_I1":     ("US & Neighbours", "Yield-curve slope 10Y-3M",
-                  "T10Y3M (FRED direct)"),
-    "US_I2":     ("US & Neighbours", "HY credit spread",
-                  "BAMLH0A0HYM2 (US HY OAS, FRED)"),
-    "US_I3":     ("US & Neighbours", "Commodities vs bonds",
-                  "log(DBC / GOVT)"),
-    "US_I4":     ("US & Neighbours", "IG credit spread",
-                  "BAMLC0A0CM (US IG OAS, FRED)"),
-    "US_I5":     ("US & Neighbours", "HY-IG differential",
-                  "BAMLH0A0HYM2 - BAMLC0A0CM"),
-    "US_I6":     ("US & Neighbours", "Yield-curve slope 2s10s",
-                  "T10Y2Y (FRED direct)"),
-    "US_I6b":    ("US & Neighbours", "Yield-curve slope 2s10s (market)",
-                  "^TNX - DGS2 (yfinance 10Y level minus FRED 2Y level)"),
-    "US_I7":     ("US & Neighbours", "10Y breakeven inflation",
-                  "T10YIE (FRED direct)"),
-    "US_I8":     ("US & Neighbours", "Risk-on vs risk-off",
-                  "log(SPY / GOVT)"),
-    "US_I9":     ("US & Neighbours", "HY vs IG credit (ETF proxy)",
-                  "log(IHYU.L / SLXX.L)"),
-    "US_I10":    ("US & Neighbours", "HY vs treasuries (credit risk)",
-                  "log(IHYU.L / GOVT)"),
-    # US & Neighbours — Volatility
-    "US_R1":     ("US & Neighbours", "Vol term structure (equity)",
-                  "VIX3M - VIX (arithmetic spread)"),
-    "US_R2":     ("US & Neighbours", "Rates vs equity vol",
-                  "log(MOVE / VIX)"),
-    # US & Neighbours — Real rates & FX
-    "US_RR1":    ("US & Neighbours", "Real rates / valuation",
-                  "DFII10 (TIPS 10Y real yield, FRED direct)"),
-    "US_FX1":    ("US & Neighbours", "Dollar vs EM & commodities",
-                  "log(EEM / DX-Y.NYB)"),
-    "US_FX2":    ("US & Neighbours", "Copper vs gold",
-                  "log(HG=F / GC=F)"),
-    # US & Neighbours — Momentum
-    "M1":        ("US & Neighbours", "Momentum – US equities trend",
-                  "(S&P500 - 40wk SMA) / 40wk SMA"),
-    "M2":        ("US & Neighbours", "Momentum – multi-asset trend",
-                  "fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"),
-    "M3":        ("US & Neighbours", "Momentum – dual momentum equity/bond",
-                  "max(SPY_12m, URTH_12m) - SHY_12m"),
-    "M4":        ("US & Neighbours", "Momentum – US HY vs Treasuries",
-                  "(HY_TR_index - 40wk SMA) / 40wk SMA"),
-    "M5":        ("US & Neighbours", "Momentum – vol-filtered equity",
-                  "log(VIX 13wk MA / VIX 52wk MA) — vol regime filter"),
-    # US & Neighbours — Leading / Macro
-    "US_LEI1":   ("US & Neighbours", "Growth / Leading indicators",
-                  "USSLIND 6M annualised % change"),
-    "US_JOBS1":  ("US & Neighbours", "Labour market / Leading",
-                  "IC4WSA YoY % change"),
-    "US_LAB1":   ("US & Neighbours", "Labour market composite",
-                  "avg_z[ inv(UNRATE), PAYEMS_YoY, inv(IC4WSA) ]"),
-    "US_GROWTH1":("US & Neighbours", "Real activity / Growth",
-                  "avg_z[ INDPRO_YoY, RSXFS_YoY ]"),
-    "US_HOUS1":  ("US & Neighbours", "Housing / Construction",
-                  "PERMIT 12M % change"),
-    "US_M2L1":   ("US & Neighbours", "Liquidity",
-                  "M2SL YoY % change"),
-    # US & Neighbours — Equity leadership & breadth
-    "US_G5":     ("US & Neighbours", "Growth / technology leadership",
-                  "log(QQQ / SPY)"),
-    "US_G6":     ("US & Neighbours", "Growth / market breadth",
-                  "log(RSP / SPY)"),
-    # US & Neighbours — Additional leading indicators
-    "US_ISM1":   ("US & Neighbours", "Leading / ISM Manufacturing New Orders",
-                  "NAPMOI level (monthly FRED, forward-filled)"),
-    "US_I11":    ("US & Neighbours", "Rates & Credit / mortgage affordability",
-                  "MORTGAGE30US - DGS10 (mortgage-Treasury spread)"),
-    "US_LAB2":   ("US & Neighbours", "Labour market / JOLTS tightness",
-                  "JTSJOL / UNEMPLOY (job openings per unemployed person)"),
-    # Europe & UK
-    "EU_G1":     ("Europe & UK", "Growth / cyclicals vs defensives (Europe)",
-                  "log((EXH4.DE+EXV1.DE+EXV3.DE) / (EXH9.DE+EXH3.DE))"),
-    "EU_G2":     ("Europe & UK", "UK domestic vs global",
-                  "log(FTMC / FTSE100)"),
-    "EU_G3":     ("Europe & UK", "Eurozone vs US leadership",
-                  "log(EuroStoxx50_USD / SPY_USD)"),
-    "EU_I1":     ("Europe & UK", "Euro credit vs govts",
-                  "ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)"),
-    "EU_I2":     ("Europe & UK", "UK real-yield / inflation proxy",
-                  "log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio"),
-    "EU_I3":     ("Europe & UK", "UK–Germany gilt-bund spread",
-                  "IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)"),
-    "EU_R1":     ("Europe & UK", "UK credit conditions",
-                  "log(SLXX.L / IGLT.L)"),
-    "EU_FX1":    ("Europe & UK", "EUR vs European cyclicals",
-                  "composite_z(log(EURUSD), log(EXH4.DE/EXH9.DE))"),
-    "EU_I4":     ("Europe & UK", "Peripheral sovereign stress / BTP-Bund",
-                  "IRLTLT01ITM156N - IRLTLT01DEM156N (FRED)"),
-    "EU_G4":     ("Europe & UK", "Eurozone vs global equities",
-                  "log(EZU / URTH)"),
-    # Japan
-    "JP_G1":     ("Japan", "Japan vs global equities",
-                  "log(EWJ / URTH)"),
-    "JP_FX1":    ("Japan", "JPY carry trade signal",
-                  "log(USDJPY=X) 26-week momentum"),
-    # Asia (China-centred)
-    "AS_G1":     ("Asia (China-centred)", "China size / domestic cycle",
-                  "log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy"),
-    "AS_G2":     ("Asia (China-centred)", "China vs global DM",
-                  "log(000001.SS_USD / URTH_USD)"),
-    "AS_G3":     ("Asia (China-centred)", "India domestic growth breadth",
-                  "avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50"),
-    "AS_I1":     ("Asia (China-centred)", "China rates vs US",
-                  "IRLTLT01CNM156N - DGS10 (FRED)"),
-    "AS_I2":     ("Asia (China-centred)", "India govts vs US Treasuries",
-                  "IRLTLT01INM156N - DGS10 (FRED)"),
-    "AS_FX1":    ("Asia (China-centred)", "CNY directional momentum",
-                  "log(CNY=X / 26wk SMA) — CNY 6-month momentum"),
-    "AS_FX2":    ("Asia (China-centred)", "INR directional momentum",
-                  "log(INR=X / 26wk SMA) — INR 6-month momentum"),
-    "AS_C1":     ("Asia (China-centred)", "China infrastructure proxy",
-                  "log(PIORECRUSDM / HG=F)"),
-    "AS_C2":     ("Asia (China-centred)", "China vs global commodities",
-                  "log(PIORECRUSDM / DBC)"),
-    "AS_G4":     ("Asia (China-centred)", "China vs broad EM divergence",
-                  "log(FXI / EEM)"),
-    # Global / Regional — CLI
-    "REG_CLI1":  ("Global / Regional", "Regional growth diff: US vs Eurozone",
-                  "USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"),
-    "REG_CLI2":  ("Global / Regional", "Regional growth diff: US vs China",
-                  "USA_CLI - CHN_CLI"),
-    "REG_CLI3":  ("Global / Regional", "Europe block CLI state",
-                  "avg(DEU_CLI, FRA_CLI, GBR_CLI)"),
-    "REG_CLI4":  ("Global / Regional", "Asia CLI state",
-                  "avg(CHN_CLI, JPN_CLI, AUS_CLI)"),
-    "REG_CLI5":  ("Global / Regional", "Global growth breadth",
-                  "% of 9 countries where CLI>100 AND CLI>CLI_6M_ago"),
-    # Global / Regional — Multi-asset & commodity
-    "REG_RISK1": ("Global / Regional", "Global multi-asset risk appetite",
-                  "log(ACWI / GOVT)"),
-    "REG_EM1":   ("Global / Regional", "EM vs DM equity relative cycle",
-                  "log(EEM / URTH)"),
-    "REG_COMM1": ("Global / Regional", "Global commodity cycle momentum",
-                  "log(DBC / DBC.shift(52)) — DBC 12-month return"),
-    "REG_COMM2": ("Global / Regional", "Oil vs gold inflation regime",
-                  "log(CL=F / GC=F)"),
-}
+IND_LIB_CSV = os.path.join(os.path.dirname(__file__), "data", "macro_indicator_library.csv")
 
-# Ordered list of all 50 indicator IDs (defines output column order)
-ALL_INDICATOR_IDS = list(INDICATOR_META.keys())
+
+def _load_indicator_library():
+    """Load indicator metadata from macro_indicator_library.csv.
+
+    Returns:
+        ind_meta : dict  {id: (region_block, category, formula_note)}
+        all_ids  : list  ordered indicator IDs (CSV row order)
+        naturally_leading : frozenset  IDs flagged as naturally leading
+    """
+    lib = pd.read_csv(IND_LIB_CSV)
+    ind_meta = {}
+    all_ids = []
+    leading = set()
+    for _, row in lib.iterrows():
+        ind_id = str(row.get("id", "")).strip()
+        if not ind_id:
+            continue
+        region   = str(row.get("region_block", "")).strip()
+        category = str(row.get("category", "")).strip()
+        formula  = str(row.get("formula_using_library_names", "")).strip()
+        ind_meta[ind_id] = (region, category, formula)
+        all_ids.append(ind_id)
+        if str(row.get("naturally_leading", "")).strip().upper() == "TRUE":
+            leading.add(ind_id)
+    return ind_meta, all_ids, frozenset(leading)
+
+
+INDICATOR_META, ALL_INDICATOR_IDS, NATURALLY_LEADING = _load_indicator_library()
 
 
 # ===========================================================================
@@ -672,51 +543,50 @@ REGIME_RULES = {
     # US Growth
     "US_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth",       "defensive"),
     "US_G2":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "late-cycle"),
-    "US_G2b": lambda r, z: _r(r, z,  1, -1, "risk-on",          "defensive"),
-    "US_G3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
-    "US_G3b": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
-    "US_G4":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
-    "US_G4b": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
+    "US_G3": lambda r, z: _r(r, z,  1, -1, "risk-on",          "defensive"),
+    "US_EQ_F3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
+    "US_EQ_F4": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
+    "US_EQ_F1":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
+    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
-    "US_I1":  lambda r, z: (
+    "US_R1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
         else _r(r, z, 1, -1, "early-cycle", "late-cycle", "mid-cycle")
     ),
-    "US_I2":  lambda r, z: (
+    "US_Cr2":  lambda r, z: (
         "stress"  if (not np.isnan(r) and r > 700) or (not np.isnan(z) and z > 1.5)
         else ("frothy" if not np.isnan(z) and z < -1 and not np.isnan(r) and r < 400
               else "normal")
     ),
-    "US_I3":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
-    "US_I4":  lambda r, z: (
+    "GL_CA_I1":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
+    "US_Cr1":  lambda r, z: (
         "IG-stress" if (not np.isnan(r) and r > 200) or (not np.isnan(z) and z > 1.5)
         else ("frothy" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "US_I5":  lambda r, z: _r(r, z,  1, -1, "quality-spread",   "complacent"),
-    "US_I6":  lambda r, z: (
+    "US_Cr3":  lambda r, z: _r(r, z,  1, -1, "quality-spread",   "complacent"),
+    "US_R2":  lambda r, z: (
         "inverted" if (not np.isnan(r) and r < 0)
         else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
-    "US_I6b": lambda r, z: (
+    "US_R3": lambda r, z: (
         "inverted" if (not np.isnan(r) and r < 0)
         else ("steep" if not np.isnan(r) and r > 0.5 and not np.isnan(z) and z > 1
               else ("flat" if not np.isnan(z) and z < -1 else "normal"))
     ),
-    "US_I7":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
-    "US_I8":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
-    "US_I9":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
-    "US_I10": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
+    "US_R4":  lambda r, z: _r(r, z,  1, -1, "high-inflation-exp", "disinflation"),
+    "US_CA_G1":  lambda r, z: _r(r, z,  1, -1, "risk-on",          "risk-off"),
+    "US_Cr4": lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     # Volatility
-    "US_R1":  lambda r, z: (
+    "US_V1":  lambda r, z: (
         "stress" if not np.isnan(r) and r < 0
         else ("complacency" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "US_R2":  lambda r, z: _r(r, z,  1, -1, "macro-uncertainty", "calm"),
+    "US_V2":  lambda r, z: _r(r, z,  1, -1, "macro-uncertainty", "calm"),
     # Real rates / FX
-    "US_RR1": lambda r, z: _r(r, z,  1, -1, "high-real-rates",  "low-real-rates"),
-    "US_FX1": lambda r, z: _r(r, z,  1, -1, "weak-USD",         "strong-USD"),
-    "US_FX2": lambda r, z: _r(r, z,  1, -1, "global-growth",    "recession-watch"),
+    "US_R5": lambda r, z: _r(r, z,  1, -1, "high-real-rates",  "low-real-rates"),
+    "FX_CMD2": lambda r, z: _r(r, z,  1, -1, "weak-USD",         "strong-USD"),
+    "FX_CMD1": lambda r, z: _r(r, z,  1, -1, "global-growth",    "recession-watch"),
     # Momentum — raw value encodes the signal directly (not a ratio)
     "M1":     lambda r, z: ("risk-on" if not np.isnan(r) and r > 0 else "risk-off"),
     "M2":     lambda r, z: (
@@ -732,85 +602,74 @@ REGIME_RULES = {
         else ("late-cycle" if not np.isnan(r) and r < 0 else "expansion")
     ),
     "US_JOBS1":  lambda r, z: _r(r, z,  1, -1, "labour-deteriorating", "overheating", "stable"),
-    "US_LAB1":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
-    "US_GROWTH1":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
+    "US_JOBS3":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
+    "US_G6":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
     "US_HOUS1":  lambda r, z: _r(r, z,  1, -1, "housing-expanding",    "housing-contracting"),
-    "US_M2L1":   lambda r, z: _r(r, z,  1, -1, "abundant-liquidity",   "tight-liquidity"),
+    "US_M2":   lambda r, z: _r(r, z,  1, -1, "abundant-liquidity",   "tight-liquidity"),
     "US_G5":     lambda r, z: _r(r, z,  1, -1, "tech-led",             "defensive-rotation"),
-    "US_G6":     lambda r, z: _r(r, z,  1, -1, "broad-rally",          "narrow-concentrated"),
+    "US_G4":     lambda r, z: _r(r, z,  1, -1, "broad-rally",          "narrow-concentrated"),
     "US_ISM1":   lambda r, z: (
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
-    "US_I11":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
-    "US_LAB2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
+    "US_R6":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
+    "US_JOBS2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
     # Europe
-    "EU_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
-    "EU_G2":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
-    "EU_G3":  lambda r, z: _r(r, z,  1, -1, "EU-outperform",    "US-dominance"),
-    "EU_I1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
-    "EU_I2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
-    "EU_I3":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
-    "EU_R1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
-    "EU_FX1": lambda r, z: _r(r, z,  1, -1, "EU-macro-friendly","EU-strain"),
-    "EU_I4":  lambda r, z: (
+    "EU_G3":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
+    "UK_G1":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
+    "EU_G2":  lambda r, z: _r(r, z,  1, -1, "EU-outperform",    "US-dominance"),
+    "EU_Cr1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
+    "UK_R2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
+    "UK_R1":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
+    "UK_Cr1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
+    "EU_G4": lambda r, z: _r(r, z,  1, -1, "EU-macro-friendly","EU-strain"),
+    "EU_R1":  lambda r, z: (
         "peripheral-stress" if (not np.isnan(r) and r > 2.5) or (not np.isnan(z) and z > 1.5)
         else ("compressed" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "EU_G4":  lambda r, z: _r(r, z,  1, -1, "eurozone-outperform", "eurozone-underperform"),
+    "EU_G1":  lambda r, z: _r(r, z,  1, -1, "eurozone-outperform", "eurozone-underperform"),
     # Japan
     "JP_G1":  lambda r, z: _r(r, z,  1, -1, "japan-outperform",    "japan-underperform"),
-    "JP_FX1": lambda r, z: (
+    "FX_2": lambda r, z: (
         "carry-unwind" if not np.isnan(z) and z < -1
         else ("carry-on" if not np.isnan(z) and z > 0.5 else "neutral")
     ),
     # Asia
-    "AS_G1":  lambda r, z: _r(r, z,  1, -1, "mid-cap-lead",     "large-cap-safety"),
-    "AS_G2":  lambda r, z: _r(r, z,  1, -1, "China-outperform", "China-cautious"),
-    "AS_G3":  lambda r, z: _r(r, z,  1, -1, "India-domestic-strong","large-cap-safety"),
-    "AS_I1":  lambda r, z: _r(r, z,  1, -1, "China-bonds-outperform","China-underperform"),
-    "AS_I2":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
-    "AS_FX1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
-    "AS_FX2": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
-    "AS_C1":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
-    "AS_C2":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
-    "AS_G4":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
+    "AS_CN_G3":  lambda r, z: _r(r, z,  1, -1, "mid-cap-lead",     "large-cap-safety"),
+    "AS_CN_G2":  lambda r, z: _r(r, z,  1, -1, "China-outperform", "China-cautious"),
+    "AS_IN_G1":  lambda r, z: _r(r, z,  1, -1, "India-domestic-strong","large-cap-safety"),
+    "AS_CN_R1":  lambda r, z: _r(r, z,  1, -1, "China-bonds-outperform","China-underperform"),
+    "AS_IN_R1":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
+    "FX_CN1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
+    "FX_1": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
+    "FX_CMD5":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
+    "FX_CMD4":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
+    "AS_CN_G1":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
     # Regional CLI
-    "REG_CLI1": lambda r, z: _r(r, z,  1, -1, "US-leads-EU",    "EU-leads-US"),
-    "REG_CLI2": lambda r, z: _r(r, z,  1, -1, "US-leads-China", "China-leads-US"),
-    "REG_CLI3": lambda r, z: _r(r, z,  1, -1, "EU-above-trend", "EU-below-trend",  "near-trend"),
-    "REG_CLI4": lambda r, z: _r(r, z,  1, -1, "Asia-above-trend","Asia-below-trend","near-trend"),
+    "GL_CLI1": lambda r, z: _r(r, z,  1, -1, "US-leads-EU",    "EU-leads-US"),
+    "GL_CLI2": lambda r, z: _r(r, z,  1, -1, "US-leads-China", "China-leads-US"),
+    "EU_CLI1": lambda r, z: _r(r, z,  1, -1, "EU-above-trend", "EU-below-trend",  "near-trend"),
+    "AS_CLI1": lambda r, z: _r(r, z,  1, -1, "Asia-above-trend","Asia-below-trend","near-trend"),
     # REG_CLI5 uses raw breadth value, not z-score
-    "REG_CLI5": lambda r, z: (
+    "GL_CLI5": lambda r, z: (
         "broad-expansion" if not np.isnan(r) and r >= 0.7
         else ("contracting" if not np.isnan(r) and r < 0.4 else "mixed")
     ),
     # Global multi-asset & commodity
-    "REG_RISK1": lambda r, z: _r(r, z,  1, -1, "risk-on",            "risk-off"),
-    "REG_EM1":   lambda r, z: _r(r, z,  1, -1, "em-outperform",      "dm-outperform"),
-    "REG_COMM1": lambda r, z: _r(r, z,  1, -1, "commodity-bull",     "commodity-bear"),
-    "REG_COMM2": lambda r, z: _r(r, z,  1, -1, "growth-inflation",   "deflation-risk"),
+    "GL_G2": lambda r, z: _r(r, z,  1, -1, "risk-on",            "risk-off"),
+    "GL_G1":   lambda r, z: _r(r, z,  1, -1, "em-outperform",      "dm-outperform"),
+    "FX_CMD6": lambda r, z: _r(r, z,  1, -1, "commodity-bull",     "commodity-bear"),
+    "FX_CMD3": lambda r, z: _r(r, z,  1, -1, "growth-inflation",   "deflation-risk"),
 }
 
 
 # ---------------------------------------------------------------------------
 # Forward regime system
 # ---------------------------------------------------------------------------
-# Indicators tagged here are NATURALLY LEADING — their current reading already
-# reflects conditions 1-3 months ahead.  Their fwd_regime is labelled "[leading]"
-# to distinguish them from the trajectory-based fwd_regime of lagging indicators.
-NATURALLY_LEADING = frozenset({
-    "US_ISM1",   # ISM New Orders: leads production ~6 weeks
-    "US_LAB2",   # JOLTS openings/unemployed: leads wages ~2 months
-    "US_HOUS1",  # Housing permits: leads construction ~3-6 months
-    "US_LEI1",   # Conference Board LEI: leads activity ~3-6 months
-    "REG_CLI1",  # OECD CLI diffs: designed to lead turning points
-    "REG_CLI2",
-    "REG_CLI3",
-    "REG_CLI4",
-    "REG_CLI5",
-    "JP_FX1",    # JPY carry momentum: leads risk-off by 2-4 weeks
-})
+# NATURALLY_LEADING is loaded from macro_indicator_library.csv at module init
+# (see _load_indicator_library above).  These indicators' current reading
+# already reflects conditions 1-3 months ahead; their fwd_regime is labelled
+# "[leading]" to distinguish from trajectory-based fwd_regime of lagging ones.
 
 # z-slope thresholds for forward trajectory classification
 _FWD_SLOPE_POS = +0.15   # weekly z-score change per week (improving if above)
@@ -974,27 +833,27 @@ def _calc_US_G2(cp, **_):
     )
 
 
-def _calc_US_G3(cp, **_):
+def _calc_US_EQ_F3(cp, **_):
     """Small Cap vs Large Cap: log(IWM / IWB)."""
     return _log_ratio(_p(cp, "IWM"), _p(cp, "IWB"))
 
 
-def _calc_US_G2b(cp, **_):
+def _calc_US_G3(cp, **_):
     """Financials vs Utilities (2-ticker): log(XLF / XLU)."""
     return _log_ratio(_p(cp, "XLF"), _p(cp, "XLU"))
 
 
-def _calc_US_G3b(cp, **_):
+def _calc_US_EQ_F4(cp, **_):
     """Small Cap vs Large Cap (S&P proxy): log(IWM / SPY)."""
     return _log_ratio(_p(cp, "IWM"), _p(cp, "SPY"))
 
 
-def _calc_US_G4(cp, **_):
+def _calc_US_EQ_F1(cp, **_):
     """Value vs Growth: log(IWD / IWF)."""
     return _log_ratio(_p(cp, "IWD"), _p(cp, "IWF"))
 
 
-def _calc_US_G4b(cp, **_):
+def _calc_US_EQ_F2(cp, **_):
     """Growth vs Value (S&P 500): log(IVW / IVE)."""
     return _log_ratio(_p(cp, "IVW"), _p(cp, "IVE"))
 
@@ -1003,27 +862,27 @@ def _calc_US_G4b(cp, **_):
 # CREDIT / FINANCIAL CONDITIONS  (US_I1–I10)
 # ---------------------------------------------------------------------------
 
-def _calc_US_I1(mu, **_):
+def _calc_US_R1(mu, **_):
     """10Y–3M yield-curve spread (bps), direct from FRED T10Y3M."""
     return _to_weekly_friday(_get_col(mu, "T10Y3M"))
 
 
-def _calc_US_I2(mu, **_):
+def _calc_US_Cr2(mu, **_):
     """US HY OAS spread (bps), direct from FRED BAMLH0A0HYM2."""
     return _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2"))
 
 
-def _calc_US_I3(cp, **_):
+def _calc_GL_CA_I1(cp, **_):
     """Commodities vs Bonds: log(DBC / GOVT) — inflation vs deflation signal."""
     return _log_ratio(_p(cp, "DBC"), _p(cp, "GOVT"))
 
 
-def _calc_US_I4(mu, **_):
+def _calc_US_Cr1(mu, **_):
     """US IG OAS spread (bps), direct from FRED BAMLC0A0CM."""
     return _to_weekly_friday(_get_col(mu, "BAMLC0A0CM"))
 
 
-def _calc_US_I5(mu, **_):
+def _calc_US_Cr3(mu, **_):
     """HY–IG spread differential: BAMLH0A0HYM2 − BAMLC0A0CM."""
     return _arith_diff(
         _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2")),
@@ -1031,12 +890,12 @@ def _calc_US_I5(mu, **_):
     )
 
 
-def _calc_US_I6(mu, **_):
+def _calc_US_R2(mu, **_):
     """10Y–2Y yield curve: direct from FRED T10Y2Y."""
     return _to_weekly_friday(_get_col(mu, "T10Y2Y"))
 
 
-def _calc_US_I6b(cp, mu, **_):
+def _calc_US_R3(cp, mu, **_):
     """10Y-2Y yield curve from market prices: ^TNX (yfinance) minus DGS2 (FRED).
     Both are in % pa; result is in percentage points."""
     tnx = _to_weekly_friday(_p(cp, "^TNX"))
@@ -1044,22 +903,17 @@ def _calc_US_I6b(cp, mu, **_):
     return _arith_diff(tnx, dgs2)
 
 
-def _calc_US_I7(mu, **_):
+def _calc_US_R4(mu, **_):
     """10Y breakeven inflation: direct from FRED T10YIE."""
     return _to_weekly_friday(_get_col(mu, "T10YIE"))
 
 
-def _calc_US_I8(cp, **_):
+def _calc_US_CA_G1(cp, **_):
     """Risk-On vs Risk-Off: log(SPY / GOVT)."""
     return _log_ratio(_p(cp, "SPY"), _p(cp, "GOVT"))
 
 
-def _calc_US_I9(cp, **_):
-    """HY vs IG Credit (ETF proxy): log(IHYU.L / SLXX.L)."""
-    return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "SLXX.L"))
-
-
-def _calc_US_I10(cp, **_):
+def _calc_US_Cr4(cp, **_):
     """HY vs Treasuries (credit risk): log(IHYU.L / GOVT)."""
     return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "GOVT"))
 
@@ -1068,12 +922,12 @@ def _calc_US_I10(cp, **_):
 # RISK / VOLATILITY REGIME  (US_R1–R2)
 # ---------------------------------------------------------------------------
 
-def _calc_US_R1(cp, **_):
+def _calc_US_V1(cp, **_):
     """VIX term structure: ^VIX3M − ^VIX (bps; positive = contango = calm)."""
     return _arith_diff(_p(cp, "^VIX3M"), _p(cp, "^VIX"))
 
 
-def _calc_US_R2(cp, **_):
+def _calc_US_V2(cp, **_):
     """Cross-asset vol: log(^MOVE / ^VIX) — bond vol relative to equity vol."""
     return _log_ratio(_p(cp, "^MOVE"), _p(cp, "^VIX"))
 
@@ -1082,7 +936,7 @@ def _calc_US_R2(cp, **_):
 # REAL RATES  (US_RR1)
 # ---------------------------------------------------------------------------
 
-def _calc_US_RR1(mu, **_):
+def _calc_US_R5(mu, **_):
     """10Y TIPS real yield: direct from FRED DFII10."""
     return _to_weekly_friday(_get_col(mu, "DFII10"))
 
@@ -1091,12 +945,12 @@ def _calc_US_RR1(mu, **_):
 # FX / COMMODITIES  (US_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_US_FX1(cp, **_):
+def _calc_FX_CMD2(cp, **_):
     """EM vs DXY: log(EEM_USD / DX-Y.NYB) — EM risk appetite vs dollar."""
     return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "DX-Y.NYB"))
 
 
-def _calc_US_FX2(cp, **_):
+def _calc_FX_CMD1(cp, **_):
     """Copper vs Gold: log(HG=F / GC=F) — industrial demand vs safe-haven."""
     return _log_ratio(_p(cp, "HG=F"), _p(cp, "GC=F"))
 
@@ -1196,7 +1050,7 @@ def _calc_US_JOBS1(mu, **_):
     return _yoy(ic)
 
 
-def _calc_US_LAB1(mu, **_):
+def _calc_US_JOBS3(mu, **_):
     """
     Labour market composite z-score.
     Components: UNRATE (inverted), PAYEMS YoY, IC4WSA YoY (inverted).
@@ -1214,7 +1068,7 @@ def _calc_US_LAB1(mu, **_):
     return composite
 
 
-def _calc_US_GROWTH1(mu, **_):
+def _calc_US_G6(mu, **_):
     """
     US Growth composite: equal-weight z-score of INDPRO YoY and RSXFS YoY.
     """
@@ -1234,7 +1088,7 @@ def _calc_US_HOUS1(mu, **_):
     return _yoy(permit)
 
 
-def _calc_US_M2L1(mu, **_):
+def _calc_US_M2(mu, **_):
     """M2 liquidity YoY: M2SL year-on-year % change."""
     m2 = _to_weekly_friday(_get_col(mu, "M2SL"))
     return _yoy(m2)
@@ -1248,7 +1102,7 @@ def _calc_US_G5(cp, **_):
     return _log_ratio(_p(cp, "QQQ"), _p(cp, "SPY"))
 
 
-def _calc_US_G6(cp, **_):
+def _calc_US_G4(cp, **_):
     """
     Market breadth: log(RSP / SPY) — S&P 500 equal-weight vs cap-weight.
     Positive → broad participation; negative → rally concentrated in mega-caps.
@@ -1265,7 +1119,7 @@ def _calc_US_ISM1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_US_I11(supp, **_):
+def _calc_US_R6(supp, **_):
     """
     Mortgage affordability / credit stress: MORTGAGE30US − DGS10.
     Wider spread = lender risk aversion / tight housing credit; leads housing activity.
@@ -1275,7 +1129,7 @@ def _calc_US_I11(supp, **_):
     return _arith_diff(mort, us10)
 
 
-def _calc_US_LAB2(supp, **_):
+def _calc_US_JOBS2(supp, **_):
     """
     JOLTS labour market tightness: JTSJOL / UNEMPLOY (openings per unemployed person).
     Ratio > 1 = more openings than unemployed → wage pressure; leads CPI by ~2 months.
@@ -1293,27 +1147,26 @@ def _calc_US_LAB2(supp, **_):
 _US_CALCULATORS = {
     "US_G1":      _calc_US_G1,
     "US_G2":      _calc_US_G2,
-    "US_G2b":     _calc_US_G2b,
-    "US_G3":      _calc_US_G3,
-    "US_G3b":     _calc_US_G3b,
-    "US_G4":      _calc_US_G4,
-    "US_G4b":     _calc_US_G4b,
-    "US_I1":      _calc_US_I1,
-    "US_I2":      _calc_US_I2,
-    "US_I3":      _calc_US_I3,
-    "US_I4":      _calc_US_I4,
-    "US_I5":      _calc_US_I5,
-    "US_I6":      _calc_US_I6,
-    "US_I6b":     _calc_US_I6b,
-    "US_I7":      _calc_US_I7,
-    "US_I8":      _calc_US_I8,
-    "US_I9":      _calc_US_I9,
-    "US_I10":     _calc_US_I10,
+    "US_G3":     _calc_US_G3,
+    "US_EQ_F3":      _calc_US_EQ_F3,
+    "US_EQ_F4":     _calc_US_EQ_F4,
+    "US_EQ_F1":      _calc_US_EQ_F1,
+    "US_EQ_F2":     _calc_US_EQ_F2,
     "US_R1":      _calc_US_R1,
+    "US_Cr2":      _calc_US_Cr2,
+    "GL_CA_I1":      _calc_GL_CA_I1,
+    "US_Cr1":      _calc_US_Cr1,
+    "US_Cr3":      _calc_US_Cr3,
     "US_R2":      _calc_US_R2,
-    "US_RR1":     _calc_US_RR1,
-    "US_FX1":     _calc_US_FX1,
-    "US_FX2":     _calc_US_FX2,
+    "US_R3":     _calc_US_R3,
+    "US_R4":      _calc_US_R4,
+    "US_CA_G1":      _calc_US_CA_G1,
+    "US_Cr4":     _calc_US_Cr4,
+    "US_V1":      _calc_US_V1,
+    "US_V2":      _calc_US_V2,
+    "US_R5":     _calc_US_R5,
+    "FX_CMD2":     _calc_FX_CMD2,
+    "FX_CMD1":     _calc_FX_CMD1,
     "M1":         _calc_M1,
     "M2":         _calc_M2,
     "M3":         _calc_M3,
@@ -1321,15 +1174,15 @@ _US_CALCULATORS = {
     "M5":         _calc_M5,
     "US_LEI1":    _calc_US_LEI1,
     "US_JOBS1":   _calc_US_JOBS1,
-    "US_LAB1":    _calc_US_LAB1,
-    "US_GROWTH1": _calc_US_GROWTH1,
+    "US_JOBS3":    _calc_US_JOBS3,
+    "US_G6": _calc_US_G6,
     "US_HOUS1":   _calc_US_HOUS1,
-    "US_M2L1":    _calc_US_M2L1,
+    "US_M2":    _calc_US_M2,
     "US_G5":      _calc_US_G5,
-    "US_G6":      _calc_US_G6,
+    "US_G4":      _calc_US_G4,
     "US_ISM1":    _calc_US_ISM1,
-    "US_I11":     _calc_US_I11,
-    "US_LAB2":    _calc_US_LAB2,
+    "US_R6":     _calc_US_R6,
+    "US_JOBS2":    _calc_US_JOBS2,
 }
 
 
@@ -1341,7 +1194,7 @@ _US_CALCULATORS = {
 # EU GROWTH / RISK APPETITE  (EU_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_G1(cp, **_):
+def _calc_EU_G3(cp, **_):
     """
     STOXX 600 Cyclicals vs Defensives (Europe):
     log((Industrials + Banks + Technology) / (Utilities + Consumer Staples))
@@ -1355,7 +1208,7 @@ def _calc_EU_G1(cp, **_):
     )
 
 
-def _calc_EU_G2(cp, **_):
+def _calc_UK_G1(cp, **_):
     """
     UK domestic vs global: log(^FTMC / ^FTSE).
     FTSE 250 is predominantly domestic UK-revenue companies; FTSE 100 is
@@ -1364,7 +1217,7 @@ def _calc_EU_G2(cp, **_):
     return _log_ratio(_p(cp, "^FTMC"), _p(cp, "^FTSE"))
 
 
-def _calc_EU_G3(cp, **_):
+def _calc_EU_G2(cp, **_):
     """
     Eurozone vs US equity leadership: log(FEZ / SPY).
     FEZ = iShares Euro Stoxx 50 ETF (USD-denominated); SPY = S&P 500 ETF.
@@ -1378,7 +1231,7 @@ def _calc_EU_G3(cp, **_):
 # EU FINANCIAL CONDITIONS  (EU_I1–I3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_I1(supp, **_):
+def _calc_EU_Cr1(supp, **_):
     """
     Euro IG spread: Euro IG corporate yield minus ECB AAA govt yield.
     Fetched via fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread'].
@@ -1391,7 +1244,7 @@ def _calc_EU_I1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_EU_I2(cp, **_):
+def _calc_UK_R2(cp, **_):
     """
     UK inflation expectations proxy: log(INXG.L / IGLT.L).
     INXG.L = iShares UK IL Gilt ETF (inflation-linked); IGLT.L = nominal gilt ETF.
@@ -1400,7 +1253,7 @@ def _calc_EU_I2(cp, **_):
     return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
 
 
-def _calc_EU_I3(supp, **_):
+def _calc_UK_R1(supp, **_):
     """
     UK–Germany gilt-bund yield spread: IRLTLT01GBM156N − IRLTLT01DEM156N.
     Both monthly OECD series via FRED, forward-filled to weekly.
@@ -1415,7 +1268,7 @@ def _calc_EU_I3(supp, **_):
 # EU CREDIT / RATES  (EU_R1)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_R1(cp, **_):
+def _calc_UK_Cr1(cp, **_):
     """
     UK credit conditions: log(SLXX.L / IGLT.L).
     SLXX.L = iShares GBP Corporate Bond ETF; IGLT.L = UK Gilt ETF.
@@ -1428,7 +1281,7 @@ def _calc_EU_R1(cp, **_):
 # EU FX / MACRO COMPOSITE  (EU_FX1)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_FX1(cp, **_):
+def _calc_EU_G4(cp, **_):
     """
     EUR macro composite: equal-weight z-score of EUR strength + EU cyclical tilt.
     Component 1: log(EURUSD=X)           — EUR/USD spot level
@@ -1446,7 +1299,7 @@ def _calc_EU_FX1(cp, **_):
     return composite
 
 
-def _calc_EU_I4(supp, **_):
+def _calc_EU_R1(supp, **_):
     """
     BTP-Bund peripheral sovereign stress: IRLTLT01ITM156N − IRLTLT01DEM156N.
     Spread > 2.5% = peripheral stress; z > +1.5 = historically elevated risk premium.
@@ -1457,7 +1310,7 @@ def _calc_EU_I4(supp, **_):
     return _arith_diff(ita, deu)
 
 
-def _calc_EU_G4(cp, **_):
+def _calc_EU_G1(cp, **_):
     """
     Eurozone vs global equities: log(EZU / URTH).
     Positive → Eurozone outperforming MSCI World; driven by EUR, ECB posture, China trade.
@@ -1474,7 +1327,7 @@ def _calc_JP_G1(cp, **_):
     return _log_ratio(_p(cp, "EWJ"), _p(cp, "URTH"))
 
 
-def _calc_JP_FX1(cp, **_):
+def _calc_FX_2(cp, **_):
     """
     JPY carry trade signal: USDJPY=X 26-week log momentum.
     Positive z → yen weakening → carry trade ON.
@@ -1489,18 +1342,18 @@ def _calc_JP_FX1(cp, **_):
 # ---------------------------------------------------------------------------
 
 _EU_CALCULATORS = {
-    "EU_G1":  _calc_EU_G1,
-    "EU_G2":  _calc_EU_G2,
     "EU_G3":  _calc_EU_G3,
-    "EU_I1":  _calc_EU_I1,
-    "EU_I2":  _calc_EU_I2,
-    "EU_I3":  _calc_EU_I3,
+    "UK_G1":  _calc_UK_G1,
+    "EU_G2":  _calc_EU_G2,
+    "EU_Cr1":  _calc_EU_Cr1,
+    "UK_R2":  _calc_UK_R2,
+    "UK_R1":  _calc_UK_R1,
+    "UK_Cr1":  _calc_UK_Cr1,
+    "EU_G4": _calc_EU_G4,
     "EU_R1":  _calc_EU_R1,
-    "EU_FX1": _calc_EU_FX1,
-    "EU_I4":  _calc_EU_I4,
-    "EU_G4":  _calc_EU_G4,
+    "EU_G1":  _calc_EU_G1,
     "JP_G1":  _calc_JP_G1,
-    "JP_FX1": _calc_JP_FX1,
+    "FX_2": _calc_FX_2,
 }
 
 
@@ -1512,7 +1365,7 @@ _EU_CALCULATORS = {
 # ASIA GROWTH / RISK APPETITE  (AS_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_G1(cp, supp, **_):
+def _calc_AS_CN_G3(cp, supp, **_):
     """
     China small vs large cap: log(ASHR / FXI).
     ASHR = CSI 300 ETF (large-cap proxy); FXI = iShares China Large-Cap ETF.
@@ -1525,7 +1378,7 @@ def _calc_AS_G1(cp, supp, **_):
     return _log_ratio(ashr, fxi)
 
 
-def _calc_AS_G2(cp, **_):
+def _calc_AS_CN_G2(cp, **_):
     """
     India mid vs large cap: log(^CRSMID / ^NSEI).
     ^CRSMID = Nifty Midcap 100; ^NSEI = Nifty 50.
@@ -1533,7 +1386,7 @@ def _calc_AS_G2(cp, **_):
     return _log_ratio(_p(cp, "^CRSMID"), _p(cp, "^NSEI"))
 
 
-def _calc_AS_G3(cp, **_):
+def _calc_AS_IN_G1(cp, **_):
     """
     Japan: TOPIX (^N225 proxy) — z-score of log returns used as risk gauge.
     Raw = log(000001.SS / URTH) i.e. Shanghai Comp vs World equity.
@@ -1546,7 +1399,7 @@ def _calc_AS_G3(cp, **_):
 # ASIA FINANCIAL CONDITIONS  (AS_I1–I2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_I1(supp, **_):
+def _calc_AS_CN_R1(supp, **_):
     """
     China 10Y yield spread vs US 10Y: IRLTLT01CNM156N − DGS10.
     Both monthly/daily FRED series, forward-filled to weekly.
@@ -1558,7 +1411,7 @@ def _calc_AS_I1(supp, **_):
     return _arith_diff(chn, us)
 
 
-def _calc_AS_I2(supp, **_):
+def _calc_AS_IN_R1(supp, **_):
     """
     India 10Y yield spread vs US 10Y: IRLTLT01INM156N − DGS10.
     Both monthly/daily FRED series, forward-filled to weekly.
@@ -1574,7 +1427,7 @@ def _calc_AS_I2(supp, **_):
 # ASIA FX  (AS_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_FX1(cp, **_):
+def _calc_FX_CN1(cp, **_):
     """
     CNY directional momentum: log(CNY=X / 26wk SMA).
     CNY=X = USD per CNY (higher = CNY stronger).
@@ -1586,7 +1439,7 @@ def _calc_AS_FX1(cp, **_):
     return np.log(cny / sma26.replace(0, np.nan))
 
 
-def _calc_AS_FX2(cp, **_):
+def _calc_FX_1(cp, **_):
     """
     INR directional momentum: log(INR=X / 26wk SMA).
     INR=X = USD per INR (higher = INR stronger).
@@ -1602,7 +1455,7 @@ def _calc_AS_FX2(cp, **_):
 # ASIA COMMODITIES  (AS_C1–C2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_C1(supp, **_):
+def _calc_FX_CMD5(supp, **_):
     """
     Iron ore price (USD/tonne): FRED PIORECRUSDM (monthly, forward-filled).
     Raw = price level; z-score reflects steel demand cycle.
@@ -1611,7 +1464,7 @@ def _calc_AS_C1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_AS_C2(cp, **_):
+def _calc_FX_CMD4(cp, **_):
     """
     Copper/Gold ratio: log(HG=F / GC=F) — same as US_FX2, EM-demand lens.
     Captures Asian industrial cycle vs safe-haven demand.
@@ -1623,7 +1476,7 @@ def _calc_AS_C2(cp, **_):
 # REGIONAL CLI COMPOSITES  (REG_CLI1–CLI5)
 # ---------------------------------------------------------------------------
 
-def _calc_REG_CLI1(mi, **_):
+def _calc_GL_CLI1(mi, **_):
     """
     US vs Eurozone growth differential: USA_CLI − avg(DEU_CLI, FRA_CLI).
     Positive → US momentum outpacing Europe; negative → Europe catching up or leading.
@@ -1637,7 +1490,7 @@ def _calc_REG_CLI1(mi, **_):
     return _arith_diff(usa, eu_avg)
 
 
-def _calc_REG_CLI2(mi, **_):
+def _calc_GL_CLI2(mi, **_):
     """
     US vs China growth differential: USA_CLI − CHN_CLI.
     Positive → US cycle outpacing China; negative → China leading.
@@ -1647,7 +1500,7 @@ def _calc_REG_CLI2(mi, **_):
     return _arith_diff(usa, chn)
 
 
-def _calc_REG_CLI3(mi, **_):
+def _calc_EU_CLI1(mi, **_):
     """
     Europe block CLI: equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI.
     Above 100 = Europe running above long-run trend; below 100 = below trend.
@@ -1658,7 +1511,7 @@ def _calc_REG_CLI3(mi, **_):
     return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
-def _calc_REG_CLI4(mi, **_):
+def _calc_AS_CLI1(mi, **_):
     """
     Asia block CLI: equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI.
     Above 100 = Asia running above long-run trend; below 100 = below trend.
@@ -1668,7 +1521,7 @@ def _calc_REG_CLI4(mi, **_):
     return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
-def _calc_REG_CLI5(mi, **_):
+def _calc_GL_CLI5(mi, **_):
     """
     Global growth breadth (diffusion): fraction of 9 countries where
     CLI > 100 AND CLI > CLI_6M_ago (i.e. above trend AND improving).
@@ -1691,7 +1544,7 @@ def _calc_REG_CLI5(mi, **_):
     return pd.concat(series_list, axis=1).mean(axis=1)
 
 
-def _calc_AS_G4(cp, **_):
+def _calc_AS_CN_G1(cp, **_):
     """
     China vs broad EM divergence: log(FXI / EEM).
     Positive → China large-caps outperforming broad EM (policy support, credit easing).
@@ -1700,7 +1553,7 @@ def _calc_AS_G4(cp, **_):
     return _log_ratio(_p(cp, "FXI"), _p(cp, "EEM", usd=True))
 
 
-def _calc_REG_RISK1(cp, **_):
+def _calc_GL_G2(cp, **_):
     """
     Global multi-asset risk appetite: log(ACWI / GOVT).
     ACWI = iShares MSCI All Country World ETF; GOVT = US Treasury bond ETF.
@@ -1710,7 +1563,7 @@ def _calc_REG_RISK1(cp, **_):
     return _log_ratio(_p(cp, "ACWI"), _p(cp, "GOVT"))
 
 
-def _calc_REG_EM1(cp, **_):
+def _calc_GL_G1(cp, **_):
     """
     EM vs DM equity relative cycle: log(EEM / URTH).
     Positive → emerging markets outperforming MSCI World (requires: weak USD +
@@ -1720,7 +1573,7 @@ def _calc_REG_EM1(cp, **_):
     return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "URTH"))
 
 
-def _calc_REG_COMM1(cp, **_):
+def _calc_FX_CMD6(cp, **_):
     """
     Global commodity cycle: DBC 12-month log return.
     Positive z → commodities in a multi-month bull cycle; leads EM equity outperformance
@@ -1730,7 +1583,7 @@ def _calc_REG_COMM1(cp, **_):
     return np.log(dbc / dbc.shift(52).replace(0, np.nan))
 
 
-def _calc_REG_COMM2(cp, **_):
+def _calc_FX_CMD3(cp, **_):
     """
     Oil vs gold inflation regime: log(CL=F / GC=F).
     Positive → oil outpacing gold = growth-driven inflation (bullish cyclicals).
@@ -1745,25 +1598,25 @@ def _calc_REG_COMM2(cp, **_):
 # ---------------------------------------------------------------------------
 
 _ASIA_REGIONAL_CALCULATORS = {
-    "AS_G1":    _calc_AS_G1,
-    "AS_G2":    _calc_AS_G2,
-    "AS_G3":    _calc_AS_G3,
-    "AS_I1":    _calc_AS_I1,
-    "AS_I2":    _calc_AS_I2,
-    "AS_FX1":   _calc_AS_FX1,
-    "AS_FX2":   _calc_AS_FX2,
-    "AS_C1":    _calc_AS_C1,
-    "AS_C2":    _calc_AS_C2,
-    "AS_G4":    _calc_AS_G4,
-    "REG_CLI1": _calc_REG_CLI1,
-    "REG_CLI2": _calc_REG_CLI2,
-    "REG_CLI3":  _calc_REG_CLI3,
-    "REG_CLI4":  _calc_REG_CLI4,
-    "REG_CLI5":  _calc_REG_CLI5,
-    "REG_RISK1": _calc_REG_RISK1,
-    "REG_EM1":   _calc_REG_EM1,
-    "REG_COMM1": _calc_REG_COMM1,
-    "REG_COMM2": _calc_REG_COMM2,
+    "AS_CN_G3":    _calc_AS_CN_G3,
+    "AS_CN_G2":    _calc_AS_CN_G2,
+    "AS_IN_G1":    _calc_AS_IN_G1,
+    "AS_CN_R1":    _calc_AS_CN_R1,
+    "AS_IN_R1":    _calc_AS_IN_R1,
+    "FX_CN1":   _calc_FX_CN1,
+    "FX_1":   _calc_FX_1,
+    "FX_CMD5":    _calc_FX_CMD5,
+    "FX_CMD4":    _calc_FX_CMD4,
+    "AS_CN_G1":    _calc_AS_CN_G1,
+    "GL_CLI1": _calc_GL_CLI1,
+    "GL_CLI2": _calc_GL_CLI2,
+    "EU_CLI1":  _calc_EU_CLI1,
+    "AS_CLI1":  _calc_AS_CLI1,
+    "GL_CLI5":  _calc_GL_CLI5,
+    "GL_G2": _calc_GL_G2,
+    "GL_G1":   _calc_GL_G1,
+    "FX_CMD6": _calc_FX_CMD6,
+    "FX_CMD3": _calc_FX_CMD3,
 }
 
 # Master dispatcher — union of all regional dicts
