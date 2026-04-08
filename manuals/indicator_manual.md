@@ -1503,11 +1503,11 @@ For a global multi-asset investor, FX_2 is the single most important *systemic r
 
 ## 4c. Global & Regional Indicators
 
-*This final group operates at the highest level of abstraction: cross-regional growth differentials (REG_CLI1–5), global risk appetite (REG_RISK1), EM vs DM relative cycles (REG_EM1), and the global commodity cycle (REG_COMM1–2). These are the indicators that aggregate everything below them and translate regional signals into top-level portfolio tilts. They should be read as the last layer of confirmation before making broad asset allocation decisions.*
+*This final group operates at the highest level of abstraction: cross-regional growth differentials (GL_CLI1–5), global risk appetite (GL_G2), EM vs DM relative cycles (GL_G1), and the global commodity cycle (FX_CMD6, FX_CMD3). These are the indicators that aggregate everything below them and translate regional signals into top-level portfolio tilts. They should be read as the last layer of confirmation before making broad asset allocation decisions.*
 
 ---
 
-### REG_CLI1 — US vs Eurozone Growth Differential (OECD CLI)
+### GL_CLI1 — US vs Eurozone Growth Differential (OECD CLI)
 
 | | |
 |---|---|
@@ -1517,11 +1517,11 @@ For a global multi-asset investor, FX_2 is the single most important *systemic r
 
 **Economic Rationale**
 
-REG_CLI1 computes the US–Eurozone growth momentum differential using OECD Composite Leading Indicators (CLIs). CLIs are designed to anticipate turning points in economic activity relative to trend by approximately 6–9 months, making this a *leading* differential signal rather than a coincident one.
+GL_CLI1 computes the US–Eurozone growth momentum differential using OECD Composite Leading Indicators (CLIs). CLIs are designed to anticipate turning points in economic activity relative to trend by approximately 6–9 months, making this a *leading* differential signal rather than a coincident one.
 
 The OECD CLI methodology (OECD 2012, *Composite Leading Indicators: A Tool for Short-Term Analysis*) constructs each country's CLI from 6–10 component series selected for cyclical leading properties — typically including business surveys, financial variables, housing and order data. The CLIs are normalised to a long-run mean of 100, so the arithmetic difference captures whether the US or the Eurozone is running above or below its own historical trend by a larger margin.
 
-For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozone regional equity allocation. Bekaert & Hodrick (2009, *International Financial Management*) showed that short-term growth differentials between major economies are among the most reliable predictors of equity outperformance at 6–12 month horizons — particularly for large economies like the US and Eurozone where relative macro momentum is a dominant driver of relative equity returns. The signal also carries FX implications: a widening US growth lead versus the Eurozone is supportive of USD relative to EUR.
+For a 6–9 month investor, GL_CLI1 is the primary signal for the US vs Eurozone regional equity allocation. Bekaert & Hodrick (2009, *International Financial Management*) showed that short-term growth differentials between major economies are among the most reliable predictors of equity outperformance at 6–12 month horizons — particularly for large economies like the US and Eurozone where relative macro momentum is a dominant driver of relative equity returns. The signal also carries FX implications: a widening US growth lead versus the Eurozone is supportive of USD relative to EUR.
 
 **Regime Classification**
 
@@ -1533,7 +1533,7 @@ For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozon
 
 ---
 
-### REG_CLI2 — US vs China Growth Differential (OECD CLI)
+### GL_CLI2 — US vs China Growth Differential (OECD CLI)
 
 | | |
 |---|---|
@@ -1543,9 +1543,9 @@ For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozon
 
 **Economic Rationale**
 
-REG_CLI2 measures the growth momentum differential between the US and China — the two largest economies and the principal poles of the global growth cycle. A positive differential means the US cycle is running ahead of China's on an OECD-normalised basis; a negative differential means China's momentum is superior.
+GL_CLI2 measures the growth momentum differential between the US and China — the two largest economies and the principal poles of the global growth cycle. A positive differential means the US cycle is running ahead of China's on an OECD-normalised basis; a negative differential means China's momentum is superior.
 
-The US–China growth differential is one of the most consequential macro variables for multi-asset portfolios because of its broad transmission. When China leads (negative REG_CLI2): commodity demand accelerates (iron ore, copper, soybeans), commodity-exporting EM economies outperform, the AUD and BRL typically strengthen, and China equity outperformance (AS_G2) tends to follow. When the US leads (positive REG_CLI2): the dollar tends to be supported, US equity earnings growth dominates, and commodity-sensitive EM assets are under relative pressure.
+The US–China growth differential is one of the most consequential macro variables for multi-asset portfolios because of its broad transmission. When China leads (negative GL_CLI2): commodity demand accelerates (iron ore, copper, soybeans), commodity-exporting EM economies outperform, the AUD and BRL typically strengthen, and China equity outperformance (AS_CN_G2) tends to follow. When the US leads (positive GL_CLI2): the dollar tends to be supported, US equity earnings growth dominates, and commodity-sensitive EM assets are under relative pressure.
 
 The OECD China CLI is constructed from industrial production, business surveys, money supply and equity market signals — a broader set than the NBS official PMI and less subject to Chinese statistical smoothing. Fernald & Babson (2016, *Federal Reserve Bank of San Francisco*) showed that OECD CLI-based signals for China lead the official GDP figures by 1–2 quarters, providing genuine advance information about the Chinese cycle direction.
 
@@ -1559,7 +1559,7 @@ The OECD China CLI is constructed from industrial production, business surveys, 
 
 ---
 
-### REG_CLI3 — Europe Block CLI State (DEU + FRA + GBR Average)
+### EU_CLI1 — Europe Block CLI State (DEU + FRA + GBR Average)
 
 | | |
 |---|---|
@@ -1569,7 +1569,7 @@ The OECD China CLI is constructed from industrial production, business surveys, 
 
 **Economic Rationale**
 
-REG_CLI3 provides a composite read on European economic momentum by averaging the three largest European economies — Germany, France and the UK. While EU_G1 captures the market's real-time assessment of Europe, REG_CLI3 provides the underlying fundamental confirmation from official leading indicator data, with a 6–9 month forward-looking horizon.
+EU_CLI1 provides a composite read on European economic momentum by averaging the three largest European economies — Germany, France and the UK. While EU_G3 captures the market's real-time assessment of Europe, EU_CLI1 provides the underlying fundamental confirmation from official leading indicator data, with a 6–9 month forward-looking horizon.
 
 Germany, France and the UK together represent approximately 55% of European GDP. Germany's CLI is heavily influenced by industrial orders, exports and ifo business surveys — making it the most sensitive to global trade and China linkages. France's CLI is more domestically oriented, reflecting services and consumer confidence. The UK CLI incorporates post-Brexit specific dynamics. The equal-weighted average smooths idiosyncratic national noise and captures the European macro consensus.
 
@@ -1585,7 +1585,7 @@ The significance of the 100-level threshold is directly from OECD methodology: C
 
 ---
 
-### REG_CLI4 — Asia-Pacific Block CLI State (CHN + JPN + AUS Average)
+### AS_CLI1 — Asia-Pacific Block CLI State (CHN + JPN + AUS Average)
 
 | | |
 |---|---|
@@ -1595,13 +1595,13 @@ The significance of the 100-level threshold is directly from OECD methodology: C
 
 **Economic Rationale**
 
-REG_CLI4 constructs an Asia-Pacific composite CLI from the three OECD-tracked economies that best represent the region's growth cycle: China (demand engine), Japan (supply chain and capital goods), and Australia (commodity supply barometer).
+AS_CLI1 constructs an Asia-Pacific composite CLI from the three OECD-tracked economies that best represent the region's growth cycle: China (demand engine), Japan (supply chain and capital goods), and Australia (commodity supply barometer).
 
 The three components are complementary rather than redundant. China's CLI captures domestic demand and policy stimulus. Japan's CLI is heavily export-oriented, meaning it leads on global trade cycle and reflects Chinese demand for Japanese capital goods. Australia's CLI is dominated by commodity export dynamics — iron ore, coal, LNG — making it an amplifier of Chinese infrastructure demand. Together they form a triangulated Asia-Pacific signal that is more robust than any single national CLI.
 
 Importantly, Australia's inclusion provides a *commodity-sector early warning*: Australian business confidence and dwelling investment tend to respond quickly to changes in Chinese steel demand, making the AUS CLI a forward-looking signal for commodity-cycle turns. RBA research (Berkelmans 2005, *RBA Working Paper*) showed that Chinese demand shocks transmit to Australian activity within 1–2 quarters — faster than most commodity exporters.
 
-For a global investor, a high REG_CLI4 reading is one of the most bullish signals available for EM equities, commodity-linked currencies and materials/energy sectors simultaneously.
+For a global investor, a high AS_CLI1 reading is one of the most bullish signals available for EM equities, commodity-linked currencies and materials/energy sectors simultaneously.
 
 **Regime Classification**
 
@@ -1613,7 +1613,7 @@ For a global investor, a high REG_CLI4 reading is one of the most bullish signal
 
 ---
 
-### REG_CLI5 — Global Growth Breadth Diffusion Index *(Naturally Leading)*
+### GL_CLI5 — Global Growth Breadth Diffusion Index *(Naturally Leading)*
 
 | | |
 |---|---|
@@ -1624,7 +1624,7 @@ For a global investor, a high REG_CLI4 reading is one of the most bullish signal
 
 **Economic Rationale**
 
-REG_CLI5 is the broadest and most powerful macro signal in the library: a global growth diffusion index measuring how many of the world's nine largest OECD-tracked economies are *simultaneously* above trend and accelerating. It answers the most fundamental question a multi-asset investor can ask: is the global economy broadly expanding or contracting?
+GL_CLI5 is the broadest and most powerful macro signal in the library: a global growth diffusion index measuring how many of the world's nine largest OECD-tracked economies are *simultaneously* above trend and accelerating. It answers the most fundamental question a multi-asset investor can ask: is the global economy broadly expanding or contracting?
 
 The diffusion index methodology has deep roots in business cycle analysis. Burns & Mitchell (1946, NBER) showed that the simultaneity of expansion across sectors and countries is one of the most reliable characteristics distinguishing genuine expansions from sector-specific or regional recoveries. Harding & Pagan (2002, *Journal of Applied Econometrics*) formalised the concordance statistic — measuring the fraction of time two cycles are in the same phase — and showed that high global concordance (many countries expanding together) is associated with the most durable and broad-based expansions.
 
@@ -1632,19 +1632,19 @@ The dual condition — CLI > 100 *and* CLI > its 26-week lagged value — requir
 
 The thresholds reflect historical calibration: a fraction of 0.7 or above (6–7 of 9 economies above trend and improving) has historically coincided with the most robust global bull markets. A fraction below 0.4 (fewer than 4 economies qualifying) has historically been associated with global recessions or near-recessions.
 
-Because CLIs are themselves designed to lead economic activity, REG_CLI5 is *naturally leading*: the current reading already embeds a 6–9 month forward signal for global growth conditions.
+Because CLIs are themselves designed to lead economic activity, GL_CLI5 is *naturally leading*: the current reading already embeds a 6–9 month forward signal for global growth conditions.
 
 **Regime Classification**
 
 | Fraction | Label | Positioning |
 |---|---|---|
 | ≥ 0.7 | `broad-expansion` | Raise global equity beta; OW EM, cyclicals, HY |
-| 0.4–0.7 | `mixed` | Selective; focus on regions confirmed by REG_CLI1–4 |
+| 0.4–0.7 | `mixed` | Selective; focus on regions confirmed by GL_CLI1–2, EU_CLI1, AS_CLI1 |
 | < 0.4 | `contracting` | De-risk beta; favour quality, IG, core govts |
 
 ---
 
-### REG_RISK1 — Global Multi-Asset Risk Appetite (ACWI / GOVT)
+### GL_G2 — Global Multi-Asset Risk Appetite (ACWI / GOVT)
 
 | | |
 |---|---|
@@ -1654,13 +1654,13 @@ Because CLIs are themselves designed to lead economic activity, REG_CLI5 is *nat
 
 **Economic Rationale**
 
-REG_RISK1 is the broadest single risk-on/risk-off signal in the library. ACWI covers approximately 3,000 stocks across 47 developed and emerging market countries — the most comprehensive equity benchmark available. GOVT provides the risk-free anchor. Their ratio captures the aggregate preference of global capital between the riskiest (global equities) and safest (US Treasuries) assets.
+GL_G2 is the broadest single risk-on/risk-off signal in the library. ACWI covers approximately 3,000 stocks across 47 developed and emerging market countries — the most comprehensive equity benchmark available. GOVT provides the risk-free anchor. Their ratio captures the aggregate preference of global capital between the riskiest (global equities) and safest (US Treasuries) assets.
 
-This is the global-scope extension of US_I8 (SPY/GOVT), which only covers US equities. The distinction matters because global and US risk appetite can diverge: in 2022, US equities underperformed while EM equities were more resilient; in 2021, EM sold off while US equities continued higher. REG_RISK1 captures the net global verdict.
+This is the global-scope extension of US_CA_G1 (SPY/GOVT), which only covers US equities. The distinction matters because global and US risk appetite can diverge: in 2022, US equities underperformed while EM equities were more resilient; in 2021, EM sold off while US equities continued higher. GL_G2 captures the net global verdict.
 
 The theoretical foundation is the *flight-to-quality* literature. Vayanos (2004, *Journal of Finance*) and Brunnermeier & Pedersen (2009, *Review of Financial Studies*) documented that episodes of global risk aversion trigger simultaneous equity outflows and Treasury inflows — compressing the equity/Treasury ratio sharply and persistently. These episodes are not simply correlated with higher volatility; they represent genuine regime shifts in the risk tolerance of the global investor base.
 
-For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when it is in the `global-risk-on` regime, virtually all risk assets are supported and the cost of hedges is high; when it is in `global-risk-off`, the burden of proof shifts to individual risk positions.
+For a 6–9 month investor, GL_G2 is the top-level confirmation signal: when it is in the `global-risk-on` regime, virtually all risk assets are supported and the cost of hedges is high; when it is in `global-risk-off`, the burden of proof shifts to individual risk positions.
 
 **Regime Classification**
 
@@ -1672,7 +1672,7 @@ For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when
 
 ---
 
-### REG_EM1 — Emerging Markets vs Developed Markets (EEM / URTH)
+### GL_G1 — Emerging Markets vs Developed Markets (EEM / URTH)
 
 | | |
 |---|---|
@@ -1682,9 +1682,9 @@ For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when
 
 **Economic Rationale**
 
-REG_EM1 measures the relative performance of emerging markets versus developed markets in USD terms — the primary signal for the EM vs DM allocation decision in a global equity portfolio. It complements US_FX1 (which captures the dollar/EM channel) by focusing on the equity relative return directly.
+GL_G1 measures the relative performance of emerging markets versus developed markets in USD terms — the primary signal for the EM vs DM allocation decision in a global equity portfolio. It complements FX_CMD2 (which captures the dollar/EM channel) by focusing on the equity relative return directly.
 
-EM outperformance requires three conditions to align simultaneously: (1) **weak USD** — a strong dollar raises EM debt burdens and tightens financial conditions (US_FX1 must be positive); (2) **positive EM growth differential vs DM** — EM earnings must be growing faster than DM (REG_CLI1–4 and REG_CLI5 must support EM); (3) **commodity strength** — most EM economies are net commodity exporters, so rising commodity prices (REG_COMM1 positive) directly improve terms of trade. When all three conditions are simultaneously met, EM outperformance can be very powerful — the 2002–2007 EM bull market saw EEM outperform URTH by approximately 20% per year.
+EM outperformance requires three conditions to align simultaneously: (1) **weak USD** — a strong dollar raises EM debt burdens and tightens financial conditions (FX_CMD2 must be positive); (2) **positive EM growth differential vs DM** — EM earnings must be growing faster than DM (GL_CLI1–2, EU_CLI1, AS_CLI1 and GL_CLI5 must support EM); (3) **commodity strength** — most EM economies are net commodity exporters, so rising commodity prices (FX_CMD6 positive) directly improve terms of trade. When all three conditions are simultaneously met, EM outperformance can be very powerful — the 2002–2007 EM bull market saw EEM outperform URTH by approximately 20% per year.
 
 Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven by different risk factors than DM — including political risk, currency risk and liquidity risk — meaning EM equity cycles are genuinely partially independent from DM cycles. Bekaert, Harvey & Lundblad (2005, *Journal of Financial Economics*) documented that EM equity liberalisation and greater global integration have increased correlations over time, but genuine alpha windows remain around EM-specific growth and policy cycles.
 
@@ -1698,7 +1698,7 @@ Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven b
 
 ---
 
-### REG_COMM1 — Global Commodity Cycle Momentum (DBC 52-Week Return)
+### FX_CMD6 — Global Commodity Cycle Momentum (DBC 52-Week Return)
 
 | | |
 |---|---|
@@ -1708,11 +1708,11 @@ Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven b
 
 **Economic Rationale**
 
-REG_COMM1 measures the 12-month momentum of the broad commodity complex — the clearest signal of whether the global commodity supercycle is in an uptrend or downtrend. The DBC index covers energy (~55%), metals (~25%) and agriculture (~20%), making it a comprehensive proxy for global physical demand conditions.
+FX_CMD6 measures the 12-month momentum of the broad commodity complex — the clearest signal of whether the global commodity supercycle is in an uptrend or downtrend. The DBC index covers energy (~55%), metals (~25%) and agriculture (~20%), making it a comprehensive proxy for global physical demand conditions.
 
 The theoretical rationale for using 12-month momentum on commodities is well-established. Gorton & Rouwenhorst (2006, *FAJ*) showed that commodity futures have historically delivered equity-like returns over full cycles, with their returns driven by roll yield, spot price changes and rebalancing. Momentum is particularly strong in commodities because supply adjustment lags demand — it takes 3–7 years to bring new oil fields, mines or agricultural capacity online, meaning commodity price uptrends driven by demand can persist far longer than equity uptrends where the supply response (new issuance, capex, competition) is faster.
 
-For a multi-asset investor, REG_COMM1 serves as the primary signal for whether to hold commodity-linked equity sectors (energy, materials, mining) and whether to overweight commodity-exporting equity markets (ASX 200, Bovespa, JSE, TSX). Erb & Harvey (2006, *FAJ*) documented that commodity momentum is strongest at 12-month horizons, justifying the 52-week lookback. Additionally, rising commodity momentum leads EM equity outperformance by 8–12 weeks on positive cycle turns — making REG_COMM1 a leading signal for REG_EM1.
+For a multi-asset investor, FX_CMD6 serves as the primary signal for whether to hold commodity-linked equity sectors (energy, materials, mining) and whether to overweight commodity-exporting equity markets (ASX 200, Bovespa, JSE, TSX). Erb & Harvey (2006, *FAJ*) documented that commodity momentum is strongest at 12-month horizons, justifying the 52-week lookback. Additionally, rising commodity momentum leads EM equity outperformance by 8–12 weeks on positive cycle turns — making FX_CMD6 a leading signal for GL_G1.
 
 **Regime Classification**
 
@@ -1724,7 +1724,7 @@ For a multi-asset investor, REG_COMM1 serves as the primary signal for whether t
 
 ---
 
-### REG_COMM2 — Oil vs Gold (Growth-Inflation Regime Signal)
+### FX_CMD3 — Oil vs Gold (Growth-Inflation Regime Signal)
 
 | | |
 |---|---|
@@ -1734,13 +1734,13 @@ For a multi-asset investor, REG_COMM1 serves as the primary signal for whether t
 
 **Economic Rationale**
 
-REG_COMM2 is the energy-extended version of the copper/gold ratio (US_FX2), using crude oil versus gold to distinguish between growth-driven inflation regimes and fear-driven safe-haven regimes. Oil and gold both rise during inflationary episodes, but they respond differently to the *type* of inflation: oil is primarily sensitive to demand-driven (growth-positive) inflation, while gold is primarily sensitive to fear-driven or monetary debasement inflation.
+FX_CMD3 is the energy-extended version of the copper/gold ratio (FX_CMD1), using crude oil versus gold to distinguish between growth-driven inflation regimes and fear-driven safe-haven regimes. Oil and gold both rise during inflationary episodes, but they respond differently to the *type* of inflation: oil is primarily sensitive to demand-driven (growth-positive) inflation, while gold is primarily sensitive to fear-driven or monetary debasement inflation.
 
 When oil outperforms gold (ratio rising): the world is pricing *reflationary growth* — energy demand is rising because economic activity is expanding, corporate capital expenditure is healthy, and consumers are spending on transport and energy-intensive goods. This is positive for cyclicals, energy, materials and commodity currencies. When gold outperforms oil (ratio falling): the world is pricing *deflation risk, geopolitical shock or growth deceleration* — gold is rising as a safe haven while oil demand is falling on recession fears, or oil supply is contracting but this is a supply shock rather than a demand signal.
 
 Erb & Harvey (2013, *FAJ*) documented that oil and gold respond to different components of the inflation process: oil tracks demand-pull inflation, gold tracks monetary inflation and tail risk. Hamilton (1983, *Journal of Political Economy*) showed that oil price shocks that are demand-driven (rising oil due to growth) have very different macro consequences than supply shocks — a distinction that the oil/gold ratio helps to identify.
 
-The oil/gold ratio complements US_FX2 (copper/gold) by adding the energy dimension: when both copper/gold (US_FX2) and oil/gold (REG_COMM2) are positive, the global growth-inflation signal is high-conviction. When they diverge (e.g. oil rising on geopolitical supply shock but copper flat), the signal is more ambiguous and cross-referencing with REG_CLI5 and REG_RISK1 is warranted.
+The oil/gold ratio complements FX_CMD1 (copper/gold) by adding the energy dimension: when both copper/gold (FX_CMD1) and oil/gold (FX_CMD3) are positive, the global growth-inflation signal is high-conviction. When they diverge (e.g. oil rising on geopolitical supply shock but copper flat), the signal is more ambiguous and cross-referencing with GL_CLI5 and GL_G2 is warranted.
 
 **Regime Classification**
 
@@ -1752,7 +1752,7 @@ The oil/gold ratio complements US_FX2 (copper/gold) by adding the energy dimensi
 
 ---
 
-*End of Section 4c — Global & Regional (9 indicators: REG_CLI1, REG_CLI2, REG_CLI3, REG_CLI4, REG_CLI5, REG_RISK1, REG_EM1, REG_COMM1, REG_COMM2)*
+*End of Section 4c — Global & Regional (9 indicators: GL_CLI1, GL_CLI2, EU_CLI1, AS_CLI1, GL_CLI5, GL_G2, GL_G1, FX_CMD6, FX_CMD3)*
 
 ---
 
