@@ -13,6 +13,7 @@ this script file):
 import json
 import os
 import math
+import sys
 import pandas as pd
 from pathlib import Path
 
@@ -21,49 +22,15 @@ ROOT   = Path(__file__).parent.parent
 DATA   = ROOT / "data"
 DOCS   = ROOT / "docs"
 
+# Allow importing library_utils from the repo root
+sys.path.insert(0, str(ROOT))
+from library_utils import INDICATOR_GROUP_ORDER, INDICATOR_SUB_GROUP_ORDER
+
 MACRO_MKT   = DATA / "macro_market_hist.csv"
 MACRO_US    = DATA / "macro_us_hist.csv"
 MACRO_INTL  = DATA / "macro_intl_hist.csv"
 MKT_COMP    = DATA / "market_data_comp_hist.csv"
 IND_LIB     = DATA / "macro_indicator_library.csv"
-
-# ── indicator groups matching the manual hierarchy ────────────────────────────
-INDICATOR_GROUPS = {
-    "US Growth & Style": [
-        "US_G1","US_G2","US_G2b","US_G3","US_G3b","US_G4","US_G4b","US_G5","US_G6",
-    ],
-    "US Rates & Credit": [
-        "US_I1","US_I2","US_I3","US_I4","US_I5","US_I6","US_I6b",
-        "US_I7","US_I8","US_I9","US_I10","US_I11","US_R1","US_R2","US_RR1",
-    ],
-    "US FX & Momentum": [
-        "US_FX1","US_FX2","M1","M2","M3","M4","M5",
-    ],
-    "US Macro Fundamentals": [
-        "US_LEI1","US_JOBS1","US_LAB1","US_LAB2",
-        "US_GROWTH1","US_HOUS1","US_M2L1","US_ISM1",
-    ],
-    "Europe & UK": [
-        "EU_G1","EU_G2","EU_G3","EU_G4",
-        "EU_I1","EU_I2","EU_I3","EU_I4","EU_R1","EU_FX1",
-    ],
-    "Asia: China & India": [
-        "AS_G1","AS_G2","AS_G3","AS_G4",
-        "AS_I1","AS_I2","AS_FX1","AS_FX2",
-    ],
-    "Asia Commodities & Japan": [
-        "AS_C1","AS_C2","JP_G1","JP_FX1",
-    ],
-    "Global & Regional": [
-        "REG_CLI1","REG_CLI2","REG_CLI3","REG_CLI4","REG_CLI5",
-        "REG_RISK1","REG_EM1","REG_COMM1","REG_COMM2",
-    ],
-}
-
-NATURALLY_LEADING = {
-    "US_ISM1","US_LAB2","US_HOUS1","US_LEI1",
-    "REG_CLI1","REG_CLI2","REG_CLI3","REG_CLI4","REG_CLI5","JP_FX1",
-}
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -113,6 +80,11 @@ def _parse_date_col(df: pd.DataFrame) -> tuple[list, pd.DataFrame]:
 # ── 1. macro_indicator_library metadata ──────────────────────────────────────
 
 def load_indicator_meta() -> dict:
+    """Load indicator metadata from macro_indicator_library.csv.
+
+    Returns dict keyed by indicator ID with metadata, group, sub_group,
+    and naturally_leading flag — all driven by the CSV (source of truth).
+    """
     lib = pd.read_csv(IND_LIB)
     meta = {}
     for _, row in lib.iterrows():
@@ -120,12 +92,14 @@ def load_indicator_meta() -> dict:
         if not ind_id:
             continue
         meta[ind_id] = {
-            "region":   str(row.get("region_block", "")).strip(),
-            "category": str(row.get("category", "")).strip(),
-            "formula":  str(row.get("formula_using_library_names", "")).strip(),
-            "interp":   str(row.get("economic_interpretation", "")).strip(),
+            "region":      str(row.get("region_block", "")).strip(),
+            "category":    str(row.get("category", "")).strip(),
+            "group":       str(row.get("group", "")).strip(),
+            "sub_group":   str(row.get("sub_group", "")).strip(),
+            "formula":     str(row.get("formula_using_library_names", "")).strip(),
+            "interp":      str(row.get("economic_interpretation", "")).strip(),
             "regime_desc": str(row.get("regime_classification", "")).strip(),
-            "leading":  ind_id in NATURALLY_LEADING,
+            "leading":     str(row.get("naturally_leading", "")).strip().upper() == "TRUE",
         }
     return meta
 
@@ -162,16 +136,29 @@ def build_macro_market(ind_meta: dict) -> dict:
         entry["last_date"]  = last
         indicators[ind_id] = entry
 
-    # build groups — only include IDs that are present in the file
-    groups = {}
+    # build groups and sub_groups from CSV metadata, sorted by library_utils order
+    raw_groups: dict[str, dict[str, list]] = {}  # group → sub_group → [ids]
     ungrouped = set(present_ids)
-    for group_name, ids in INDICATOR_GROUPS.items():
-        members = [i for i in ids if i in present_ids]
-        if members:
-            groups[group_name] = members
-            ungrouped -= set(members)
+    for ind_id in present_ids:
+        m = ind_meta.get(ind_id, {})
+        g  = m.get("group", "")
+        sg = m.get("sub_group", "")
+        if g:
+            raw_groups.setdefault(g, {}).setdefault(sg, []).append(ind_id)
+            ungrouped.discard(ind_id)
+
+    # sort groups by INDICATOR_GROUP_ORDER, sub_groups by INDICATOR_SUB_GROUP_ORDER
+    groups = {}
+    for g in sorted(raw_groups,
+                    key=lambda g: INDICATOR_GROUP_ORDER.get(g, 99)):
+        sub_groups = {}
+        for sg in sorted(raw_groups[g],
+                         key=lambda sg: INDICATOR_SUB_GROUP_ORDER.get(sg, 99)):
+            sub_groups[sg] = sorted(raw_groups[g][sg])
+        groups[g] = sub_groups
+
     if ungrouped:
-        groups["Other"] = sorted(ungrouped)
+        groups["Other"] = {"Ungrouped": sorted(ungrouped)}
 
     return {"dates": dates, "indicators": indicators, "groups": groups}
 
