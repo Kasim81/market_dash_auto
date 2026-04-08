@@ -489,11 +489,11 @@ For equity investors, the relationship between real rates and P/E multiples is d
 
 ## 2b. US FX & Momentum Indicators
 
-*This group captures two distinct signals: (1) the **dollar cycle** and its effect on cross-asset pricing (US_FX1, US_FX2), and (2) **systematic trend/momentum** filters that determine whether the current price environment is conducive to risk-taking across equities, credit and multi-asset portfolios (M1–M5). These indicators sit at the boundary between fundamental macro and quantitative strategy.*
+*This group captures two distinct signals: (1) the **dollar cycle** and its effect on cross-asset pricing (FX_CMD2, FX_CMD1), and (2) **systematic trend/momentum** filters that determine whether the current price environment is conducive to risk-taking across equities, credit and multi-asset portfolios (M1–M5). These indicators sit at the boundary between fundamental macro and quantitative strategy.*
 
 ---
 
-### US_FX1 — Dollar vs Emerging Markets
+### FX_CMD2 — Dollar vs Emerging Markets
 
 | | |
 |---|---|
@@ -519,7 +519,7 @@ For a 6–9 month investor, the dollar cycle is one of the highest-impact multi-
 
 ---
 
-### US_FX2 — Copper/Gold Ratio (Global Growth Barometer)
+### FX_CMD1 — Copper/Gold Ratio (Global Growth Barometer)
 
 | | |
 |---|---|
@@ -533,7 +533,7 @@ The copper/gold ratio is one of the most closely watched cross-commodity signals
 
 The ratio therefore distils a binary question: is the world's marginal capital seeking productive investment (high copper demand relative to safe haven) or protecting itself (high gold demand relative to copper)? Jeffrey Gundlach of DoubleLine popularised the copper/gold ratio as a predictor of 10-year Treasury yields — empirically, the ratio leads the 10-year yield by 6–12 months, because both respond to forward growth expectations. Erb & Harvey (2006, *FAJ*) documented that commodity returns are driven by roll yield, spot return and inflation — and copper's spot return is uniquely tied to the global manufacturing PMI.
 
-For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross-check on the yield curve and equity cyclicals signals: a rising copper/gold ratio alongside a steepening yield curve (US_I1 improving) and rising cyclicals/defensives (US_G1/G2 improving) is a high-conviction pro-growth signal.
+For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross-check on the yield curve and equity cyclicals signals: a rising copper/gold ratio alongside a steepening yield curve (US_R1 improving) and rising cyclicals/defensives (US_G1/G2 improving) is a high-conviction pro-growth signal.
 
 **Regime Classification**
 
@@ -681,41 +681,13 @@ Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyn
 
 ---
 
-*End of Section 2b — US FX & Momentum (7 indicators: US_FX1, US_FX2, M1, M2, M3, M4, M5)*
+*End of Section 2b — FX & Momentum (7 indicators: FX_CMD2, FX_CMD1, M1, M2, M3, M4, M5)*
 
 ---
 
 ## 3a. US Macro Fundamentals
 
 *These indicators draw on official economic data releases rather than market prices. They measure the underlying real economy — labour markets, production, credit, housing and liquidity — and provide the fundamental backdrop that ultimately drives asset price regimes over 6–9 months. Publication lags range from 1 week (jobless claims) to 6 weeks (ISM, JOLTS), so these signals are best combined with the market-based indicators in Sections 1–2.*
-
----
-
-### US_LEI1 — Conference Board Leading Economic Index
-
-| | |
-|---|---|
-| **Formula** | `USSLIND` (Conference Board LEI) — 6-month annualised % change |
-| **Data** | FRED: USSLIND (monthly, released ~3 weeks after month-end) |
-| **Lookback** | 156-week rolling z-score of 6m annualised change |
-
-**Economic Rationale**
-
-The Conference Board Leading Economic Index (LEI) is a composite of ten sub-indicators designed to lead business cycle turning points by 6–9 months. Its components span financial conditions (S&P 500, yield curve), credit (ISM new orders, building permits), and labour markets (initial claims, average workweek). The breadth of coverage is its primary strength: no single data series dominates, making it more robust than any individual indicator.
-
-The academic foundation is Burns & Mitchell (1946, NBER), whose pioneering work on business cycle measurement established that leading indicators consistently precede cycle peaks and troughs. Diebold & Rudebusch (1989, *American Economic Review*) and Stock & Watson (1989, *JASA*) formalised the statistical evidence for composite leading indicators, showing that equal-weighted combinations of leading series outperform individual series for 3–6 month ahead GDP forecasts.
-
-The **6-month annualised change** is the Conference Board's own preferred signal transformation: it smooths monthly noise while remaining responsive to genuine trend reversals. Their research (Conference Board 2001) shows that a 6-month decline of roughly 4.3% or more, accompanied by broad diffusion, has preceded all post-war US recessions with only two false positives (1966, 1995). This threshold is incorporated directly into the regime rules.
-
-For a 6–9 month investor, LEI is the highest-level cycle signal available: a sustained negative trend (consecutive monthly declines, 6m change < −4%) is a strong signal to reduce gross risk, rotate toward quality and duration, and reduce EM/commodity exposure.
-
-**Regime Classification**
-
-| Condition | Label | Positioning |
-|---|---|---|
-| 6m change < −4.3% AND z < −1.5 | `recession-risk` | Cap equity risk; OW high-quality bonds and defensives |
-| 6m change 0 to −4.3% | `late-cycle` | Selective; reduce cyclicals, monitor credit spreads |
-| 6m change > 0 | `expansion` | Normal equity risk budget |
 
 ---
 
@@ -745,7 +717,7 @@ The YoY transformation is preferred for two reasons: (1) it eliminates seasonal 
 
 ---
 
-### US_LAB1 — Labour Market Composite
+### US_JOBS3 — Labour Market Composite
 
 | | |
 |---|---|
@@ -755,11 +727,11 @@ The YoY transformation is preferred for two reasons: (1) it eliminates seasonal 
 
 **Economic Rationale**
 
-No single labour market series captures the full picture: unemployment is a lagging indicator, payrolls are coincident, and claims are leading. US_LAB1 synthesises all three into a single composite score that spans the lead-coincident-lag spectrum of labour market data — mimicking how the Federal Reserve's own staff models assess labour market conditions.
+No single labour market series captures the full picture: unemployment is a lagging indicator, payrolls are coincident, and claims are leading. US_JOBS3 synthesises all three into a single composite score that spans the lead-coincident-lag spectrum of labour market data — mimicking how the Federal Reserve's own staff models assess labour market conditions.
 
-The Federal Reserve's *Labour Market Conditions Index* (LMCI), developed by Hakkio & Willis (2014, *Kansas City Fed*) and extended by the Board of Governors, uses a factor model to extract a common latent state from 19 labour market indicators. US_LAB1 implements a simplified version of the same concept using three key series, with the inversions applied so that the composite is positive when labour markets are strong and negative when weak.
+The Federal Reserve's *Labour Market Conditions Index* (LMCI), developed by Hakkio & Willis (2014, *Kansas City Fed*) and extended by the Board of Governors, uses a factor model to extract a common latent state from 19 labour market indicators. US_JOBS3 implements a simplified version of the same concept using three key series, with the inversions applied so that the composite is positive when labour markets are strong and negative when weak.
 
-Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labour market tightness is the primary transmission channel from monetary policy to inflation and growth — central banks tighten specifically to cool labour markets, and recessions begin when the cooling overshoots. For a 6–9 month investor, US_LAB1 captures the real-time state of this channel: high composite z-score implies continued consumer spending support; low composite z-score implies deteriorating income dynamics and rising recession probability.
+Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labour market tightness is the primary transmission channel from monetary policy to inflation and growth — central banks tighten specifically to cool labour markets, and recessions begin when the cooling overshoots. For a 6–9 month investor, US_JOBS3 captures the real-time state of this channel: high composite z-score implies continued consumer spending support; low composite z-score implies deteriorating income dynamics and rising recession probability.
 
 **Regime Classification**
 
@@ -771,7 +743,7 @@ Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labo
 
 ---
 
-### US_LAB2 — JOLTS Labour Market Tightness *(Naturally Leading)*
+### US_JOBS2 — JOLTS Labour Market Tightness *(Naturally Leading)*
 
 | | |
 |---|---|
@@ -786,7 +758,7 @@ The job openings–to–unemployed ratio is the canonical measure of **labour ma
 
 The theoretical framework is the Diamond-Mortensen-Pissarides (DMP) search model (Pissarides 1985, *Review of Economic Studies*; Mortensen & Pissarides 1994, *Review of Economic Studies*; both authors received the Nobel Prize in 2010). The DMP model predicts that the vacancy-unemployment ratio is a sufficient statistic for the tightness of the matching market: as it rises, workers find jobs faster, wages rise, and the employment rate increases. Shimer (2005, *American Economic Review*) further showed that vacancies are 10× more volatile than unemployment across the cycle — making the ratio a more sensitive early signal of cycle turns than unemployment alone.
 
-Practically, the JOLTS ratio leads reported unemployment by approximately 2 months and leads the Employment Cost Index (ECI, the broadest wage measure) by 3–4 months, making it *naturally leading*: the current reading already embeds the signal about labour market conditions 1–2 months ahead. This is why US_LAB2 is included in the `NATURALLY_LEADING` set, and its `fwd_regime` is tagged `[leading]`.
+Practically, the JOLTS ratio leads reported unemployment by approximately 2 months and leads the Employment Cost Index (ECI, the broadest wage measure) by 3–4 months, making it *naturally leading*: the current reading already embeds the signal about labour market conditions 1–2 months ahead. This is why US_JOBS2 is included in the `NATURALLY_LEADING` set, and its `fwd_regime` is tagged `[leading]`.
 
 **Regime Classification**
 
@@ -798,7 +770,7 @@ Practically, the JOLTS ratio leads reported unemployment by approximately 2 mont
 
 ---
 
-### US_GROWTH1 — Real Activity Composite (IP + Retail Sales)
+### US_G6 — Real Activity Composite (IP + Retail Sales)
 
 | | |
 |---|---|
@@ -808,7 +780,7 @@ Practically, the JOLTS ratio leads reported unemployment by approximately 2 mont
 
 **Economic Rationale**
 
-US_GROWTH1 combines the two broadest real-activity measures spanning the supply and demand sides of the US economy: industrial production (supply/manufacturing) and retail sales ex-autos (consumer demand). Together they provide a coincident composite analogous to the NBER Business Cycle Dating Committee's own primary indicators.
+US_G6 combines the two broadest real-activity measures spanning the supply and demand sides of the US economy: industrial production (supply/manufacturing) and retail sales ex-autos (consumer demand). Together they provide a coincident composite analogous to the NBER Business Cycle Dating Committee's own primary indicators.
 
 Industrial production (INDPRO), published by the Federal Reserve Board, covers manufacturing, mining and utilities — approximately 20% of GDP but highly cyclical and leading for corporate earnings. Bernanke (1983, *American Economic Review*) showed that industrial production is one of the first GDP components to inflect at cycle turning points. Its YoY change correlates closely with corporate earnings growth and is a core input into manufacturing PMI surveys.
 
@@ -837,7 +809,7 @@ The composite z-score removes the need to interpret two series simultaneously, p
 
 **Economic Rationale**
 
-Building permits are one of the most reliable leading indicators in the NBER framework — they are included in the Conference Board LEI (US_LEI1) and are published earlier than housing starts, making them the first-available signal of construction cycle direction.
+Building permits are one of the most reliable leading indicators in the NBER framework — they were included in the Conference Board LEI and are published earlier than housing starts, making them the first-available signal of construction cycle direction.
 
 The transmission mechanism is multilayered. First, housing construction has extremely high labour and material intensity — a single-family home creates approximately 3 person-years of employment across construction, materials and professional services. Second, new housing generates significant downstream spending: buyers purchase appliances, furniture and home improvement goods (the IKEA/Home Depot multiplier). Third, rising construction activity raises land and existing home prices, increasing household net worth and supporting the *wealth effect* on consumption (Case, Quigley & Shiller 2005, *Brookings Papers*).
 
@@ -853,7 +825,7 @@ The interest-rate sensitivity of permits is also why US_HOUS1 is *naturally lead
 
 ---
 
-### US_M2L1 — M2 Money Supply Growth (Liquidity Indicator)
+### US_M2 — M2 Money Supply Growth (Liquidity Indicator)
 
 | | |
 |---|---|
@@ -906,7 +878,7 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 
 ---
 
-*End of Section 3a — US Macro Fundamentals (8 indicators: US_LEI1, US_JOBS1, US_LAB1, US_LAB2, US_GROWTH1, US_HOUS1, US_M2L1, US_ISM1)*
+*End of Section 3a — US Macro Fundamentals (7 indicators: US_JOBS1, US_JOBS3, US_JOBS2, US_G6, US_HOUS1, US_M2, US_ISM1)*
 
 ---
 
