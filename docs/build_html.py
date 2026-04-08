@@ -432,6 +432,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .grp-body{display:none}
 .grp-body.open{display:block}
 
+/* ── sub-group sections (third tier, inside macro-market groups) ── */
+.sgrp-section{padding-left:0}
+.sgrp-header{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 14px 4px 36px;cursor:pointer;user-select:none
+}
+.sgrp-header:hover{background:#1c2128}
+.sgrp-arrow{font-size:8px;color:#484f58;transition:transform .15s;flex-shrink:0}
+.sgrp-arrow.open{transform:rotate(90deg)}
+.sgrp-title{font-size:10.5px;font-weight:500;color:#768390;flex:1;
+  letter-spacing:.03em}
+.sgrp-count{font-size:9px;color:#484f58;flex-shrink:0}
+.sgrp-body{display:none}
+.sgrp-body.open{display:block}
+.sgrp-body .series-item{padding-left:48px}
+
 /* ── asset class sections (second tier, inside market data) ── */
 .ac-section{}
 .ac-header{
@@ -872,8 +888,8 @@ function buildMacroMarketSection(){
 
   const body = el('div','src-body open');
 
-  Object.entries(mm.groups).forEach(([groupName, ids]) => {
-    body.appendChild(buildGroupSection(groupName, ids, mm.indicators));
+  Object.entries(mm.groups).forEach(([groupName, subGroups]) => {
+    body.appendChild(buildGroupSection(groupName, subGroups, mm.indicators));
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -881,16 +897,39 @@ function buildMacroMarketSection(){
   return wrap;
 }
 
-function buildGroupSection(groupName, ids, indicators){
+function buildGroupSection(groupName, subGroups, indicators){
+  // subGroups = { sub_group_name: [indicator_ids], ... }
+  const totalIds = Object.values(subGroups).reduce((n, ids) => n + ids.length, 0);
+
   const wrap = el('div','grp-section');
   const hdr  = el('div','grp-header');
   const arr  = makeArrow('grp-arrow open');
   const ttl  = el('span','grp-title', groupName);
-  const cnt  = el('span','grp-count', ids.length);
+  const cnt  = el('span','grp-count', totalIds);
   hdr.append(arr, ttl, cnt);
   wrap.appendChild(hdr);
 
   const body = el('div','grp-body open');
+
+  Object.entries(subGroups).forEach(([sgName, ids]) => {
+    body.appendChild(buildSubGroupSection(sgName, ids, indicators));
+  });
+
+  hdr.addEventListener('click', () => toggleSection(arr, body));
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function buildSubGroupSection(sgName, ids, indicators){
+  const wrap = el('div','sgrp-section');
+  const hdr  = el('div','sgrp-header');
+  const arr  = makeArrow('sgrp-arrow open');
+  const ttl  = el('span','sgrp-title', sgName);
+  const cnt  = el('span','sgrp-count', ids.length);
+  hdr.append(arr, ttl, cnt);
+  wrap.appendChild(hdr);
+
+  const body = el('div','sgrp-body open');
   ids.forEach(indId => {
     const ind = indicators[indId];
     if(!ind) return;
@@ -1107,7 +1146,14 @@ document.getElementById('search-box').addEventListener('input', function(){
     item.classList.toggle('hidden', !text.includes(q));
   });
 
-  // hide empty group bodies (no visible children)
+  // hide empty sub-group sections (no visible children)
+  document.querySelectorAll('.sgrp-body').forEach(body => {
+    const anyVisible = Array.from(body.querySelectorAll('.series-item'))
+      .some(i => !i.classList.contains('hidden'));
+    body.closest('.sgrp-section').style.display = anyVisible ? '' : 'none';
+  });
+
+  // hide empty group / asset-class bodies (no visible children)
   document.querySelectorAll('.grp-body,.ac-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
@@ -1123,8 +1169,8 @@ document.getElementById('search-box').addEventListener('input', function(){
         body.previousElementSibling.querySelector('.src-arrow').classList.add('open'); }
     });
   } else {
-    // restore hidden groups
-    document.querySelectorAll('.grp-section,.ac-section').forEach(s => s.style.display = '');
+    // restore hidden groups and sub-groups
+    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section').forEach(s => s.style.display = '');
   }
 });
 
