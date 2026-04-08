@@ -1,7 +1,7 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-03-30
-> Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md
+> Last updated: 2026-04-08
+> Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md, indicator_groups_review_UPDATED.xlsx
 
 ---
 
@@ -26,7 +26,7 @@
 | Comp Pipeline | ~390 library-driven instruments — daily snapshot + weekly history | Production |
 | Phase A — US Macro (FRED) | ~43 FRED series — snapshot + weekly history | Production |
 | Phase C — International Macro | OECD CLI, unemployment, CPI, GDP, rates for 11 countries | Production |
-| Phase E — Macro-Market Indicators | 57 composite indicators (z-scores, regimes) | Production |
+| Phase E — Macro-Market Indicators | 68 composite indicators (z-scores, regimes, fwd_regimes) | Production |
 
 ### 7-Step Refactoring (completed 2026-03-30)
 
@@ -38,7 +38,7 @@
 | 4 | Replaced hardcoded `PENCE_TICKERS` with dynamic `.endsWith(".L")` + median > 50 check |
 | 5 | Added `broad_asset_class` column to `index_library.csv`; removed code-computed labels |
 | 6 | Added `units` column to `index_library.csv`; removed `_ac_units` / `_asc_units` dicts |
-| 7 | Moved 10 sentiment ratios from `market_data_comp` to `compute_macro_market.py` (7 new indicators: US_G2b, US_G3b, US_G4b, US_I6b, US_I8, US_I9, US_I10) |
+| 7 | Moved 10 sentiment ratios from `market_data_comp` to `compute_macro_market.py` (7 new indicators — IDs subsequently renamed during indicator groups review) |
 
 ### Post-Refactoring Cleanup (completed 2026-03-30)
 
@@ -46,6 +46,25 @@
 - Cleaned up GitHub Actions workflow to remove stale git-add references
 - Consolidated sort-order dicts and FX maps into `library_utils.py` (done prior to refactoring)
 - Resolved all 12 items from `METADATA_REDUNDANCY_REVIEW.md`
+
+### Indicator Groups Review & CSV-Driven Migration (completed 2026-04-08)
+
+| Change | Detail |
+|---|---|
+| Indicator ID rename | All 68 indicators renamed from internal codes (e.g. `US_I1`→`US_G1`, `US_I5`→`US_Cr2`) to semantic IDs reflecting group/function |
+| CSV single source of truth | `macro_indicator_library.csv` now drives all metadata — no hardcoded `INDICATOR_META` or `NATURALLY_LEADING` in Python |
+| Group/sub_group hierarchy | Added `group` and `sub_group` columns to CSV; `build_html.py` sidebar uses 3-level nesting (group → sub_group → indicator) |
+| `region_block` removed | Legacy column dropped from CSV and Sheets snapshot; replaced by `group`/`sub_group` |
+| Sheets snapshot updated | `macro_market` tab now outputs `id, group, sub_group, category, last_date, raw, zscore, regime, fwd_regime, formula_note` |
+| Z-score window | Changed from 260 weeks (5yr) to 156 weeks (3yr) for faster regime responsiveness |
+| US_G3 ticker | Switched from XLF (broad financials) to ^SP500-4010 (Banks industry group) for purer credit-cycle signal |
+| US_EQ_F2 inverted | Now Value/Growth (IVE/IVW) to match US_EQ_F1 convention — positive z = value regime |
+| US_Cr2 5-regime | New framework: opportunity (>800bps), stress (>500bps), normal, complacent (<400bps), frothy (<300bps) |
+| Amber palette | New 4th regime color category for complacent/caution/elevated/late-cycle labels |
+| US_LEI1 removed | USSLIND permanently discontinued by Philadelphia Fed in 2025 |
+| PNG snapshot | Custom download composites chart title, Plotly image, legend, and regime color key onto a single canvas |
+| Sort orders | Sectors now follow custom ordering (Consumer Staples first); Industry Groups and Industries sorted by GICS ticker code |
+| Forward regime system | `fwd_regime` column added: improving/stable/deteriorating with optional [leading] suffix |
 
 ### Previously Resolved Issues
 
@@ -80,9 +99,7 @@ These are returning no data and need investigation:
 
 ### Priority 2: Code/Metadata Mismatches
 
-| Issue | Location | Suggested Action |
-|---|---|---|
-| EU_R1 metadata/code mismatch | compute_macro_market.py | `INDICATOR_META` says `log(SLXX.L / IGLT.L)` but `_calc_EU_R1` code reads FRED `IRLTLT01DEM156N` (Germany 10Y yield). Decide which formula is correct and align code + metadata. |
+*All issues resolved.* EU_R1 metadata/code mismatch fixed during indicator groups review — CSV and code now both describe BTP-Bund spread (IRLTLT01ITM156N − IRLTLT01DEM156N).
 
 ---
 
@@ -149,18 +166,18 @@ Once confirmed, add rows to `index_library.csv` — no new Python modules needed
 
 ### 4.3 Calculated Fields Expansion
 
-Several calculated fields were proposed but not yet implemented. Some may already be covered by the 57 macro-market indicators — audit before building duplicates.
+Several calculated fields were proposed but not yet implemented. Some may already be covered by the 68 macro-market indicators — audit before building duplicates.
 
 | Field | Formula | Status |
 |---|---|---|
-| HY/IG ratio | BAMLH0A0HYM2 / BAMLC0A0CM | Likely covered by US_I5 (HY-IG spread) |
+| HY/IG ratio | BAMLH0A0HYM2 / BAMLC0A0CM | Covered by US_Cr3 (HY-IG spread) |
 | EMFX basket | Equal-weight CNY, INR, KRW, TWD vs USD | Not yet implemented |
 | EEM/IWDA ratio | EEM / IWDA.L (FX-adjusted) | Not yet implemented |
 | MOVE proxy | 30-day realised vol on ^TNX | Not yet implemented |
 | Global PMI proxy | Equal-weight ISM + Eurozone PMI + Japan PMI | Depends on Phase D |
 | Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented |
 
-**Action:** Audit the 57 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the same pattern: add to `INDICATOR_META`, write a `_calc_*` function, add to `REGIME_RULES` and `_US_CALCULATORS`, add a row to `macro_indicator_library.csv`.
+**Action:** Audit the 68 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
 
 ### 4.4 Sheets Export Audit (Phase G)
 
@@ -240,14 +257,14 @@ Google Sheets limit is 10M cells. Headroom is tight. Future optimisation: drop `
 1. **Add alignment utilities to `library_utils.py`:** `load_ragged_series()`, `align_series()`, `detect_frequency()`, `freq_aware_shift()`
 2. **Convert `fetch_hist.py` to ragged output:** Replace spine-aligned builders with per-ticker ragged output
 3. **Convert `fetch_macro_international.py` to native frequency:** Store OECD monthly and WB/IMF annual at their natural cadence
-4. **Update `compute_macro_market.py`:** All 57 indicator calculator functions updated to consume ragged data via alignment utilities
+4. **Update `compute_macro_market.py`:** All 68 indicator calculator functions updated to consume ragged data via alignment utilities
 5. **Validate:** Compare indicator values between weekly and ragged branches for overlapping Friday dates
 
 ### Risks
 
 1. **Sheets cell budget tight (8.4M/10M)** — if more tickers added, may need to drop `_Local` for USD-base instruments or split tabs
-2. **57 indicator functions to update** — each must be tested individually against weekly branch output
-3. **Z-score window equivalence** — 260 weekly != 1300 daily (trading vs calendar days); verify regime classifications match
+2. **68 indicator functions to update** — each must be tested individually against weekly branch output
+3. **Z-score window equivalence** — 156 weekly != 780 daily (trading vs calendar days); verify regime classifications match
 4. **Cherry-pick conflicts** — hist/compute changes won't merge cleanly between branches; manual adaptation needed
 
 ---

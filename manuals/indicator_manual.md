@@ -1,10 +1,10 @@
 # Macro-Market Indicator Manual
 
-> **Purpose:** Educational reference for all 70 composite indicators computed by `compute_macro_market.py`. Each entry covers the formula, data sources, economic rationale drawn from academic and practitioner research, and regime interpretation calibrated for a **6–9 month investment horizon**.
+> **Purpose:** Educational reference for all 68 composite indicators computed by `compute_macro_market.py`. Each entry covers the formula, data sources, economic rationale drawn from academic and practitioner research, and regime interpretation calibrated for a **6–9 month investment horizon**.
 >
-> **Output columns per indicator:** `raw` (the computed series), `zscore` (260-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
+> **Output columns per indicator:** `raw` (the computed series), `zscore` (156-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
 >
-> Last updated: 2026-04-01
+> Last updated: 2026-04-08
 
 ---
 
@@ -29,7 +29,7 @@
 |---|---|
 | **Formula** | `log(XLY / XLP)` |
 | **Data** | SPDR S&P 500 Consumer Discretionary ETF (XLY) / SPDR S&P 500 Consumer Staples ETF (XLP) — yfinance TR |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -74,18 +74,18 @@ The combination of four sectors creates a more robust signal than US_G1 alone, l
 
 ---
 
-### US_G2b — Financials vs Utilities
+### US_G3 — Banks vs Utilities
 
 | | |
 |---|---|
-| **Formula** | `log(XLF / XLU)` |
-| **Data** | XLF (Financials), XLU (Utilities) — yfinance TR |
+| **Formula** | `log(^SP500-4010 / XLU)` |
+| **Data** | S&P 500 Banks Industry Group (^SP500-4010) / SPDR S&P 500 Utilities ETF (XLU) — yfinance TR |
 
 **Economic Rationale**
 
-A focused two-ticker version of US_G2 that isolates the *credit and rates* dimension of the cycle. Financials earn more when the yield curve is steep (NIM expands as they borrow short and lend long), when loan demand is strong, and when credit losses are low — all conditions associated with early and mid-cycle expansion. Utilities are explicitly rate-sensitive: their dividend yields compete with bonds, so they outperform in falling-rate or growth-scare environments.
+A focused two-ticker version of US_G2 that isolates the *credit and rates* dimension of the cycle using the S&P 500 Banks industry group rather than broad financials (XLF). Banks are more directly leveraged to the yield curve, loan demand, and credit losses than the broader financials sector (which includes insurance, fintech, and asset management). Banks earn more when the yield curve is steep (NIM expands as they borrow short and lend long), when loan demand is strong, and when credit losses are low — all conditions associated with early and mid-cycle expansion. Utilities are explicitly rate-sensitive: their dividend yields compete with bonds, so they outperform in falling-rate or growth-scare environments.
 
-The XLF/XLU ratio is therefore a combined proxy for (1) yield curve steepness, (2) credit demand, and (3) risk appetite — making it a compact recession indicator. Borio & Lowe (2002, BIS) document that banking sector underperformance relative to defensive sectors reliably precedes credit-cycle downturns.
+The banks/utilities ratio is therefore a combined proxy for (1) yield curve steepness, (2) credit demand, and (3) risk appetite — making it a compact recession indicator. Borio & Lowe (2002, BIS) document that banking sector underperformance relative to defensive sectors reliably precedes credit-cycle downturns.
 
 **Regime Classification**
 
@@ -96,7 +96,7 @@ The XLF/XLU ratio is therefore a combined proxy for (1) yield curve steepness, (
 
 ---
 
-### US_G3 — Size Cycle (Russell 2000 / Russell 1000)
+### US_EQ_F3 — Size Cycle (Russell 2000 / Russell 1000)
 
 | | |
 |---|---|
@@ -120,7 +120,7 @@ Research by Ibbotson et al. (2013) and more recently AQR (2018) confirms that sm
 
 ---
 
-### US_G3b — Size Cycle S&P Proxy (Russell 2000 / S&P 500)
+### US_EQ_F4 — Size Cycle S&P Proxy (Russell 2000 / S&P 500)
 
 | | |
 |---|---|
@@ -129,11 +129,11 @@ Research by Ibbotson et al. (2013) and more recently AQR (2018) confirms that sm
 
 **Economic Rationale**
 
-Functionally identical in economic meaning to US_G3 but benchmarks the Russell 2000 against the most widely followed large-cap index rather than the Russell 1000. The S&P 500 includes a large weight in mega-cap technology and platform companies — which have near-zero correlation with the domestic credit cycle — making this ratio slightly more sensitive to the cyclical vs secular-growth distinction than the Russell 2000/1000 pair. Both indicators are retained as they can diverge at tech cycle peaks.
+Functionally identical in economic meaning to US_EQ_F3 but benchmarks the Russell 2000 against the most widely followed large-cap index rather than the Russell 1000. The S&P 500 includes a large weight in mega-cap technology and platform companies — which have near-zero correlation with the domestic credit cycle — making this ratio slightly more sensitive to the cyclical vs secular-growth distinction than the Russell 2000/1000 pair. Both indicators are retained as they can diverge at tech cycle peaks.
 
 ---
 
-### US_G4 — Style: Value vs Growth (Russell 1000)
+### US_EQ_F1 — Style: Value vs Growth (Russell 1000)
 
 | | |
 |---|---|
@@ -146,7 +146,7 @@ The *value premium* — the historical tendency of cheap stocks (high book/price
 
 Growth stocks (technology, biotech, platform companies) have long-duration cash flows heavily weighted to the distant future. Like long-duration bonds, their present value is highly sensitive to the discount rate. When real rates rise, the PV of those distant cash flows falls more than the PV of near-term value cash flows — causing growth to underperform value. When real rates fall or remain low, the opposite holds.
 
-This relationship was quantified by Lettau & Wachter (2007, JF) and has been consistently confirmed in practitioner research by AQR, GMO, and Research Affiliates. For a 6–9 month investor, the key variable is the *direction* of real rates (US_RR1), which US_G4 tends to anticipate in price.
+This relationship was quantified by Lettau & Wachter (2007, JF) and has been consistently confirmed in practitioner research by AQR, GMO, and Research Affiliates. For a 6–9 month investor, the key variable is the *direction* of real rates (US_R5), which US_EQ_F1 tends to anticipate in price.
 
 **Regime Classification**
 
@@ -158,18 +158,16 @@ This relationship was quantified by Lettau & Wachter (2007, JF) and has been con
 
 ---
 
-### US_G4b — Style: Growth vs Value (S&P 500)
+### US_EQ_F2 — Style: Value vs Growth (S&P 500)
 
 | | |
 |---|---|
-| **Formula** | `log(IVW / IVE)` |
-| **Data** | iShares S&P 500 Growth ETF (IVW) / iShares S&P 500 Value ETF (IVE) — yfinance TR |
+| **Formula** | `log(IVE / IVW)` |
+| **Data** | iShares S&P 500 Value ETF (IVE) / iShares S&P 500 Growth ETF (IVW) — yfinance TR |
 
 **Economic Rationale**
 
-The inverse of US_G4 using the S&P 500 decomposition rather than the Russell 1000. The S&P 500 growth/value split weights mega-cap technology more heavily (Apple, Microsoft, NVIDIA etc. dominate IVW) than the Russell 1000 equivalent. This means US_G4b is particularly sensitive to AI/technology cycle dynamics that may not show up as strongly in the broader Russell series. Both indicators are retained: US_G4 gives the broad style signal, US_G4b isolates the mega-cap-tech dimension.
-
-Note that because this is *growth/value* (inverted relative to US_G4), z > +1 here means the *growth regime*, not the value regime.
+The S&P 500 counterpart to US_EQ_F1, using the same value/growth convention (positive z = value regime). The S&P 500 growth/value split weights mega-cap technology more heavily (Apple, Microsoft, NVIDIA etc. dominate IVW) than the Russell 1000 equivalent. This means US_EQ_F2 is particularly sensitive to AI/technology cycle dynamics that may not show up as strongly in the broader Russell series. Both indicators are retained: US_EQ_F1 gives the broad style signal, US_EQ_F2 isolates the mega-cap-tech dimension.
 
 ---
 
@@ -200,7 +198,7 @@ For a 6–9 month investor, the signal is most actionable *at the inflection* �
 
 ---
 
-### US_G6 — Market Breadth (Equal-Weight vs Cap-Weight S&P 500)
+### US_G4 — Market Breadth (Equal-Weight vs Cap-Weight S&P 500)
 
 | | |
 |---|---|
@@ -227,19 +225,19 @@ For a 6–9 month investor, this indicator is particularly useful as a *risk man
 
 ---
 
-*End of Section 1 — US Growth & Style Indicators (9 indicators: US_G1, US_G2, US_G2b, US_G3, US_G3b, US_G4, US_G4b, US_G5, US_G6)*
+*End of Section 1 — US Growth & Style Indicators (9 indicators: US_G1, US_G2, US_G3, US_EQ_F3, US_EQ_F4, US_EQ_F1, US_EQ_F2, US_G5, US_G4)*
 
 ---
 
 ## 2. US Rates, Credit, Volatility & Momentum
 
-### Section 2a — US Rates & Credit (US_I1–I11, US_R1–R2, US_RR1)
+### Section 2a — US Rates, Credit & Volatility (US_R1–R6, US_Cr1–Cr4, US_V1–V2, US_CA_G1, GL_CA_I1)
 
 *Fixed-income and credit indicators are the backbone of macro regime identification. They reflect the cost and availability of capital — the single most important driver of business investment, housing, and consumer spending over a 6–9 month horizon. Unlike equity ratios, which can remain elevated for years on sentiment, credit spreads and yield curves have hard economic anchors in default rates and monetary policy.*
 
 ---
 
-### US_I1 — Yield-Curve Slope 10Y–3M
+### US_R1 — Yield-Curve Slope 10Y–3M
 
 | | |
 |---|---|
@@ -266,7 +264,7 @@ For a 6–9 month investor, the key insight is *where you are in the inversion c
 
 ---
 
-### US_I6 — Yield-Curve Slope 2s10s (FRED)
+### US_R2 — Yield-Curve Slope 2s10s (FRED)
 
 | | |
 |---|---|
@@ -277,48 +275,48 @@ For a 6–9 month investor, the key insight is *where you are in the inversion c
 
 The 2s10s curve is the market's benchmark measure of monetary policy stance vs. long-run growth expectations. The 2-year yield is highly sensitive to Fed policy expectations 1–2 years out; the 10-year reflects the longer-run nominal growth and inflation outlook.
 
-While the 10Y–3M spread (US_I1) is the better *recession predictor*, the 2s10s spread is more widely used by traders and market participants because it is more liquid and more reactive to near-term Fed policy shifts. Reinhart & Rogoff (2009) and Campbell Harvey's original dissertation (1986) document both curves' predictive power. The 2s10s is complementary to US_I1: divergence between the two signals can identify whether the inversion is driven by Fed overtightening (3M elevated) or by collapsing long-run growth expectations (10Y falling).
+While the 10Y–3M spread (US_R1) is the better *recession predictor*, the 2s10s spread is more widely used by traders and market participants because it is more liquid and more reactive to near-term Fed policy shifts. Reinhart & Rogoff (2009) and Campbell Harvey's original dissertation (1986) document both curves' predictive power. The 2s10s is complementary to US_R1: divergence between the two signals can identify whether the inversion is driven by Fed overtightening (3M elevated) or by collapsing long-run growth expectations (10Y falling).
 
-### US_I6b — Yield-Curve Slope 2s10s (Market)
+### US_R3 — Yield-Curve Slope 2s10s (Market)
 
 | | |
 |---|---|
 | **Formula** | `^TNX (yfinance) − DGS2 (FRED)` |
 | **Data** | yfinance 10Y yield level + FRED 2Y CMT |
 
-Functionally identical to US_I1 in interpretation. Retained as a cross-check: the yfinance-sourced 10Y yield updates intraday, while FRED T10Y2Y has a 1-day publication lag. Any persistent divergence between US_I6 and US_I6b would indicate a data feed issue.
+Functionally identical to US_R1 in interpretation. Retained as a cross-check: the yfinance-sourced 10Y yield updates intraday, while FRED T10Y2Y has a 1-day publication lag. Any persistent divergence between US_R2 and US_R3 would indicate a data feed issue.
 
 ---
 
-### US_I2 — US High-Yield Credit Spread (OAS)
+### US_Cr2 — US High-Yield Credit Spread (5-Regime Framework)
 
 | | |
 |---|---|
-| **Formula** | `BAMLH0A0HYM2` — ICE BofA US High Yield Master II Option-Adjusted Spread |
-| **Data** | FRED (Federal Reserve Economic Data), St. Louis Fed |
-| **Regime trigger** | Level-based: OAS > 700 bps or z > +1.5 triggers `stress` |
+| **Formula** | `yield(ICE BofA US High Yield Index) − US 10-Year Treasury Yield` |
+| **Data** | FRED: BAMLH0A0HYM2 (HY OAS) and DGS10 (10Y Treasury) |
+| **Regime trigger** | 5-regime framework based on raw spread level + z-score (see below) |
 
 **Economic Rationale**
 
-The HY OAS measures the yield premium that sub-investment-grade (rated BB and below) corporate borrowers must pay over equivalent-maturity US Treasuries. It is one of the most sensitive real-time measures of *credit conditions* and *default risk expectations*.
+The HY spread measures the yield premium that sub-investment-grade (rated BB and below) corporate borrowers must pay over US Treasuries. It is one of the most sensitive real-time measures of *credit conditions* and *default risk expectations*.
 
 Altman (1968, JF) established the theoretical link between credit spreads and default probability via Z-score models. Subsequent work by Duffie & Singleton (1999) and the Merton (1974) structural credit model formalised the spread as compensation for expected loss (probability of default × loss given default) plus a *liquidity premium* and a *risk premium*.
 
-From a cycle perspective, HY spreads are *coincident-to-leading*: they tend to widen before official recession declarations because the corporate bond market prices deteriorating fundamentals faster than equity analysts revise earnings. The 400-bps level has historically divided benign from stressed environments; 700 bps marks systemic distress (2001 TMT bust, 2008 GFC, 2020 COVID shock).
-
-For a 6–9 month investor, *the direction of spreads matters more than the level*: a spread at 450 bps and widening is more dangerous than 600 bps and tightening.
+The regime framework uses two key structural pivots from practitioner research: **500 bps** is the pivot between normal and stressed conditions (PitchBook/LCD research shows this threshold separates default-cycle regimes); **800 bps** is a historically compelling contrarian buy level (T. Rowe Price research shows median 23.6% one-year forward return from this level, per CFA Institute analysis of post-crisis recoveries).
 
 **Regime Classification**
 
 | Condition | Label | Positioning |
 |---|---|---|
-| OAS > 700 or z > +1.5 | `stress` | De-risk HY; OW IG and Treasuries |
-| 400–700 bps, \|z\| ≤ 1 | `normal` | Carry regime; hold HY at benchmark |
-| OAS < 400, z < −1 | `frothy` | Consider UW HY; credit cycle late |
+| Spread > 800 bps or z > +2 | `opportunity` | Contrarian buy — historically strong forward returns |
+| Spread > 500 bps and z > +1 | `stress` | De-risk HY; OW IG and Treasuries |
+| 400–600 bps, \|z\| < 1 | `normal` | Carry regime; hold HY at benchmark |
+| Spread < 400 bps, z < −0.5 | `complacent` | Below-average compensation; tighten risk |
+| Spread < 300 bps, z < −1 | `frothy` | Asymmetric downside; consider UW HY |
 
 ---
 
-### US_I4 — US Investment-Grade Credit Spread (OAS)
+### US_Cr1 — US Investment-Grade Credit Spread (OAS)
 
 | | |
 |---|---|
@@ -329,11 +327,11 @@ For a 6–9 month investor, *the direction of spreads matters more than the leve
 
 The IG OAS measures the spread demanded for investment-grade (BBB and above) corporate credit. IG spreads are structurally lower than HY and less volatile, reflecting the lower default probability of investment-grade issuers. However, they are highly sensitive to *liquidity conditions* and *risk appetite* in the institutional investor base (insurance companies, pension funds, foreign reserve managers all hold significant IG).
 
-The IG spread and HY spread together paint a complete picture of the credit cycle. When HY spreads widen significantly but IG remains contained, stress is isolated to lower-quality borrowers — a typical mid-cycle signal. When both widen simultaneously (tracked by US_I5), financial conditions are tightening broadly.
+The IG spread and HY spread together paint a complete picture of the credit cycle. When HY spreads widen significantly but IG remains contained, stress is isolated to lower-quality borrowers — a typical mid-cycle signal. When both widen simultaneously (tracked by US_Cr3), financial conditions are tightening broadly.
 
 ---
 
-### US_I5 — HY–IG Spread Differential
+### US_Cr3 — HY–IG Spread Differential
 
 | | |
 |---|---|
@@ -346,7 +344,7 @@ This differential captures the *quality spread* — the additional compensation 
 
 ---
 
-### US_I3 — Commodities vs Bonds
+### GL_CA_I1 — Commodities vs Bonds
 
 | | |
 |---|---|
@@ -361,7 +359,7 @@ This relationship was formalised in asset allocation research by Bridgewater Ass
 
 ---
 
-### US_I7 — 10-Year Breakeven Inflation
+### US_R4 — 10-Year Breakeven Inflation
 
 | | |
 |---|---|
@@ -376,7 +374,7 @@ Breakeven inflation is distinct from *realised* inflation: it reflects forward e
 
 ---
 
-### US_I8 — Risk-On vs Risk-Off (Equities vs Treasuries)
+### US_CA_G1 — Risk-On vs Risk-Off (Equities vs Treasuries)
 
 | | |
 |---|---|
@@ -391,20 +389,7 @@ Ibbotson & Sinquefield (1976) documented the long-run superiority of equities ov
 
 ---
 
-### US_I9 — HY vs IG Credit (ETF Ratio)
-
-| | |
-|---|---|
-| **Formula** | `log(IHYU.L / SLXX.L)` |
-| **Data** | iShares USD HY Corp Bond UCITS ETF (IHYU.L) / iShares Core GBP Corporate Bond UCITS ETF (SLXX.L) — yfinance TR |
-
-**Economic Rationale**
-
-This ratio uses European-listed ETFs to measure the *relative total return* of USD high-yield credit vs. investment-grade GBP corporate credit. Rising ratio = investors preferring speculative-grade over investment-grade = credit risk appetite. The use of ETF price ratios (rather than OAS levels as in US_I2 and US_I4) captures both spread changes *and* the duration and carry component, giving a more complete total-return perspective.
-
----
-
-### US_I10 — HY vs Treasuries (Credit Risk)
+### US_Cr4 — HY vs Treasuries (Credit Risk)
 
 | | |
 |---|---|
@@ -413,11 +398,11 @@ This ratio uses European-listed ETFs to measure the *relative total return* of U
 
 **Economic Rationale**
 
-The broadest total-return credit signal: HY vs. pure government bonds. This encompasses the full *credit risk premium* — compensation for default, liquidity, and economic uncertainty. Unlike the OAS measures (US_I2, US_I4) which use yield differentials, this log price ratio captures realised investor experience. During credit crises, IHYU.L falls sharply while GOVT rises — the ratio collapses, generating a strong `flight-to-quality` regime signal.
+The broadest total-return credit signal: HY vs. pure government bonds. This encompasses the full *credit risk premium* — compensation for default, liquidity, and economic uncertainty. Unlike the OAS measures (US_Cr2, US_Cr1) which use yield differentials, this log price ratio captures realised investor experience. During credit crises, IHYU.L falls sharply while GOVT rises — the ratio collapses, generating a strong `flight-to-quality` regime signal.
 
 ---
 
-### US_I11 — Mortgage Credit Spread (Affordability Stress)
+### US_R6 — Mortgage Credit Spread (Affordability Stress)
 
 | | |
 |---|---|
@@ -432,7 +417,7 @@ The MBA Mortgage Bankers Association and the National Association of Realtors tr
 
 ---
 
-### US_R1 — VIX Term Structure (Equity Vol)
+### US_V1 — VIX Term Structure (Equity Vol)
 
 | | |
 |---|---|
@@ -458,7 +443,7 @@ Whaley (2009, JFM) and subsequent CBOE research documents the term structure of 
 
 ---
 
-### US_R2 — Rates vs Equity Vol (MOVE/VIX Ratio)
+### US_V2 — Rates vs Equity Vol (MOVE/VIX Ratio)
 
 | | |
 |---|---|
@@ -473,7 +458,7 @@ A high MOVE/VIX ratio — common during Fed tightening cycles and fiscal crises 
 
 ---
 
-### US_RR1 — Real Rates (TIPS 10-Year Yield)
+### US_R5 — Real Rates (TIPS 10-Year Yield)
 
 | | |
 |---|---|
@@ -486,7 +471,7 @@ The 10-year real interest rate is arguably the single most important macro varia
 
 Fisher (1930) established the decomposition of nominal rates into real rates and expected inflation. In modern macro-finance, the real rate is determined by: (1) the stance of monetary policy relative to the neutral rate (r*), (2) the term premium for holding duration, and (3) global safe-asset demand (the *global saving glut* identified by Bernanke 2005).
 
-For equity investors, the relationship between real rates and P/E multiples is direct: the Gordon Growth Model implies P/E = 1 / (r_real + ERP − g), so rising real rates compress multiples, particularly for long-duration growth stocks (US_G5, US_G4 rotate together with US_RR1). For a 6–9 month investor, the *direction* of real rates is the key variable: TIPS yields rising from negative to positive (-0.5% to +2% as in 2022) caused the most severe equity de-rating in decades.
+For equity investors, the relationship between real rates and P/E multiples is direct: the Gordon Growth Model implies P/E = 1 / (r_real + ERP − g), so rising real rates compress multiples, particularly for long-duration growth stocks (US_G5, US_EQ_F1 rotate together with US_R5). For a 6–9 month investor, the *direction* of real rates is the key variable: TIPS yields rising from negative to positive (-0.5% to +2% as in 2022) caused the most severe equity de-rating in decades.
 
 **Regime Classification**
 
@@ -498,23 +483,23 @@ For equity investors, the relationship between real rates and P/E multiples is d
 
 ---
 
-*End of Section 2a — US Rates & Credit (14 indicators: US_I1, US_I2, US_I3, US_I4, US_I5, US_I6, US_I6b, US_I7, US_I8, US_I9, US_I10, US_I11, US_R1, US_R2, US_RR1)*
+*End of Section 2a — US Rates, Credit & Volatility (13 indicators: US_R1, US_R2, US_R3, US_Cr2, US_Cr1, US_Cr3, GL_CA_I1, US_R4, US_CA_G1, US_Cr4, US_R6, US_V1, US_V2, US_R5)*
 
 ---
 
 ## 2b. US FX & Momentum Indicators
 
-*This group captures two distinct signals: (1) the **dollar cycle** and its effect on cross-asset pricing (US_FX1, US_FX2), and (2) **systematic trend/momentum** filters that determine whether the current price environment is conducive to risk-taking across equities, credit and multi-asset portfolios (M1–M5). These indicators sit at the boundary between fundamental macro and quantitative strategy.*
+*This group captures two distinct signals: (1) the **dollar cycle** and its effect on cross-asset pricing (FX_CMD2, FX_CMD1), and (2) **systematic trend/momentum** filters that determine whether the current price environment is conducive to risk-taking across equities, credit and multi-asset portfolios (M1–M5). These indicators sit at the boundary between fundamental macro and quantitative strategy.*
 
 ---
 
-### US_FX1 — Dollar vs Emerging Markets
+### FX_CMD2 — Dollar vs Emerging Markets
 
 | | |
 |---|---|
 | **Formula** | `log(EEM / DX-Y.NYB)` |
 | **Data** | iShares MSCI Emerging Markets ETF (EEM) / ICE US Dollar Index (DX-Y.NYB) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -534,13 +519,13 @@ For a 6–9 month investor, the dollar cycle is one of the highest-impact multi-
 
 ---
 
-### US_FX2 — Copper/Gold Ratio (Global Growth Barometer)
+### FX_CMD1 — Copper/Gold Ratio (Global Growth Barometer)
 
 | | |
 |---|---|
 | **Formula** | `log(HG=F / GC=F)` |
 | **Data** | Copper Futures (HG=F) / Gold Futures (GC=F) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -548,7 +533,7 @@ The copper/gold ratio is one of the most closely watched cross-commodity signals
 
 The ratio therefore distils a binary question: is the world's marginal capital seeking productive investment (high copper demand relative to safe haven) or protecting itself (high gold demand relative to copper)? Jeffrey Gundlach of DoubleLine popularised the copper/gold ratio as a predictor of 10-year Treasury yields — empirically, the ratio leads the 10-year yield by 6–12 months, because both respond to forward growth expectations. Erb & Harvey (2006, *FAJ*) documented that commodity returns are driven by roll yield, spot return and inflation — and copper's spot return is uniquely tied to the global manufacturing PMI.
 
-For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross-check on the yield curve and equity cyclicals signals: a rising copper/gold ratio alongside a steepening yield curve (US_I1 improving) and rising cyclicals/defensives (US_G1/G2 improving) is a high-conviction pro-growth signal.
+For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross-check on the yield curve and equity cyclicals signals: a rising copper/gold ratio alongside a steepening yield curve (US_R1 improving) and rising cyclicals/defensives (US_G1/G2 improving) is a high-conviction pro-growth signal.
 
 **Regime Classification**
 
@@ -566,7 +551,7 @@ For a multi-asset investor at a 6–9 month horizon, the ratio serves as a cross
 |---|---|
 | **Formula** | `log(SPY / SMA_40w(SPY))` |
 | **Data** | SPDR S&P 500 ETF (SPY) — yfinance |
-| **Lookback** | 260-week rolling z-score of distance from SMA |
+| **Lookback** | 156-week rolling z-score of distance from SMA |
 
 **Economic Rationale**
 
@@ -593,7 +578,7 @@ The 40-week window is the practitioner consensus for *slow trend* — long enoug
 |---|---|
 | **Formula** | Fraction of {SPY, URTH, GOVT, VNQ, DBC} above their 40-week SMA |
 | **Data** | SPY, iShares MSCI World (URTH), iShares US Treasury Bond (GOVT), Vanguard Real Estate (VNQ), Invesco DB Commodity (DBC) — yfinance |
-| **Lookback** | 260-week rolling z-score of breadth fraction |
+| **Lookback** | 156-week rolling z-score of breadth fraction |
 
 **Economic Rationale**
 
@@ -621,7 +606,7 @@ For a multi-asset portfolio manager, M2 is a *portfolio heat* indicator: when al
 |---|---|
 | **Formula** | `max(12m_return(SPY), 12m_return(URTH)) − 12m_return(SHY)` |
 | **Data** | SPY (US equity), URTH (global equity), SHY (1–3yr Treasuries as cash proxy) — yfinance |
-| **Lookback** | 260-week rolling z-score of excess return signal |
+| **Lookback** | 156-week rolling z-score of excess return signal |
 
 **Economic Rationale**
 
@@ -650,7 +635,7 @@ For a 6–9 month investor, M3 provides a principled answer to two allocation qu
 |---|---|
 | **Formula** | `log(BAMLHYH0A0HYM2TRIV / SMA_40w(BAMLHYH0A0HYM2TRIV))`; forced to −1 if HY OAS (BAMLH0A0HYM2) > 600 bps |
 | **Data** | FRED: ICE BofA US HY Total Return Index, ICE BofA US HY Option-Adjusted Spread |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -675,7 +660,7 @@ The **600 bps spread override** is a fundamental safety valve. Empirically, OAS 
 |---|---|
 | **Formula** | `log(VIX_13w_MA / VIX_52w_MA)` |
 | **Data** | CBOE VIX Index (^VIX) — yfinance, resampled to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -696,7 +681,7 @@ Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyn
 
 ---
 
-*End of Section 2b — US FX & Momentum (7 indicators: US_FX1, US_FX2, M1, M2, M3, M4, M5)*
+*End of Section 2b — FX & Momentum (7 indicators: FX_CMD2, FX_CMD1, M1, M2, M3, M4, M5)*
 
 ---
 
@@ -706,41 +691,13 @@ Ang, Hodrick, Xing & Zhang (2006, *Journal of Finance*) showed that high-idiosyn
 
 ---
 
-### US_LEI1 — Conference Board Leading Economic Index
-
-| | |
-|---|---|
-| **Formula** | `USSLIND` (Conference Board LEI) — 6-month annualised % change |
-| **Data** | FRED: USSLIND (monthly, released ~3 weeks after month-end) |
-| **Lookback** | 260-week rolling z-score of 6m annualised change |
-
-**Economic Rationale**
-
-The Conference Board Leading Economic Index (LEI) is a composite of ten sub-indicators designed to lead business cycle turning points by 6–9 months. Its components span financial conditions (S&P 500, yield curve), credit (ISM new orders, building permits), and labour markets (initial claims, average workweek). The breadth of coverage is its primary strength: no single data series dominates, making it more robust than any individual indicator.
-
-The academic foundation is Burns & Mitchell (1946, NBER), whose pioneering work on business cycle measurement established that leading indicators consistently precede cycle peaks and troughs. Diebold & Rudebusch (1989, *American Economic Review*) and Stock & Watson (1989, *JASA*) formalised the statistical evidence for composite leading indicators, showing that equal-weighted combinations of leading series outperform individual series for 3–6 month ahead GDP forecasts.
-
-The **6-month annualised change** is the Conference Board's own preferred signal transformation: it smooths monthly noise while remaining responsive to genuine trend reversals. Their research (Conference Board 2001) shows that a 6-month decline of roughly 4.3% or more, accompanied by broad diffusion, has preceded all post-war US recessions with only two false positives (1966, 1995). This threshold is incorporated directly into the regime rules.
-
-For a 6–9 month investor, LEI is the highest-level cycle signal available: a sustained negative trend (consecutive monthly declines, 6m change < −4%) is a strong signal to reduce gross risk, rotate toward quality and duration, and reduce EM/commodity exposure.
-
-**Regime Classification**
-
-| Condition | Label | Positioning |
-|---|---|---|
-| 6m change < −4.3% AND z < −1.5 | `recession-risk` | Cap equity risk; OW high-quality bonds and defensives |
-| 6m change 0 to −4.3% | `late-cycle` | Selective; reduce cyclicals, monitor credit spreads |
-| 6m change > 0 | `expansion` | Normal equity risk budget |
-
----
-
 ### US_JOBS1 — Initial Jobless Claims (YoY Change)
 
 | | |
 |---|---|
 | **Formula** | YoY % change of `IC4WSA` (4-week moving average of initial claims) |
 | **Data** | FRED: IC4WSA (weekly, released Thursday for prior week) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -760,21 +717,21 @@ The YoY transformation is preferred for two reasons: (1) it eliminates seasonal 
 
 ---
 
-### US_LAB1 — Labour Market Composite
+### US_JOBS3 — Labour Market Composite
 
 | | |
 |---|---|
 | **Formula** | Equal-weighted average of z-scores of: inverted `UNRATE`, `PAYEMS` YoY%, inverted `IC4WSA` |
 | **Data** | FRED: UNRATE (monthly), PAYEMS (monthly), IC4WSA (weekly) |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
-No single labour market series captures the full picture: unemployment is a lagging indicator, payrolls are coincident, and claims are leading. US_LAB1 synthesises all three into a single composite score that spans the lead-coincident-lag spectrum of labour market data — mimicking how the Federal Reserve's own staff models assess labour market conditions.
+No single labour market series captures the full picture: unemployment is a lagging indicator, payrolls are coincident, and claims are leading. US_JOBS3 synthesises all three into a single composite score that spans the lead-coincident-lag spectrum of labour market data — mimicking how the Federal Reserve's own staff models assess labour market conditions.
 
-The Federal Reserve's *Labour Market Conditions Index* (LMCI), developed by Hakkio & Willis (2014, *Kansas City Fed*) and extended by the Board of Governors, uses a factor model to extract a common latent state from 19 labour market indicators. US_LAB1 implements a simplified version of the same concept using three key series, with the inversions applied so that the composite is positive when labour markets are strong and negative when weak.
+The Federal Reserve's *Labour Market Conditions Index* (LMCI), developed by Hakkio & Willis (2014, *Kansas City Fed*) and extended by the Board of Governors, uses a factor model to extract a common latent state from 19 labour market indicators. US_JOBS3 implements a simplified version of the same concept using three key series, with the inversions applied so that the composite is positive when labour markets are strong and negative when weak.
 
-Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labour market tightness is the primary transmission channel from monetary policy to inflation and growth — central banks tighten specifically to cool labour markets, and recessions begin when the cooling overshoots. For a 6–9 month investor, US_LAB1 captures the real-time state of this channel: high composite z-score implies continued consumer spending support; low composite z-score implies deteriorating income dynamics and rising recession probability.
+Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labour market tightness is the primary transmission channel from monetary policy to inflation and growth — central banks tighten specifically to cool labour markets, and recessions begin when the cooling overshoots. For a 6–9 month investor, US_JOBS3 captures the real-time state of this channel: high composite z-score implies continued consumer spending support; low composite z-score implies deteriorating income dynamics and rising recession probability.
 
 **Regime Classification**
 
@@ -786,13 +743,13 @@ Bernanke & Carey (1996, *Quarterly Journal of Economics*) demonstrated that labo
 
 ---
 
-### US_LAB2 — JOLTS Labour Market Tightness *(Naturally Leading)*
+### US_JOBS2 — JOLTS Labour Market Tightness *(Naturally Leading)*
 
 | | |
 |---|---|
 | **Formula** | `JTSJOL / UNEMPLOY` — ratio of job openings to unemployed persons |
 | **Data** | FRED: JTSJOL (monthly JOLTS), UNEMPLOY (monthly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | ~2 months ahead of reported unemployment; ~3–4 months ahead of wage inflation |
 
 **Economic Rationale**
@@ -801,7 +758,7 @@ The job openings–to–unemployed ratio is the canonical measure of **labour ma
 
 The theoretical framework is the Diamond-Mortensen-Pissarides (DMP) search model (Pissarides 1985, *Review of Economic Studies*; Mortensen & Pissarides 1994, *Review of Economic Studies*; both authors received the Nobel Prize in 2010). The DMP model predicts that the vacancy-unemployment ratio is a sufficient statistic for the tightness of the matching market: as it rises, workers find jobs faster, wages rise, and the employment rate increases. Shimer (2005, *American Economic Review*) further showed that vacancies are 10× more volatile than unemployment across the cycle — making the ratio a more sensitive early signal of cycle turns than unemployment alone.
 
-Practically, the JOLTS ratio leads reported unemployment by approximately 2 months and leads the Employment Cost Index (ECI, the broadest wage measure) by 3–4 months, making it *naturally leading*: the current reading already embeds the signal about labour market conditions 1–2 months ahead. This is why US_LAB2 is included in the `NATURALLY_LEADING` set, and its `fwd_regime` is tagged `[leading]`.
+Practically, the JOLTS ratio leads reported unemployment by approximately 2 months and leads the Employment Cost Index (ECI, the broadest wage measure) by 3–4 months, making it *naturally leading*: the current reading already embeds the signal about labour market conditions 1–2 months ahead. This is why US_JOBS2 is included in the `NATURALLY_LEADING` set, and its `fwd_regime` is tagged `[leading]`.
 
 **Regime Classification**
 
@@ -813,17 +770,17 @@ Practically, the JOLTS ratio leads reported unemployment by approximately 2 mont
 
 ---
 
-### US_GROWTH1 — Real Activity Composite (IP + Retail Sales)
+### US_G6 — Real Activity Composite (IP + Retail Sales)
 
 | | |
 |---|---|
 | **Formula** | Equal-weighted z-score composite of: `INDPRO` 12m % change + `RSXFS` 12m % change |
 | **Data** | FRED: INDPRO (Industrial Production, monthly), RSXFS (Retail Sales ex-Autos, monthly) |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
-US_GROWTH1 combines the two broadest real-activity measures spanning the supply and demand sides of the US economy: industrial production (supply/manufacturing) and retail sales ex-autos (consumer demand). Together they provide a coincident composite analogous to the NBER Business Cycle Dating Committee's own primary indicators.
+US_G6 combines the two broadest real-activity measures spanning the supply and demand sides of the US economy: industrial production (supply/manufacturing) and retail sales ex-autos (consumer demand). Together they provide a coincident composite analogous to the NBER Business Cycle Dating Committee's own primary indicators.
 
 Industrial production (INDPRO), published by the Federal Reserve Board, covers manufacturing, mining and utilities — approximately 20% of GDP but highly cyclical and leading for corporate earnings. Bernanke (1983, *American Economic Review*) showed that industrial production is one of the first GDP components to inflect at cycle turning points. Its YoY change correlates closely with corporate earnings growth and is a core input into manufacturing PMI surveys.
 
@@ -847,12 +804,12 @@ The composite z-score removes the need to interpret two series simultaneously, p
 |---|---|
 | **Formula** | `PERMIT` — 12-month % change |
 | **Data** | FRED: PERMIT (Building Permits, monthly, released ~3 weeks after month-end) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | Typically leads housing starts by 1–2 months; leads GDP by 2–4 quarters |
 
 **Economic Rationale**
 
-Building permits are one of the most reliable leading indicators in the NBER framework — they are included in the Conference Board LEI (US_LEI1) and are published earlier than housing starts, making them the first-available signal of construction cycle direction.
+Building permits are one of the most reliable leading indicators in the NBER framework — they were included in the Conference Board LEI and are published earlier than housing starts, making them the first-available signal of construction cycle direction.
 
 The transmission mechanism is multilayered. First, housing construction has extremely high labour and material intensity — a single-family home creates approximately 3 person-years of employment across construction, materials and professional services. Second, new housing generates significant downstream spending: buyers purchase appliances, furniture and home improvement goods (the IKEA/Home Depot multiplier). Third, rising construction activity raises land and existing home prices, increasing household net worth and supporting the *wealth effect* on consumption (Case, Quigley & Shiller 2005, *Brookings Papers*).
 
@@ -868,13 +825,13 @@ The interest-rate sensitivity of permits is also why US_HOUS1 is *naturally lead
 
 ---
 
-### US_M2L1 — M2 Money Supply Growth (Liquidity Indicator)
+### US_M2 — M2 Money Supply Growth (Liquidity Indicator)
 
 | | |
 |---|---|
 | **Formula** | `M2SL` — YoY % change |
 | **Data** | FRED: M2SL (monthly, revised quarterly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -921,7 +878,7 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 
 ---
 
-*End of Section 3a — US Macro Fundamentals (8 indicators: US_LEI1, US_JOBS1, US_LAB1, US_LAB2, US_GROWTH1, US_HOUS1, US_M2L1, US_ISM1)*
+*End of Section 3a — US Macro Fundamentals (7 indicators: US_JOBS1, US_JOBS3, US_JOBS2, US_G6, US_HOUS1, US_M2, US_ISM1)*
 
 ---
 
@@ -931,19 +888,19 @@ Gordon (1990, *Business Cycles, Indicators and Forecasting*, NBER) and more rece
 
 ---
 
-### EU_G1 — European Cyclicals vs Defensives
+### EU_G3 — European Cyclicals vs Defensives
 
 | | |
 |---|---|
 | **Formula** | `log((EXV1.DE + EXH1.DE + EXV3.DE) / (EXV2.DE + EXH3.DE))` |
 | **Data** | STOXX Europe 600 sector ETFs: Industrials, Banks, Technology vs Utilities, Consumer Staples — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-EU_G1 is the European analogue of US_G1/G2: relative performance of cyclical sectors (industrials, banks, technology) versus defensive sectors (utilities, consumer staples) as a real-time market-based assessment of the European growth outlook.
+EU_G3 is the European analogue of US_G1/G2: relative performance of cyclical sectors (industrials, banks, technology) versus defensive sectors (utilities, consumer staples) as a real-time market-based assessment of the European growth outlook.
 
-The choice of European Banks as a cyclical component is particularly important and differs from the US construction. European banks are more directly tied to the sovereign credit cycle than US banks: their balance sheets carry significant sovereign bond holdings, and their lending spreads respond directly to ECB policy and peripheral sovereign stress (EU_I4). When banks outperform defensives in Europe, it signals improving credit conditions, a steepening yield curve and diminishing tail risk — all supportive of the broader European growth narrative.
+The choice of European Banks as a cyclical component is particularly important and differs from the US construction. European banks are more directly tied to the sovereign credit cycle than US banks: their balance sheets carry significant sovereign bond holdings, and their lending spreads respond directly to ECB policy and peripheral sovereign stress (EU_R1). When banks outperform defensives in Europe, it signals improving credit conditions, a steepening yield curve and diminishing tail risk — all supportive of the broader European growth narrative.
 
 Fama & French (1989) showed that cyclical-to-defensive spread returns predict future economic conditions across markets, not just the US. Dimson, Marsh & Staunton (2002, *Triumph of the Optimists*) extended this analysis to European markets, confirming that sector rotation signals are robust across the UK, Germany and France. The European cycle is also highly sensitive to global trade volumes — particularly Chinese demand for German capital goods — making EU_G1 a dual signal for both European domestic conditions and global goods cycle strength.
 
@@ -957,13 +914,13 @@ Fama & French (1989) showed that cyclical-to-defensive spread returns predict fu
 
 ---
 
-### EU_G2 — UK Domestic vs Global (FTSE 250 / FTSE 100)
+### UK_G1 — UK Domestic vs Global (FTSE 250 / FTSE 100)
 
 | | |
 |---|---|
 | **Formula** | `log(MCX.L / ISF.L)` — FTSE 250 ETF / FTSE 100 ETF |
 | **Data** | iShares FTSE 250 ETF (MCX.L) / iShares Core FTSE 100 ETF (ISF.L) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -983,17 +940,17 @@ Dimson, Marsh & Staunton (2002) noted the UK equity market's historically high i
 
 ---
 
-### EU_G3 — Eurozone vs US Equity Leadership
+### EU_G2 — Eurozone vs US Equity Leadership
 
 | | |
 |---|---|
 | **Formula** | `log(FEZ / SPY)` — Euro Stoxx 50 ETF / S&P 500 ETF (both in USD) |
 | **Data** | SPDR Euro Stoxx 50 ETF (FEZ) / SPDR S&P 500 ETF (SPY) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-EU_G3 measures relative equity leadership between the Eurozone and the United States — one of the most important regional allocation decisions in a global multi-asset portfolio.
+EU_G2 measures relative equity leadership between the Eurozone and the United States — one of the most important regional allocation decisions in a global multi-asset portfolio.
 
 The drivers of Eurozone-vs-US relative performance are well-documented in the academic literature on international equity premium differentials. Solnik (1974, *Journal of Finance*) established that international diversification reduces portfolio risk precisely because national equity cycles diverge — the Eurozone and US cycles correlate at approximately 0.75 over rolling 3-year periods but can diverge sharply at cycle inflection points. Asness, Moskowitz & Pedersen (2013) showed that cross-country equity momentum is one of the most persistent and risk-adjusted-efficient factors in international investing.
 
@@ -1009,21 +966,21 @@ Key structural drivers of Eurozone outperformance phases include: (1) EUR apprec
 
 ---
 
-### EU_G4 — Eurozone vs Global Equities
+### EU_G1 — Eurozone vs Global Equities
 
 | | |
 |---|---|
 | **Formula** | `log(EZU / URTH)` — iShares MSCI Eurozone ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EZU, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-EU_G4 broadens the Eurozone comparison from US-only (EU_G3) to the full global developed-market universe. This distinction matters: Eurozone outperformance relative to the US (EU_G3 positive) can coexist with Eurozone underperformance relative to MSCI World if Japan, UK or other developed markets are simultaneously strong. EU_G4 therefore answers the regional allocation question from the perspective of a globally diversified investor.
+EU_G1 broadens the Eurozone comparison from US-only (EU_G2) to the full global developed-market universe. This distinction matters: Eurozone outperformance relative to the US (EU_G2 positive) can coexist with Eurozone underperformance relative to MSCI World if Japan, UK or other developed markets are simultaneously strong. EU_G1 therefore answers the regional allocation question from the perspective of a globally diversified investor.
 
-The MSCI World benchmark (proxied by URTH) covers 23 developed markets with approximately 70% US weight, meaning EU_G4 is a less US-centric comparison than EU_G3. When EU_G4 is positive, Eurozone equities are genuinely outperforming the blended global developed market — capturing not just EUR/USD dynamics but also European fundamentals versus the broader international cycle.
+The MSCI World benchmark (proxied by URTH) covers 23 developed markets with approximately 70% US weight, meaning EU_G1 is a less US-centric comparison than EU_G2. When EU_G1 is positive, Eurozone equities are genuinely outperforming the blended global developed market — capturing not just EUR/USD dynamics but also European fundamentals versus the broader international cycle.
 
-For a 6–9 month investor constructing a MSCI World-based equity allocation, EU_G4 provides the primary signal for whether to overweight or underweight European equities relative to the benchmark. A sustained positive z-score of EU_G4 combined with a positive EU_G1 (European cyclicals leading) and a compressed EU_I4 (BTP-Bund spread) constitutes a high-conviction Eurozone overweight signal.
+For a 6–9 month investor constructing a MSCI World-based equity allocation, EU_G1 provides the primary signal for whether to overweight or underweight European equities relative to the benchmark. A sustained positive z-score of EU_G1 combined with a positive EU_G3 (European cyclicals leading) and a compressed EU_R1 (BTP-Bund spread) constitutes a high-conviction Eurozone overweight signal.
 
 **Regime Classification**
 
@@ -1035,21 +992,21 @@ For a 6–9 month investor constructing a MSCI World-based equity allocation, EU
 
 ---
 
-### EU_I1 — Euro Corporate vs Government Spread
+### EU_Cr1 — Euro Corporate vs Government Spread
 
 | | |
 |---|---|
 | **Formula** | `yield(ICE BofA Euro Corporate Index) − yield(ICE BofA Euro Government Index)` |
 | **Data** | FRED: BAMLHE00EHY0EY (Euro HY OAS) and BAMLHE4XEHYSIS (Euro IG OAS) — arithmetic difference |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-EU_I1 is the European equivalent of US_I2 (HY OAS): the spread between corporate bond yields and risk-free government yields captures the aggregate risk premium demanded for Euro corporate credit. This spread is one of the broadest and most liquid financial conditions indicators for the Eurozone economy.
+EU_Cr1 is the European equivalent of US_Cr2 (HY spread): the spread between corporate bond yields and risk-free government yields captures the aggregate risk premium demanded for Euro corporate credit. This spread is one of the broadest and most liquid financial conditions indicators for the Eurozone economy.
 
-The credit channel of monetary policy in Europe is particularly important because European companies are far more bank-dependent than US companies: approximately 70–80% of Eurozone corporate financing comes from bank loans versus approximately 40% in the US. Bank lending rates closely track the corporate bond market's risk premium signal — when EU_I1 widens, it signals tighter bank lending conditions, which feed through to investment, hiring and production with a 2–4 quarter lag (ECB Lending Survey research, Altunbas et al. 2010, *Journal of Banking & Finance*).
+The credit channel of monetary policy in Europe is particularly important because European companies are far more bank-dependent than US companies: approximately 70–80% of Eurozone corporate financing comes from bank loans versus approximately 40% in the US. Bank lending rates closely track the corporate bond market's risk premium signal — when EU_Cr1 widens, it signals tighter bank lending conditions, which feed through to investment, hiring and production with a 2–4 quarter lag (ECB Lending Survey research, Altunbas et al. 2010, *Journal of Banking & Finance*).
 
-Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess bond premium (EBP) framework, showing that corporate spread widening beyond what can be explained by expected defaults is the most powerful predictor of future real activity — more powerful than the yield curve alone. EU_I1 captures a similar signal for the Eurozone: widening that exceeds the credit cycle's default-justified level indicates financial conditions tightening beyond fundamentals, a regime shift requiring defensive positioning.
+Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess bond premium (EBP) framework, showing that corporate spread widening beyond what can be explained by expected defaults is the most powerful predictor of future real activity — more powerful than the yield curve alone. EU_Cr1 captures a similar signal for the Eurozone: widening that exceeds the credit cycle's default-justified level indicates financial conditions tightening beyond fundamentals, a regime shift requiring defensive positioning.
 
 **Regime Classification**
 
@@ -1061,19 +1018,19 @@ Gilchrist & Zakrajšek (2012, *American Economic Review*) developed the excess b
 
 ---
 
-### EU_I2 — UK Inflation Expectations Proxy (Linker/Gilt Ratio)
+### UK_R2 — UK Inflation Expectations Proxy (Linker/Gilt Ratio)
 
 | | |
 |---|---|
 | **Formula** | `log(INXG.L / IGLT.L)` — iShares UK Inflation-Linked Gilt ETF / iShares UK Gilt ETF |
 | **Data** | INXG.L, IGLT.L — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
 The ratio of inflation-linked gilt (linker) prices to nominal gilt prices is a market-based proxy for UK inflation expectations and real rate dynamics. When linkers outperform nominal gilts, the market is pricing rising inflation breakevens or falling real rates — both signals that the inflation-adjusted return on nominal bonds is declining, a headwind for long-duration fixed income.
 
-The theoretical basis comes from the Fisher (1930) decomposition: nominal yield = real yield + expected inflation + term premium. The linker/gilt price ratio implicitly captures the inflation component: linkers pay a real coupon plus CPI uplift, so they outperform nominal gilts when inflation expectations rise or when real rates fall. This mirrors the TIPS-based US_RR1 and US_I7 indicators but uses the ETF price ratio rather than FRED yield data, since UK real yield data availability on FRED is limited.
+The theoretical basis comes from the Fisher (1930) decomposition: nominal yield = real yield + expected inflation + term premium. The linker/gilt price ratio implicitly captures the inflation component: linkers pay a real coupon plus CPI uplift, so they outperform nominal gilts when inflation expectations rise or when real rates fall. This mirrors the TIPS-based US_R5 and US_R4 indicators but uses the ETF price ratio rather than FRED yield data, since UK real yield data availability on FRED is limited.
 
 Post-Brexit, UK inflation dynamics have been structurally different from the Eurozone: UK CPI peaked at 11.1% in October 2022, driven by energy dependency and sterling weakness — the highest level among major developed economies. The Bank of England's (BoE) dual mandate complication — inflation control versus financial stability — makes the linker/gilt ratio a particularly important signal for UK rate risk and gilt market positioning.
 
@@ -1087,13 +1044,13 @@ Post-Brexit, UK inflation dynamics have been structurally different from the Eur
 
 ---
 
-### EU_I3 — UK–Germany 10-Year Spread (Gilt–Bund)
+### UK_R1 — UK–Germany 10-Year Spread (Gilt–Bund)
 
 | | |
 |---|---|
 | **Formula** | `UK 10Y Gilt Yield − Germany 10Y Bund Yield` |
 | **Data** | FRED: IRLTLT01GBM156N (UK 10Y) − IRLTLT01DEM156N (Germany 10Y) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1101,7 +1058,7 @@ The UK–Germany 10-year yield spread distils three distinct macro signals into 
 
 During normal periods, the spread reflects the structural inflation and growth premium of the UK over Germany — typically 50–150 bps. When the spread widens sharply above historical norms, it signals that UK-specific risk is being priced: fiscal credibility concerns (as in the 2022 Truss mini-budget, when the gilt–bund spread spiked 100 bps in days, forcing BoE intervention), inflation overshoot, or BoE policy lag risk. Conversely, a compressed spread can signal relative UK macro weakness or Eurozone stress.
 
-Blanchard & Summers (1984) showed that long-term yield differentials between developed countries embed both current and expected future short-rate differentials — meaning the gilt–bund spread also captures expectations about the future BoE/ECB policy divergence path over 2–5 years. For a multi-asset investor, sharp moves in EU_I3 are often early warnings of GBP volatility and UK equity risk repricing.
+Blanchard & Summers (1984) showed that long-term yield differentials between developed countries embed both current and expected future short-rate differentials — meaning the gilt–bund spread also captures expectations about the future BoE/ECB policy divergence path over 2–5 years. For a multi-asset investor, sharp moves in UK_R1 are often early warnings of GBP volatility and UK equity risk repricing.
 
 **Regime Classification**
 
@@ -1113,13 +1070,13 @@ Blanchard & Summers (1984) showed that long-term yield differentials between dev
 
 ---
 
-### EU_I4 — BTP–Bund Spread (Peripheral Sovereign Stress)
+### EU_R1 — BTP–Bund Spread (Peripheral Sovereign Stress)
 
 | | |
 |---|---|
 | **Formula** | `Italy 10Y Yield − Germany 10Y Bund Yield` |
 | **Data** | FRED: IRLTLT01ITM156N − IRLTLT01DEM156N |
-| **Lookback** | 260-week rolling z-score; raw level override at 2.5% |
+| **Lookback** | 156-week rolling z-score; raw level override at 2.5% |
 
 **Economic Rationale**
 
@@ -1139,21 +1096,21 @@ In practice, the ECB has intervened twice with explicit backstops at critical BT
 
 ---
 
-### EU_R1 — UK Credit Conditions (Corporates vs Gilts)
+### UK_Cr1 — UK Credit Conditions (Corporates vs Gilts)
 
 | | |
 |---|---|
 | **Formula** | `log(SLXX.L / IGLT.L)` — iShares Core GBP Corporate Bond ETF / iShares UK Gilt ETF |
 | **Data** | SLXX.L, IGLT.L — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-EU_R1 measures the relative performance of GBP investment-grade corporate bonds versus UK government gilts — the UK equivalent of the US investment-grade credit spread signal. When corporates outperform gilts, it signals that investors are willing to accept lower incremental yield for UK credit risk; the financial conditions environment is supportive. When gilts outperform, it signals a flight to safety within the UK fixed income market.
+UK_Cr1 measures the relative performance of GBP investment-grade corporate bonds versus UK government gilts — the UK equivalent of the US investment-grade credit spread signal. When corporates outperform gilts, it signals that investors are willing to accept lower incremental yield for UK credit risk; the financial conditions environment is supportive. When gilts outperform, it signals a flight to safety within the UK fixed income market.
 
-The UK corporate bond market is smaller and less liquid than the US market, which means EU_R1 tends to move more sharply at inflection points and can lead equity market stress. Longstaff & Schwartz (1995, *Journal of Finance*) showed that corporate–government spread dynamics are driven by both default risk and liquidity premiums, with the liquidity component dominating during stress — a feature particularly pronounced in the GBP corporate market.
+The UK corporate bond market is smaller and less liquid than the US market, which means UK_Cr1 tends to move more sharply at inflection points and can lead equity market stress. Longstaff & Schwartz (1995, *Journal of Finance*) showed that corporate–government spread dynamics are driven by both default risk and liquidity premiums, with the liquidity component dominating during stress — a feature particularly pronounced in the GBP corporate market.
 
-Post-Brexit, UK corporate spreads have also incorporated a structural UK-specific risk premium absent from EUR or USD corporate markets: sterling liquidity risk, UK political risk, and the reduced depth of the GBP investor base. EU_R1 therefore serves as both a domestic credit conditions indicator and a barometer of UK-specific macro risk relative to the global credit cycle.
+Post-Brexit, UK corporate spreads have also incorporated a structural UK-specific risk premium absent from EUR or USD corporate markets: sterling liquidity risk, UK political risk, and the reduced depth of the GBP investor base. UK_Cr1 therefore serves as both a domestic credit conditions indicator and a barometer of UK-specific macro risk relative to the global credit cycle.
 
 **Regime Classification**
 
@@ -1165,21 +1122,21 @@ Post-Brexit, UK corporate spreads have also incorporated a structural UK-specifi
 
 ---
 
-### EU_FX1 — EUR Macro Composite (EUR/USD + European Cyclicals)
+### EU_G4 — EUR Macro Composite (EUR/USD + European Cyclicals)
 
 | | |
 |---|---|
 | **Formula** | Average z-score of `log(EURUSD=X)` and `log(EXV1.DE / EXV2.DE)` (European industrials/utilities) |
 | **Data** | EUR/USD spot (EURUSD=X) + STOXX Europe 600 Industrials/Utilities ratio — yfinance |
-| **Lookback** | 260-week rolling z-score of composite |
+| **Lookback** | 156-week rolling z-score of composite |
 
 **Economic Rationale**
 
-EU_FX1 combines two complementary signals — the EUR exchange rate and European sector rotation — into a composite that distinguishes genuine Eurozone macro strength from currency-only moves. This design choice is deliberate: EUR appreciation alone can occur for reasons unrelated to European growth (e.g. USD weakness, safe-haven flows during non-European crises), but EUR appreciation *combined with European cyclicals outperforming defensives* is a stronger signal that Eurozone fundamentals are genuinely improving.
+EU_G4 combines two complementary signals — the EUR exchange rate and European sector rotation — into a composite that distinguishes genuine Eurozone macro strength from currency-only moves. This design choice is deliberate: EUR appreciation alone can occur for reasons unrelated to European growth (e.g. USD weakness, safe-haven flows during non-European crises), but EUR appreciation *combined with European cyclicals outperforming defensives* is a stronger signal that Eurozone fundamentals are genuinely improving.
 
 The EUR is the second most important reserve currency globally and reflects the aggregate macro credibility of the Eurozone — fiscal discipline, ECB policy, and trade competitiveness. Frankel & Rose (1995, *Journal of International Economics*) documented that currency strength in export-oriented economies correlates with export-driven growth cycles; Obstfeld & Rogoff (1996, *Foundations of International Macroeconomics*) formalised the link between terms-of-trade improvement and currency appreciation for industrial exporters like Germany.
 
-The industrial/utilities sector component captures domestic capex and credit cycle conditions within Europe, filtering out external demand effects. When both legs of EU_FX1 are positive simultaneously — EUR strengthening AND European cyclicals leading defensives — the composite provides a high-conviction signal that European equity risk is well-compensated for the 6–9 month horizon.
+The industrial/utilities sector component captures domestic capex and credit cycle conditions within Europe, filtering out external demand effects. When both legs of EU_G4 are positive simultaneously — EUR strengthening AND European cyclicals leading defensives — the composite provides a high-conviction signal that European equity risk is well-compensated for the 6–9 month horizon.
 
 **Regime Classification**
 
@@ -1191,7 +1148,7 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 
 ---
 
-*End of Section 3b — Europe & UK (10 indicators: EU_G1, EU_G2, EU_G3, EU_G4, EU_I1, EU_I2, EU_I3, EU_I4, EU_R1, EU_FX1)*
+*End of Section 3b — Europe & UK (10 indicators: EU_G3, UK_G1, EU_G2, EU_G1, EU_Cr1, UK_R2, UK_R1, EU_R1, UK_Cr1, EU_G4)*
 
 ---
 
@@ -1205,13 +1162,13 @@ The industrial/utilities sector component captures domestic capex and credit cyc
 
 ---
 
-### AS_G1 — China Size Cycle (CSI 500 / CSI 300)
+### AS_CN_G3 — China Size Cycle (CSI 500 / CSI 300)
 
 | | |
 |---|---|
 | **Formula** | `log(000905.SS / 000300.SS)` — CSI 500 / CSI 300 |
 | **Data** | CSI 500 Index (000905.SS) / CSI 300 Index (000300.SS) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1219,7 +1176,7 @@ The CSI 300 covers the 300 largest A-share companies listed on the Shanghai and 
 
 This decomposition is structurally important in China because the SOE and private-sector economies respond to different policy levers. SOE outperformance (CSI 300 leading) tends to occur during credit-driven infrastructure stimulus phases — the PBOC and policy banks direct lending to SOEs, which expand capacity. Private-sector outperformance (CSI 500 leading) tends to occur when consumption, technology and services are driving growth — a higher quality, more self-sustaining cycle. Lardy (2014, *Markets Over Mao*, Peterson Institute) documented this structural duality and its implications for sustainable Chinese growth.
 
-For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus is creating genuine domestic demand (CSI 500 leadership, positive for global consumer goods exporters) or infrastructure-only reflation (CSI 300 leadership, more directly positive for industrial metals). The ratio also serves as a proxy for Chinese risk appetite breadth: mid-cap leadership implies broader investor participation and confidence.
+For a 6–9 month international investor, AS_CN_G3 signals whether Chinese stimulus is creating genuine domestic demand (CSI 500 leadership, positive for global consumer goods exporters) or infrastructure-only reflation (CSI 300 leadership, more directly positive for industrial metals). The ratio also serves as a proxy for Chinese risk appetite breadth: mid-cap leadership implies broader investor participation and confidence.
 
 **Regime Classification**
 
@@ -1231,21 +1188,21 @@ For a 6–9 month international investor, AS_G1 signals whether Chinese stimulus
 
 ---
 
-### AS_G2 — China vs Global Developed Markets
+### AS_CN_G2 — China vs Global Developed Markets
 
 | | |
 |---|---|
 | **Formula** | `log(000001.SS / URTH)` — Shanghai Composite / iShares MSCI World ETF (USD-adjusted) |
 | **Data** | Shanghai Composite (000001.SS), iShares MSCI World ETF (URTH) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-AS_G2 compares Chinese equity performance to the global developed-market benchmark in USD terms, capturing the net effect of all China-specific macro forces — growth, policy, geopolitics, valuation and FX — relative to the global cycle. It is the primary signal for whether to overweight or underweight China versus a global DM baseline.
+AS_CN_G2 compares Chinese equity performance to the global developed-market benchmark in USD terms, capturing the net effect of all China-specific macro forces — growth, policy, geopolitics, valuation and FX — relative to the global cycle. It is the primary signal for whether to overweight or underweight China versus a global DM baseline.
 
 The theoretical rationale draws on the *emerging market premium* literature. Bekaert & Harvey (1995, *Journal of Finance*) showed that EM equities carry a risk premium over DM equities that varies with openness, policy risk and integration with global capital markets. China's equity market is partially segmented from global markets (capital controls, A-share accessibility) meaning the A-share market often diverges significantly from global trends — creating genuine alpha opportunities when Chinese policy cycles diverge from the global cycle.
 
-Key drivers of China outperformance phases: (1) PBOC easing and credit expansion (RRR cuts, LPR reductions); (2) fiscal stimulus targeted at infrastructure and housing; (3) regulatory easing after crackdowns; (4) CNY stability or strengthening (AS_FX1 positive). Underperformance phases are typically associated with: regulatory tightening (2021 tech crackdown), property sector stress (Evergrande, 2021–23), US-China geopolitical escalation, or CNY depreciation pressure.
+Key drivers of China outperformance phases: (1) PBOC easing and credit expansion (RRR cuts, LPR reductions); (2) fiscal stimulus targeted at infrastructure and housing; (3) regulatory easing after crackdowns; (4) CNY stability or strengthening (FX_CN1 positive). Underperformance phases are typically associated with: regulatory tightening (2021 tech crackdown), property sector stress (Evergrande, 2021–23), US-China geopolitical escalation, or CNY depreciation pressure.
 
 **Regime Classification**
 
@@ -1257,21 +1214,21 @@ Key drivers of China outperformance phases: (1) PBOC easing and credit expansion
 
 ---
 
-### AS_G3 — India Domestic Growth Breadth (Nifty Mid/Smallcap vs Nifty 50)
+### AS_IN_G1 — India Domestic Growth Breadth (Nifty Mid/Smallcap vs Nifty 50)
 
 | | |
 |---|---|
 | **Formula** | `log(NIFTY_MIDCAP150 / ^NSEI)` and `log(NIFTY_SMALLCAP250 / ^NSEI)` — z-score of each |
 | **Data** | Nifty Midcap 150, Nifty Smallcap 250, Nifty 50 (^NSEI) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-India's equity market structure mirrors the UK dynamic (EU_G2) in one key respect: the Nifty 50 is dominated by globally competitive large-caps (Reliance Industries, TCS, Infosys, HDFC Bank) with significant international revenue exposure and institutional ownership, while the Nifty Midcap 150 and Smallcap 250 are primarily domestic businesses — regional banks, domestic consumer brands, real estate developers, infrastructure contractors.
+India's equity market structure mirrors the UK dynamic (UK_G1) in one key respect: the Nifty 50 is dominated by globally competitive large-caps (Reliance Industries, TCS, Infosys, HDFC Bank) with significant international revenue exposure and institutional ownership, while the Nifty Midcap 150 and Smallcap 250 are primarily domestic businesses — regional banks, domestic consumer brands, real estate developers, infrastructure contractors.
 
 The mid/small-cap-to-large-cap ratio in India therefore captures domestic animal spirits and the *democratisation of the growth cycle*: when mid and small caps outperform, credit is flowing broadly through the domestic economy, consumption is strong, and smaller businesses are accessing capital and winning market share. This is characteristic of India's mid-cycle expansions. When large caps dominate, it signals selective institutional positioning in quality names — often coinciding with RBI tightening, INR depreciation or global risk-off reducing appetite for illiquid smaller stocks.
 
-India's structural growth story — demographics, formalisation of the economy via GST and Aadhaar, manufacturing relocation from China — creates a long-run tailwind for the ratio, but the cyclical overlay remains important for 6–9 month positioning. Patnaik & Shah (2012, *NIPFP*) and Gopinath (2015, *IMF*) documented India's growing but still-fragile integration with global capital flows, which makes domestic indicators like AS_G3 more informative than pure top-down EM signals.
+India's structural growth story — demographics, formalisation of the economy via GST and Aadhaar, manufacturing relocation from China — creates a long-run tailwind for the ratio, but the cyclical overlay remains important for 6–9 month positioning. Patnaik & Shah (2012, *NIPFP*) and Gopinath (2015, *IMF*) documented India's growing but still-fragile integration with global capital flows, which makes domestic indicators like AS_IN_G1 more informative than pure top-down EM signals.
 
 **Regime Classification**
 
@@ -1283,21 +1240,21 @@ India's structural growth story — demographics, formalisation of the economy v
 
 ---
 
-### AS_G4 — China vs Broad EM (FXI / EEM)
+### AS_CN_G1 — China vs Broad EM (FXI / EEM)
 
 | | |
 |---|---|
 | **Formula** | `log(FXI / EEM)` — iShares China Large-Cap ETF / iShares MSCI EM ETF (both USD) |
 | **Data** | FXI, EEM — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-AS_G4 measures whether China is driving or lagging the broader EM complex — an intra-EM rotation signal. Because China constitutes approximately 25–30% of the MSCI EM Index (and historically up to 40% prior to index reconstitutions), FXI/EEM measures China *relative* to the full EM basket including India (~18%), Taiwan (~16%), Korea (~12%), Brazil and South Africa.
+AS_CN_G1 measures whether China is driving or lagging the broader EM complex — an intra-EM rotation signal. Because China constitutes approximately 25–30% of the MSCI EM Index (and historically up to 40% prior to index reconstitutions), FXI/EEM measures China *relative* to the full EM basket including India (~18%), Taiwan (~16%), Korea (~12%), Brazil and South Africa.
 
 When FXI outperforms EEM, China is the marginal driver of EM returns — typically during domestic Chinese stimulus phases where commodity demand is rising and the PBOC is accommodating. This is directly positive for commodity-currency pairs (AUD/USD, BRL/USD, CLP/USD) since Chinese infrastructure demand is the primary marginal buyer of iron ore, copper and soybeans. When EEM outperforms FXI, other EM economies — particularly India, Korea (technology cycle) or Brazil (commodity producers) — are leading, indicating a more diversified EM expansion less dependent on Chinese credit.
 
-Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014, *The Dollar Trap*) documented the transmission channels from Chinese growth to EM commodity exporters, confirming that China-driven EM cycles have distinct sectoral signatures versus India or Korea-driven cycles. For an EM portfolio manager, AS_G4 determines whether to tilt toward China and commodity-linked EM (FXI outperformance) or diversified/non-China EM (EEM outperformance).
+Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014, *The Dollar Trap*) documented the transmission channels from Chinese growth to EM commodity exporters, confirming that China-driven EM cycles have distinct sectoral signatures versus India or Korea-driven cycles. For an EM portfolio manager, AS_CN_G1 determines whether to tilt toward China and commodity-linked EM (FXI outperformance) or diversified/non-China EM (EEM outperformance).
 
 **Regime Classification**
 
@@ -1309,13 +1266,13 @@ Rajan & Subramanian (2011, *Journal of Development Economics*) and Prasad (2014,
 
 ---
 
-### AS_I1 — China–US Yield Spread (Carry Signal)
+### AS_CN_R1 — China–US Yield Spread (Carry Signal)
 
 | | |
 |---|---|
 | **Formula** | `IRLTLT01CNM156N − DGS10` — China 10Y Government Bond Yield minus US 10Y Treasury Yield |
 | **Data** | FRED: IRLTLT01CNM156N (China 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1335,13 +1292,13 @@ For a 6–9 month investor, the China–US spread therefore serves a dual purpos
 
 ---
 
-### AS_I2 — India–US Yield Spread (INR Carry Signal)
+### AS_IN_R1 — India–US Yield Spread (INR Carry Signal)
 
 | | |
 |---|---|
 | **Formula** | `IRLTLT01INM156N − DGS10` — India 10Y Government Bond Yield minus US 10Y Treasury Yield |
 | **Data** | FRED: IRLTLT01INM156N (India 10Y), DGS10 (US 10Y) — monthly, interpolated to weekly |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1361,17 +1318,17 @@ The risk scenario is spread compression driven by US rate rises (as in 2022) wit
 
 ---
 
-### AS_FX1 — CNY Directional Momentum
+### FX_CN1 — CNY Directional Momentum
 
 | | |
 |---|---|
 | **Formula** | `log(CNY=X / SMA_26w(CNY=X))` — CNY/USD spot vs its 26-week moving average |
 | **Data** | CNY=X (USD per CNY, so higher = stronger CNY) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-AS_FX1 measures the 6-month directional momentum of the Chinese yuan — whether the CNY is strengthening or weakening relative to its recent trend. This momentum framing is deliberate: the CNY is a managed currency (the PBOC sets a daily fixing within a ±2% band), meaning absolute FX levels are policy-controlled and less informative than the *direction* of the trend, which reflects the net of PBOC management intentions and market pressure.
+FX_CN1 measures the 6-month directional momentum of the Chinese yuan — whether the CNY is strengthening or weakening relative to its recent trend. This momentum framing is deliberate: the CNY is a managed currency (the PBOC sets a daily fixing within a ±2% band), meaning absolute FX levels are policy-controlled and less informative than the *direction* of the trend, which reflects the net of PBOC management intentions and market pressure.
 
 CNY strengthening momentum signals: (1) PBOC comfort with or active support of a stronger currency, typically associated with confidence in the domestic economy; (2) capital inflows driven by China's current account surplus or foreign portfolio investment; (3) reduced US-China trade tension (tariff escalation typically triggers CNY depreciation as a partial offset). CNY weakening momentum signals the reverse: PBOC allowing depreciation to cushion export competitiveness, capital flight, or external pressure.
 
@@ -1389,21 +1346,21 @@ For a global investor, CNY momentum is a direct signal for China equity position
 
 ---
 
-### AS_FX2 — INR Directional Momentum
+### FX_1 — INR Directional Momentum
 
 | | |
 |---|---|
 | **Formula** | `log(INR=X / SMA_26w(INR=X))` — INR/USD spot vs its 26-week moving average |
 | **Data** | INR=X (USD per INR, higher = stronger INR) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-AS_FX2 mirrors AS_FX1 for India: 6-month INR directional momentum. The INR is also a managed float (the RBI intervenes via FX reserves to smooth volatility) but with less direct daily management than the CNY, making momentum signals somewhat more market-driven.
+FX_1 mirrors FX_CN1 for India: 6-month INR directional momentum. The INR is also a managed float (the RBI intervenes via FX reserves to smooth volatility) but with less direct daily management than the CNY, making momentum signals somewhat more market-driven.
 
-INR strengthening momentum reflects: (1) strong FPI inflows — both equity (India's structural growth premium attracting global allocation) and debt (carry attractiveness from AS_I2); (2) RBI reserve accumulation and hawkish policy stance; (3) lower oil prices (India imports approximately 85% of its oil, so lower crude is a direct terms-of-trade benefit that reduces the current account deficit and supports INR). INR weakening momentum reflects: (1) elevated oil prices widening the current account deficit; (2) FPI outflows triggered by US rate rises or global risk-off; (3) domestic inflation overshooting RBI's 4% target, eroding real yield differentials.
+INR strengthening momentum reflects: (1) strong FPI inflows — both equity (India's structural growth premium attracting global allocation) and debt (carry attractiveness from AS_IN_R1); (2) RBI reserve accumulation and hawkish policy stance; (3) lower oil prices (India imports approximately 85% of its oil, so lower crude is a direct terms-of-trade benefit that reduces the current account deficit and supports INR). INR weakening momentum reflects: (1) elevated oil prices widening the current account deficit; (2) FPI outflows triggered by US rate rises or global risk-off; (3) domestic inflation overshooting RBI's 4% target, eroding real yield differentials.
 
-The 26-week SMA anchor captures the medium-term policy and flow dynamics for INR. Kohli (2015, *RBI Working Paper*) documented that INR momentum tracks the BoP capital account closely at 3–6 month horizons — making AS_FX2 an early indicator of whether foreign capital is building or reducing India exposure.
+The 26-week SMA anchor captures the medium-term policy and flow dynamics for INR. Kohli (2015, *RBI Working Paper*) documented that INR momentum tracks the BoP capital account closely at 3–6 month horizons — making FX_1 an early indicator of whether foreign capital is building or reducing India exposure.
 
 For equity investors, INR strength is positively correlated with Indian equity returns in USD terms — it both signals risk appetite and improves the USD return on local equity positions.
 
@@ -1417,23 +1374,23 @@ For equity investors, INR strength is positively correlated with Indian equity r
 
 ---
 
-*End of Section 4a — Asia: China & India (8 indicators: AS_G1, AS_G2, AS_G3, AS_G4, AS_I1, AS_I2, AS_FX1, AS_FX2)*
+*End of Section 4a — Asia: China & India (8 indicators: AS_CN_G3, AS_CN_G2, AS_IN_G1, AS_CN_G1, AS_CN_R1, AS_IN_R1, FX_CN1, FX_1)*
 
 ---
 
 ## 4b. Asia Commodities & Japan
 
-*This group covers two commodity signals tied to the Chinese infrastructure cycle (AS_C1, AS_C2) and two Japan-specific indicators (JP_G1, JP_FX1). The Japan indicators are among the most globally systemic in the entire library: the JPY carry trade (JP_FX1) is a first-order risk signal for global equities and EM assets, and BOJ policy surprises can simultaneously move US Treasuries, EM currencies and cross-asset volatility within hours.*
+*This group covers two commodity signals tied to the Chinese infrastructure cycle (FX_CMD5, FX_CMD4) and two Japan-specific indicators (JP_G1, FX_2). The Japan indicators are among the most globally systemic in the entire library: the JPY carry trade (FX_2) is a first-order risk signal for global equities and EM assets, and BOJ policy surprises can simultaneously move US Treasuries, EM currencies and cross-asset volatility within hours.*
 
 ---
 
-### AS_C1 — Iron Ore / Copper (China Infrastructure vs Broad Industrial)
+### FX_CMD5 — Iron Ore / Copper (China Infrastructure vs Broad Industrial)
 
 | | |
 |---|---|
 | **Formula** | `log(Iron Ore price / HG=F)` — Iron Ore spot / Copper Futures |
 | **Data** | Iron Ore (World Bank commodity price series or spot proxy) / Copper Futures (HG=F) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
@@ -1441,7 +1398,7 @@ Iron ore and copper are both industrial metals, but they serve distinct economic
 
 The iron ore / copper ratio therefore answers a specific question: is China's demand for steel (infrastructure, property) running ahead of or behind the global industrial cycle (capex, electronics, manufacturing)? When iron ore outperforms copper (ratio rising), it signals that China's heavy-industry and construction cycle is the dominant driver of commodity demand — typically coinciding with government-directed fiscal stimulus (fixed asset investment) or a property market recovery. When copper outperforms iron ore, global manufacturing and electronics are driving demand more broadly — a higher-quality global expansion rather than a China-specific credit-driven cycle.
 
-Kilian (2009, *American Economic Review*) showed that commodity price decompositions into supply vs demand components are essential for interpreting commodity signals correctly. Heap (2005, *Citigroup Metals Research*) first formalised the China commodity intensity thesis: that China's steel intensity per unit of GDP is structurally higher during urbanisation phases, creating a duration of iron ore demand that is decoupled from the global industrial cycle. For a 6–9 month investor, AS_C1 distinguishes between commodity exposure types: iron-ore-sensitive (Australian miners, bulk shippers, Brazil iron ore exporters) versus copper-sensitive (diversified industrials, electrical infrastructure).
+Kilian (2009, *American Economic Review*) showed that commodity price decompositions into supply vs demand components are essential for interpreting commodity signals correctly. Heap (2005, *Citigroup Metals Research*) first formalised the China commodity intensity thesis: that China's steel intensity per unit of GDP is structurally higher during urbanisation phases, creating a duration of iron ore demand that is decoupled from the global industrial cycle. For a 6–9 month investor, FX_CMD5 distinguishes between commodity exposure types: iron-ore-sensitive (Australian miners, bulk shippers, Brazil iron ore exporters) versus copper-sensitive (diversified industrials, electrical infrastructure).
 
 **Regime Classification**
 
@@ -1453,17 +1410,17 @@ Kilian (2009, *American Economic Review*) showed that commodity price decomposit
 
 ---
 
-### AS_C2 — Iron Ore / Broad Commodities (China vs Global Commodity Cycle)
+### FX_CMD4 — Iron Ore / Broad Commodities (China vs Global Commodity Cycle)
 
 | | |
 |---|---|
 | **Formula** | `log(Iron Ore / DBC)` — Iron Ore spot / Invesco DB Commodity Index ETF |
 | **Data** | Iron Ore spot / DBC (DBC covers energy ~55%, metals ~25%, agriculture ~20%) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-AS_C2 compares the China-specific iron ore cycle against the full diversified commodity complex, which is dominated by energy (crude oil, natural gas, heating oil), industrial metals and agriculture. Where AS_C1 identifies the *composition* of industrial demand (China-heavy vs global manufacturing), AS_C2 identifies whether China's cycle is *leading or lagging* the broader commodity market.
+FX_CMD4 compares the China-specific iron ore cycle against the full diversified commodity complex, which is dominated by energy (crude oil, natural gas, heating oil), industrial metals and agriculture. Where FX_CMD5 identifies the *composition* of industrial demand (China-heavy vs global manufacturing), FX_CMD4 identifies whether China's cycle is *leading or lagging* the broader commodity market.
 
 The DBC commodity index captures the global commodity cycle in its full breadth: energy prices driven by OPEC supply decisions and US shale output; agricultural prices driven by weather, fertiliser costs and food demand; and metals driven by both China and global industrial activity. When iron ore outperforms DBC, it means Chinese heavy-industry demand is running above the average commodity cycle — typically during fiscal stimulus phases where Chinese steel output and fixed asset investment are prioritised. When DBC outperforms iron ore, the global energy and agricultural cycle (driven by geopolitical supply shocks, US inflation, or weather events) is dominating, and China's contribution to global commodity demand is relatively subdued.
 
@@ -1485,19 +1442,19 @@ The distinction is crucial for portfolio construction: an iron ore overweight ve
 |---|---|
 | **Formula** | `log(EWJ / URTH)` — iShares MSCI Japan ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EWJ, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
 Japan equity relative to global equities in USD terms is driven by three distinct forces that make it unlike any other developed market: (1) the yen exchange rate; (2) BOJ monetary policy; and (3) China demand for Japanese capital goods.
 
-**Yen dynamics** are the most immediate driver. Japan's equity market is dominated by global exporters (Toyota, Sony, Keyence, Fanuc) whose yen-denominated earnings rise mechanically when JPY weakens against USD. Approximately 60% of Nikkei earnings are derived from overseas — meaning a 10% JPY depreciation mechanically adds approximately 4–5% to Nikkei earnings in JPY terms. In USD terms, EWJ partially offsets this (USD-denominated ETF), but the *local-currency outperformance* of Japan versus global benchmarks persists during yen-weakness phases. This creates a tight link between JP_G1 and JP_FX1 (JPY momentum).
+**Yen dynamics** are the most immediate driver. Japan's equity market is dominated by global exporters (Toyota, Sony, Keyence, Fanuc) whose yen-denominated earnings rise mechanically when JPY weakens against USD. Approximately 60% of Nikkei earnings are derived from overseas — meaning a 10% JPY depreciation mechanically adds approximately 4–5% to Nikkei earnings in JPY terms. In USD terms, EWJ partially offsets this (USD-denominated ETF), but the *local-currency outperformance* of Japan versus global benchmarks persists during yen-weakness phases. This creates a tight link between JP_G1 and FX_2 (JPY momentum).
 
 **BOJ policy** is the second driver. Japan has been the primary practitioner of unconventional monetary policy since the 1990s — yield curve control (YCC), quantitative and qualitative easing, and negative rates. When the BOJ maintains accommodation while other central banks tighten, the interest rate differential supports both yen weakness and Japanese equity multiples. Conversely, BOJ hawkish surprises (as in July/August 2024, when the BOJ raised rates and triggered the largest single-day Nikkei decline since 1987) cause sharp JPY appreciation and equity underperformance simultaneously.
 
-**China trade links** are the third driver: Japan is a major exporter of machine tools, semiconductor equipment and auto parts to China. China recovery phases (positive AS_G2) tend to lift Japanese capital-goods exporters.
+**China trade links** are the third driver: Japan is a major exporter of machine tools, semiconductor equipment and auto parts to China. China recovery phases (positive AS_CN_G2) tend to lift Japanese capital-goods exporters.
 
-For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both are positive (Japan equities outperforming AND JPY weakening), the carry trade is ON and Japanese export earnings are supportive. If JP_G1 is positive but JP_FX1 is negative (JPY strengthening), it signals a higher-quality, domestically-driven Japanese expansion — rarer but more durable.
+For a 6–9 month investor, JP_G1 is best interpreted alongside FX_2: if both are positive (Japan equities outperforming AND JPY weakening), the carry trade is ON and Japanese export earnings are supportive. If JP_G1 is positive but FX_2 is negative (JPY strengthening), it signals a higher-quality, domestically-driven Japanese expansion — rarer but more durable.
 
 **Regime Classification**
 
@@ -1509,13 +1466,13 @@ For a 6–9 month investor, JP_G1 is best interpreted alongside JP_FX1: if both 
 
 ---
 
-### JP_FX1 — JPY Carry Trade Signal (USD/JPY 26-Week Momentum) *(Naturally Leading)*
+### FX_2 — JPY Carry Trade Signal (USD/JPY 26-Week Momentum) *(Naturally Leading)*
 
 | | |
 |---|---|
 | **Formula** | `log(USDJPY=X / SMA_26w(USDJPY=X))` — USD/JPY spot vs its 26-week moving average |
 | **Data** | USDJPY=X — yfinance (higher = JPY weaker / USD stronger) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 | **Lead** | JPY moves precede equity/EM impact by days to 2–4 weeks |
 
 **Economic Rationale**
@@ -1526,9 +1483,9 @@ The academic documentation is extensive. Burnside et al. (2011, *Journal of Fina
 
 The **26-week SMA momentum** captures the *sustained direction* of the carry trade cycle rather than day-to-day JPY moves. When USD/JPY is running above its 26-week average (positive momentum = JPY weakening trend), carry trade positions are being added and global risk appetite is supported. When USD/JPY breaks below its 26-week average (negative momentum = JPY strengthening trend), the carry trade is being unwound — and the signal is *naturally leading* because the FX move precedes the equity and credit market impact by days to 2–4 weeks as positions are forced closed.
 
-The August 2024 carry unwind — triggered by a surprise BOJ rate hike — is the canonical recent example: USD/JPY fell from ~160 to ~142 within weeks, the Nikkei dropped 13% in a single day, EM currencies fell in tandem, and VIX spiked to 65. JP_FX1 would have been flashing a `carry-unwind` regime in the days before the equity damage arrived.
+The August 2024 carry unwind — triggered by a surprise BOJ rate hike — is the canonical recent example: USD/JPY fell from ~160 to ~142 within weeks, the Nikkei dropped 13% in a single day, EM currencies fell in tandem, and VIX spiked to 65. FX_2 would have been flashing a `carry-unwind` regime in the days before the equity damage arrived.
 
-For a global multi-asset investor, JP_FX1 is the single most important *systemic risk indicator* in the library for detecting forced deleveraging events.
+For a global multi-asset investor, FX_2 is the single most important *systemic risk indicator* in the library for detecting forced deleveraging events.
 
 **Regime Classification**
 
@@ -1540,31 +1497,31 @@ For a global multi-asset investor, JP_FX1 is the single most important *systemic
 
 ---
 
-*End of Section 4b — Asia Commodities & Japan (4 indicators: AS_C1, AS_C2, JP_G1, JP_FX1)*
+*End of Section 4b — Asia Commodities & Japan (4 indicators: FX_CMD5, FX_CMD4, JP_G1, FX_2)*
 
 ---
 
 ## 4c. Global & Regional Indicators
 
-*This final group operates at the highest level of abstraction: cross-regional growth differentials (REG_CLI1–5), global risk appetite (REG_RISK1), EM vs DM relative cycles (REG_EM1), and the global commodity cycle (REG_COMM1–2). These are the indicators that aggregate everything below them and translate regional signals into top-level portfolio tilts. They should be read as the last layer of confirmation before making broad asset allocation decisions.*
+*This final group operates at the highest level of abstraction: cross-regional growth differentials (GL_CLI1–5), global risk appetite (GL_G2), EM vs DM relative cycles (GL_G1), and the global commodity cycle (FX_CMD6, FX_CMD3). These are the indicators that aggregate everything below them and translate regional signals into top-level portfolio tilts. They should be read as the last layer of confirmation before making broad asset allocation decisions.*
 
 ---
 
-### REG_CLI1 — US vs Eurozone Growth Differential (OECD CLI)
+### GL_CLI1 — US vs Eurozone Growth Differential (OECD CLI)
 
 | | |
 |---|---|
 | **Formula** | `USA_CLI − avg(DEU_CLI, FRA_CLI)` |
 | **Data** | OECD Composite Leading Indicators: USA, DEU, FRA (monthly, ~6-week publication lag) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_CLI1 computes the US–Eurozone growth momentum differential using OECD Composite Leading Indicators (CLIs). CLIs are designed to anticipate turning points in economic activity relative to trend by approximately 6–9 months, making this a *leading* differential signal rather than a coincident one.
+GL_CLI1 computes the US–Eurozone growth momentum differential using OECD Composite Leading Indicators (CLIs). CLIs are designed to anticipate turning points in economic activity relative to trend by approximately 6–9 months, making this a *leading* differential signal rather than a coincident one.
 
 The OECD CLI methodology (OECD 2012, *Composite Leading Indicators: A Tool for Short-Term Analysis*) constructs each country's CLI from 6–10 component series selected for cyclical leading properties — typically including business surveys, financial variables, housing and order data. The CLIs are normalised to a long-run mean of 100, so the arithmetic difference captures whether the US or the Eurozone is running above or below its own historical trend by a larger margin.
 
-For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozone regional equity allocation. Bekaert & Hodrick (2009, *International Financial Management*) showed that short-term growth differentials between major economies are among the most reliable predictors of equity outperformance at 6–12 month horizons — particularly for large economies like the US and Eurozone where relative macro momentum is a dominant driver of relative equity returns. The signal also carries FX implications: a widening US growth lead versus the Eurozone is supportive of USD relative to EUR.
+For a 6–9 month investor, GL_CLI1 is the primary signal for the US vs Eurozone regional equity allocation. Bekaert & Hodrick (2009, *International Financial Management*) showed that short-term growth differentials between major economies are among the most reliable predictors of equity outperformance at 6–12 month horizons — particularly for large economies like the US and Eurozone where relative macro momentum is a dominant driver of relative equity returns. The signal also carries FX implications: a widening US growth lead versus the Eurozone is supportive of USD relative to EUR.
 
 **Regime Classification**
 
@@ -1576,19 +1533,19 @@ For a 6–9 month investor, REG_CLI1 is the primary signal for the US vs Eurozon
 
 ---
 
-### REG_CLI2 — US vs China Growth Differential (OECD CLI)
+### GL_CLI2 — US vs China Growth Differential (OECD CLI)
 
 | | |
 |---|---|
 | **Formula** | `USA_CLI − CHN_CLI` |
 | **Data** | OECD Composite Leading Indicators: USA, CHN (monthly) |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_CLI2 measures the growth momentum differential between the US and China — the two largest economies and the principal poles of the global growth cycle. A positive differential means the US cycle is running ahead of China's on an OECD-normalised basis; a negative differential means China's momentum is superior.
+GL_CLI2 measures the growth momentum differential between the US and China — the two largest economies and the principal poles of the global growth cycle. A positive differential means the US cycle is running ahead of China's on an OECD-normalised basis; a negative differential means China's momentum is superior.
 
-The US–China growth differential is one of the most consequential macro variables for multi-asset portfolios because of its broad transmission. When China leads (negative REG_CLI2): commodity demand accelerates (iron ore, copper, soybeans), commodity-exporting EM economies outperform, the AUD and BRL typically strengthen, and China equity outperformance (AS_G2) tends to follow. When the US leads (positive REG_CLI2): the dollar tends to be supported, US equity earnings growth dominates, and commodity-sensitive EM assets are under relative pressure.
+The US–China growth differential is one of the most consequential macro variables for multi-asset portfolios because of its broad transmission. When China leads (negative GL_CLI2): commodity demand accelerates (iron ore, copper, soybeans), commodity-exporting EM economies outperform, the AUD and BRL typically strengthen, and China equity outperformance (AS_CN_G2) tends to follow. When the US leads (positive GL_CLI2): the dollar tends to be supported, US equity earnings growth dominates, and commodity-sensitive EM assets are under relative pressure.
 
 The OECD China CLI is constructed from industrial production, business surveys, money supply and equity market signals — a broader set than the NBS official PMI and less subject to Chinese statistical smoothing. Fernald & Babson (2016, *Federal Reserve Bank of San Francisco*) showed that OECD CLI-based signals for China lead the official GDP figures by 1–2 quarters, providing genuine advance information about the Chinese cycle direction.
 
@@ -1602,17 +1559,17 @@ The OECD China CLI is constructed from industrial production, business surveys, 
 
 ---
 
-### REG_CLI3 — Europe Block CLI State (DEU + FRA + GBR Average)
+### EU_CLI1 — Europe Block CLI State (DEU + FRA + GBR Average)
 
 | | |
 |---|---|
 | **Formula** | `avg(DEU_CLI, FRA_CLI, GBR_CLI)` — equal-weighted average |
 | **Data** | OECD CLIs: Germany, France, United Kingdom (monthly) |
-| **Lookback** | 260-week rolling z-score; regime also references CLI level vs 100 |
+| **Lookback** | 156-week rolling z-score; regime also references CLI level vs 100 |
 
 **Economic Rationale**
 
-REG_CLI3 provides a composite read on European economic momentum by averaging the three largest European economies — Germany, France and the UK. While EU_G1 captures the market's real-time assessment of Europe, REG_CLI3 provides the underlying fundamental confirmation from official leading indicator data, with a 6–9 month forward-looking horizon.
+EU_CLI1 provides a composite read on European economic momentum by averaging the three largest European economies — Germany, France and the UK. While EU_G3 captures the market's real-time assessment of Europe, EU_CLI1 provides the underlying fundamental confirmation from official leading indicator data, with a 6–9 month forward-looking horizon.
 
 Germany, France and the UK together represent approximately 55% of European GDP. Germany's CLI is heavily influenced by industrial orders, exports and ifo business surveys — making it the most sensitive to global trade and China linkages. France's CLI is more domestically oriented, reflecting services and consumer confidence. The UK CLI incorporates post-Brexit specific dynamics. The equal-weighted average smooths idiosyncratic national noise and captures the European macro consensus.
 
@@ -1628,23 +1585,23 @@ The significance of the 100-level threshold is directly from OECD methodology: C
 
 ---
 
-### REG_CLI4 — Asia-Pacific Block CLI State (CHN + JPN + AUS Average)
+### AS_CLI1 — Asia-Pacific Block CLI State (CHN + JPN + AUS Average)
 
 | | |
 |---|---|
 | **Formula** | `avg(CHN_CLI, JPN_CLI, AUS_CLI)` — equal-weighted average |
 | **Data** | OECD CLIs: China, Japan, Australia (monthly) |
-| **Lookback** | 260-week rolling z-score; regime also references CLI level vs 100 |
+| **Lookback** | 156-week rolling z-score; regime also references CLI level vs 100 |
 
 **Economic Rationale**
 
-REG_CLI4 constructs an Asia-Pacific composite CLI from the three OECD-tracked economies that best represent the region's growth cycle: China (demand engine), Japan (supply chain and capital goods), and Australia (commodity supply barometer).
+AS_CLI1 constructs an Asia-Pacific composite CLI from the three OECD-tracked economies that best represent the region's growth cycle: China (demand engine), Japan (supply chain and capital goods), and Australia (commodity supply barometer).
 
 The three components are complementary rather than redundant. China's CLI captures domestic demand and policy stimulus. Japan's CLI is heavily export-oriented, meaning it leads on global trade cycle and reflects Chinese demand for Japanese capital goods. Australia's CLI is dominated by commodity export dynamics — iron ore, coal, LNG — making it an amplifier of Chinese infrastructure demand. Together they form a triangulated Asia-Pacific signal that is more robust than any single national CLI.
 
 Importantly, Australia's inclusion provides a *commodity-sector early warning*: Australian business confidence and dwelling investment tend to respond quickly to changes in Chinese steel demand, making the AUS CLI a forward-looking signal for commodity-cycle turns. RBA research (Berkelmans 2005, *RBA Working Paper*) showed that Chinese demand shocks transmit to Australian activity within 1–2 quarters — faster than most commodity exporters.
 
-For a global investor, a high REG_CLI4 reading is one of the most bullish signals available for EM equities, commodity-linked currencies and materials/energy sectors simultaneously.
+For a global investor, a high AS_CLI1 reading is one of the most bullish signals available for EM equities, commodity-linked currencies and materials/energy sectors simultaneously.
 
 **Regime Classification**
 
@@ -1656,18 +1613,18 @@ For a global investor, a high REG_CLI4 reading is one of the most bullish signal
 
 ---
 
-### REG_CLI5 — Global Growth Breadth Diffusion Index *(Naturally Leading)*
+### GL_CLI5 — Global Growth Breadth Diffusion Index *(Naturally Leading)*
 
 | | |
 |---|---|
 | **Formula** | Fraction of {USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN} where `CLI > 100 AND CLI > CLI_26w_ago` |
 | **Data** | OECD CLIs: all 9 countries (monthly) |
 | **Output range** | 0.0 (no country above trend and improving) to 1.0 (all 9 countries above trend and improving) |
-| **Lookback** | 260-week rolling z-score; regime also references raw fraction |
+| **Lookback** | 156-week rolling z-score; regime also references raw fraction |
 
 **Economic Rationale**
 
-REG_CLI5 is the broadest and most powerful macro signal in the library: a global growth diffusion index measuring how many of the world's nine largest OECD-tracked economies are *simultaneously* above trend and accelerating. It answers the most fundamental question a multi-asset investor can ask: is the global economy broadly expanding or contracting?
+GL_CLI5 is the broadest and most powerful macro signal in the library: a global growth diffusion index measuring how many of the world's nine largest OECD-tracked economies are *simultaneously* above trend and accelerating. It answers the most fundamental question a multi-asset investor can ask: is the global economy broadly expanding or contracting?
 
 The diffusion index methodology has deep roots in business cycle analysis. Burns & Mitchell (1946, NBER) showed that the simultaneity of expansion across sectors and countries is one of the most reliable characteristics distinguishing genuine expansions from sector-specific or regional recoveries. Harding & Pagan (2002, *Journal of Applied Econometrics*) formalised the concordance statistic — measuring the fraction of time two cycles are in the same phase — and showed that high global concordance (many countries expanding together) is associated with the most durable and broad-based expansions.
 
@@ -1675,35 +1632,35 @@ The dual condition — CLI > 100 *and* CLI > its 26-week lagged value — requir
 
 The thresholds reflect historical calibration: a fraction of 0.7 or above (6–7 of 9 economies above trend and improving) has historically coincided with the most robust global bull markets. A fraction below 0.4 (fewer than 4 economies qualifying) has historically been associated with global recessions or near-recessions.
 
-Because CLIs are themselves designed to lead economic activity, REG_CLI5 is *naturally leading*: the current reading already embeds a 6–9 month forward signal for global growth conditions.
+Because CLIs are themselves designed to lead economic activity, GL_CLI5 is *naturally leading*: the current reading already embeds a 6–9 month forward signal for global growth conditions.
 
 **Regime Classification**
 
 | Fraction | Label | Positioning |
 |---|---|---|
 | ≥ 0.7 | `broad-expansion` | Raise global equity beta; OW EM, cyclicals, HY |
-| 0.4–0.7 | `mixed` | Selective; focus on regions confirmed by REG_CLI1–4 |
+| 0.4–0.7 | `mixed` | Selective; focus on regions confirmed by GL_CLI1–2, EU_CLI1, AS_CLI1 |
 | < 0.4 | `contracting` | De-risk beta; favour quality, IG, core govts |
 
 ---
 
-### REG_RISK1 — Global Multi-Asset Risk Appetite (ACWI / GOVT)
+### GL_G2 — Global Multi-Asset Risk Appetite (ACWI / GOVT)
 
 | | |
 |---|---|
 | **Formula** | `log(ACWI / GOVT)` — iShares MSCI ACWI ETF / iShares US Treasury Bond ETF |
 | **Data** | ACWI (iShares MSCI ACWI — 47-country global equity), GOVT (iShares US Treasury) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_RISK1 is the broadest single risk-on/risk-off signal in the library. ACWI covers approximately 3,000 stocks across 47 developed and emerging market countries — the most comprehensive equity benchmark available. GOVT provides the risk-free anchor. Their ratio captures the aggregate preference of global capital between the riskiest (global equities) and safest (US Treasuries) assets.
+GL_G2 is the broadest single risk-on/risk-off signal in the library. ACWI covers approximately 3,000 stocks across 47 developed and emerging market countries — the most comprehensive equity benchmark available. GOVT provides the risk-free anchor. Their ratio captures the aggregate preference of global capital between the riskiest (global equities) and safest (US Treasuries) assets.
 
-This is the global-scope extension of US_I8 (SPY/GOVT), which only covers US equities. The distinction matters because global and US risk appetite can diverge: in 2022, US equities underperformed while EM equities were more resilient; in 2021, EM sold off while US equities continued higher. REG_RISK1 captures the net global verdict.
+This is the global-scope extension of US_CA_G1 (SPY/GOVT), which only covers US equities. The distinction matters because global and US risk appetite can diverge: in 2022, US equities underperformed while EM equities were more resilient; in 2021, EM sold off while US equities continued higher. GL_G2 captures the net global verdict.
 
 The theoretical foundation is the *flight-to-quality* literature. Vayanos (2004, *Journal of Finance*) and Brunnermeier & Pedersen (2009, *Review of Financial Studies*) documented that episodes of global risk aversion trigger simultaneous equity outflows and Treasury inflows — compressing the equity/Treasury ratio sharply and persistently. These episodes are not simply correlated with higher volatility; they represent genuine regime shifts in the risk tolerance of the global investor base.
 
-For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when it is in the `global-risk-on` regime, virtually all risk assets are supported and the cost of hedges is high; when it is in `global-risk-off`, the burden of proof shifts to individual risk positions.
+For a 6–9 month investor, GL_G2 is the top-level confirmation signal: when it is in the `global-risk-on` regime, virtually all risk assets are supported and the cost of hedges is high; when it is in `global-risk-off`, the burden of proof shifts to individual risk positions.
 
 **Regime Classification**
 
@@ -1715,19 +1672,19 @@ For a 6–9 month investor, REG_RISK1 is the top-level confirmation signal: when
 
 ---
 
-### REG_EM1 — Emerging Markets vs Developed Markets (EEM / URTH)
+### GL_G1 — Emerging Markets vs Developed Markets (EEM / URTH)
 
 | | |
 |---|---|
 | **Formula** | `log(EEM / URTH)` — iShares MSCI EM ETF / iShares MSCI World ETF (both USD) |
 | **Data** | EEM, URTH — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_EM1 measures the relative performance of emerging markets versus developed markets in USD terms — the primary signal for the EM vs DM allocation decision in a global equity portfolio. It complements US_FX1 (which captures the dollar/EM channel) by focusing on the equity relative return directly.
+GL_G1 measures the relative performance of emerging markets versus developed markets in USD terms — the primary signal for the EM vs DM allocation decision in a global equity portfolio. It complements FX_CMD2 (which captures the dollar/EM channel) by focusing on the equity relative return directly.
 
-EM outperformance requires three conditions to align simultaneously: (1) **weak USD** — a strong dollar raises EM debt burdens and tightens financial conditions (US_FX1 must be positive); (2) **positive EM growth differential vs DM** — EM earnings must be growing faster than DM (REG_CLI1–4 and REG_CLI5 must support EM); (3) **commodity strength** — most EM economies are net commodity exporters, so rising commodity prices (REG_COMM1 positive) directly improve terms of trade. When all three conditions are simultaneously met, EM outperformance can be very powerful — the 2002–2007 EM bull market saw EEM outperform URTH by approximately 20% per year.
+EM outperformance requires three conditions to align simultaneously: (1) **weak USD** — a strong dollar raises EM debt burdens and tightens financial conditions (FX_CMD2 must be positive); (2) **positive EM growth differential vs DM** — EM earnings must be growing faster than DM (GL_CLI1–2, EU_CLI1, AS_CLI1 and GL_CLI5 must support EM); (3) **commodity strength** — most EM economies are net commodity exporters, so rising commodity prices (FX_CMD6 positive) directly improve terms of trade. When all three conditions are simultaneously met, EM outperformance can be very powerful — the 2002–2007 EM bull market saw EEM outperform URTH by approximately 20% per year.
 
 Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven by different risk factors than DM — including political risk, currency risk and liquidity risk — meaning EM equity cycles are genuinely partially independent from DM cycles. Bekaert, Harvey & Lundblad (2005, *Journal of Financial Economics*) documented that EM equity liberalisation and greater global integration have increased correlations over time, but genuine alpha windows remain around EM-specific growth and policy cycles.
 
@@ -1741,21 +1698,21 @@ Harvey (1995, *Journal of Finance*) showed that EM expected returns are driven b
 
 ---
 
-### REG_COMM1 — Global Commodity Cycle Momentum (DBC 52-Week Return)
+### FX_CMD6 — Global Commodity Cycle Momentum (DBC 52-Week Return)
 
 | | |
 |---|---|
 | **Formula** | `log(DBC / DBC_52w_ago)` — Invesco DB Commodity Index 52-week log return |
 | **Data** | DBC (Invesco DB Commodity Index Tracking Fund) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_COMM1 measures the 12-month momentum of the broad commodity complex — the clearest signal of whether the global commodity supercycle is in an uptrend or downtrend. The DBC index covers energy (~55%), metals (~25%) and agriculture (~20%), making it a comprehensive proxy for global physical demand conditions.
+FX_CMD6 measures the 12-month momentum of the broad commodity complex — the clearest signal of whether the global commodity supercycle is in an uptrend or downtrend. The DBC index covers energy (~55%), metals (~25%) and agriculture (~20%), making it a comprehensive proxy for global physical demand conditions.
 
 The theoretical rationale for using 12-month momentum on commodities is well-established. Gorton & Rouwenhorst (2006, *FAJ*) showed that commodity futures have historically delivered equity-like returns over full cycles, with their returns driven by roll yield, spot price changes and rebalancing. Momentum is particularly strong in commodities because supply adjustment lags demand — it takes 3–7 years to bring new oil fields, mines or agricultural capacity online, meaning commodity price uptrends driven by demand can persist far longer than equity uptrends where the supply response (new issuance, capex, competition) is faster.
 
-For a multi-asset investor, REG_COMM1 serves as the primary signal for whether to hold commodity-linked equity sectors (energy, materials, mining) and whether to overweight commodity-exporting equity markets (ASX 200, Bovespa, JSE, TSX). Erb & Harvey (2006, *FAJ*) documented that commodity momentum is strongest at 12-month horizons, justifying the 52-week lookback. Additionally, rising commodity momentum leads EM equity outperformance by 8–12 weeks on positive cycle turns — making REG_COMM1 a leading signal for REG_EM1.
+For a multi-asset investor, FX_CMD6 serves as the primary signal for whether to hold commodity-linked equity sectors (energy, materials, mining) and whether to overweight commodity-exporting equity markets (ASX 200, Bovespa, JSE, TSX). Erb & Harvey (2006, *FAJ*) documented that commodity momentum is strongest at 12-month horizons, justifying the 52-week lookback. Additionally, rising commodity momentum leads EM equity outperformance by 8–12 weeks on positive cycle turns — making FX_CMD6 a leading signal for GL_G1.
 
 **Regime Classification**
 
@@ -1767,23 +1724,23 @@ For a multi-asset investor, REG_COMM1 serves as the primary signal for whether t
 
 ---
 
-### REG_COMM2 — Oil vs Gold (Growth-Inflation Regime Signal)
+### FX_CMD3 — Oil vs Gold (Growth-Inflation Regime Signal)
 
 | | |
 |---|---|
 | **Formula** | `log(CL=F / GC=F)` — WTI Crude Oil Futures / Gold Futures |
 | **Data** | CL=F (WTI Crude), GC=F (Gold) — yfinance |
-| **Lookback** | 260-week rolling z-score |
+| **Lookback** | 156-week rolling z-score |
 
 **Economic Rationale**
 
-REG_COMM2 is the energy-extended version of the copper/gold ratio (US_FX2), using crude oil versus gold to distinguish between growth-driven inflation regimes and fear-driven safe-haven regimes. Oil and gold both rise during inflationary episodes, but they respond differently to the *type* of inflation: oil is primarily sensitive to demand-driven (growth-positive) inflation, while gold is primarily sensitive to fear-driven or monetary debasement inflation.
+FX_CMD3 is the energy-extended version of the copper/gold ratio (FX_CMD1), using crude oil versus gold to distinguish between growth-driven inflation regimes and fear-driven safe-haven regimes. Oil and gold both rise during inflationary episodes, but they respond differently to the *type* of inflation: oil is primarily sensitive to demand-driven (growth-positive) inflation, while gold is primarily sensitive to fear-driven or monetary debasement inflation.
 
 When oil outperforms gold (ratio rising): the world is pricing *reflationary growth* — energy demand is rising because economic activity is expanding, corporate capital expenditure is healthy, and consumers are spending on transport and energy-intensive goods. This is positive for cyclicals, energy, materials and commodity currencies. When gold outperforms oil (ratio falling): the world is pricing *deflation risk, geopolitical shock or growth deceleration* — gold is rising as a safe haven while oil demand is falling on recession fears, or oil supply is contracting but this is a supply shock rather than a demand signal.
 
 Erb & Harvey (2013, *FAJ*) documented that oil and gold respond to different components of the inflation process: oil tracks demand-pull inflation, gold tracks monetary inflation and tail risk. Hamilton (1983, *Journal of Political Economy*) showed that oil price shocks that are demand-driven (rising oil due to growth) have very different macro consequences than supply shocks — a distinction that the oil/gold ratio helps to identify.
 
-The oil/gold ratio complements US_FX2 (copper/gold) by adding the energy dimension: when both copper/gold (US_FX2) and oil/gold (REG_COMM2) are positive, the global growth-inflation signal is high-conviction. When they diverge (e.g. oil rising on geopolitical supply shock but copper flat), the signal is more ambiguous and cross-referencing with REG_CLI5 and REG_RISK1 is warranted.
+The oil/gold ratio complements FX_CMD1 (copper/gold) by adding the energy dimension: when both copper/gold (FX_CMD1) and oil/gold (FX_CMD3) are positive, the global growth-inflation signal is high-conviction. When they diverge (e.g. oil rising on geopolitical supply shock but copper flat), the signal is more ambiguous and cross-referencing with GL_CLI5 and GL_G2 is warranted.
 
 **Regime Classification**
 
@@ -1795,8 +1752,8 @@ The oil/gold ratio complements US_FX2 (copper/gold) by adding the energy dimensi
 
 ---
 
-*End of Section 4c — Global & Regional (9 indicators: REG_CLI1, REG_CLI2, REG_CLI3, REG_CLI4, REG_CLI5, REG_RISK1, REG_EM1, REG_COMM1, REG_COMM2)*
+*End of Section 4c — Global & Regional (9 indicators: GL_CLI1, GL_CLI2, EU_CLI1, AS_CLI1, GL_CLI5, GL_G2, GL_G1, FX_CMD6, FX_CMD3)*
 
 ---
 
-*End of Manual — 70 indicators total across Sections 1, 2a, 2b, 3a, 3b, 4a, 4b, 4c*
+*End of Manual — 68 indicators total across Sections 1, 2a, 2b, 3a, 3b, 4a, 4b, 4c*
