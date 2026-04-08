@@ -115,7 +115,7 @@ HIST_START = "2000-01-01"
 #   ZSCORE_WINDOW = None
 # pandas rolling(window=None, min_periods=...) becomes an expanding window.
 # ===========================================================================
-ZSCORE_WINDOW      = 260    # 5-year rolling window (weeks)
+ZSCORE_WINDOW      = 156    # 3-year rolling window (weeks)
 ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ def _load_indicator_library():
     """Load indicator metadata from macro_indicator_library.csv.
 
     Returns:
-        ind_meta : dict  {id: (region_block, category, formula_note)}
+        ind_meta : dict  {id: (group, sub_group, category, formula_note)}
         all_ids  : list  ordered indicator IDs (CSV row order)
         naturally_leading : frozenset  IDs flagged as naturally leading
     """
@@ -140,10 +140,11 @@ def _load_indicator_library():
         ind_id = str(row.get("id", "")).strip()
         if not ind_id:
             continue
-        region   = str(row.get("region_block", "")).strip()
-        category = str(row.get("category", "")).strip()
-        formula  = str(row.get("formula_using_library_names", "")).strip()
-        ind_meta[ind_id] = (region, category, formula)
+        group     = str(row.get("group", "")).strip()
+        sub_group = str(row.get("sub_group", "")).strip()
+        category  = str(row.get("category", "")).strip()
+        formula   = str(row.get("formula_using_library_names", "")).strip()
+        ind_meta[ind_id] = (group, sub_group, category, formula)
         all_ids.append(ind_id)
         if str(row.get("naturally_leading", "")).strip().upper() == "TRUE":
             leading.add(ind_id)
@@ -467,7 +468,6 @@ def _yoy(series: pd.Series, freq: int = 52) -> pd.Series:
 def _annualised_change(series: pd.Series, periods: int = 6) -> pd.Series:
     """
     Annualised percentage change over `periods` months of a monthly series.
-    Used for US_LEI1 (USSLIND 6-month annualised change).
     Formula: ((x / x_n_periods_ago) ^ (12/periods) - 1) * 100
     """
     prior = series.shift(periods)
@@ -547,16 +547,18 @@ REGIME_RULES = {
     "US_EQ_F3":  lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
     "US_EQ_F4": lambda r, z: _r(r, z,  1, -1, "small-cap-lead",   "large-cap-safety"),
     "US_EQ_F1":  lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
-    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "growth-regime",    "value-regime",  "mixed"),
+    "US_EQ_F2": lambda r, z: _r(r, z,  1, -1, "value-regime",     "growth-regime", "mixed"),
     # US Rates & Credit — some use level-based rules combined with z-score
     "US_R1":  lambda r, z: (
         "recession-watch" if (not np.isnan(r) and r < 0)
         else _r(r, z, 1, -1, "early-cycle", "late-cycle", "mid-cycle")
     ),
     "US_Cr2":  lambda r, z: (
-        "stress"  if (not np.isnan(r) and r > 700) or (not np.isnan(z) and z > 1.5)
-        else ("frothy" if not np.isnan(z) and z < -1 and not np.isnan(r) and r < 400
-              else "normal")
+        "opportunity" if (not np.isnan(r) and r > 800) or (not np.isnan(z) and z > 2)
+        else ("stress" if not np.isnan(z) and z > 1 and not np.isnan(r) and r > 500
+              else ("frothy" if not np.isnan(r) and r < 300 and not np.isnan(z) and z < -1
+                    else ("complacent" if not np.isnan(r) and r < 400 and not np.isnan(z) and z < -0.5
+                          else "normal")))
     ),
     "GL_CA_I1":  lambda r, z: _r(r, z,  1, -1, "reflation",        "growth-scare",  "balanced"),
     "US_Cr1":  lambda r, z: (
@@ -597,10 +599,6 @@ REGIME_RULES = {
     "M4":     lambda r, z: ("carry" if not np.isnan(r) and r > 0 else "stress"),
     "M5":     lambda r, z: ("equity-friendly" if not np.isnan(r) and r < 0 else "defensive"),
     # US Macro
-    "US_LEI1": lambda r, z: (
-        "recession-risk" if not np.isnan(r) and r < -4.3 and not np.isnan(z) and z < -1.5
-        else ("late-cycle" if not np.isnan(r) and r < 0 else "expansion")
-    ),
     "US_JOBS1":  lambda r, z: _r(r, z,  1, -1, "labour-deteriorating", "overheating", "stable"),
     "US_JOBS3":   lambda r, z: _r(r, z,  1, -1, "strong-labour",        "weak-labour",  "mid-cycle"),
     "US_G6":lambda r, z: _r(r, z,  1, -1, "strong-growth",        "weak-growth"),
@@ -839,8 +837,8 @@ def _calc_US_EQ_F3(cp, **_):
 
 
 def _calc_US_G3(cp, **_):
-    """Financials vs Utilities (2-ticker): log(XLF / XLU)."""
-    return _log_ratio(_p(cp, "XLF"), _p(cp, "XLU"))
+    """Banks vs Utilities: log(^SP500-4010 / XLU)."""
+    return _log_ratio(_p(cp, "^SP500-4010"), _p(cp, "XLU"))
 
 
 def _calc_US_EQ_F4(cp, **_):
@@ -854,8 +852,8 @@ def _calc_US_EQ_F1(cp, **_):
 
 
 def _calc_US_EQ_F2(cp, **_):
-    """Growth vs Value (S&P 500): log(IVW / IVE)."""
-    return _log_ratio(_p(cp, "IVW"), _p(cp, "IVE"))
+    """Value vs Growth (S&P 500): log(IVE / IVW)."""
+    return _log_ratio(_p(cp, "IVE"), _p(cp, "IVW"))
 
 
 # ---------------------------------------------------------------------------
@@ -1031,17 +1029,9 @@ def _calc_M5(cp, **_):
 
 
 # ---------------------------------------------------------------------------
-# US MACRO FUNDAMENTALS  (US_LEI1, US_JOBS1, US_LAB1, US_GROWTH1,
-#                          US_HOUS1, US_M2L1)
+# US MACRO FUNDAMENTALS  (US_JOBS1, US_JOBS2, US_JOBS3, US_G6, US_GROWTH1,
+#                          US_HOUS1, US_M2, US_ISM1)
 # ---------------------------------------------------------------------------
-
-def _calc_US_LEI1(mu, **_):
-    """
-    Conference Board LEI 6-month annualised change: USSLIND.
-    Raw = annualised % change over last 6 months (26 weekly periods).
-    """
-    lei = _to_weekly_friday(_get_col(mu, "USSLIND"))
-    return _annualised_change(lei, periods=26)
 
 
 def _calc_US_JOBS1(mu, **_):
@@ -1172,7 +1162,6 @@ _US_CALCULATORS = {
     "M3":         _calc_M3,
     "M4":         _calc_M4,
     "M5":         _calc_M5,
-    "US_LEI1":    _calc_US_LEI1,
     "US_JOBS1":   _calc_US_JOBS1,
     "US_JOBS3":    _calc_US_JOBS3,
     "US_G6": _calc_US_G6,
@@ -1679,7 +1668,7 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
     Build the snapshot DataFrame (one row per indicator, latest values only).
 
     Columns:
-        id, region_block, category, last_date,
+        id, group, sub_group, category, last_date,
         raw, zscore, regime, fwd_regime, formula_note
 
     Rows are in ALL_INDICATOR_IDS order (same as macro_indicator_library.csv).
@@ -1688,13 +1677,14 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
     rows = []
     _empty_cols = ["raw", "zscore", "regime", "fwd_regime"]
     for ind_id in ALL_INDICATOR_IDS:
-        meta = INDICATOR_META.get(ind_id, ("", "", ""))
-        region_block, category, formula_note = meta
+        meta = INDICATOR_META.get(ind_id, ("", "", "", ""))
+        group, sub_group, category, formula_note = meta
         df = results.get(ind_id, pd.DataFrame(columns=_empty_cols))
         if df.empty or df["raw"].dropna().empty:
             rows.append({
                 "id":           ind_id,
-                "region_block": region_block,
+                "group":        group,
+                "sub_group":    sub_group,
                 "category":     category,
                 "last_date":    "",
                 "raw":          "",
@@ -1707,7 +1697,8 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
             last = df.dropna(subset=["raw"]).iloc[-1]
             rows.append({
                 "id":           ind_id,
-                "region_block": region_block,
+                "group":        group,
+                "sub_group":    sub_group,
                 "category":     category,
                 "last_date":    str(last.name.date()),
                 "raw":          round(last["raw"],    6),

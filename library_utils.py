@@ -66,17 +66,17 @@ EQUITY_SUBCLASS_ORDER = {
     "Equity Small Cap (Value)":  4,
     "Equity Sector":             5,
     "Equity Industry Group":     6,
-    "Factor":                    7,
-    "Equity Factor":             7,
+    "Equity Industry":           7,
+    "Factor":                    8,
+    "Equity Factor":             8,
 }
 
 SECTOR_ORDER = {
     "Blend": 0, "Value": 1, "Growth": 2,
-    "Energy": 10, "Materials": 11, "Industrials": 12,
-    "Consumer Discretionary": 13, "Consumer Staples": 14,
-    "Health Care": 15, "Financials": 16,
-    "Information Technology": 17, "Communication Services": 18,
-    "Utilities": 19, "Real Estate": 20,
+    "Consumer Staples": 10, "Health Care": 11, "Utilities": 12,
+    "Industrials": 13, "Energy": 14, "Communication Services": 15,
+    "Information Technology": 16, "Consumer Discretionary": 17,
+    "Materials": 18, "Financials": 19, "Real Estate": 20,
     "Mega-Cap Tech / Growth": 30, "Equal Weight": 31,
     "Momentum": 32, "Dividend Growth": 33, "Quality": 34,
     "Dividend/Quality": 35, "Low Volatility": 36,
@@ -196,6 +196,10 @@ def lib_sort_key(row) -> tuple:
     if ac == "Equity":
         s   = EQUITY_SUBCLASS_ORDER.get(asc, 50)
         sec = SECTOR_ORDER.get(sector, 50)
+        # Industry Groups and Industries: sort by ticker (GICS code) instead of name
+        if asc in ("Equity Industry Group", "Equity Industry"):
+            ticker = str(row.get("ticker_yfinance_pr", "") or "")
+            return (g, r, s, sec, ticker)
         return (g, r, s, sec, name)
 
     if ac == "Fixed Income":
