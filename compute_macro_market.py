@@ -616,19 +616,19 @@ REGIME_RULES = {
     "US_R6":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
     "US_JOBS2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
     # Europe
-    "EU_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
-    "EU_G2":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
-    "EU_G3":  lambda r, z: _r(r, z,  1, -1, "EU-outperform",    "US-dominance"),
-    "EU_I1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
-    "EU_I2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
-    "EU_I3":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
-    "EU_R1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
-    "EU_FX1": lambda r, z: _r(r, z,  1, -1, "EU-macro-friendly","EU-strain"),
-    "EU_I4":  lambda r, z: (
+    "EU_G3":  lambda r, z: _r(r, z,  1, -1, "pro-growth-EU",    "defensive-EU"),
+    "UK_G1":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
+    "EU_G2":  lambda r, z: _r(r, z,  1, -1, "EU-outperform",    "US-dominance"),
+    "EU_Cr1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
+    "UK_R2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
+    "UK_R1":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
+    "UK_Cr1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
+    "EU_G4": lambda r, z: _r(r, z,  1, -1, "EU-macro-friendly","EU-strain"),
+    "EU_R1":  lambda r, z: (
         "peripheral-stress" if (not np.isnan(r) and r > 2.5) or (not np.isnan(z) and z > 1.5)
         else ("compressed" if not np.isnan(z) and z < -1 else "normal")
     ),
-    "EU_G4":  lambda r, z: _r(r, z,  1, -1, "eurozone-outperform", "eurozone-underperform"),
+    "EU_G1":  lambda r, z: _r(r, z,  1, -1, "eurozone-outperform", "eurozone-underperform"),
     # Japan
     "JP_G1":  lambda r, z: _r(r, z,  1, -1, "japan-outperform",    "japan-underperform"),
     "JP_FX1": lambda r, z: (
@@ -1201,7 +1201,7 @@ _US_CALCULATORS = {
 # EU GROWTH / RISK APPETITE  (EU_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_G1(cp, **_):
+def _calc_EU_G3(cp, **_):
     """
     STOXX 600 Cyclicals vs Defensives (Europe):
     log((Industrials + Banks + Technology) / (Utilities + Consumer Staples))
@@ -1215,7 +1215,7 @@ def _calc_EU_G1(cp, **_):
     )
 
 
-def _calc_EU_G2(cp, **_):
+def _calc_UK_G1(cp, **_):
     """
     UK domestic vs global: log(^FTMC / ^FTSE).
     FTSE 250 is predominantly domestic UK-revenue companies; FTSE 100 is
@@ -1224,7 +1224,7 @@ def _calc_EU_G2(cp, **_):
     return _log_ratio(_p(cp, "^FTMC"), _p(cp, "^FTSE"))
 
 
-def _calc_EU_G3(cp, **_):
+def _calc_EU_G2(cp, **_):
     """
     Eurozone vs US equity leadership: log(FEZ / SPY).
     FEZ = iShares Euro Stoxx 50 ETF (USD-denominated); SPY = S&P 500 ETF.
@@ -1238,7 +1238,7 @@ def _calc_EU_G3(cp, **_):
 # EU FINANCIAL CONDITIONS  (EU_I1–I3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_I1(supp, **_):
+def _calc_EU_Cr1(supp, **_):
     """
     Euro IG spread: Euro IG corporate yield minus ECB AAA govt yield.
     Fetched via fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread'].
@@ -1251,7 +1251,7 @@ def _calc_EU_I1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_EU_I2(cp, **_):
+def _calc_UK_R2(cp, **_):
     """
     UK inflation expectations proxy: log(INXG.L / IGLT.L).
     INXG.L = iShares UK IL Gilt ETF (inflation-linked); IGLT.L = nominal gilt ETF.
@@ -1260,7 +1260,7 @@ def _calc_EU_I2(cp, **_):
     return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
 
 
-def _calc_EU_I3(supp, **_):
+def _calc_UK_R1(supp, **_):
     """
     UK–Germany gilt-bund yield spread: IRLTLT01GBM156N − IRLTLT01DEM156N.
     Both monthly OECD series via FRED, forward-filled to weekly.
@@ -1275,7 +1275,7 @@ def _calc_EU_I3(supp, **_):
 # EU CREDIT / RATES  (EU_R1)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_R1(cp, **_):
+def _calc_UK_Cr1(cp, **_):
     """
     UK credit conditions: log(SLXX.L / IGLT.L).
     SLXX.L = iShares GBP Corporate Bond ETF; IGLT.L = UK Gilt ETF.
@@ -1288,7 +1288,7 @@ def _calc_EU_R1(cp, **_):
 # EU FX / MACRO COMPOSITE  (EU_FX1)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_FX1(cp, **_):
+def _calc_EU_G4(cp, **_):
     """
     EUR macro composite: equal-weight z-score of EUR strength + EU cyclical tilt.
     Component 1: log(EURUSD=X)           — EUR/USD spot level
@@ -1306,7 +1306,7 @@ def _calc_EU_FX1(cp, **_):
     return composite
 
 
-def _calc_EU_I4(supp, **_):
+def _calc_EU_R1(supp, **_):
     """
     BTP-Bund peripheral sovereign stress: IRLTLT01ITM156N − IRLTLT01DEM156N.
     Spread > 2.5% = peripheral stress; z > +1.5 = historically elevated risk premium.
@@ -1317,7 +1317,7 @@ def _calc_EU_I4(supp, **_):
     return _arith_diff(ita, deu)
 
 
-def _calc_EU_G4(cp, **_):
+def _calc_EU_G1(cp, **_):
     """
     Eurozone vs global equities: log(EZU / URTH).
     Positive → Eurozone outperforming MSCI World; driven by EUR, ECB posture, China trade.
@@ -1349,16 +1349,16 @@ def _calc_JP_FX1(cp, **_):
 # ---------------------------------------------------------------------------
 
 _EU_CALCULATORS = {
-    "EU_G1":  _calc_EU_G1,
-    "EU_G2":  _calc_EU_G2,
     "EU_G3":  _calc_EU_G3,
-    "EU_I1":  _calc_EU_I1,
-    "EU_I2":  _calc_EU_I2,
-    "EU_I3":  _calc_EU_I3,
+    "UK_G1":  _calc_UK_G1,
+    "EU_G2":  _calc_EU_G2,
+    "EU_Cr1":  _calc_EU_Cr1,
+    "UK_R2":  _calc_UK_R2,
+    "UK_R1":  _calc_UK_R1,
+    "UK_Cr1":  _calc_UK_Cr1,
+    "EU_G4": _calc_EU_G4,
     "EU_R1":  _calc_EU_R1,
-    "EU_FX1": _calc_EU_FX1,
-    "EU_I4":  _calc_EU_I4,
-    "EU_G4":  _calc_EU_G4,
+    "EU_G1":  _calc_EU_G1,
     "JP_G1":  _calc_JP_G1,
     "JP_FX1": _calc_JP_FX1,
 }
