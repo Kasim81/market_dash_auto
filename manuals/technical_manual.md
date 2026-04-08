@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-03-30
+> Last updated: 2026-04-08
 
 ---
 
@@ -38,16 +38,16 @@ The pipeline runs automatically every day at **06:00 UTC** via GitHub Actions (`
 | `market_data` | ~70 instruments (simple dashboard) | Daily snapshot | yfinance + FRED |
 | `market_data_comp` | ~390 instruments from library | Daily snapshot | yfinance + FRED |
 | `market_data_comp_hist` | ~390 instruments from library | Weekly history from 1950 | yfinance + FRED |
-| `macro_us` | ~43 US FRED macro series | Daily snapshot | FRED API |
-| `macro_us_hist` | ~43 US FRED series | Weekly history from 1947 | FRED API |
+| `macro_us` | ~42 US FRED macro series | Daily snapshot | FRED API |
+| `macro_us_hist` | ~42 US FRED series | Weekly history from 1947 | FRED API |
 | `macro_intl` | 5 indicators x 11 countries | Daily snapshot | OECD + World Bank + IMF + FRED |
 | `macro_intl_hist` | 5 indicators x 11 countries | Weekly history from 1960 | OECD + World Bank + IMF + FRED |
-| `macro_market` | 57 composite indicators | Weekly snapshot | Derived from above datasets |
-| `macro_market_hist` | 57 composite indicators | Weekly history from 2000 | Derived from above datasets |
+| `macro_market` | 68 composite indicators | Weekly snapshot | Derived from above datasets |
+| `macro_market_hist` | 68 composite indicators | Weekly history from 2000 | Derived from above datasets |
 
 ### Codebase Size
 
-6 Python modules totalling ~5,845 lines, plus 7 CSV configuration libraries and 7 CSV output files.
+7 Python modules totalling ~8,388 lines, plus 7 CSV configuration libraries and 7 CSV output files.
 
 ---
 
@@ -59,19 +59,19 @@ market_dash_auto/
 ├── fetch_hist.py                  # Historical time series — macro_us + comp (1,062 lines)
 ├── fetch_macro_us_fred.py         # US FRED macro indicators + surveys (510 lines)
 ├── fetch_macro_international.py   # International macro — OECD / World Bank / IMF (1,426 lines)
-├── compute_macro_market.py        # 57 macro-market composite indicators (1,717 lines)
-├── library_utils.py               # Shared sort-order dicts, FX maps, sort key (210 lines)
+├── compute_macro_market.py        # 68 macro-market composite indicators (1,903 lines)
+├── library_utils.py               # Shared sort-order dicts, FX maps, sort key (271 lines)
 ├── requirements.txt               # Python dependencies
 ├── README.md
 │
 ├── data/                          # CSV config libraries + pipeline output files
 │   ├── index_library.csv              # Instrument master library (~390 rows, 29 columns)
 │   ├── level_change_tickers.csv       # Vol tickers using absolute pt change (14 tickers)
-│   ├── macro_library_fred.csv         # FRED indicator definitions (46 series)
+│   ├── macro_library_fred.csv         # FRED indicator definitions (45 series)
 │   ├── macro_library_oecd.csv         # OECD indicator definitions (3 indicators)
 │   ├── macro_library_imf.csv          # IMF indicator definitions (1 indicator)
 │   ├── macro_library_worldbank.csv    # World Bank indicator definitions (1 indicator)
-│   ├── macro_indicator_library.csv    # 57 macro-market indicator definitions
+│   ├── macro_indicator_library.csv    # 68 macro-market indicator definitions
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
 │   ├── market_data_comp_hist.csv      # OUTPUT — comp-pipeline weekly history
@@ -82,9 +82,15 @@ market_dash_auto/
 │   ├── macro_market.csv               # OUTPUT — macro-market indicator snapshot
 │   └── macro_market_hist.csv          # OUTPUT — macro-market indicator weekly history
 │
-├── docs/                          # Documentation
+├── docs/                          # Indicator Explorer generator
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,296 lines)
+│   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
+│   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
+│
+├── manuals/                       # Documentation
 │   ├── technical_manual.md            # This file
-│   └── forward_plan.md                # Forward-looking development roadmap
+│   ├── forward_plan.md                # Forward-looking development roadmap
+│   └── indicator_manual.md            # Indicator-by-indicator reference
 │
 └── .github/workflows/
     └── update_data.yml            # GitHub Actions daily scheduler
@@ -224,11 +230,11 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `market_data` | `fetch_data.py` | `data/market_data.csv` | ~70 simple-pipeline instruments, daily snapshot |
 | `market_data_comp` | `fetch_data.py` | `data/market_data_comp.csv` | ~390 comp-pipeline instruments, daily snapshot |
 | `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
-| `macro_us` | `fetch_macro_us_fred.py` | `data/macro_us.csv` | ~43 US FRED series snapshot |
+| `macro_us` | `fetch_macro_us_fred.py` | `data/macro_us.csv` | ~42 US FRED series snapshot |
 | `macro_us_hist` | `fetch_hist.py` | `data/macro_us_hist.csv` | Weekly FRED history from 1947 |
 | `macro_intl` | `fetch_macro_international.py` | `data/macro_intl.csv` | 11-country macro snapshot |
 | `macro_intl_hist` | `fetch_macro_international.py` | `data/macro_intl_hist.csv` | Weekly international history from 1960 |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 57-indicator snapshot (raw + z-score + regime) |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 68-indicator snapshot (group, sub_group, category, raw, zscore, regime, fwd_regime) |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
@@ -260,11 +266,11 @@ https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4
 |---|---|---|---|
 | `index_library.csv` | 390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
-| `macro_library_fred.csv` | 46 | fetch_macro_us_fred.py, fetch_macro_international.py | FRED series definitions (US + international) |
+| `macro_library_fred.csv` | 45 | fetch_macro_us_fred.py, fetch_macro_international.py | FRED series definitions (US + international) |
 | `macro_library_oecd.csv` | 3 | fetch_macro_international.py | OECD indicator definitions (CLI, unemployment) |
 | `macro_library_worldbank.csv` | 1 | fetch_macro_international.py | World Bank indicator definition (CPI) |
 | `macro_library_imf.csv` | 1 | fetch_macro_international.py | IMF indicator definition (GDP growth) |
-| `macro_indicator_library.csv` | 57 | compute_macro_market.py | Macro-market indicator definitions (formulas, regime rules) |
+| `macro_indicator_library.csv` | 68 | compute_macro_market.py, docs/build_html.py | Macro-market indicator definitions (id, category, group, sub_group, naturally_leading, formula, interpretation, regime rules) |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
@@ -277,7 +283,7 @@ https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4
 | `macro_us_hist.csv` | ~4,144 | fetch_hist.py | Weekly FRED history, 8 metadata prefix rows + data |
 | `macro_intl.csv` | ~59 | fetch_macro_international.py | International macro snapshot |
 | `macro_intl_hist.csv` | ~3,466 | fetch_macro_international.py | Weekly international history, 8 metadata prefix rows + data |
-| `macro_market.csv` | ~50 | compute_macro_market.py | Macro-market indicator snapshot |
+| `macro_market.csv` | ~68 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 
 ---
@@ -403,18 +409,18 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 |---|---|
 | `_load_fred_us_library()` | Load `macro_library_fred.csv`, return US-only series as dicts |
 | `fred_fetch_with_backoff(series_id, api_key)` | Fetch single FRED series with exponential backoff |
-| `fetch_macro_us()` | Fetch all ~43 US FRED series, compute latest/prior/change |
+| `fetch_macro_us()` | Fetch all ~42 US FRED series, compute latest/prior/change |
 | `save_csv(df)` | Save to `data/macro_us.csv` (diff-check: skip if unchanged) |
 | `push_macro_us_to_sheets(df)` | Push to Google Sheets `macro_us` tab |
 | `run_phase_a()` | **Entry point** — validate, fetch, save, push |
 
-#### FRED Series Categories (43 total)
+#### FRED Series Categories (42 total)
 
 | Category | Example Series |
 |---|---|
 | Growth / Yield Curve | T10Y2Y, T10Y3M |
 | Growth / Money Supply | M2SL |
-| Growth / Leading | USSLIND (LEI), PERMIT |
+| Growth / Leading | PERMIT |
 | Growth / Labour | IC4WSA, PAYEMS, UNRATE |
 | Growth / Activity | INDPRO, RSXFS |
 | Growth / Credit | DRTSCILM (SLOOS C&I), STDSOTHCONS, SUBLPDRCSN |
