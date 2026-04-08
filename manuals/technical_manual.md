@@ -351,7 +351,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 
 ## 9. Module Reference
 
-### 9.1 `library_utils.py` (210 lines)
+### 9.1 `library_utils.py` (271 lines)
 
 **Role:** Shared constants and helpers — single authoritative source for sort logic and FX maps.
 
@@ -360,14 +360,18 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `ASSET_CLASS_GROUP` | dict | Maps asset classes to sort order (1-7) |
 | `REGION_ORDER` | dict | Maps regions to sort order (1-9) |
 | `EQUITY_SUBCLASS_ORDER` | dict | Sort order for equity subcategories |
+| `SECTOR_ORDER` | dict | Custom sector sort order (Consumer Staples first, Real Estate last) |
 | `FI_SUBCLASS_ORDER` | dict | Sort order for fixed income subcategories |
 | `MATURITY_ORDER` | dict | Sort order for bond maturities |
 | `COMMODITY_GROUP_ORDER` | dict | Sort order for commodity groups |
 | `VOL_SUBCLASS_ORDER` | dict | Sort order for volatility subcategories |
 | `RATES_SUBCLASS_ORDER` | dict | Sort order for rates subcategories |
+| `SPREAD_SUBCLASS_ORDER` | dict | Sort order for spread subcategories |
+| `INDICATOR_GROUP_ORDER` | dict | Sort order for macro-market indicator groups (US, UK, Europe, …) |
+| `INDICATOR_SUB_GROUP_ORDER` | dict | Sort order for macro-market indicator sub-groups |
 | `COMP_FX_TICKERS` | dict | Currency code -> yfinance ticker (18 currencies) |
 | `COMP_FCY_PER_USD` | set | Indirect-quote currencies (JPY, CNY, INR, etc.) — divide by FX rate |
-| `lib_sort_key(row)` | function | Returns sort tuple from instrument dict for consistent ordering |
+| `lib_sort_key(row)` | function | Returns sort tuple from instrument dict for consistent ordering; Industry Groups/Industries sorted by GICS ticker code |
 
 ### 9.2 `fetch_data.py` (920 lines)
 
@@ -510,60 +514,103 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 | IMF | 1s | Full history in single call |
 | FRED (intl) | 0.6s | Same as US FRED |
 
-### 9.6 `compute_macro_market.py` (1,717 lines)
+### 9.6 `compute_macro_market.py` (1,903 lines)
 
-**Role:** Phase E — 57 composite macro-market indicators with z-scores and regime classifications.
+**Role:** Phase E — 68 composite macro-market indicators with z-scores, regime classifications, and forward regime signals.
 
-#### Indicator Families (57 total)
+All indicator metadata is loaded from `macro_indicator_library.csv` at import time — no hardcoded indicator definitions in Python. The CSV is the single source of truth for group, sub_group, category, formula description, and naturally_leading flag.
 
-| Family | IDs | Description |
-|---|---|---|
-| US Growth / Cyclicals | US_G1, US_G2, US_G2b, US_G3, US_G3b, US_G4, US_G4b | Sector ratios (cyclicals vs defensives, size, style) |
-| US Rates / Credit | US_I1–US_I10 | Yield curves, HY/IG spreads, credit risk, risk-on/off |
-| US Vol / Real Rates | US_R1, US_R2, US_RR1 | Vol term structure, MOVE/VIX, TIPS real yield |
-| US FX | US_FX1, US_FX2 | Dollar vs EM, copper/gold |
-| US Momentum | M1–M5 | Trend-following, dual momentum, vol-filtered |
-| Europe | EU_G1–EU_G3, EU_I1–EU_I3, EU_R1, EU_FX1 | European cyclicals, credit, gilts, EUR composite |
-| Asia | AS_G1–AS_G3, AS_I1–AS_I2, AS_FX1–AS_FX2, AS_C1–AS_C2 | China/India size, rates, FX, iron ore |
-| US Leading / Macro | US_LEI1, US_JOBS1, US_LAB1, US_GROWTH1, US_HOUS1, US_M2L1 | LEI, jobless claims, labour composite, housing, M2 |
-| Regional CLI | REG_CLI1–REG_CLI5 | Cross-country growth differentials and breadth |
+#### Indicator Families (68 total)
+
+| Group | Sub-group(s) | IDs | Description |
+|---|---|---|---|
+| US | Equity - Growth | US_G1, US_G2, US_G3, US_G5, US_G4 | Cyclicals vs defensives, banks vs utilities, tech leadership, breadth |
+| US | Equity - Factor | US_EQ_F1, US_EQ_F2, US_EQ_F3, US_EQ_F4 | Value/growth and size (Russell, S&P) |
+| US | Rates | US_R1, US_R2, US_R3, US_R4, US_R5, US_R6 | Yield curve slopes, breakeven inflation, real yields, mortgage spread |
+| US | Credit | US_Cr1, US_Cr2, US_Cr3, US_Cr4 | IG spread, HY spread (5-regime), HY-IG, HY vs Treasuries |
+| US | CrossAsset - Growth | US_CA_G1 | SPY vs GOVT risk-on/off |
+| US | Volatility | US_V1, US_V2 | VIX term structure, MOVE/VIX |
+| US | Momentum | M1–M5 | Trend, dual momentum, HY momentum, vol-filtered |
+| US | Macro / Survey | US_JOBS1, US_JOBS2, US_JOBS3, US_G6, US_HOUS1, US_M2, US_ISM1 | Labour, activity, housing, M2, ISM |
+| Europe | Equity - Growth / Credit | EU_G1, EU_G2, EU_G3, EU_G4, EU_Cr1, EU_R1 | European cyclicals, credit, BTP-Bund |
+| UK | Equity / Rates / Credit | UK_G1, UK_R1, UK_R2, UK_Cr1 | UK domestic, gilts, breakeven, credit |
+| Japan | Equity - Growth | JP_G1 | Japan vs global equities |
+| Asia | China / India | AS_CN_G1, AS_CN_G2, AS_CN_G3, AS_IN_G1, AS_CN_R1, AS_IN_R1 | Size, growth, rates |
+| Global | CrossAsset / CLI | GL_CA_I1, GL_G1, GL_G2, GL_CLI1, GL_CLI2, GL_CLI5, EU_CLI1, AS_CLI1 | Risk appetite, EM vs DM, CLI differentials/breadth |
+| FX & Commodities | Various | FX_CMD1–FX_CMD6, FX_CN1, FX_1, FX_2 | Copper/gold, dollar, iron ore, commodity momentum, FX momentum |
 
 #### How Each Indicator Works
 
 Each indicator goes through:
 1. **Calculator function** (`_calc_US_G1`, etc.) — computes raw weekly series from input data
-2. **Rolling z-score** — 260-week window (5 years), 52-week minimum warm-up
-3. **Regime classification** — discrete label based on z-score thresholds (e.g. "risk-on", "defensive", "neutral")
+2. **Rolling z-score** — 156-week window (3 years), 52-week minimum warm-up
+3. **Regime classification** — discrete label based on z-score thresholds and/or raw value thresholds (via `REGIME_RULES` lambdas)
+4. **Forward regime** — slope of z-score over trailing 8 weeks classifies as "improving", "stable", or "deteriorating"; indicators flagged as `naturally_leading` in the CSV receive a "[leading]" suffix
 
 #### Key Functions
 
 | Function | Purpose |
 |---|---|
+| `_load_indicator_library()` | Load `macro_indicator_library.csv` → `INDICATOR_META`, `ALL_INDICATOR_IDS`, `NATURALLY_LEADING` |
 | `load_comp_hist()` | Load `market_data_comp_hist.csv` (weekly prices) |
 | `load_macro_us_hist()` | Load `macro_us_hist.csv` (skip 8 metadata rows) |
 | `load_macro_intl_hist()` | Load `macro_intl_hist.csv` (skip metadata rows) |
-| `fetch_supplemental_fred()` | Fetch 7 FRED series not in macro_us_hist (iron ore, Euro HY OAS, intl yields, DGS10) |
+| `fetch_supplemental_fred()` | Fetch FRED series not in macro_us_hist (iron ore, Euro HY OAS, intl yields, DGS10, etc.) |
 | `fetch_ecb_euro_ig_spread()` | ECB Euro IG credit spread (with FRED fallback) |
 | `fetch_fxi_prices()` | yfinance FXI (China Large-Cap ETF) |
 | `_log_ratio(num, den)` | `log(num / den)` — primary indicator calculation |
 | `_arith_diff(a, b)` | `a - b` — for yield curve spreads |
 | `_sum_log_ratio(nums, dens)` | Average of multiple log-ratios — composite indicators |
-| `_rolling_zscore(series)` | Rolling z-score (260w window, 52w min) |
-| `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 57 indicator calculations |
-| `build_snapshot_df(results)` | One row per indicator (raw, zscore, regime) |
-| `build_hist_df(results)` | One row per date x 171 columns (57 indicators x 3 values) |
+| `_rolling_zscore(series)` | Rolling z-score (156w window, 52w min) |
+| `_classify_fwd_regime(z, is_leading)` | Forward regime from trailing 8-week z-score slope |
+| `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 68 indicator calculations |
+| `build_snapshot_df(results)` | One row per indicator: id, group, sub_group, category, raw, zscore, regime, fwd_regime, formula_note |
+| `build_hist_df(results)` | One row per date × 272 columns (68 indicators × 4 values: raw, zscore, regime, fwd_regime) |
+| `push_macro_to_google_sheets(df_snapshot, df_hist)` | Write `macro_market` and `macro_market_hist` tabs to Sheets |
 | `run_phase_e()` | **Entry point** — load inputs, compute, save + push |
 
 #### Key Constants
 
 | Constant | Value | Purpose |
 |---|---|---|
-| `ZSCORE_WINDOW` | 260 | 5-year rolling window for z-scores (weeks) |
+| `ZSCORE_WINDOW` | 156 | 3-year rolling window for z-scores (weeks) |
 | `ZSCORE_MIN_PERIODS` | 52 | 1-year minimum warm-up (weeks) |
 | `HIST_START` | `"2000-01-01"` | Start date for weekly spine |
-| `INDICATOR_META` | dict | Maps 57 IDs to (region_block, category, formula_note) |
-| `REGIME_RULES` | dict | Maps 57 IDs to regime classification lambdas |
-| `_US_CALCULATORS` | dict | Maps 57 IDs to calculator functions |
+| `_FWD_SLOPE_POS` | +0.15 | Weekly z-score slope threshold for "improving" |
+| `_FWD_SLOPE_NEG` | -0.15 | Weekly z-score slope threshold for "deteriorating" |
+| `INDICATOR_META` | dict | Maps 68 IDs to `(group, sub_group, category, formula_note)` — loaded from CSV |
+| `ALL_INDICATOR_IDS` | list | Ordered indicator IDs (CSV row order) |
+| `NATURALLY_LEADING` | frozenset | IDs flagged as naturally leading in the CSV |
+| `REGIME_RULES` | dict | Maps 68 IDs to regime classification lambdas |
+| `_US_CALCULATORS` | dict | US indicator calculator functions |
+| `_EU_CALCULATORS` | dict | Europe/UK indicator calculator functions |
+| `_ASIA_REGIONAL_CALCULATORS` | dict | Asia/Global/FX indicator calculator functions |
+| `_ALL_CALCULATORS` | dict | Merged union of the above three dicts |
+
+### 9.7 `docs/build_html.py` (2,296 lines)
+
+**Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a nested sidebar.
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `load_indicator_library()` | Load `macro_indicator_library.csv` → dict keyed by ID with category, group, sub_group, formula, interpretation, regime description, leading flag |
+| `build_macro_market(ind_meta)` | Load `macro_market_hist.csv`, extract time series per indicator |
+| `build_html(ind_meta, macro_data)` | Generate complete HTML with embedded JS/CSS |
+
+#### Notable Features
+
+- **3-level sidebar:** group → sub_group → indicator (CSS classes `.grp-section`, `.sgrp-section`)
+- **4-colour regime palette:** positive (green), negative (red), amber (gold), neutral (grey) — each maps a set of regime labels
+- **Forward regime display:** `fwd_regime` shown as a coloured badge alongside current regime
+- **Custom PNG snapshot:** Camera button composites chart title, Plotly chart image, legend entries, and regime colour key onto a single canvas
+- **Search filter:** Live search that hides/shows group and sub-group sections dynamically
+
+#### Output Files
+
+- `docs/indicator_explorer.html` — self-contained HTML (committed to git)
+- `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
 ---
 
@@ -683,7 +730,7 @@ Both pipelines read everything from `index_library.csv` at runtime:
 - `simple_dash = True/False` controls simple pipeline inclusion
 - `broad_asset_class` and `units` are read from CSV, not computed in code
 
-Similarly, FRED series definitions live in `macro_library_fred.csv`, OECD/WB/IMF definitions in their respective CSVs, and macro-market indicator definitions in `macro_indicator_library.csv`.
+Similarly, FRED series definitions live in `macro_library_fred.csv`, OECD/WB/IMF definitions in their respective CSVs, and macro-market indicator definitions in `macro_indicator_library.csv`. The indicator library CSV drives both `compute_macro_market.py` (metadata, grouping, naturally_leading flag) and `docs/build_html.py` (sidebar hierarchy, category, economic interpretation, regime descriptions).
 
 ### Pattern 6: Diff-Check CSV Commits
 
@@ -782,7 +829,13 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | IMF country code may have changed |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
 | UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
-| EU_R1 metadata/code mismatch | compute_macro_market.py | INDICATOR_META says `log(SLXX.L / IGLT.L)` but code reads FRED Germany 10Y yield |
+
+### Resolved / Removed
+
+| Issue | Resolution |
+|---|---|
+| EU_R1 metadata/code mismatch | Fixed during indicator groups review — CSV and code now both describe BTP-Bund spread |
+| USSLIND (LEI) stale data | FRED series stuck at Feb 2020 value — Philadelphia Fed permanently discontinued the Leading Economic Index in 2025. Indicator `US_LEI1` removed; USSLIND removed from `macro_library_fred.csv` |
 
 ### Tickers Confirmed Unavailable via yfinance
 
