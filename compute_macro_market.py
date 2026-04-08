@@ -119,167 +119,38 @@ ZSCORE_WINDOW      = 260    # 5-year rolling window (weeks)
 ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
-# INDICATOR METADATA  (id → region_block, category, formula_note)
-# Matches data/macro_indicator_library.csv
+# INDICATOR METADATA — loaded from data/macro_indicator_library.csv
 # ---------------------------------------------------------------------------
-INDICATOR_META = {
-    # US & Neighbours — Growth
-    "US_G1":     ("US & Neighbours", "Growth / cyclicals vs defensives",
-                  "log(XLY / XLP)"),
-    "US_G2":     ("US & Neighbours", "Growth / broader cyclicals vs defensives",
-                  "log((XLI+XLF) / (XLU+XLP))"),
-    "US_G2b":    ("US & Neighbours", "Growth / financials vs utilities",
-                  "log(XLF / XLU)"),
-    "US_G3":     ("US & Neighbours", "Size cycle",
-                  "log(IWM / IWB)"),
-    "US_G3b":    ("US & Neighbours", "Size cycle (S&P proxy)",
-                  "log(IWM / SPY)"),
-    "US_G4":     ("US & Neighbours", "Style / value vs growth",
-                  "log(IWD / IWF)"),
-    "US_G4b":    ("US & Neighbours", "Style / growth vs value (S&P 500)",
-                  "log(IVW / IVE)"),
-    # US & Neighbours — Rates & Credit
-    "US_I1":     ("US & Neighbours", "Yield-curve slope 10Y-3M",
-                  "T10Y3M (FRED direct)"),
-    "US_I2":     ("US & Neighbours", "HY credit spread",
-                  "BAMLH0A0HYM2 (US HY OAS, FRED)"),
-    "US_I3":     ("US & Neighbours", "Commodities vs bonds",
-                  "log(DBC / GOVT)"),
-    "US_I4":     ("US & Neighbours", "IG credit spread",
-                  "BAMLC0A0CM (US IG OAS, FRED)"),
-    "US_I5":     ("US & Neighbours", "HY-IG differential",
-                  "BAMLH0A0HYM2 - BAMLC0A0CM"),
-    "US_I6":     ("US & Neighbours", "Yield-curve slope 2s10s",
-                  "T10Y2Y (FRED direct)"),
-    "US_I6b":    ("US & Neighbours", "Yield-curve slope 2s10s (market)",
-                  "^TNX - DGS2 (yfinance 10Y level minus FRED 2Y level)"),
-    "US_I7":     ("US & Neighbours", "10Y breakeven inflation",
-                  "T10YIE (FRED direct)"),
-    "US_I8":     ("US & Neighbours", "Risk-on vs risk-off",
-                  "log(SPY / GOVT)"),
-    "US_I9":     ("US & Neighbours", "HY vs IG credit (ETF proxy)",
-                  "log(IHYU.L / SLXX.L)"),
-    "US_I10":    ("US & Neighbours", "HY vs treasuries (credit risk)",
-                  "log(IHYU.L / GOVT)"),
-    # US & Neighbours — Volatility
-    "US_R1":     ("US & Neighbours", "Vol term structure (equity)",
-                  "VIX3M - VIX (arithmetic spread)"),
-    "US_R2":     ("US & Neighbours", "Rates vs equity vol",
-                  "log(MOVE / VIX)"),
-    # US & Neighbours — Real rates & FX
-    "US_RR1":    ("US & Neighbours", "Real rates / valuation",
-                  "DFII10 (TIPS 10Y real yield, FRED direct)"),
-    "US_FX1":    ("US & Neighbours", "Dollar vs EM & commodities",
-                  "log(EEM / DX-Y.NYB)"),
-    "US_FX2":    ("US & Neighbours", "Copper vs gold",
-                  "log(HG=F / GC=F)"),
-    # US & Neighbours — Momentum
-    "M1":        ("US & Neighbours", "Momentum – US equities trend",
-                  "(S&P500 - 40wk SMA) / 40wk SMA"),
-    "M2":        ("US & Neighbours", "Momentum – multi-asset trend",
-                  "fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA"),
-    "M3":        ("US & Neighbours", "Momentum – dual momentum equity/bond",
-                  "max(SPY_12m, URTH_12m) - SHY_12m"),
-    "M4":        ("US & Neighbours", "Momentum – US HY vs Treasuries",
-                  "(HY_TR_index - 40wk SMA) / 40wk SMA"),
-    "M5":        ("US & Neighbours", "Momentum – vol-filtered equity",
-                  "log(VIX 13wk MA / VIX 52wk MA) — vol regime filter"),
-    # US & Neighbours — Leading / Macro
-    "US_LEI1":   ("US & Neighbours", "Growth / Leading indicators",
-                  "USSLIND 6M annualised % change"),
-    "US_JOBS1":  ("US & Neighbours", "Labour market / Leading",
-                  "IC4WSA YoY % change"),
-    "US_LAB1":   ("US & Neighbours", "Labour market composite",
-                  "avg_z[ inv(UNRATE), PAYEMS_YoY, inv(IC4WSA) ]"),
-    "US_GROWTH1":("US & Neighbours", "Real activity / Growth",
-                  "avg_z[ INDPRO_YoY, RSXFS_YoY ]"),
-    "US_HOUS1":  ("US & Neighbours", "Housing / Construction",
-                  "PERMIT 12M % change"),
-    "US_M2L1":   ("US & Neighbours", "Liquidity",
-                  "M2SL YoY % change"),
-    # US & Neighbours — Equity leadership & breadth
-    "US_G5":     ("US & Neighbours", "Growth / technology leadership",
-                  "log(QQQ / SPY)"),
-    "US_G6":     ("US & Neighbours", "Growth / market breadth",
-                  "log(RSP / SPY)"),
-    # US & Neighbours — Additional leading indicators
-    "US_ISM1":   ("US & Neighbours", "Leading / ISM Manufacturing New Orders",
-                  "NAPMOI level (monthly FRED, forward-filled)"),
-    "US_I11":    ("US & Neighbours", "Rates & Credit / mortgage affordability",
-                  "MORTGAGE30US - DGS10 (mortgage-Treasury spread)"),
-    "US_LAB2":   ("US & Neighbours", "Labour market / JOLTS tightness",
-                  "JTSJOL / UNEMPLOY (job openings per unemployed person)"),
-    # Europe & UK
-    "EU_G1":     ("Europe & UK", "Growth / cyclicals vs defensives (Europe)",
-                  "log((EXH4.DE+EXV1.DE+EXV3.DE) / (EXH9.DE+EXH3.DE))"),
-    "EU_G2":     ("Europe & UK", "UK domestic vs global",
-                  "log(FTMC / FTSE100)"),
-    "EU_G3":     ("Europe & UK", "Eurozone vs US leadership",
-                  "log(EuroStoxx50_USD / SPY_USD)"),
-    "EU_I1":     ("Europe & UK", "Euro credit vs govts",
-                  "ECB Euro IG yield - Euro AAA govt yield (BAMLHE00EHYIOAS fallback)"),
-    "EU_I2":     ("Europe & UK", "UK real-yield / inflation proxy",
-                  "log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio"),
-    "EU_I3":     ("Europe & UK", "UK–Germany gilt-bund spread",
-                  "IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)"),
-    "EU_R1":     ("Europe & UK", "UK credit conditions",
-                  "log(SLXX.L / IGLT.L)"),
-    "EU_FX1":    ("Europe & UK", "EUR vs European cyclicals",
-                  "composite_z(log(EURUSD), log(EXH4.DE/EXH9.DE))"),
-    "EU_I4":     ("Europe & UK", "Peripheral sovereign stress / BTP-Bund",
-                  "IRLTLT01ITM156N - IRLTLT01DEM156N (FRED)"),
-    "EU_G4":     ("Europe & UK", "Eurozone vs global equities",
-                  "log(EZU / URTH)"),
-    # Japan
-    "JP_G1":     ("Japan", "Japan vs global equities",
-                  "log(EWJ / URTH)"),
-    "JP_FX1":    ("Japan", "JPY carry trade signal",
-                  "log(USDJPY=X) 26-week momentum"),
-    # Asia (China-centred)
-    "AS_G1":     ("Asia (China-centred)", "China size / domestic cycle",
-                  "log(ASHR / FXI) — CSI 300 ETF / China Large-Cap ETF proxy"),
-    "AS_G2":     ("Asia (China-centred)", "China vs global DM",
-                  "log(000001.SS_USD / URTH_USD)"),
-    "AS_G3":     ("Asia (China-centred)", "India domestic growth breadth",
-                  "avg log-ratio: NiftyMid100/Nifty50 + NiftySmall100/Nifty50"),
-    "AS_I1":     ("Asia (China-centred)", "China rates vs US",
-                  "IRLTLT01CNM156N - DGS10 (FRED)"),
-    "AS_I2":     ("Asia (China-centred)", "India govts vs US Treasuries",
-                  "IRLTLT01INM156N - DGS10 (FRED)"),
-    "AS_FX1":    ("Asia (China-centred)", "CNY directional momentum",
-                  "log(CNY=X / 26wk SMA) — CNY 6-month momentum"),
-    "AS_FX2":    ("Asia (China-centred)", "INR directional momentum",
-                  "log(INR=X / 26wk SMA) — INR 6-month momentum"),
-    "AS_C1":     ("Asia (China-centred)", "China infrastructure proxy",
-                  "log(PIORECRUSDM / HG=F)"),
-    "AS_C2":     ("Asia (China-centred)", "China vs global commodities",
-                  "log(PIORECRUSDM / DBC)"),
-    "AS_G4":     ("Asia (China-centred)", "China vs broad EM divergence",
-                  "log(FXI / EEM)"),
-    # Global / Regional — CLI
-    "REG_CLI1":  ("Global / Regional", "Regional growth diff: US vs Eurozone",
-                  "USA_CLI - avg(DEU_CLI, FRA_CLI)  [EA19 not in OECD file]"),
-    "REG_CLI2":  ("Global / Regional", "Regional growth diff: US vs China",
-                  "USA_CLI - CHN_CLI"),
-    "REG_CLI3":  ("Global / Regional", "Europe block CLI state",
-                  "avg(DEU_CLI, FRA_CLI, GBR_CLI)"),
-    "REG_CLI4":  ("Global / Regional", "Asia CLI state",
-                  "avg(CHN_CLI, JPN_CLI, AUS_CLI)"),
-    "REG_CLI5":  ("Global / Regional", "Global growth breadth",
-                  "% of 9 countries where CLI>100 AND CLI>CLI_6M_ago"),
-    # Global / Regional — Multi-asset & commodity
-    "REG_RISK1": ("Global / Regional", "Global multi-asset risk appetite",
-                  "log(ACWI / GOVT)"),
-    "REG_EM1":   ("Global / Regional", "EM vs DM equity relative cycle",
-                  "log(EEM / URTH)"),
-    "REG_COMM1": ("Global / Regional", "Global commodity cycle momentum",
-                  "log(DBC / DBC.shift(52)) — DBC 12-month return"),
-    "REG_COMM2": ("Global / Regional", "Oil vs gold inflation regime",
-                  "log(CL=F / GC=F)"),
-}
+IND_LIB_CSV = os.path.join(os.path.dirname(__file__), "data", "macro_indicator_library.csv")
 
-# Ordered list of all 50 indicator IDs (defines output column order)
-ALL_INDICATOR_IDS = list(INDICATOR_META.keys())
+
+def _load_indicator_library():
+    """Load indicator metadata from macro_indicator_library.csv.
+
+    Returns:
+        ind_meta : dict  {id: (region_block, category, formula_note)}
+        all_ids  : list  ordered indicator IDs (CSV row order)
+        naturally_leading : frozenset  IDs flagged as naturally leading
+    """
+    lib = pd.read_csv(IND_LIB_CSV)
+    ind_meta = {}
+    all_ids = []
+    leading = set()
+    for _, row in lib.iterrows():
+        ind_id = str(row.get("id", "")).strip()
+        if not ind_id:
+            continue
+        region   = str(row.get("region_block", "")).strip()
+        category = str(row.get("category", "")).strip()
+        formula  = str(row.get("formula_using_library_names", "")).strip()
+        ind_meta[ind_id] = (region, category, formula)
+        all_ids.append(ind_id)
+        if str(row.get("naturally_leading", "")).strip().upper() == "TRUE":
+            leading.add(ind_id)
+    return ind_meta, all_ids, frozenset(leading)
+
+
+INDICATOR_META, ALL_INDICATOR_IDS, NATURALLY_LEADING = _load_indicator_library()
 
 
 # ===========================================================================
@@ -796,21 +667,10 @@ REGIME_RULES = {
 # ---------------------------------------------------------------------------
 # Forward regime system
 # ---------------------------------------------------------------------------
-# Indicators tagged here are NATURALLY LEADING — their current reading already
-# reflects conditions 1-3 months ahead.  Their fwd_regime is labelled "[leading]"
-# to distinguish them from the trajectory-based fwd_regime of lagging indicators.
-NATURALLY_LEADING = frozenset({
-    "US_ISM1",   # ISM New Orders: leads production ~6 weeks
-    "US_LAB2",   # JOLTS openings/unemployed: leads wages ~2 months
-    "US_HOUS1",  # Housing permits: leads construction ~3-6 months
-    "US_LEI1",   # Conference Board LEI: leads activity ~3-6 months
-    "REG_CLI1",  # OECD CLI diffs: designed to lead turning points
-    "REG_CLI2",
-    "REG_CLI3",
-    "REG_CLI4",
-    "REG_CLI5",
-    "JP_FX1",    # JPY carry momentum: leads risk-off by 2-4 weeks
-})
+# NATURALLY_LEADING is loaded from macro_indicator_library.csv at module init
+# (see _load_indicator_library above).  These indicators' current reading
+# already reflects conditions 1-3 months ahead; their fwd_regime is labelled
+# "[leading]" to distinguish from trajectory-based fwd_regime of lagging ones.
 
 # z-slope thresholds for forward trajectory classification
 _FWD_SLOPE_POS = +0.15   # weekly z-score change per week (improving if above)
