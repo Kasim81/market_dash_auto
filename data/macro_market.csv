@@ -22,7 +22,7 @@ EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-10,3.14,-0.5466,neutral,stable,yiel
 UK_R2,UK,Rates - Inflation,Breakeven - Proxy (return) - GBP,2026-04-03,0.158969,-0.6206,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
 UK_Cr1,UK,Credit,UK credit conditions,2026-04-03,-2.099686,1.2124,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
 EU_G4,Europe,Equity - Growth,EUR vs European cyclicals,2026-04-03,-0.456978,-1.738,EU-strain,deteriorating,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
-AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-10,-0.109496,0.0772,neutral,stable,CSI 500 / CSI 300
+AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-10,-0.08527,0.3008,neutral,stable,CSI 500 / CSI 300
 AS_CN_G2,Asia,China - Equity (Growth),China vs global DM,2026-04-03,0.860044,0.8604,neutral,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
 AS_IN_G1,Asia,India - Equity - Factor (Size),India domestic growth breadth,2026-04-03,3.071197,-0.3954,neutral,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
 AS_CN_R1,Asia,China - Rates,China rates vs US,,,,Insufficient Data,n/a,"China 10Y Govt Bond Yield (IRLTLT01CNM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
