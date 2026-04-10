@@ -1,69 +1,69 @@
 id,group,sub_group,category,last_date,raw,zscore,regime,fwd_regime,formula_note
-US_G1,US,Equity - Growth,Growth / cyclicals vs defensives,2026-04-03,0.278142,0.1886,neutral,stable,S&P 500 Consumer Discretionary / S&P 500 Consumer Staples
-US_G2,US,Equity - Growth,Growth / broader cyclicals vs defensives,2026-04-03,0.508874,0.9472,neutral,stable,(S&P 500 Industrials + S&P 500 Financials) / (S&P 500 Utilities + S&P 500 Consumer Staples)
-US_EQ_F3,US,Equity - Factor (Size),Size cycle (Russell),2026-04-03,-0.35908,-0.0607,neutral,stable,Russell 2000 / Russell 1000
-US_EQ_F1,US,Equity - Factor (Style),Style / value vs growth,2026-04-03,-0.690825,0.1953,mixed,stable,Russell 1000 Value / Russell 1000 Growth
-US_R1,US,Rates - Growth,Yield-curve slope,2026-04-03,0.64,1.6119,early-cycle,stable,US 10-Year Treasury Yield - US 3-Month Treasury Yield
-US_Cr2,US,Credit,HY credit spread,2026-04-03,3.13,-0.3743,normal,stable,yield(ICE BofA US High Yield Index) - US 10-Year Treasury Yield
-GL_CA_I1,Global,CrossAsset - Inflation,Commodities vs bonds,2026-04-03,0.248348,4.1158,reflation,improving,Invesco DB Commodity Index Fund / ICE BofA US Treasury Index
-US_V1,US,Volatility,Vol term structure (equity),2026-04-03,0.849998,-0.7545,normal,stable,CBOE VIX3M - 3-Month VIX - CBOE VIX Volatility Index  (or ratio VIX3M / VIX)
-US_V2,US,Volatility,Rates vs equity vol,2026-04-03,1.263063,-1.7051,calm,stable,MOVE Index - Bond Volatility / CBOE VIX Volatility Index
-FX_CMD2,FX & Commodities,CrossAsset - Growth,Dollar vs EM & commodities,2026-04-03,-0.569638,1.7067,weak-USD,stable,iShares MSCI Emerging Markets ETF / DXY Dollar Index and Invesco DB Commodity Index Fund / DXY Dollar Index
-FX_CMD1,FX & Commodities,CrossAsset - Growth,Copper vs gold,2026-04-03,-6.728807,-1.6828,recession-watch,stable,Copper / Gold
-M1,US,Mmtm - Equity,Momentum – US equities trend,2026-04-03,-0.008027,-1.7747,risk-off,deteriorating,Compare S&P 500 level to its N-month SMA (e.g. 10-month or 200-day)
-M2,US,Mmtm - CrossAsset,Momentum – multi-asset trend,2026-04-03,0.8,-0.018,risk-on,stable,"Apply same SMA filter separately to S&P 500, iShares MSCI World ETF, ICE BofA US Treasury Index, S&P 500 Equity Real Estate Investment Trusts, Invesco DB Commodity Index Fund"
-M3,US,Mmtm - CrossAsset,Momentum – dual momentum equity/bond,2026-04-03,0.291964,1.6284,equity-regime,improving,"Use 12-month total returns of S&P 500 and iShares MSCI World ETF vs cash (US 3-Month Treasury Yield as proxy), with bond sleeve via iShares Core Global Aggregate Bond UCITS ETF or ICE BofA US Treasury Index"
-M4,US,Mmtm - Credit,Momentum – US high yield vs Treasuries,2026-04-03,0.00986,-1.6608,carry,deteriorating,"log(ICE BofA US HY Total Return Index (BAMLHYH0A0HYM2TRIV) / its 40-week SMA (~200-day equivalent, on weekly data). Spread override: if HY OAS (BAMLH0A0HYM2) > 600 bps, indicator forced to -1 (stress) regardless of trend."
-M5,US,Mmtm - Volatility,Momentum – vol-filtered equity exposure,2026-04-03,0.119016,1.0378,defensive,improving,13-week SMA vs 52-week SMA of CBOE VIX Volatility Index (on weekly data; ~3-month vs 12-month). log(VIX_13w / VIX_52w): negative = vol trending below annual average = equity-friendly.
-EU_G3,Europe,Equity - Growth,Growth / cyclicals vs defensives (Europe),2026-04-03,0.601629,0.4671,neutral,stable,(STOXX Europe 600 Industrials + STOXX Europe 600 Banks + STOXX Europe 600 Technology) / (STOXX Europe 600 Utilities + STOXX Europe 600 Consumer Staples)
-UK_G1,UK,Equity - Growth,UK domestic vs global,2026-04-03,0.72936,-3.3633,global-preferred,stable,FTSE 250 / FTSE 100
-EU_G2,Europe,Equity - Growth,Eurozone vs US leadership,2026-04-03,-2.351535,0.1708,neutral,stable,Euro Stoxx 50 / S&P 500
-EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-10,3.14,-0.5466,neutral,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
-UK_R2,UK,Rates - Inflation,Breakeven - Proxy (return) - GBP,2026-04-03,0.158969,-0.6206,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
-UK_Cr1,UK,Credit,UK credit conditions,2026-04-03,-2.099686,1.2124,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
-EU_G4,Europe,Equity - Growth,EUR vs European cyclicals,2026-04-03,-0.456978,-1.738,EU-strain,deteriorating,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
-AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-10,-0.08527,0.3008,neutral,stable,CSI 500 / CSI 300
-AS_CN_G2,Asia,China - Equity (Growth),China vs global DM,2026-04-03,0.860044,0.8604,neutral,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
-AS_IN_G1,Asia,India - Equity - Factor (Size),India domestic growth breadth,2026-04-03,3.071197,-0.3954,neutral,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
+US_G1,US,Equity - Growth,Growth / cyclicals vs defensives,2026-04-10,0.300837,0.4023,neutral,stable,S&P 500 Consumer Discretionary / S&P 500 Consumer Staples
+US_G2,US,Equity - Growth,Growth / broader cyclicals vs defensives,2026-04-10,0.537362,1.2789,risk-on,stable,(S&P 500 Industrials + S&P 500 Financials) / (S&P 500 Utilities + S&P 500 Consumer Staples)
+US_EQ_F3,US,Equity - Factor (Size),Size cycle (Russell),2026-04-10,-0.35234,0.0634,neutral,stable,Russell 2000 / Russell 1000
+US_EQ_F1,US,Equity - Factor (Style),Style / value vs growth,2026-04-10,-0.690612,0.2168,mixed,stable,Russell 1000 Value / Russell 1000 Growth
+US_R1,US,Rates - Growth,Yield-curve slope,2026-04-10,0.61,1.5507,early-cycle,stable,US 10-Year Treasury Yield - US 3-Month Treasury Yield
+US_Cr2,US,Credit,HY credit spread,2026-04-10,2.94,-0.7135,complacent,stable,yield(ICE BofA US High Yield Index) - US 10-Year Treasury Yield
+GL_CA_I1,Global,CrossAsset - Inflation,Commodities vs bonds,2026-04-10,0.226545,3.5908,reflation,improving,Invesco DB Commodity Index Fund / ICE BofA US Treasury Index
+US_V1,US,Volatility,Vol term structure (equity),2026-04-10,2.32,0.2548,normal,stable,CBOE VIX3M - 3-Month VIX - CBOE VIX Volatility Index  (or ratio VIX3M / VIX)
+US_V2,US,Volatility,Rates vs equity vol,2026-04-10,1.334299,-1.4379,calm,stable,MOVE Index - Bond Volatility / CBOE VIX Volatility Index
+FX_CMD2,FX & Commodities,CrossAsset - Growth,Dollar vs EM & commodities,2026-04-10,-0.495372,2.087,weak-USD,stable,iShares MSCI Emerging Markets ETF / DXY Dollar Index and Invesco DB Commodity Index Fund / DXY Dollar Index
+FX_CMD1,FX & Commodities,CrossAsset - Growth,Copper vs gold,2026-04-10,-6.715504,-1.5856,recession-watch,stable,Copper / Gold
+M1,US,Mmtm - Equity,Momentum – US equities trend,2026-04-10,0.025772,-0.9978,risk-on,stable,Compare S&P 500 level to its N-month SMA (e.g. 10-month or 200-day)
+M2,US,Mmtm - CrossAsset,Momentum – multi-asset trend,2026-04-10,1.0,0.9062,risk-on,stable,"Apply same SMA filter separately to S&P 500, iShares MSCI World ETF, ICE BofA US Treasury Index, S&P 500 Equity Real Estate Investment Trusts, Invesco DB Commodity Index Fund"
+M3,US,Mmtm - CrossAsset,Momentum – dual momentum equity/bond,2026-04-10,0.264525,1.2769,equity-regime,improving,"Use 12-month total returns of S&P 500 and iShares MSCI World ETF vs cash (US 3-Month Treasury Yield as proxy), with bond sleeve via iShares Core Global Aggregate Bond UCITS ETF or ICE BofA US Treasury Index"
+M4,US,Mmtm - Credit,Momentum – US high yield vs Treasuries,2026-04-10,0.017701,-1.0868,carry,stable,"log(ICE BofA US HY Total Return Index (BAMLHYH0A0HYM2TRIV) / its 40-week SMA (~200-day equivalent, on weekly data). Spread override: if HY OAS (BAMLH0A0HYM2) > 600 bps, indicator forced to -1 (stress) regardless of trend."
+M5,US,Mmtm - Volatility,Momentum – vol-filtered equity exposure,2026-04-10,0.154778,1.2479,defensive,improving,13-week SMA vs 52-week SMA of CBOE VIX Volatility Index (on weekly data; ~3-month vs 12-month). log(VIX_13w / VIX_52w): negative = vol trending below annual average = equity-friendly.
+EU_G3,Europe,Equity - Growth,Growth / cyclicals vs defensives (Europe),2026-04-10,0.63428,0.7009,neutral,stable,(STOXX Europe 600 Industrials + STOXX Europe 600 Banks + STOXX Europe 600 Technology) / (STOXX Europe 600 Utilities + STOXX Europe 600 Consumer Staples)
+UK_G1,UK,Equity - Growth,UK domestic vs global,2026-04-10,0.742401,-2.9673,global-preferred,stable,FTSE 250 / FTSE 100
+EU_G2,Europe,Equity - Growth,Eurozone vs US leadership,2026-04-10,-2.335797,0.4447,neutral,stable,Euro Stoxx 50 / S&P 500
+EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-10,3.05,-0.686,neutral,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
+UK_R2,UK,Rates - Inflation,Breakeven - Proxy (return) - GBP,2026-04-10,0.149041,-0.8026,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
+UK_Cr1,UK,Credit,UK credit conditions,2026-04-10,-2.095041,1.4326,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
+EU_G4,Europe,Equity - Growth,EUR vs European cyclicals,2026-04-10,-0.115774,-1.1707,EU-strain,deteriorating,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
+AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-10,-0.082687,0.3246,neutral,stable,CSI 500 / CSI 300
+AS_CN_G2,Asia,China - Equity (Growth),China vs global DM,2026-04-10,0.864531,0.9161,neutral,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
+AS_IN_G1,Asia,India - Equity - Factor (Size),India domestic growth breadth,2026-04-10,3.052245,-0.5651,neutral,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
 AS_CN_R1,Asia,China - Rates,China rates vs US,,,,Insufficient Data,n/a,"China 10Y Govt Bond Yield (IRLTLT01CNM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
 AS_IN_R1,Asia,India - Rates,India rates vs US,,,,Insufficient Data,n/a,"India 10Y Govt Bond Yield (IRLTLT01INM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
-FX_CN1,FX & Commodities,China - FX Mmtm,CNY directional momentum,2026-04-03,-0.018661,-1.2075,CNY-weakening,stable,log(CNY=X / 26-week SMA of CNY=X). CNY=X = USD per CNY (higher = CNY stronger).
-FX_1,FX & Commodities,India - FX Mmtm,INR directional momentum,2026-04-03,0.02494,1.6407,INR-strengthening,stable,log(INR=X / 26-week SMA of INR=X). INR=X = USD per INR (higher = INR stronger).
-US_Cr1,US,Credit,IG Spread,2026-04-03,0.86,-0.5926,normal,stable,yield(ICE BofA US Corporate Index) - US 10-Year Treasury Yield
-US_Cr3,US,Credit,HY/IG Spread,2026-04-03,2.27,-0.2454,neutral,stable,yield(ICE BofA US High Yield Index) - yield(ICE BofA US Corporate Index)
-US_R2,US,Rates - Growth,Yield-curve slope,2026-04-03,0.51,1.0013,steep,stable,US 10-Year Treasury Yield - US 2-Year Treasury Yield
-US_R5,US,Rates,Real rates,2026-04-03,1.99,0.3351,neutral,stable,yield(ICE BofA US Inflation-Linked Treasury Index (TIPS))
-US_R4,US,Rates - Inflation,Inflation Breakeven,2026-04-03,2.36,0.7654,neutral,stable,US 10-Year Treasury Yield - yield(ICE BofA US Inflation-Linked Treasury Index (TIPS))
+FX_CN1,FX & Commodities,China - FX Mmtm,CNY directional momentum,2026-04-10,-0.022881,-1.4615,CNY-weakening,stable,log(CNY=X / 26-week SMA of CNY=X). CNY=X = USD per CNY (higher = CNY stronger).
+FX_1,FX & Commodities,India - FX Mmtm,INR directional momentum,2026-04-10,0.024214,1.5472,INR-strengthening,stable,log(INR=X / 26-week SMA of INR=X). INR=X = USD per INR (higher = INR stronger).
+US_Cr1,US,Credit,IG Spread,2026-04-10,0.83,-0.7376,normal,stable,yield(ICE BofA US Corporate Index) - US 10-Year Treasury Yield
+US_Cr3,US,Credit,HY/IG Spread,2026-04-10,2.11,-0.6798,neutral,stable,yield(ICE BofA US High Yield Index) - yield(ICE BofA US Corporate Index)
+US_R2,US,Rates - Growth,Yield-curve slope,2026-04-10,0.51,0.9887,normal,stable,US 10-Year Treasury Yield - US 2-Year Treasury Yield
+US_R5,US,Rates,Real rates,2026-04-10,1.96,0.1923,neutral,stable,yield(ICE BofA US Inflation-Linked Treasury Index (TIPS))
+US_R4,US,Rates - Inflation,Inflation Breakeven,2026-04-10,2.34,0.5176,neutral,stable,US 10-Year Treasury Yield - yield(ICE BofA US Inflation-Linked Treasury Index (TIPS))
 UK_R1,UK,Rates - Growth,GB10Y vs DM10Y,2026-02-06,1.625733,-0.8382,neutral,stable,UK 10-Year Gilt Yield - Germany 10-Year Bund Yield
 FX_CMD5,FX & Commodities,Growth (China infra),Growth / China infrastructure,2026-02-06,100.965,-0.9509,neutral,stable,Iron Ore (World Bank Price Index) / Copper
-FX_CMD4,FX & Commodities,Growth (China broad),Growth / China vs global commodities,2026-04-03,-6.728807,-1.6828,global-commodity-lead,stable,Iron Ore (World Bank Price Index) / Invesco DB Commodity Index Fund
-US_JOBS1,US,Macro,Labour market / Leading,2026-04-03,-6.734007,-1.5581,overheating,stable,Initial Jobless Claims 4-Week Avg (IC4WSA) – YoY % change and z-score
-US_JOBS3,US,Macro,Labour market composite,2026-04-03,-0.246967,0.6775,mid-cycle,stable,"Equal-weighted composite of z-scores of inverted unemployment rate (UNRATE), payroll growth (PAYEMS YoY) and inverted IC4WSA"
-US_G6,US,Macro,Real activity / Growth,2026-04-03,0.363218,0.6031,neutral,stable,Composite of z-scores of 12-month change in Industrial Production (INDPRO) and Retail Sales ex-Autos (RSXFS)
-US_HOUS1,US,Macro,Housing / Construction,2026-04-03,-2.531646,0.2347,neutral,stable [leading],Building Permits (PERMIT) – 12-month % change and z-score
-US_M2,US,Macro,Liquidity,2026-04-03,4.095428,0.8852,neutral,stable,M2 Money Supply (M2SL) – YoY % change and z-score
-GL_CLI1,Global,CLI,Regional growth diff (US v EU),2026-04-03,-0.29445,-0.547,neutral,stable [leading],"USA_CLI minus avg(DEU_CLI, FRA_CLI). EA19 composite not available in OECD pull; DEU+FRA equal-weight average used as Eurozone proxy."
-GL_CLI2,Global,CLI,Regional growth diff (US v CHN),2026-04-03,2.4018,2.1967,US-leads-China,stable [leading],USA_CLI minus CHN_CLI.
-EU_CLI1,Europe,CLI,Europe block CLI state,2026-04-03,101.1372,1.9948,EU-above-trend,stable [leading],"Equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI (ITA excluded — not consistently available in OECD pull)."
-AS_CLI1,Asia,CLI,Asia (China-centred) CLI state,2026-04-03,99.854667,-0.8207,near-trend,stable [leading],"Equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI."
-GL_CLI5,Global,CLI,Global growth breadth,2026-04-03,0.777778,1.8472,broad-expansion,stable [leading],"Fraction of 9 countries (USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN) where CLI > 100 AND CLI > CLI_26W_ago (above trend and improving simultaneously). Raw value = 0.0 to 1.0."
-US_G3,US,Equity - Growth,Growth / banks vs utilities,2026-04-03,2.508033,0.2239,neutral,deteriorating,S&P 500 Banks (^SP500-4010) / S&P 500 Utilities
-US_EQ_F4,US,Equity - Factor (Size),Size cycle (S&P),2026-04-03,-0.959294,-0.0959,neutral,stable,Russell 2000 / S&P 500
-US_EQ_F2,US,Equity - Factor (Style),Style / value vs growth (S&P 500),2026-04-03,0.613954,-0.6761,mixed,stable,S&P 500 Value ETF (IVE) / S&P 500 Growth ETF (IVW)
-US_R3,US,Rates - Growth,Yield-curve slope (market return),2026-04-03,0.473,0.9354,normal,stable,US 10-Year Treasury Yield (^TNX yfinance) minus US 2-Year Treasury Yield (DGS2 FRED)
-US_CA_G1,US,CrossAsset - Growth,Risk-on vs risk-off,2026-04-03,3.355639,1.0598,risk-on,stable,S&P 500 ETF (SPY) / ICE BofA US Treasury Index (GOVT)
-US_Cr4,US,Credit,HY vs treasuries (credit risk),2026-04-03,-3.186622,1.2111,credit-appetite,stable,iShares USD High Yield Corp Bond UCITS ETF (IHYU.L) / ICE BofA US Treasury Index (GOVT)
-US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-03,-0.114324,0.7953,neutral,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
-US_G4,US,Equity - Growth,Growth / market breadth,2026-04-03,-1.222745,-0.7715,neutral,stable,S&P 500 Equal-Weight ETF (RSP) / SPDR S&P 500 ETF (SPY)
+FX_CMD4,FX & Commodities,Growth (China broad),Growth / China vs global commodities,2026-04-10,-6.715504,-1.5856,global-commodity-lead,stable,Iron Ore (World Bank Price Index) / Invesco DB Commodity Index Fund
+US_JOBS1,US,Macro,Labour market / Leading,2026-04-10,-6.053812,-1.4189,overheating,stable,Initial Jobless Claims 4-Week Avg (IC4WSA) – YoY % change and z-score
+US_JOBS3,US,Macro,Labour market composite,2026-04-10,-0.287562,0.6203,mid-cycle,stable,"Equal-weighted composite of z-scores of inverted unemployment rate (UNRATE), payroll growth (PAYEMS YoY) and inverted IC4WSA"
+US_G6,US,Macro,Real activity / Growth,2026-04-10,0.350381,0.5785,neutral,stable,Composite of z-scores of 12-month change in Industrial Production (INDPRO) and Retail Sales ex-Autos (RSXFS)
+US_HOUS1,US,Macro,Housing / Construction,2026-04-10,-2.531646,0.2204,neutral,stable [leading],Building Permits (PERMIT) – 12-month % change and z-score
+US_M2,US,Macro,Liquidity,2026-04-10,4.095428,0.8752,neutral,stable,M2 Money Supply (M2SL) – YoY % change and z-score
+GL_CLI1,Global,CLI,Regional growth diff (US v EU),2026-04-10,-0.29445,-0.5608,neutral,stable [leading],"USA_CLI minus avg(DEU_CLI, FRA_CLI). EA19 composite not available in OECD pull; DEU+FRA equal-weight average used as Eurozone proxy."
+GL_CLI2,Global,CLI,Regional growth diff (US v CHN),2026-04-10,2.4018,2.1486,US-leads-China,stable [leading],USA_CLI minus CHN_CLI.
+EU_CLI1,Europe,CLI,Europe block CLI state,2026-04-10,101.1372,1.9647,EU-above-trend,stable [leading],"Equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI (ITA excluded — not consistently available in OECD pull)."
+AS_CLI1,Asia,CLI,Asia (China-centred) CLI state,2026-04-10,99.854667,-0.8169,near-trend,stable [leading],"Equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI."
+GL_CLI5,Global,CLI,Global growth breadth,2026-04-10,0.777778,1.8139,broad-expansion,stable [leading],"Fraction of 9 countries (USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN) where CLI > 100 AND CLI > CLI_26W_ago (above trend and improving simultaneously). Raw value = 0.0 to 1.0."
+US_G3,US,Equity - Growth,Growth / banks vs utilities,2026-04-10,2.551101,0.5896,neutral,stable,S&P 500 Banks (^SP500-4010) / S&P 500 Utilities
+US_EQ_F4,US,Equity - Factor (Size),Size cycle (S&P),2026-04-10,-0.953769,0.0058,neutral,stable,Russell 2000 / S&P 500
+US_EQ_F2,US,Equity - Factor (Style),Style / value vs growth (S&P 500),2026-04-10,0.591941,-0.8956,mixed,stable,S&P 500 Value ETF (IVE) / S&P 500 Growth ETF (IVW)
+US_R3,US,Rates - Growth,Yield-curve slope (market return),2026-04-10,0.503,0.9833,normal,stable,US 10-Year Treasury Yield (^TNX yfinance) minus US 2-Year Treasury Yield (DGS2 FRED)
+US_CA_G1,US,CrossAsset - Growth,Risk-on vs risk-off,2026-04-10,3.39126,1.3102,risk-on,stable,S&P 500 ETF (SPY) / ICE BofA US Treasury Index (GOVT)
+US_Cr4,US,Credit,HY vs treasuries (credit risk),2026-04-10,-3.178211,1.3916,credit-appetite,stable,iShares USD High Yield Corp Bond UCITS ETF (IHYU.L) / ICE BofA US Treasury Index (GOVT)
+US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-10,-0.10819,1.0163,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
+US_G4,US,Equity - Growth,Growth / market breadth,2026-04-10,-1.233289,-0.952,neutral,stable,S&P 500 Equal-Weight ETF (RSP) / SPDR S&P 500 ETF (SPY)
 US_ISM1,US,Macro - Survey,Leading / ISM Manufacturing New Orders,,,,Insufficient Data,n/a,ISM Manufacturing New Orders Index (NAPMOI via FRED monthly)
-US_R6,US,Rates,Rates / mortgage affordability,2026-04-10,2.13,-1.1043,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
+US_R6,US,Rates,Rates / mortgage affordability,2026-04-10,2.08,-1.2608,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
 US_JOBS2,US,Macro,Labour market / JOLTS tightness,2026-03-06,0.908995,-1.1113,labour-slack,stable [leading],JOLTS Job Openings (JTSJOL FRED) / Unemployed Persons (UNEMPLOY FRED)
 EU_R1,Europe,Rates - Growth,BTP-Bund,2026-02-06,0.581333,-1.9976,compressed,stable,Italy 10-Year Govt Bond Yield (IRLTLT01ITM156N FRED) minus Germany 10-Year Bund Yield (IRLTLT01DEM156N FRED)
-EU_G1,Europe,Equity - Growth,Eurozone vs global equities,2026-04-03,-1.057588,0.4178,neutral,stable,iShares MSCI Eurozone ETF (EZU) / iShares MSCI World ETF (URTH)
-JP_G1,Japan,Equity - Growth,Japan vs global equities,2026-04-03,-0.75641,0.8238,neutral,stable,iShares MSCI Japan ETF (EWJ) / iShares MSCI World ETF (URTH)
-FX_2,FX & Commodities,Japan - FX Mmtm,JPY carry trade signal,2026-04-03,0.075488,0.9383,carry-on,stable [leading],USD/JPY (USDJPY=X) 26-week log momentum
+EU_G1,Europe,Equity - Growth,Eurozone vs global equities,2026-04-10,-1.043411,0.7059,neutral,stable,iShares MSCI Eurozone ETF (EZU) / iShares MSCI World ETF (URTH)
+JP_G1,Japan,Equity - Growth,Japan vs global equities,2026-04-10,-0.758521,0.7836,neutral,stable,iShares MSCI Japan ETF (EWJ) / iShares MSCI World ETF (URTH)
+FX_2,FX & Commodities,Japan - FX Mmtm,JPY carry trade signal,2026-04-10,0.039977,0.2958,neutral,stable [leading],USD/JPY (USDJPY=X) 26-week log momentum
 AS_CN_G1,Asia,China - Equity (Growth),China vs broad EM divergence,,,,Insufficient Data,n/a,iShares China Large-Cap ETF (FXI) / iShares MSCI EM ETF (EEM) in USD
-GL_G2,Global,CrossAsset - Growth,Global multi-asset risk appetite,2026-04-03,1.807371,1.3082,risk-on,stable,iShares MSCI ACWI ETF (ACWI) / ICE BofA US Treasury Index (GOVT)
-GL_G1,Global,CrossAsset - Growth,EM vs DM equity relative cycle,2026-04-03,-1.166635,1.2493,em-outperform,stable,iShares MSCI Emerging Markets ETF (EEM) / iShares MSCI World ETF (URTH) in USD
-FX_CMD6,FX & Commodities,Growth Mmtm,Global commodity cycle momentum,2026-04-03,0.369574,3.7807,commodity-bull,improving,Invesco DB Commodity Index Tracking Fund (DBC) 52-week log return
-FX_CMD3,FX & Commodities,Inflation,Oil vs gold inflation regime,2026-04-03,-3.730562,-0.2608,neutral,improving,WTI Crude Oil (CL=F) / Gold (GC=F) log-ratio
+GL_G2,Global,CrossAsset - Growth,Global multi-asset risk appetite,2026-04-10,1.846516,1.6069,risk-on,stable,iShares MSCI ACWI ETF (ACWI) / ICE BofA US Treasury Index (GOVT)
+GL_G1,Global,CrossAsset - Growth,EM vs DM equity relative cycle,2026-04-10,-1.139355,1.7697,em-outperform,stable,iShares MSCI Emerging Markets ETF (EEM) / iShares MSCI World ETF (URTH) in USD
+FX_CMD6,FX & Commodities,Growth Mmtm,Global commodity cycle momentum,2026-04-10,0.349164,3.4228,commodity-bull,improving,Invesco DB Commodity Index Tracking Fund (DBC) 52-week log return
+FX_CMD3,FX & Commodities,Inflation,Oil vs gold inflation regime,2026-04-10,-3.870916,-0.6208,neutral,improving,WTI Crude Oil (CL=F) / Gold (GC=F) log-ratio
