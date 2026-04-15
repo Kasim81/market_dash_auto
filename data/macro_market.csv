@@ -18,11 +18,11 @@ M5,US,Mmtm - Volatility,Momentum – vol-filtered equity exposure,2026-04-10,0.1
 EU_G3,Europe,Equity - Growth,Growth / cyclicals vs defensives (Europe),2026-04-10,0.636476,0.7173,neutral,stable,(STOXX Europe 600 Industrials + STOXX Europe 600 Banks + STOXX Europe 600 Technology) / (STOXX Europe 600 Utilities + STOXX Europe 600 Consumer Staples)
 UK_G1,UK,Equity - Growth,UK domestic vs global,2026-04-10,0.74597,-2.8958,global-preferred,stable,FTSE 250 / FTSE 100
 EU_G2,Europe,Equity - Growth,Eurozone vs US leadership,2026-04-10,-2.332553,0.498,neutral,stable,Euro Stoxx 50 / S&P 500
-EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-10,2.98,-0.7942,neutral,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
+EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-17,2.98,-0.784,neutral,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
 UK_R2,UK,Rates - Inflation,Breakeven - Proxy (return) - GBP,2026-04-10,0.146673,-0.8483,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
 UK_Cr1,UK,Credit,UK credit conditions,2026-04-10,-2.096218,1.3767,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
 EU_G4,Europe,Equity - Growth,EUR vs European cyclicals,2026-04-10,-0.127759,-1.1903,EU-strain,deteriorating,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
-AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-17,-0.075459,0.4006,neutral,stable,CSI 500 / CSI 300
+AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-17,-0.087184,0.2917,neutral,stable,CSI 500 / CSI 300
 AS_CN_G2,Asia,China - Equity (Growth),China vs global DM,2026-04-10,0.877589,1.0811,China-outperform,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
 AS_IN_G1,Asia,India - Equity - Factor (Size),India domestic growth breadth,2026-04-10,3.052139,-0.5661,neutral,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
 AS_CN_R1,Asia,China - Rates,China rates vs US,,,,Insufficient Data,n/a,"China 10Y Govt Bond Yield (IRLTLT01CNM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
@@ -56,7 +56,7 @@ US_Cr4,US,Credit,HY vs treasuries (credit risk),2026-04-10,-3.178089,1.3943,cred
 US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-10,-0.106087,1.0909,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
 US_G4,US,Equity - Growth,Growth / market breadth,2026-04-10,-1.239873,-1.0698,narrow-concentrated,stable,S&P 500 Equal-Weight ETF (RSP) / SPDR S&P 500 ETF (SPY)
 US_ISM1,US,Macro - Survey,Leading / ISM Manufacturing New Orders,,,,Insufficient Data,n/a,ISM Manufacturing New Orders Index (NAPMOI via FRED monthly)
-US_R6,US,Rates,Rates / mortgage affordability,2026-04-10,2.06,-1.3232,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
+US_R6,US,Rates,Rates / mortgage affordability,2026-04-17,2.07,-1.2744,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
 US_JOBS2,US,Macro,Labour market / JOLTS tightness,2026-03-06,0.908995,-1.1113,labour-slack,stable [leading],JOLTS Job Openings (JTSJOL FRED) / Unemployed Persons (UNEMPLOY FRED)
 EU_R1,Europe,Rates - Growth,BTP-Bund,2026-02-06,0.581333,-1.9976,compressed,stable,Italy 10-Year Govt Bond Yield (IRLTLT01ITM156N FRED) minus Germany 10-Year Bund Yield (IRLTLT01DEM156N FRED)
 EU_G1,Europe,Equity - Growth,Eurozone vs global equities,2026-04-10,-1.039757,0.7761,neutral,stable,iShares MSCI Eurozone ETF (EZU) / iShares MSCI World ETF (URTH)
