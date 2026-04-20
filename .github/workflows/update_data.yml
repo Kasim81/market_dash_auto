@@ -1,12 +1,9 @@
 name: Update Market Data
 on:
   schedule:
-    # Run every day at 6 AM UTC (adjust as needed)
-    - cron: '0 6 * * *'
-    # Run every Monday at 06:30 UTC (before London market open)
-    # - cron: '30 6 * * 1'
-    # Also run every Thursday at 06:30 UTC for mid-week refresh
-    # - cron: '30 6 * * 4'
+    # Run every day at 02:30 UTC (03:30 BST / 02:30 GMT) so the job finishes
+    # before the 05:30 UK local Task Scheduler automations that consume the data.
+    - cron: '30 2 * * *'
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 permissions:
   contents: write
