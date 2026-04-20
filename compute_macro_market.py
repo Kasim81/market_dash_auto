@@ -1663,16 +1663,62 @@ def compute_all_indicators(cp, mu, mi, supp) -> dict:
 # OUTPUT BUILDERS
 # ===========================================================================
 
+def _zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w):
+    """
+    Classify the z-score trajectory into one of:
+        intensifying : |z| rising vs both 1w and 4w ago, near the 13w peak
+        fading       : |z| falling from recent peak (|z_now| < 0.9 * |z_4w|)
+        reversing    : sign flipped vs 4w ago from a non-trivial prior level
+        stable       : none of the above
+
+    All inputs may be NaN; return "" when the current z-score is missing.
+    """
+    if z_now is None or pd.isna(z_now):
+        return ""
+    az = abs(z_now)
+    a4 = abs(z_4w) if (z_4w is not None and pd.notna(z_4w)) else None
+    a1 = abs(z_1w) if (z_1w is not None and pd.notna(z_1w)) else None
+    # reversing: sign flip from a meaningful prior reading
+    if (z_4w is not None and pd.notna(z_4w) and abs(z_4w) > 0.5
+            and ((z_now >= 0) != (z_4w >= 0))):
+        return "reversing"
+    # fading: clear drop from 4w ago
+    if a4 is not None and az < 0.9 * a4:
+        return "fading"
+    # intensifying: rising vs both 1w and 4w and close to 13w peak
+    if (a1 is not None and a4 is not None
+            and az > a1 and az > a4
+            and z_peak_abs_13w is not None and pd.notna(z_peak_abs_13w)
+            and az >= 0.95 * z_peak_abs_13w):
+        return "intensifying"
+    return "stable"
+
+
+def _sample_z(df: pd.DataFrame, offset_weeks: int):
+    """
+    Return zscore value from `offset_weeks` weekly rows before the last
+    non-null raw row, or NaN if unavailable. Data is weekly Friday frequency.
+    """
+    non_null = df.dropna(subset=["raw"])
+    if non_null.empty or len(non_null) <= offset_weeks:
+        return float("nan")
+    return non_null["zscore"].iloc[-1 - offset_weeks]
+
+
 def build_snapshot_df(results: dict) -> pd.DataFrame:
     """
     Build the snapshot DataFrame (one row per indicator, latest values only).
 
     Columns:
         id, group, sub_group, category, last_date,
-        raw, zscore, regime, fwd_regime, formula_note
+        raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago,
+        zscore_peak_abs_13w, zscore_trend,
+        regime, fwd_regime, formula_note
 
     Rows are in ALL_INDICATOR_IDS order (same as macro_indicator_library.csv).
     fwd_regime encodes the 1-2 month forward trajectory based on z-score slope.
+    zscore_trend classifies recent z-score trajectory: intensifying, stable,
+    fading, or reversing. See _zscore_trend_classification for definitions.
     """
     rows = []
     _empty_cols = ["raw", "zscore", "regime", "fwd_regime"]
@@ -1682,30 +1728,48 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
         df = results.get(ind_id, pd.DataFrame(columns=_empty_cols))
         if df.empty or df["raw"].dropna().empty:
             rows.append({
-                "id":           ind_id,
-                "group":        group,
-                "sub_group":    sub_group,
-                "category":     category,
-                "last_date":    "",
-                "raw":          "",
-                "zscore":       "",
-                "regime":       "Insufficient Data",
-                "fwd_regime":   "n/a",
-                "formula_note": formula_note,
+                "id":                  ind_id,
+                "group":               group,
+                "sub_group":           sub_group,
+                "category":            category,
+                "last_date":           "",
+                "raw":                 "",
+                "zscore":              "",
+                "zscore_1w_ago":       "",
+                "zscore_4w_ago":       "",
+                "zscore_13w_ago":      "",
+                "zscore_peak_abs_13w": "",
+                "zscore_trend":        "",
+                "regime":              "Insufficient Data",
+                "fwd_regime":          "n/a",
+                "formula_note":        formula_note,
             })
         else:
-            last = df.dropna(subset=["raw"]).iloc[-1]
+            non_null = df.dropna(subset=["raw"])
+            last = non_null.iloc[-1]
+            z_now  = last["zscore"] if pd.notna(last["zscore"]) else float("nan")
+            z_1w   = _sample_z(df, 1)
+            z_4w   = _sample_z(df, 4)
+            z_13w  = _sample_z(df, 13)
+            last_13 = non_null["zscore"].iloc[-13:].dropna()
+            z_peak_abs_13w = last_13.abs().max() if not last_13.empty else float("nan")
+            trend = _zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w)
             rows.append({
-                "id":           ind_id,
-                "group":        group,
-                "sub_group":    sub_group,
-                "category":     category,
-                "last_date":    str(last.name.date()),
-                "raw":          round(last["raw"],    6),
-                "zscore":       round(last["zscore"], 4) if pd.notna(last["zscore"]) else "",
-                "regime":       last["regime"],
-                "fwd_regime":   last.get("fwd_regime", "n/a"),
-                "formula_note": formula_note,
+                "id":                  ind_id,
+                "group":               group,
+                "sub_group":           sub_group,
+                "category":            category,
+                "last_date":           str(last.name.date()),
+                "raw":                 round(last["raw"], 6),
+                "zscore":              round(z_now, 4) if pd.notna(z_now) else "",
+                "zscore_1w_ago":       round(z_1w, 4)  if pd.notna(z_1w)  else "",
+                "zscore_4w_ago":       round(z_4w, 4)  if pd.notna(z_4w)  else "",
+                "zscore_13w_ago":      round(z_13w, 4) if pd.notna(z_13w) else "",
+                "zscore_peak_abs_13w": round(z_peak_abs_13w, 4) if pd.notna(z_peak_abs_13w) else "",
+                "zscore_trend":        trend,
+                "regime":              last["regime"],
+                "fwd_regime":          last.get("fwd_regime", "n/a"),
+                "formula_note":        formula_note,
             })
     return pd.DataFrame(rows)
 
