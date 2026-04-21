@@ -82,9 +82,11 @@ SNAPSHOT_CSV = "data/macro_market.csv"
 HIST_CSV     = "data/macro_market_hist.csv"
 
 # Input CSV paths (produced by earlier phases)
-COMP_HIST_CSV      = "data/market_data_comp_hist.csv"
-MACRO_US_HIST_CSV  = "data/macro_us_hist.csv"
+COMP_HIST_CSV       = "data/market_data_comp_hist.csv"
+MACRO_US_HIST_CSV   = "data/macro_us_hist.csv"
 MACRO_INTL_HIST_CSV = "data/macro_intl_hist.csv"
+MACRO_DBN_HIST_CSV  = "data/macro_dbnomics_hist.csv"
+MACRO_FMP_HIST_CSV  = "data/macro_fmp_hist.csv"
 
 # FRED API settings — mirrors fetch_macro_us_fred.py
 FRED_BASE_URL      = "https://api.stlouisfed.org/fred/series/observations"
@@ -671,6 +673,52 @@ REGIME_RULES = {
     "GL_G1":   lambda r, z: _r(r, z,  1, -1, "em-outperform",      "dm-outperform"),
     "FX_CMD6": lambda r, z: _r(r, z,  1, -1, "commodity-bull",     "commodity-bear"),
     "FX_CMD3": lambda r, z: _r(r, z,  1, -1, "growth-inflation",   "deflation-risk"),
+    # Phase D — Business Survey indicators
+    "US_PMI1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "US_PMI2": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "US_SVC1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "EU_PMI1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "EU_PMI2": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "EU_BLS1": lambda r, z: _r(r, z,  1, -1, "credit-easing",     "credit-tightening"),
+    "EU_ESI1": lambda r, z: _r(r, z,  1, -1, "above-avg-sentiment","below-avg-sentiment"),
+    "DE_ZEW1": lambda r, z: _r(r, z,  1, -1, "optimistic",         "pessimistic"),
+    "DE_IFO1": lambda r, z: _r(r, z,  1, -1, "above-avg-climate",  "below-avg-climate"),
+    "UK_PMI1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "JP_TK1":  lambda r, z: _r(r, z,  1, -1, "optimistic",         "pessimistic"),
+    "JP_PMI1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 52
+        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
+    ),
+    "CN_PMI1": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 50.5
+        else ("contraction" if not np.isnan(r) and r < 49.5 else "neutral")
+    ),
+    "CN_PMI2": lambda r, z: (
+        "expansion"   if not np.isnan(r) and r > 51
+        else ("contraction" if not np.isnan(r) and r < 49 else "neutral")
+    ),
+    "GL_PMI1": lambda r, z: (
+        "global-expansion" if not np.isnan(r) and r > 51
+        else ("global-contraction" if not np.isnan(r) and r < 49 else "neutral")
+    ),
 }
 
 
@@ -816,13 +864,53 @@ def load_macro_intl_hist() -> pd.DataFrame:
     return df
 
 
+def load_macro_dbnomics_hist() -> pd.DataFrame:
+    """
+    Load macro_dbnomics_hist.csv (Phase D Tier 2 — ISM, ECB BLS, Eurostat, Tankan).
+    Returns DataFrame with DatetimeIndex; empty DataFrame if file absent.
+    """
+    if not os.path.exists(MACRO_DBN_HIST_CSV):
+        print(f"  [load] {MACRO_DBN_HIST_CSV} not found — DB.nomics indicators will be empty")
+        return pd.DataFrame()
+    df = pd.read_csv(MACRO_DBN_HIST_CSV, skiprows=8, index_col="Date", low_memory=False)
+    df.index = pd.to_datetime(df.index, errors="coerce")
+    df = df[df.index.notna()].sort_index()
+    if "row_id" in df.columns:
+        df = df.drop(columns=["row_id"])
+    df = df.apply(pd.to_numeric, errors="coerce")
+    df = df[df.index >= HIST_START]
+    print(f"  [load] macro_dbnomics_hist: {df.shape[0]} rows × {df.shape[1]} cols")
+    return df
+
+
+def load_macro_fmp_hist() -> pd.DataFrame:
+    """
+    Load macro_fmp_hist.csv (Phase D Tier 3 — S&P Global PMIs, ZEW, IFO, NBS, Caixin).
+    Returns DataFrame with DatetimeIndex; empty DataFrame if file absent.
+    """
+    if not os.path.exists(MACRO_FMP_HIST_CSV):
+        print(f"  [load] {MACRO_FMP_HIST_CSV} not found — FMP indicators will be empty")
+        return pd.DataFrame()
+    df = pd.read_csv(MACRO_FMP_HIST_CSV, skiprows=8, index_col="Date", low_memory=False)
+    df.index = pd.to_datetime(df.index, errors="coerce")
+    df = df[df.index.notna()].sort_index()
+    if "row_id" in df.columns:
+        df = df.drop(columns=["row_id"])
+    df = df.apply(pd.to_numeric, errors="coerce")
+    df = df[df.index >= HIST_START]
+    print(f"  [load] macro_fmp_hist: {df.shape[0]} rows × {df.shape[1]} cols")
+    return df
+
+
 # ===========================================================================
 # INDICATOR CALCULATORS — US & NEIGHBOURS  (27 indicators)
 #
-# Each function signature: _calc_XXX(cp, mu, mi, supp) → pd.Series (raw values)
-#   cp   = load_comp_hist()       wide DataFrame of market prices
-#   mu   = load_macro_us_hist()   wide DataFrame of US FRED series
-#   mi   = load_macro_intl_hist() wide DataFrame of international CLI series
+# Each function signature: _calc_XXX(cp, mu, mi, supp, dbn, fmp) → pd.Series
+#   cp   = load_comp_hist()            wide DataFrame of market prices
+#   mu   = load_macro_us_hist()        wide DataFrame of US FRED series
+#   mi   = load_macro_intl_hist()      wide DataFrame of international CLI series
+#   dbn  = load_macro_dbnomics_hist()  wide DataFrame of DB.nomics survey series
+#   fmp  = load_macro_fmp_hist()       wide DataFrame of FMP calendar survey series
 #   supp = fetch_supplemental_fred() dict of extra FRED Series
 # Only the args actually needed are used; **_ absorbs the rest.
 # ===========================================================================
@@ -1671,11 +1759,126 @@ _ASIA_REGIONAL_CALCULATORS = {
     "FX_CMD3": _calc_FX_CMD3,
 }
 
+# ===========================================================================
+# INDICATOR CALCULATORS — PHASE D SURVEYS  (15 indicators)
+#
+# These use data from DB.nomics (dbn) and FMP calendar (fmp) history CSVs.
+# Column names match the col field in macro_library_dbnomics.csv and
+# macro_library_fmp.csv respectively.
+# ===========================================================================
+
+# --- US PMI (from DB.nomics ISM) ---
+
+def _calc_US_PMI1(dbn, **_):
+    """ISM Manufacturing PMI composite — raw level, 156w z-score."""
+    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI"))
+
+def _calc_US_PMI2(dbn, **_):
+    """ISM Manufacturing New Orders momentum proxy (raw New Orders level)."""
+    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
+
+def _calc_US_SVC1(dbn, **_):
+    """ISM Services PMI composite — raw level, 156w z-score."""
+    return _to_weekly_friday(_get_col(dbn, "ISM_SVC_PMI"))
+
+# --- Eurozone surveys (T2 DB.nomics + T3 FMP) ---
+
+def _calc_EU_PMI1(fmp, **_):
+    """S&P Global Eurozone Manufacturing PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "EZ_MFG_PMI"))
+
+def _calc_EU_PMI2(fmp, **_):
+    """S&P Global Eurozone Services PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "EZ_SVC_PMI"))
+
+def _calc_EU_BLS1(dbn, **_):
+    """ECB BLS credit standards for enterprises (net % tightening, inverted).
+    Inverted so that positive z-score = easing (growth-positive)."""
+    raw = _get_col(dbn, "ECB_BLS_NFC")
+    return _to_weekly_friday(-raw)
+
+def _calc_EU_ESI1(dbn, **_):
+    """EC Economic Sentiment Indicator (EA) — raw level, 156w z-score."""
+    return _to_weekly_friday(_get_col(dbn, "EU_ESI"))
+
+# --- Germany surveys (T3 FMP) ---
+
+def _calc_DE_ZEW1(fmp, **_):
+    """ZEW Economic Sentiment — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "DE_ZEW"))
+
+def _calc_DE_IFO1(fmp, **_):
+    """IFO Business Climate — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "DE_IFO"))
+
+# --- UK survey (T3 FMP) ---
+
+def _calc_UK_PMI1(fmp, **_):
+    """S&P Global UK Manufacturing PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "UK_MFG_PMI"))
+
+# --- Japan (T2 DB.nomics Tankan + T3 FMP) ---
+
+def _calc_JP_TK1(dbn, **_):
+    """BoJ Tankan Large Manufacturers DI — raw level from DB.nomics."""
+    return _to_weekly_friday(_get_col(dbn, "JP_TANKAN_MFG"))
+
+def _calc_JP_PMI1(fmp, **_):
+    """Jibun Bank Japan Manufacturing PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "JP_MFG_PMI"))
+
+# --- China surveys (T3 FMP) ---
+
+def _calc_CN_PMI1(fmp, **_):
+    """NBS China Manufacturing PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "CN_NBS_PMI"))
+
+def _calc_CN_PMI2(fmp, **_):
+    """Caixin China Manufacturing PMI — raw level from FMP calendar."""
+    return _to_weekly_friday(_get_col(fmp, "CN_CAIXIN_PMI"))
+
+# --- Global composite ---
+
+def _calc_GL_PMI1(dbn, fmp, **_):
+    """Equal-weight global manufacturing PMI proxy.
+    Average of US ISM Mfg + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs.
+    Single most important global growth regime signal."""
+    components = [
+        _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI")),
+        _to_weekly_friday(_get_col(fmp, "EZ_MFG_PMI")),
+        _to_weekly_friday(_get_col(fmp, "UK_MFG_PMI")),
+        _to_weekly_friday(_get_col(fmp, "JP_MFG_PMI")),
+        _to_weekly_friday(_get_col(fmp, "CN_NBS_PMI")),
+    ]
+    combined = pd.concat(components, axis=1)
+    return combined.mean(axis=1, skipna=True)
+
+
+_PHASE_D_CALCULATORS = {
+    "US_PMI1":  _calc_US_PMI1,
+    "US_PMI2":  _calc_US_PMI2,
+    "US_SVC1":  _calc_US_SVC1,
+    "EU_PMI1":  _calc_EU_PMI1,
+    "EU_PMI2":  _calc_EU_PMI2,
+    "EU_BLS1":  _calc_EU_BLS1,
+    "EU_ESI1":  _calc_EU_ESI1,
+    "DE_ZEW1":  _calc_DE_ZEW1,
+    "DE_IFO1":  _calc_DE_IFO1,
+    "UK_PMI1":  _calc_UK_PMI1,
+    "JP_TK1":   _calc_JP_TK1,
+    "JP_PMI1":  _calc_JP_PMI1,
+    "CN_PMI1":  _calc_CN_PMI1,
+    "CN_PMI2":  _calc_CN_PMI2,
+    "GL_PMI1":  _calc_GL_PMI1,
+}
+
+
 # Master dispatcher — union of all regional dicts
 _ALL_CALCULATORS = {
     **_US_CALCULATORS,
     **_EU_CALCULATORS,
     **_ASIA_REGIONAL_CALCULATORS,
+    **_PHASE_D_CALCULATORS,
 }
 
 
@@ -1683,7 +1886,7 @@ _ALL_CALCULATORS = {
 # MAIN COMPUTATION ENGINE
 # ===========================================================================
 
-def compute_all_indicators(cp, mu, mi, supp) -> dict:
+def compute_all_indicators(cp, mu, mi, supp, dbn=None, fmp=None) -> dict:
     """
     Run every indicator calculator and return a dict:
         { ind_id: pd.DataFrame(columns=['raw','zscore','regime']) }
@@ -1695,6 +1898,8 @@ def compute_all_indicators(cp, mu, mi, supp) -> dict:
         mu   : macro_us DataFrame    (weekly FRED US series)
         mi   : macro_intl DataFrame  (weekly CLI + international series)
         supp : dict of supplemental Series from FRED / ECB / yfinance
+        dbn  : macro_dbnomics_hist DataFrame (Phase D Tier 2, optional)
+        fmp  : macro_fmp_hist DataFrame (Phase D Tier 3, optional)
 
     Returns:
         dict mapping indicator id → DataFrame with columns [raw, zscore, regime]
@@ -1706,7 +1911,9 @@ def compute_all_indicators(cp, mu, mi, supp) -> dict:
             print(f"  [compute] WARNING: no calculator for {ind_id} — skipping")
             continue
         try:
-            raw_series = calc_fn(cp=cp, mu=mu, mi=mi, supp=supp)
+            raw_series = calc_fn(cp=cp, mu=mu, mi=mi, supp=supp,
+                                    dbn=dbn if dbn is not None else pd.DataFrame(),
+                                    fmp=fmp if fmp is not None else pd.DataFrame())
             df = make_result(raw_series, ind_id)
             results[ind_id] = df
             last_date = df.index[-1].date() if not df.empty else "n/a"
@@ -1973,6 +2180,8 @@ def run_phase_e():
     cp = load_comp_hist()
     mu = load_macro_us_hist()
     mi = load_macro_intl_hist()
+    dbn = load_macro_dbnomics_hist()
+    fmp = load_macro_fmp_hist()
 
     # ------------------------------------------------------------------
     # 2. Fetch supplemental data
@@ -1990,7 +2199,7 @@ def run_phase_e():
     # 3. Compute all indicators
     # ------------------------------------------------------------------
     print("  Computing indicators …")
-    results = compute_all_indicators(cp, mu, mi, supp)
+    results = compute_all_indicators(cp, mu, mi, supp, dbn=dbn, fmp=fmp)
 
     # ------------------------------------------------------------------
     # 4. Build output DataFrames
