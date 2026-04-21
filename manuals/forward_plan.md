@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-04-08
+> Last updated: 2026-04-21
 > Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md, indicator_groups_review_UPDATED.xlsx
 
 ---
@@ -46,6 +46,23 @@
 - Cleaned up GitHub Actions workflow to remove stale git-add references
 - Consolidated sort-order dicts and FX maps into `library_utils.py` (done prior to refactoring)
 - Resolved all 12 items from `METADATA_REDUNDANCY_REVIEW.md`
+
+### Z-Score Trend Classification in Snapshot (completed 2026-04-20)
+
+| Change | Detail |
+|---|---|
+| Snapshot columns added | `macro_market` / `data/macro_market.csv` now include `zscore_1w_ago`, `zscore_4w_ago`, `zscore_13w_ago`, `zscore_peak_abs_13w`, and `zscore_trend` |
+| Trend labels | `intensifying` (\|z\| rising vs 1w and 4w ago and within 5% of the 13-week peak), `fading` (\|z_now\| < 0.9 × \|z_4w\|), `reversing` (sign flip vs 4w ago from a prior \|z\| > 0.5), `stable` (none of the above) |
+| Implementation | `_zscore_trend_classification()` and `_sample_z()` helpers in `compute_macro_market.py`; `build_snapshot_df()` extended accordingly |
+| Consumer impact | `macro_market_hist` schema is unchanged, so `build_html.py` (which reads the history CSV) required no update; anything reading the snapshot CSV/tab must accept the new columns |
+
+### GitHub Actions Schedule + Indicator Explorer Build (completed 2026-04-20)
+
+| Change | Detail |
+|---|---|
+| Schedule shift | Daily cron moved from `0 6 * * *` (06:00 UTC) to `17 3 * * *` (03:17 UTC) to escape GitHub's top-of-hour congestion while still finishing before the 06:00 UK local automations |
+| Explorer rebuild step | Workflow now runs `cd docs && python build_html.py` after `fetch_data.py`; commits `docs/indicator_explorer.html` and `docs/indicator_explorer_mkt.js` alongside the CSVs |
+| Commit message | Changed from `Update market data - ...` to `Update market data + explorer - ...` |
 
 ### Indicator Groups Review & CSV-Driven Migration (completed 2026-04-08)
 
