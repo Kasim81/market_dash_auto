@@ -37,10 +37,11 @@ MIN_YEARS = 3  # minimum acceptable history depth
 # ---------------------------------------------------------------------------
 
 ISM_SERIES = {
-    "ISM Mfg PMI":          "ISM/pmi/pm",
-    "ISM Mfg New Orders":   "ISM/new-orders/pm",
-    "ISM Svc PMI":          "ISM/nm-pmi/pm",
-    "ISM Svc Business Act": "ISM/nm-business/pm",
+    "ISM Mfg PMI":          ["ISM/pmi/pm"],
+    "ISM Mfg New Orders":   ["ISM/new-orders/pm", "ISM/mno/pm", "ISM/noi/pm"],
+    "ISM Svc PMI":          ["ISM/nm-pmi/pm"],
+    "ISM Svc Business Act": ["ISM/nm-business/pm", "ISM/nm-business-activity/pm",
+                              "ISM/nm-ba/pm"],
 }
 
 # ---------------------------------------------------------------------------
@@ -294,11 +295,25 @@ def main():
     # Part 1: ISM (known)
     # -----------------------------------------------------------------------
     print("=" * 70)
-    print("PART 1 — ISM Manufacturing & Services (4 known series)")
+    print("PART 1 — ISM Manufacturing & Services (4 series)")
     print("=" * 70)
-    for label, sid in ISM_SERIES.items():
-        print(f"\n  Fetching {sid} ...")
-        doc = fetch_series(sid)
+
+    # First, list all ISM datasets for diagnostics
+    print("\n  Listing ISM datasets on DB.nomics...")
+    ism_datasets = list_datasets("ISM")
+    if ism_datasets:
+        print(f"  Found {len(ism_datasets)} ISM datasets:")
+        for ds in ism_datasets:
+            code = ds.get("code", "?")
+            name = (ds.get("name") or ds.get("description") or "")[:70]
+            n = ds.get("nb_series", "?")
+            print(f"    {code}: {name} ({n} series)")
+    else:
+        print("  WARNING: ISM provider not found or has no datasets on DB.nomics")
+
+    for label, candidates in ISM_SERIES.items():
+        print(f"\n  Trying candidates for: {label}")
+        doc, sid = try_candidates(label, candidates)
         if doc:
             info = analyse_series(doc)
             info["series_id"] = sid
@@ -307,13 +322,46 @@ def main():
             resolved[label] = sid
             save_sample(sid, doc, label)
             status = "STALE" if info["stale"] else "OK"
-            print(f"  {status}: {info['n_obs']} obs, {info['first']} → {info['last']} "
+            print(f"  {status}: resolved as {sid}")
+            print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
                   f"({info['years']}y), last value={info['last_value']}, "
                   f"{info['days_ago']}d ago")
         else:
-            results.append({"name": label, "series_id": sid, "ok": False,
-                            "reason": "not found", "group": "ISM"})
-            print(f"  FAIL: series not found")
+            # Explore ISM datasets by keyword
+            print(f"  No candidate hit.  Searching ISM datasets by keyword...")
+            kw_map = {
+                "ISM Mfg New Orders":   ["new", "order"],
+                "ISM Svc Business Act": ["business", "activity"],
+            }
+            kws = kw_map.get(label, label.lower().split())
+            found = False
+            for ds in ism_datasets:
+                ds_code = ds.get("code", "")
+                matches = explore_and_match("ISM", ds_code, kws, limit=50)
+                if matches:
+                    print(f"  Found {len(matches)} matches in ISM/{ds_code}.  Top 3:")
+                    for m in matches[:3]:
+                        code = m.get("series_code", "?")
+                        name = (m.get("series_name") or "")[:80]
+                        print(f"    {code}: {name}")
+                    best = matches[0]
+                    best_sid = f"ISM/{ds_code}/{best['series_code']}"
+                    doc2 = fetch_series(best_sid)
+                    if doc2:
+                        info = analyse_series(doc2)
+                        info["series_id"] = best_sid
+                        info["group"] = "ISM"
+                        results.append(info)
+                        resolved[label] = best_sid
+                        save_sample(best_sid, doc2, label)
+                        status = "STALE" if info["stale"] else "OK"
+                        print(f"  {status}: {info['n_obs']} obs, {info['first']} → {info['last']}")
+                    found = True
+                    break
+            if not found:
+                results.append({"name": label, "series_id": candidates[0], "ok": False,
+                                "reason": "not on DB.nomics", "group": "ISM"})
+                print(f"  FAIL: ISM series not found on DB.nomics")
 
     # -----------------------------------------------------------------------
     # Part 2: ECB Bank Lending Survey
@@ -524,7 +572,9 @@ def main():
         else:
             status = "STALE" if r["stale"] else ("SHALLOW" if r.get("shallow") else "OK")
             rng = f"{r['first']} → {r['last']}"
-            print(f"  {label:<35} {sid:<45} {status:<8} {r['n_obs']:>5} {rng:<25} {r.get('days_ago',''):>5}")
+            days = r.get('days_ago')
+            days_str = str(days) if days is not None else ""
+            print(f"  {label:<35} {sid:<45} {status:<8} {r['n_obs']:>5} {rng:<25} {days_str:>5}")
 
     # Resolved series mapping (for building macro_library_dbnomics.csv)
     print(f"\n  Resolved series IDs ({len(resolved)}):")
