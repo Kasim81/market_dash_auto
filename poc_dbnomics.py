@@ -59,18 +59,22 @@ MIN_YEARS = 3  # minimum acceptable history depth
 # ---------------------------------------------------------------------------
 
 ECB_BLS_CANDIDATES = {
+    # Candidates derived from confirmed Austria pattern Q.AT.ALL.{factor}.E.{size}.B3.ST.S.FNET
+    # substituting AT → U2 (Euro Area, changing composition).
+    # Dimension 4 (factor): Z=aggregate/all factors, BC=bank competition,
+    #   CP=capital position, BSC=balance-sheet constraints, CS=credit standards summary
     "ECB BLS — Credit Std Enterprises": [
-        # Most likely: Q.U2.ALL.Z.B3.Z.Z.ST.S.BWFNET
-        #   Q=Quarterly, U2=EA changing composition, ALL=all banks
-        #   B3=loans to enterprises, ST=standards, BWFNET=balanced weighted net %
-        "ECB/BLS/Q.U2.ALL.Z.B3.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.B.Z.Z.ST.S.BWFNET",
-        # Fallback: search
+        "ECB/BLS/Q.U2.ALL.Z.E.LE.B3.ST.S.FNET",      # aggregate factor, large enterprise
+        "ECB/BLS/Q.U2.ALL.Z.E.Z.B3.ST.S.FNET",       # aggregate factor, all sizes
+        "ECB/BLS/Q.U2.ALL.Z.E.SME.B3.ST.S.FNET",     # aggregate factor, SME
+        "ECB/BLS/Q.U2.ALL.BC.E.LE.B3.ST.S.FNET",     # bank competition factor
+        "ECB/BLS/Q.U2.ALL.BC.E.Z.B3.ST.S.FNET",
     ],
     "ECB BLS — Credit Std Households": [
-        "ECB/BLS/Q.U2.ALL.Z.B5.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.B6.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.H.Z.Z.ST.S.BWFNET",
+        "ECB/BLS/Q.U2.ALL.Z.H.H.B3.ST.S.FNET",       # aggregate factor, housing loans
+        "ECB/BLS/Q.U2.ALL.Z.H.C.B3.ST.S.FNET",       # aggregate factor, consumer credit
+        "ECB/BLS/Q.U2.ALL.BC.H.H.B3.ST.S.FNET",      # bank competition factor, housing
+        "ECB/BLS/Q.U2.ALL.BC.H.C.B3.ST.S.FNET",      # bank competition factor, consumer
     ],
 }
 
@@ -135,6 +139,18 @@ def search_dataset(provider: str, dataset: str, limit: int = 200) -> list:
         return data.get("series", {}).get("docs", [])
     except Exception:
         return []
+
+
+def fetch_dataset_metadata(provider: str, dataset: str) -> dict:
+    """Fetch dataset metadata showing available dimensions and codes."""
+    url = f"{BASE}/dataset/{provider}/{dataset}"
+    try:
+        r = requests.get(url, timeout=30)
+        if r.status_code != 200:
+            return {}
+        return r.json().get("dataset", {})
+    except Exception:
+        return {}
 
 
 def list_datasets(provider: str) -> list:
@@ -297,15 +313,31 @@ def main():
             print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
                   f"({info['years']}y), last={info['last_value']}, {info['days_ago']}d ago")
         else:
-            print(f"  No candidate hit.  Exploring ECB/BLS dataset by keyword (U2 filter)...")
+            print(f"  No candidate hit.  Fetching ECB/BLS dimension metadata...")
+            meta = fetch_dataset_metadata("ECB", "BLS")
+            if meta:
+                dims_order = meta.get("dimensions_codes_order", [])
+                dims_labels = meta.get("dimensions_values_labels", {})
+                print(f"  Dataset has {len(dims_order)} dimensions: {dims_order}")
+                for dim_name in dims_order[:5]:
+                    vals = dims_labels.get(dim_name, {})
+                    if isinstance(vals, dict):
+                        sample = list(vals.items())[:5]
+                    elif isinstance(vals, list):
+                        sample = vals[:5]
+                    else:
+                        sample = []
+                    print(f"    {dim_name}: {sample}")
+            print(f"\n  Now exploring ECB/BLS dataset by keyword (U2 filter, limit=500)...")
             kw_map = {
                 "Credit Std Enterprises": ["standards", "enterprise"],
                 "Credit Std Households":  ["standards", "household"],
             }
             short = label.split("—")[-1].strip()
             kws = kw_map.get(short, short.lower().split())
-            # Filter: must be Euro Area (U2) and factor=ST (standards)
-            matches = explore_and_match("ECB", "BLS", kws, limit=2000,
+            # Filter: must be Euro Area (U2) and factor=ST (standards).
+            # NB: ECB/BLS has ~20k series; limit>500 may return HTTP 400.
+            matches = explore_and_match("ECB", "BLS", kws, limit=500,
                                         required_substrings=["Q.U2.", ".ST."])
             if matches:
                 print(f"  Found {len(matches)} keyword matches.  Top 5:")
@@ -360,7 +392,7 @@ def main():
             for ds in ("teibs010", "teibs020", "ei_bssi_m_r2"):
                 kw_map = {
                     "EC Economic Sentiment (EA)":  ["sentiment"],
-                    "EC Industry Confidence (EA)":  ["industry", "confidence"],
+                    "EC Industry Confidence (EA)":  ["industrial", "confidence"],
                     "EC Services Confidence (EA)":  ["services", "confidence"],
                 }
                 kws = kw_map.get(label, label.lower().split())
