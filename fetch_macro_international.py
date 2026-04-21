@@ -125,19 +125,22 @@ COUNTRY_META = {
 }
 
 # IMF DataMapper country codes → our OECD-aligned codes
-# IMF uses 3-letter ISO codes for countries; XM for Euro Area
+# IMF uses 3-letter ISO codes for countries, and its own aggregate codes:
+#   EURO = Euro Area (not the SDMX standard "XM")
+#   EUQ  = Europe (broader, includes non-euro countries)
+#   EU   = European Union
 IMF_CODE_MAP = {
-    "AUS": "AUS",
-    "CAN": "CAN",
-    "CHE": "CHE",
-    "CHN": "CHN",
-    "DEU": "DEU",
-    "XM":  "EA19",   # IMF uses "XM" for Euro Area (not 3-letter)
-    "FRA": "FRA",
-    "GBR": "GBR",
-    "ITA": "ITA",
-    "JPN": "JPN",
-    "USA": "USA",
+    "AUS":  "AUS",
+    "CAN":  "CAN",
+    "CHE":  "CHE",
+    "CHN":  "CHN",
+    "DEU":  "DEU",
+    "EURO": "EA19",   # IMF DataMapper uses "EURO" for Euro Area
+    "FRA":  "FRA",
+    "GBR":  "GBR",
+    "ITA":  "ITA",
+    "JPN":  "JPN",
+    "USA":  "USA",
 }
 
 # World Bank country codes → our codes
@@ -570,7 +573,7 @@ def _parse_worldbank(data: list, label: str = "") -> dict:
 def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
     """
     Parse IMF DataMapper response.
-    IMF uses 3-letter ISO codes for countries and "XM" for Euro Area.
+    IMF uses 3-letter ISO codes for countries and "EURO" for Euro Area.
 
     Returns:
         {our_country_code: [(year_str, float_value), ...]} sorted ascending.
