@@ -4,3 +4,6 @@ numpy
 requests
 google-auth
 google-api-python-client
+# dev-only: used by manuals/build_docx.py, manuals/md_to_docx.py, archive/generate_review_excel.py
+python-docx
+openpyxl

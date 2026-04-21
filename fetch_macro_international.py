@@ -21,7 +21,8 @@ Fetches macro indicators for 11 major economies from three free public APIs:
 
 Countries: AUS, CAN, CHE, CHN, DEU, EA19, FRA, GBR, ITA, JPN, USA
   Note: CHN and EA19 have partial coverage (absent from OECD LFS unemployment).
-  Note: EA19 = Eurozone; World Bank equivalent code is EMU.
+  Note: EA19 = Eurozone. Equivalent codes on other sources:
+        World Bank → EMU; IMF DataMapper → EURO.
 
 Outputs:
   data/macro_intl.csv          — snapshot (latest + prior + change per country×indicator)
@@ -125,19 +126,21 @@ COUNTRY_META = {
 }
 
 # IMF DataMapper country codes → our OECD-aligned codes
-# IMF uses 3-letter ISO codes for countries; XM for Euro Area
+# IMF uses 3-letter ISO codes for countries; "EURO" for Euro Area (entity code
+# visible at https://www.imf.org/external/datamapper/profile/EURO). The legacy
+# "XM" code returns no data from the v1 DataMapper API.
 IMF_CODE_MAP = {
-    "AUS": "AUS",
-    "CAN": "CAN",
-    "CHE": "CHE",
-    "CHN": "CHN",
-    "DEU": "DEU",
-    "XM":  "EA19",   # IMF uses "XM" for Euro Area (not 3-letter)
-    "FRA": "FRA",
-    "GBR": "GBR",
-    "ITA": "ITA",
-    "JPN": "JPN",
-    "USA": "USA",
+    "AUS":  "AUS",
+    "CAN":  "CAN",
+    "CHE":  "CHE",
+    "CHN":  "CHN",
+    "DEU":  "DEU",
+    "EURO": "EA19",   # IMF DataMapper uses "EURO" for Euro Area
+    "FRA":  "FRA",
+    "GBR":  "GBR",
+    "ITA":  "ITA",
+    "JPN":  "JPN",
+    "USA":  "USA",
 }
 
 # World Bank country codes → our codes
@@ -570,7 +573,7 @@ def _parse_worldbank(data: list, label: str = "") -> dict:
 def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
     """
     Parse IMF DataMapper response.
-    IMF uses 3-letter ISO codes for countries and "XM" for Euro Area.
+    IMF uses 3-letter ISO codes for countries and "EURO" for Euro Area.
 
     Returns:
         {our_country_code: [(year_str, float_value), ...]} sorted ascending.

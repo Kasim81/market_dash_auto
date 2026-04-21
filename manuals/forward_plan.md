@@ -1,7 +1,7 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-04-20
-> Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md, indicator_groups_review_UPDATED.xlsx
+> Last updated: 2026-04-21
+> Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md, archive/indicator_groups_review_UPDATED.xlsx
 
 ---
 
@@ -47,6 +47,23 @@
 - Consolidated sort-order dicts and FX maps into `library_utils.py` (done prior to refactoring)
 - Resolved all 12 items from `METADATA_REDUNDANCY_REVIEW.md`
 
+### Z-Score Trend Classification in Snapshot (completed 2026-04-20)
+
+| Change | Detail |
+|---|---|
+| Snapshot columns added | `macro_market` / `data/macro_market.csv` now include `zscore_1w_ago`, `zscore_4w_ago`, `zscore_13w_ago`, `zscore_peak_abs_13w`, and `zscore_trend` |
+| Trend labels | `intensifying` (\|z\| rising vs 1w and 4w ago and within 5% of the 13-week peak), `fading` (\|z_now\| < 0.9 × \|z_4w\|), `reversing` (sign flip vs 4w ago from a prior \|z\| > 0.5), `stable` (none of the above) |
+| Implementation | `_zscore_trend_classification()` and `_sample_z()` helpers in `compute_macro_market.py`; `build_snapshot_df()` extended accordingly |
+| Consumer impact | `macro_market_hist` schema is unchanged, so `build_html.py` (which reads the history CSV) required no update; anything reading the snapshot CSV/tab must accept the new columns |
+
+### GitHub Actions Schedule + Indicator Explorer Build (completed 2026-04-20)
+
+| Change | Detail |
+|---|---|
+| Schedule shift | Daily cron moved from `0 6 * * *` (06:00 UTC) to `17 3 * * *` (03:17 UTC) to escape GitHub's top-of-hour congestion while still finishing before the 06:00 UK local automations |
+| Explorer rebuild step | Workflow now runs `cd docs && python build_html.py` after `fetch_data.py`; commits `docs/indicator_explorer.html` and `docs/indicator_explorer_mkt.js` alongside the CSVs |
+| Commit message | Changed from `Update market data - ...` to `Update market data + explorer - ...` |
+
 ### Indicator Groups Review & CSV-Driven Migration (completed 2026-04-08)
 
 | Change | Detail |
@@ -88,12 +105,10 @@
 
 ### Priority 1: Currently Broken Data Sources
 
-These are returning no data and need investigation:
-
-| Issue | Module | Suggested Action |
+| Issue | Module | Status / Action |
 |---|---|---|
-| OECD DF_FINMARK (short-term interest rates) returning zero data for all 11 countries | fetch_macro_international.py | Investigate correct SDMX query key for the new `sdmx.oecd.org` API. The dataflow ID may have changed during the July 2024 migration. Test with a direct browser query first. |
-| IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | Investigate correct IMF DataMapper country code for Eurozone. Try `EUR`, `EMU`, `EU` as alternatives to `XM`. |
+| OECD `DF_FINMARK` (short-term interest rates) returning zero data for all 11 countries | fetch_macro_international.py | **Fixed 2026-04-21.** The SDMX `MEASURE` code for the 3-month interbank rate on `DSD_STES@DF_FINMARK` is `IR3TIB`, not `IRST`. Key template in `macro_library_oecd.csv` updated to `{countries}.M.IR3TIB.PA.....`. First daily run will confirm. |
+| IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | **Fixed 2026-04-21.** IMF DataMapper v1 API uses entity code `EURO` for the Euro Area (see `imf.org/external/datamapper/profile/EURO`); the legacy `XM` code is no longer served. `IMF_CODE_MAP` updated. |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural limitation — OECD doesn't publish CLI for these codes. Consider using DEU+FRA average as Eurozone proxy (already done in `compute_macro_market.py`). Document as known gap. |
 | UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED access restriction or temporary issue. Monitor across runs. If persistent, check if series ID has changed. |
 
@@ -105,14 +120,16 @@ These are returning no data and need investigation:
 
 ## 3. Metadata & Label Corrections
 
-These are minor fixes to `index_library.csv` metadata that don't affect pipeline logic but improve data quality:
+Status of the label items previously flagged in `METADATA_REDUNDANCY_REVIEW.md` against the current `data/index_library.csv` (verified 2026-04-21):
 
-| Ticker | Current Value | Correct Value | Field |
+| Ticker | Proposed Fix | Current Library State | Action |
 |---|---|---|---|
-| `^IRX` | name: "US 2Y Treasury Yield" | "US 3-Month T-Bill Yield" | `name` |
-| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE | region: "North America" | "US" | `region` |
-| `IWF` | region: "North America" | "US" | `region` |
-| `^VIX` | region: "Global" | "US" | `region` |
+| `^IRX` | name → "US 3-Month T-Bill Yield" | `name = "US 3-Month Treasury Yield"` | **Already fixed.** Wording is a close equivalent — no change needed. |
+| `^VIX` | region → "US" | `region = ""` (empty) | Low priority. Setting `"US"` requires adding a `"US"` key to `REGION_ORDER` in `library_utils.py` first (currently not defined); otherwise it falls back to sort order 50. See note below. |
+| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE | region → "US" | `region = "North America"` | Same blocker as `^VIX`. Would affect ~12 rows plus any other US-specific ETF the audit surfaces. |
+| `IWF` | region → "US" | `region = "North America"` | Same blocker. |
+
+**Blocker for "US" region rollout.** `library_utils.REGION_ORDER` has `"Global", "North America", "UK", "Europe", ...` but no `"US"`. Setting region to `"US"` without updating the sort map causes the affected rows to drop to the end of their group. The clean fix is: (a) add `"US": 2` (tied with / preceding `"North America"`) to `REGION_ORDER`, (b) audit `index_library.csv` for all clearly US-only instruments (not just the 12 above), (c) migrate them together in one commit. Deferred until the audit is done.
 
 ### Excluded Indicators (Do Not Implement Without Instruction)
 

@@ -3,9 +3,11 @@
 
 > **Purpose:** Educational reference for all 68 composite indicators computed by `compute_macro_market.py`. Each entry covers the formula, data sources, economic rationale drawn from academic and practitioner research, and regime interpretation calibrated for a **6–9 month investment horizon**.
 >
-> **Output columns per indicator:** `raw` (the computed series), `zscore` (156-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
+> **History columns per indicator (`macro_market_hist`):** `raw` (the computed series), `zscore` (156-week rolling z-score), `regime` (current state label), `fwd_regime` (1–2 month trajectory based on 8-week z-score slope).
 >
-> Last updated: 2026-04-08
+> **Snapshot columns per indicator (`macro_market`):** the four history columns above at the latest date, plus `zscore_1w_ago`, `zscore_4w_ago`, `zscore_13w_ago`, `zscore_peak_abs_13w`, and `zscore_trend` — a classification of the recent z-score trajectory as `intensifying` (magnitude rising vs 1w and 4w ago, and near the trailing 13-week peak), `fading` (`|z_now| < 0.9 × |z_4w|`), `reversing` (sign flip vs 4w ago from a prior `|z| > 0.5`), or `stable`.
+>
+> Last updated: 2026-04-21
 
 ---
 

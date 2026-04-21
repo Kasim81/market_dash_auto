@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-04-08
+> Last updated: 2026-04-21
 
 ---
 
@@ -29,7 +29,7 @@ Market Dashboard Auto is a fully automated daily data pipeline that fetches mark
 - **Google Sheets** (primary human-readable output, spreadsheet ID: `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`)
 - **CSV files** in `data/` (machine-readable; committed to git by GitHub Actions)
 
-The pipeline runs automatically every day at **06:00 UTC** via GitHub Actions (`python fetch_data.py`).
+The pipeline runs automatically every day at **03:17 UTC** via GitHub Actions (`python fetch_data.py` followed by `python docs/build_html.py`). The odd minute avoids GitHub's scheduled-run congestion at the top of the hour; the 03:17 slot ensures the run finishes before the 06:00 UK local automations that consume the data.
 
 ### Scope at a Glance
 
@@ -47,7 +47,7 @@ The pipeline runs automatically every day at **06:00 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-7 Python modules totalling ~8,388 lines, plus 7 CSV configuration libraries and 7 CSV output files.
+7 Python modules totalling ~8,452 lines, plus 7 CSV configuration libraries and 7 CSV output files.
 
 ---
 
@@ -59,7 +59,7 @@ market_dash_auto/
 ├── fetch_hist.py                  # Historical time series — macro_us + comp (1,062 lines)
 ├── fetch_macro_us_fred.py         # US FRED macro indicators + surveys (510 lines)
 ├── fetch_macro_international.py   # International macro — OECD / World Bank / IMF (1,426 lines)
-├── compute_macro_market.py        # 68 macro-market composite indicators (1,903 lines)
+├── compute_macro_market.py        # 68 macro-market composite indicators (1,967 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key (271 lines)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -90,10 +90,20 @@ market_dash_auto/
 ├── manuals/                       # Documentation
 │   ├── technical_manual.md            # This file
 │   ├── forward_plan.md                # Forward-looking development roadmap
-│   └── indicator_manual.md            # Indicator-by-indicator reference
+│   ├── indicator_manual.md            # Indicator-by-indicator reference
+│   ├── indicator_manual.docx          # Rendered Word version (built via build_docx.py)
+│   ├── macro_market_cheat_sheet.md    # Regime/threshold quick-reference companion
+│   ├── macro_market_cheat_sheet.docx  # Rendered Word version (built via md_to_docx.py)
+│   ├── build_docx.py                  # Converts indicator_manual.md → .docx
+│   └── md_to_docx.py                  # Generic markdown → .docx converter (default: cheat sheet)
+│
+├── archive/                       # Historical / one-off artefacts kept for reference
+│   ├── generate_review_excel.py       # Pre-2026-04-08 indicator-review workbook generator (stale IDs)
+│   ├── indicator_groups_review.xlsx   # Input workbook used during the 2026-04 groups review
+│   └── indicator_groups_review_UPDATED.xlsx  # Output of that review — drove macro_indicator_library.csv
 │
 └── .github/workflows/
-    └── update_data.yml            # GitHub Actions daily scheduler
+    └── update_data.yml            # GitHub Actions daily scheduler (+ builds indicator_explorer.html)
 ```
 
 ---
@@ -136,7 +146,7 @@ fetch_data.py
 └─ [try] run_phase_e()                          ← compute_macro_market → macro_market + macro_market_hist
 ```
 
-After the Python run, the workflow commits all updated CSVs back to git (on the `main` branch) with message: `Update market data - YYYY-MM-DD HH:MM UTC`.
+After `fetch_data.py` finishes, the workflow runs `python docs/build_html.py` to rebuild the Indicator Explorer (`docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js`) from the freshly updated CSVs. All updated CSVs and the two explorer files are then committed back to git (on the `main` branch) with message: `Update market data + explorer - YYYY-MM-DD HH:MM UTC`.
 
 ---
 
@@ -234,7 +244,7 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `macro_us_hist` | `fetch_hist.py` | `data/macro_us_hist.csv` | Weekly FRED history from 1947 |
 | `macro_intl` | `fetch_macro_international.py` | `data/macro_intl.csv` | 11-country macro snapshot |
 | `macro_intl_hist` | `fetch_macro_international.py` | `data/macro_intl_hist.csv` | Weekly international history from 1960 |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 68-indicator snapshot (group, sub_group, category, raw, zscore, regime, fwd_regime) |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 68-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
@@ -514,7 +524,7 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 | IMF | 1s | Full history in single call |
 | FRED (intl) | 0.6s | Same as US FRED |
 
-### 9.6 `compute_macro_market.py` (1,903 lines)
+### 9.6 `compute_macro_market.py` (1,967 lines)
 
 **Role:** Phase E — 68 composite macro-market indicators with z-scores, regime classifications, and forward regime signals.
 
@@ -564,7 +574,9 @@ Each indicator goes through:
 | `_rolling_zscore(series)` | Rolling z-score (156w window, 52w min) |
 | `_classify_fwd_regime(z, is_leading)` | Forward regime from trailing 8-week z-score slope |
 | `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 68 indicator calculations |
-| `build_snapshot_df(results)` | One row per indicator: id, group, sub_group, category, raw, zscore, regime, fwd_regime, formula_note |
+| `build_snapshot_df(results)` | One row per indicator: id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note |
+| `_zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w)` | Classify recent z-score trajectory as `intensifying` (rising in magnitude vs 1w/4w and near the 13-week peak), `fading` (`\|z_now\| < 0.9 × \|z_4w\|`), `reversing` (sign flip vs 4w ago from a prior `\|z\| > 0.5`), or `stable`. |
+| `_sample_z(df, offset_weeks)` | Return zscore value `offset_weeks` Friday rows before the last non-null raw row (used to sample 1w/4w/13w history for trend classification). |
 | `build_hist_df(results)` | One row per date × 272 columns (68 indicators × 4 values: raw, zscore, regime, fwd_regime) |
 | `push_macro_to_google_sheets(df_snapshot, df_hist)` | Write `macro_market` and `macro_market_hist` tabs to Sheets |
 | `run_phase_e()` | **Entry point** — load inputs, compute, save + push |
@@ -775,13 +787,18 @@ All API calls include configurable delays and exponential backoff on 429/5xx:
 ### Python Dependencies (`requirements.txt`)
 
 ```
-yfinance
+yfinance>=0.2.51
 pandas
 numpy
 requests
 google-auth
 google-api-python-client
+# dev-only: used by manuals/build_docx.py, manuals/md_to_docx.py, archive/generate_review_excel.py
+python-docx
+openpyxl
 ```
+
+The last two (`python-docx`, `openpyxl`) are not touched by the daily GitHub Actions pipeline — they support the local documentation build (`manuals/build_docx.py`, `manuals/md_to_docx.py`) and the one-off indicator-review workbook generator in `archive/generate_review_excel.py` (kept for historical reference; uses pre-2026-04-08 indicator IDs and is no longer runnable against the current library without a rewrite).
 
 ### Running Locally
 
@@ -802,11 +819,12 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### GitHub Actions
 
-- **Schedule:** Daily at 06:00 UTC (cron `0 6 * * *`)
+- **Schedule:** Daily at 03:17 UTC (cron `17 3 * * *`) — the odd minute avoids GitHub's scheduled-run congestion at the top of the hour; this slot ensures the run finishes before the 06:00 UK local automations that consume the data
 - **Manual trigger:** workflow_dispatch — GitHub UI > Actions > "Update Market Data" > "Run workflow"
 - **Python version:** 3.11
 - **Timeout:** 120 minutes
-- **Post-run:** Auto-commits updated CSVs to `main` branch
+- **Steps:** (1) `git pull --rebase`, (2) `python fetch_data.py`, (3) `cd docs && python build_html.py`, (4) commit + push
+- **Post-run:** Auto-commits updated CSVs plus `docs/indicator_explorer.html` and `docs/indicator_explorer_mkt.js` to `main` branch with message `Update market data + explorer - YYYY-MM-DD HH:MM UTC`
 
 ### GitHub Secrets
 
@@ -825,10 +843,15 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 | Issue | Module | Notes |
 |---|---|---|
-| OECD DF_FINMARK (short-term interest rate) returning zero data | fetch_macro_international.py | Query key needs investigation |
-| IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | IMF country code may have changed |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
 | UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
+
+### Recently Fixed (pending first post-fix run to confirm)
+
+| Issue | Module | Fix |
+|---|---|---|
+| OECD `DF_FINMARK` short-term interest rates returned zero data | `data/macro_library_oecd.csv` | `MEASURE` code corrected from `IRST` to `IR3TIB` (3-month interbank rate) — fixed 2026-04-21 |
+| IMF `XM` (Eurozone GDP Growth) returned no data | `fetch_macro_international.py` | `IMF_CODE_MAP` updated: IMF DataMapper v1 API uses `EURO` for the Euro Area — fixed 2026-04-21 |
 
 ### Resolved / Removed
 
@@ -852,12 +875,13 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### Metadata / Label Issues
 
-| Ticker | Issue | Recommended Fix |
-|---|---|---|
-| `^IRX` | Labeled "US 2Y Treasury Yield" but is 13-week T-bill (3-month) | Rename to "US 3-Month T-Bill" or swap ticker |
-| XLE, XLB, XLI etc. | Region "North America" | Should be "US" — S&P 500 sectors are US-only |
-| `IWF` | Region "North America" | Should be "US" — Russell 1000 Growth is US-only |
-| `^VIX` | Region "Global" | Should be "US" — measures S&P 500 implied vol |
+Status verified against `data/index_library.csv` on 2026-04-21 — see `forward_plan.md` §3 for detail.
+
+| Ticker | Previously Flagged | Current State | Action |
+|---|---|---|---|
+| `^IRX` | Labeled "US 2Y Treasury Yield" | `name = "US 3-Month Treasury Yield"` | Already fixed |
+| `^VIX` | Region "Global" | Region empty | Deferred — "US" region not yet in `REGION_ORDER` |
+| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged | Deferred — add `"US"` to `REGION_ORDER` + audit all US-only rows first |
 
 ### Remaining Redundancy Items
 

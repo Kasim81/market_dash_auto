@@ -1,7 +1,7 @@
 # Macro-Market Indicator Cheat Sheet
 
 **68 indicators | 156-week (3-year) rolling z-score | CSV-driven architecture**
-**Date: 2026-04-08**
+**Date: 2026-04-21**
 
 This cheat sheet is a quick-reference companion to the full *Indicator Manual*. It covers every indicator's regime rules, threshold logic, and narrative themes — designed to support blog idea generation, regime commentary, and snapshot interpretation at a glance.
 
@@ -12,6 +12,7 @@ This cheat sheet is a quick-reference companion to the full *Indicator Manual*. 
 - **Standard regime**: z > +1 / -1 to +1 / z < -1 (most indicators)
 - **Non-standard**: marked with a dagger (**+**) — uses absolute levels, asymmetric thresholds, or fraction-based logic
 - **Forward regime**: `improving` / `stable` / `deteriorating`, with `[leading]` suffix for naturally leading indicators
+- **Z-score trend** (snapshot-only): `intensifying` (|z| rising vs 1w/4w ago and near the 13-week peak) / `fading` (|z_now| < 0.9 × |z_4w|) / `reversing` (sign flip vs 4w ago from a prior |z| > 0.5) / `stable`. The `macro_market` snapshot also exposes `zscore_1w_ago`, `zscore_4w_ago`, `zscore_13w_ago`, and `zscore_peak_abs_13w` for context.
 - **Narrative themes**: short phrases for blog/commentary framing when the indicator is in an extreme regime
 
 ---
