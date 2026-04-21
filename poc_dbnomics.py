@@ -86,20 +86,25 @@ ECB_BLS_CANDIDATES = {
 # ---------------------------------------------------------------------------
 
 EUROSTAT_CANDIDATES = {
+    # NB: teibs010/teibs020 are summary tables with only ~12 obs of history.
+    # Prefer ei_bssi_m_r2 (Business and Consumer Surveys, full history).
     "EC Economic Sentiment (EA)": [
-        "Eurostat/teibs010/M.BS-ESI-I.SA.EA",
-        "Eurostat/teibs010/M.BS-ESI-I.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ESI-I.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ESI-I.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA19",
     ],
     "EC Industry Confidence (EA)": [
-        "Eurostat/teibs020/M.BS-ICI-BAL.SA.EA",
-        "Eurostat/teibs020/M.BS-ICI-BAL.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ICI-BAL.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ICI-BAL.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA19",
     ],
     "EC Services Confidence (EA)": [
-        "Eurostat/teibs020/M.BS-SCI-BAL.SA.EA",
-        "Eurostat/teibs020/M.BS-SCI-BAL.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-SCI-BAL.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-SCI-BAL.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA19",
     ],
 }
 
@@ -146,11 +151,32 @@ def fetch_dataset_metadata(provider: str, dataset: str) -> dict:
     url = f"{BASE}/dataset/{provider}/{dataset}"
     try:
         r = requests.get(url, timeout=30)
+        print(f"    [metadata] GET {url} → HTTP {r.status_code}")
         if r.status_code != 200:
             return {}
         return r.json().get("dataset", {})
-    except Exception:
+    except Exception as e:
+        print(f"    [metadata] exception: {e}")
         return {}
+
+
+def fetch_series_by_dimensions(provider: str, dataset: str,
+                               dimensions: dict, limit: int = 100) -> list:
+    """
+    Fetch series filtered by dimension values (server-side filter).
+    dimensions: {dim_name: [value1, value2]} — uses DB.nomics dimensions param.
+    """
+    dim_json = json.dumps(dimensions)
+    url = f"{BASE}/series/{provider}/{dataset}?dimensions={dim_json}&limit={limit}"
+    try:
+        r = requests.get(url, timeout=30)
+        print(f"    [dimquery] HTTP {r.status_code}, {len(r.text)} bytes")
+        if r.status_code != 200:
+            return []
+        return r.json().get("series", {}).get("docs", [])
+    except Exception as e:
+        print(f"    [dimquery] exception: {e}")
+        return []
 
 
 def list_datasets(provider: str) -> list:
@@ -315,30 +341,57 @@ def main():
         else:
             print(f"  No candidate hit.  Fetching ECB/BLS dimension metadata...")
             meta = fetch_dataset_metadata("ECB", "BLS")
-            if meta:
-                dims_order = meta.get("dimensions_codes_order", [])
-                dims_labels = meta.get("dimensions_values_labels", {})
+            print(f"  Metadata keys: {list(meta.keys())[:20] if meta else '(empty)'}")
+            dims_order = meta.get("dimensions_codes_order", []) if meta else []
+            dims_labels = meta.get("dimensions_values_labels", {}) if meta else {}
+            if dims_order:
                 print(f"  Dataset has {len(dims_order)} dimensions: {dims_order}")
-                for dim_name in dims_order[:5]:
+                for dim_name in dims_order:
                     vals = dims_labels.get(dim_name, {})
                     if isinstance(vals, dict):
-                        sample = list(vals.items())[:5]
+                        sample = list(vals.items())[:6]
                     elif isinstance(vals, list):
-                        sample = vals[:5]
+                        sample = vals[:6]
                     else:
                         sample = []
                     print(f"    {dim_name}: {sample}")
-            print(f"\n  Now exploring ECB/BLS dataset by keyword (U2 filter, limit=500)...")
-            kw_map = {
-                "Credit Std Enterprises": ["standards", "enterprise"],
-                "Credit Std Households":  ["standards", "household"],
-            }
-            short = label.split("—")[-1].strip()
-            kws = kw_map.get(short, short.lower().split())
-            # Filter: must be Euro Area (U2) and factor=ST (standards).
-            # NB: ECB/BLS has ~20k series; limit>500 may return HTTP 400.
-            matches = explore_and_match("ECB", "BLS", kws, limit=500,
-                                        required_substrings=["Q.U2.", ".ST."])
+            else:
+                print("  WARNING: no dimension metadata returned")
+
+            # Try server-side dimensions filter (requires knowing dim names)
+            matches = []
+            if dims_order:
+                ref_area_dim = next((d for d in dims_order
+                                     if d.upper() in ("REF_AREA", "AREA", "COUNTRY", "BLS_COUNTRY")),
+                                    None)
+                if ref_area_dim:
+                    print(f"  Trying server-side filter: {ref_area_dim}=U2 ...")
+                    docs = fetch_series_by_dimensions("ECB", "BLS",
+                                                     {ref_area_dim: ["U2"]}, limit=200)
+                    print(f"  Returned {len(docs)} series with {ref_area_dim}=U2")
+                    # Filter client-side for "ST" (standards) in series_code
+                    short = label.split("—")[-1].strip()
+                    kws_filter = ["enterprise"] if "Enterprises" in short else ["household"]
+                    for d in docs:
+                        code = (d.get("series_code") or "").upper()
+                        name = (d.get("series_name") or "").lower()
+                        if ".ST." not in code:
+                            continue
+                        if not any(k in name for k in kws_filter):
+                            continue
+                        matches.append(d)
+                    print(f"  After filtering for .ST. + keyword: {len(matches)} matches")
+
+            if not matches:
+                print(f"\n  Falling back to keyword listing (limit=500)...")
+                kw_map = {
+                    "Credit Std Enterprises": ["standards", "enterprise"],
+                    "Credit Std Households":  ["standards", "household"],
+                }
+                short = label.split("—")[-1].strip()
+                kws = kw_map.get(short, short.lower().split())
+                matches = explore_and_match("ECB", "BLS", kws, limit=500,
+                                            required_substrings=["Q.U2.", ".ST."])
             if matches:
                 print(f"  Found {len(matches)} keyword matches.  Top 5:")
                 for m in matches[:5]:
@@ -389,7 +442,8 @@ def main():
         else:
             # Explore: try listing teibs010 and teibs020
             print(f"  No candidate hit.  Exploring Eurostat datasets...")
-            for ds in ("teibs010", "teibs020", "ei_bssi_m_r2"):
+            # Prefer ei_bssi_m_r2 (full history) over teibs010/020 (summary, 12 obs only)
+            for ds in ("ei_bssi_m_r2", "teibs010", "teibs020"):
                 kw_map = {
                     "EC Economic Sentiment (EA)":  ["sentiment"],
                     "EC Industry Confidence (EA)":  ["industrial", "confidence"],
