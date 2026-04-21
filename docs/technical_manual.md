@@ -421,7 +421,7 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 | Financial Conditions | NFCI |
 | Inflation | CPIAUCSL, CPILFESL, PCEPILFE, PPIACO, T10YIE |
 | Monetary Policy | DFEDTARU, WRESBAL |
-| Sentiment / Surveys | UMCSENT, UMCSC, UMCSE |
+| Sentiment / Surveys | UMCSENT |
 | Regional Fed | GACDFSA066MSFRBPHI (Philly), MFRBSCOMP (Richmond), KCACTMFG (Kansas City) |
 
 ### 9.4 `fetch_hist.py` (1,062 lines)
@@ -775,8 +775,6 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | OECD DF_FINMARK (short-term interest rate) returning zero data | fetch_macro_international.py | Query key needs investigation |
 | IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | IMF country code may have changed |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
-| UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
-| EU_R1 metadata/code mismatch | compute_macro_market.py | INDICATOR_META says `log(SLXX.L / IGLT.L)` but code reads FRED Germany 10Y yield |
 
 ### Tickers Confirmed Unavailable via yfinance
 

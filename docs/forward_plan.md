@@ -76,7 +76,7 @@ These are returning no data and need investigation:
 | OECD DF_FINMARK (short-term interest rates) returning zero data for all 11 countries | fetch_macro_international.py | Investigate correct SDMX query key for the new `sdmx.oecd.org` API. The dataflow ID may have changed during the July 2024 migration. Test with a direct browser query first. |
 | IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | Investigate correct IMF DataMapper country code for Eurozone. Try `EUR`, `EMU`, `EU` as alternatives to `XM`. |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural limitation — OECD doesn't publish CLI for these codes. Consider using DEU+FRA average as Eurozone proxy (already done in `compute_macro_market.py`). Document as known gap. |
-| UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED access restriction or temporary issue. Monitor across runs. If persistent, check if series ID has changed. |
+| ~~UMCSE & UMCSC (UMich sub-indices) returning null~~ | Resolved — removed | `UMCSE` and `UMCSC` are not valid FRED series IDs. The UMich sub-indices (Expectations, Current Conditions) are not available via the FRED API; only the headline `UMCSENT` is. Both removed from `macro_library_fred.csv` and `macro_us_hist.csv`. |
 
 ### Priority 2: Code/Metadata Mismatches
 
