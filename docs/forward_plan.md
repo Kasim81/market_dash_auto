@@ -80,9 +80,9 @@ These are returning no data and need investigation:
 
 ### Priority 2: Code/Metadata Mismatches
 
-| Issue | Location | Suggested Action |
+| Issue | Location | Status |
 |---|---|---|
-| EU_R1 metadata/code mismatch | compute_macro_market.py | `INDICATOR_META` says `log(SLXX.L / IGLT.L)` but `_calc_EU_R1` code reads FRED `IRLTLT01DEM156N` (Germany 10Y yield). Decide which formula is correct and align code + metadata. |
+| EU_I2, EU_I3, EU_R1 were cross-wired in `compute_macro_market.py` | Resolved 2026-03-30 — all three calculators now match INDICATOR_META and macro_indicator_library.csv | Done |
 
 ---
 

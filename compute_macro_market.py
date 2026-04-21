@@ -1206,33 +1206,34 @@ def _calc_EU_I1(supp, **_):
     return _to_weekly_friday(s)
 
 
-def _calc_EU_I2(supp, **_):
+def _calc_EU_I2(cp, **_):
     """
-    Euro HY OAS (bps): FRED BAMLHE00EHYIOAS — ICE BofA Euro High Yield OAS.
+    UK real-yield / inflation proxy: log(INXG.L / IGLT.L) — UK IL gilt ETF vs nominal gilt ETF.
+    Rising ratio = IL outperforming (rising inflation expectations or falling real rates).
     """
-    s = supp.get("BAMLHE00EHYIOAS", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
 
 
-def _calc_EU_I3(cp, **_):
+def _calc_EU_I3(supp, **_):
     """
-    UK credit conditions: log(SLXX.L / IGLT.L) — UK IG Corp vs Gilt.
-    Widening spread (SLXX underperforming) → tighter conditions.
+    UK–Germany 10Y gilt-bund spread: IRLTLT01GBM156N - IRLTLT01DEM156N (FRED monthly).
+    Positive spread = UK term premium over Germany.
     """
-    return _log_ratio(_p(cp, "SLXX.L"), _p(cp, "IGLT.L"))
+    gb = supp.get("IRLTLT01GBM156N", pd.Series(dtype=float))
+    de = supp.get("IRLTLT01DEM156N", pd.Series(dtype=float))
+    return _arith_diff(_to_weekly_friday(gb), _to_weekly_friday(de))
 
 
 # ---------------------------------------------------------------------------
 # EU RATES  (EU_R1)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_R1(supp, **_):
+def _calc_EU_R1(cp, **_):
     """
-    Germany 10Y yield: FRED IRLTLT01DEM156N (monthly, forward-filled weekly).
-    Raw = yield level in %.
+    UK credit conditions: log(SLXX.L / IGLT.L) — UK IG Corp ETF vs Gilt ETF.
+    Z > +1: credit appetite (corporates outperform); Z < -1: flight-to-quality into gilts.
     """
-    s = supp.get("IRLTLT01DEM156N", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    return _log_ratio(_p(cp, "SLXX.L"), _p(cp, "IGLT.L"))
 
 
 # ---------------------------------------------------------------------------
