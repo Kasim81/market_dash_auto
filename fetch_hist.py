@@ -45,6 +45,7 @@ from googleapiclient.discovery import build
 from library_utils import (
     COMP_FX_TICKERS,
     COMP_FCY_PER_USD,
+    SHEETS_PROTECTED_TABS,
     lib_sort_key as _comp_inst_sort_key,
 )
 
@@ -349,8 +350,7 @@ def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
         return
 
     # Safety guard — never overwrite existing tabs
-    PROTECTED_TABS = {"market_data", "sentiment_data"}
-    if tab_name in PROTECTED_TABS:
+    if tab_name in SHEETS_PROTECTED_TABS:
         print(f"  [{label}] REFUSED: '{tab_name}' is a protected tab")
         return
 

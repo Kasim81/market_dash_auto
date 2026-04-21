@@ -51,6 +51,8 @@ from datetime import datetime, date, timezone
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
+from library_utils import SHEETS_PROTECTED_TABS
+
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
@@ -395,6 +397,10 @@ def push_macro_us_to_sheets(df: pd.DataFrame) -> None:
         print("[Phase A] Empty DataFrame — skipping Sheets push")
         return
 
+    if TAB_NAME in SHEETS_PROTECTED_TABS:
+        print(f"[Phase A] REFUSED: '{TAB_NAME}' is a protected tab")
+        return
+
     try:
         creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
         creds = Credentials.from_service_account_info(
@@ -444,7 +450,7 @@ def push_macro_us_to_sheets(df: pd.DataFrame) -> None:
         # Clear existing content first
         sheets.values().clear(
             spreadsheetId=SHEET_ID,
-            range=f"{TAB_NAME}!A:Z"
+            range=f"{TAB_NAME}!A:ZZ"
         ).execute()
 
         # Write new content

@@ -269,3 +269,42 @@ COMP_FCY_PER_USD = {
     "CAD", "BRL", "HKD", "MXN", "IDR",
     "RUB", "SAR", "ZAR", "TRY", "ARS",
 }
+
+
+# ---------------------------------------------------------------------------
+# GOOGLE SHEETS TAB MANAGEMENT
+# ---------------------------------------------------------------------------
+# Single source of truth for Sheets-side tab state. Every writer module in the
+# pipeline imports and uses these constants.
+# ---------------------------------------------------------------------------
+
+# Tabs that must NEVER be overwritten by pipeline code. `market_data` is the
+# simple-pipeline output consumed by the downstream `trigger.py`; `sentiment_data`
+# is a legacy tab kept in the deletion set but guarded against writes in case
+# any lingering caller tries to push to it.
+SHEETS_PROTECTED_TABS = frozenset({"market_data", "sentiment_data"})
+
+# Tabs that are actively written by the pipeline. Used by Phase G audits and
+# by the legacy-tab cleanup to know which titles are "in-use".
+SHEETS_ACTIVE_TABS = frozenset({
+    "market_data",           # fetch_data.py (simple pipeline)
+    "market_data_comp",      # fetch_data.py (comp pipeline snapshot)
+    "market_data_comp_hist", # fetch_hist.py (weekly comp history)
+    "macro_us",              # fetch_macro_us_fred.py
+    "macro_us_hist",         # fetch_hist.py (weekly FRED history)
+    "macro_intl",            # fetch_macro_international.py
+    "macro_intl_hist",       # fetch_macro_international.py
+    "macro_market",          # compute_macro_market.py
+    "macro_market_hist",     # compute_macro_market.py
+})
+
+# Legacy tabs to delete on every run. These were outputs of older phases that
+# have been consolidated or superseded; an Apps Script on the Sheet side may
+# recreate some, so we sweep them unconditionally.
+SHEETS_LEGACY_TABS_TO_DELETE = frozenset({
+    "Market Data",         # space-variant duplicate of market_data
+    "sentiment_data",      # consolidated into macro_us + macro_intl
+    "macro_surveys",       # consolidated into macro_us
+    "macro_surveys_hist",  # consolidated into macro_us_hist
+    "market_data_hist",    # replaced by market_data_comp_hist
+})
