@@ -441,7 +441,7 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 | Financial Conditions | NFCI |
 | Inflation | CPIAUCSL, CPILFESL, PCEPILFE, PPIACO, T10YIE |
 | Monetary Policy | DFEDTARU, WRESBAL |
-| Sentiment / Surveys | UMCSENT, UMCSC, UMCSE |
+| Sentiment / Surveys | UMCSENT |
 | Regional Fed | GACDFSA066MSFRBPHI (Philly), MFRBSCOMP (Richmond), KCACTMFG (Kansas City) |
 
 ### 9.4 `fetch_hist.py` (1,062 lines)
@@ -844,7 +844,6 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | Issue | Module | Notes |
 |---|---|---|
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
-| UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
 
 ### Recently Fixed (pending first post-fix run to confirm)
 
@@ -852,6 +851,8 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 |---|---|---|
 | OECD `DF_FINMARK` short-term interest rates returned zero data | `data/macro_library_oecd.csv` | `MEASURE` code corrected from `IRST` to `IR3TIB` (3-month interbank rate) — fixed 2026-04-21 |
 | IMF `XM` (Eurozone GDP Growth) returned no data | `fetch_macro_international.py` | `IMF_CODE_MAP` updated: IMF DataMapper v1 API uses `EURO` for the Euro Area — fixed 2026-04-21 |
+| `UMCSE` & `UMCSC` (UMich sub-indices) returned null | `data/macro_library_fred.csv`, `data/macro_us_hist.csv` | Not valid FRED series IDs — the UMich sub-indices (Expectations, Current Conditions) are not published via FRED; only the headline `UMCSENT` is. Both removed — fixed 2026-04-21 |
+| `^VIX` and `^MOVE` had blank `region` | `data/index_library.csv` | Set `region = "North America"`, `country_market = "United States"` — fixed 2026-04-21 |
 
 ### Resolved / Removed
 

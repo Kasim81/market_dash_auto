@@ -111,14 +111,14 @@ Nifty Infrastructure,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,Fal
 Nifty Metal,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXMETAL,,,,,,,,2011-07-12,False
 Nifty Pharma,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXPHARMA,,,,,,,,2011-01-31,False
 Nifty Realty,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXREALTY,,,,,,,,2010-07-19,False
-CBOE VIX Volatility Index,Volatility,Macro-Market Indicators,Index,,,,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VIX,,,,,,,,1990-01-02,True
+CBOE VIX Volatility Index,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VIX,,,,,,,,1990-01-02,True
 CBOE VIX9D - 9-Day VIX,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VIX9D,,,,,,,,2011-01-03,False
 CBOE VIX3M - 3-Month VIX,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VIX3M,,,,,,,,2006-07-17,False
 CBOE VVIX - Volatility of VIX,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VVIX,,,,,,,,2007-01-03,False
 CBOE SKEW Index,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SKEW,,,,,,,,1990-01-02,False
 CBOE VXEFA - EAFE Volatility,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^VXEFA,,,,,,,,2023-06-26,False
 CBOE VXEEM - EM Volatility,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^VXEEM,,,,,,,,,False
-MOVE Index - Bond Volatility,Volatility,Macro-Market Indicators,Index,,,,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^MOVE,,,,,,,,2002-11-12,False
+MOVE Index - Bond Volatility,Volatility,Macro-Market Indicators,Index,,North America,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^MOVE,,,,,,,,2002-11-12,False
 CBOE GVZ - Gold Volatility Index,Volatility,Macro-Market Indicators,Index,Volatility,Global,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^GVZ,,,,,,,,2008-06-03,False
 CBOE OVX - Crude Oil Volatility,Volatility,Macro-Market Indicators,Index,Volatility,Global,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10,False
 NYSE FANG+ Index,Equity,Equity,Index,,,,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,2014-09-22,False
