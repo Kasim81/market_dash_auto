@@ -274,7 +274,7 @@ Each new source should follow the FRED pattern:
 
 ## 5. Multi-Frequency Pipeline (Phase 2)
 
-**Priority:** High impact but large effort. Detailed plan exists in `multifreq_plan.md`.
+**Priority:** High impact but large effort. Detailed implementation plan in [`manuals/multifreq_plan.md`](multifreq_plan.md).
 **Status:** Not started.
 
 ### Objective
