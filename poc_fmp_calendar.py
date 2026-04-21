@@ -56,6 +56,45 @@ CHUNK_MONTHS = 6
 # ---------------------------------------------------------------------------
 
 TARGET_EVENTS = {
+    "ISM_MFG_PMI": {
+        "description": "ISM Manufacturing PMI (US)",
+        "country_filter": None,
+        "patterns": [
+            "ism manufacturing pmi",
+            "ism manufacturing index",
+            "ism mfg pmi",
+            "manufacturing pmi (ism)",
+        ],
+    },
+    "ISM_MFG_NEWORD": {
+        "description": "ISM Manufacturing New Orders (US)",
+        "country_filter": None,
+        "patterns": [
+            "ism new orders",
+            "ism manufacturing new orders",
+            "manufacturing new orders index",
+        ],
+    },
+    "ISM_SVC_PMI": {
+        "description": "ISM Services PMI / Non-Manufacturing PMI (US)",
+        "country_filter": None,
+        "patterns": [
+            "ism services pmi",
+            "ism non-manufacturing pmi",
+            "ism nm pmi",
+            "non-manufacturing pmi",
+            "services pmi (ism)",
+        ],
+    },
+    "ISM_SVC_BUSACT": {
+        "description": "ISM Services Business Activity (US)",
+        "country_filter": None,
+        "patterns": [
+            "ism business activity",
+            "ism services business activity",
+            "ism nm business activity",
+        ],
+    },
     "EZ_MFG_PMI": {
         "description": "S&P Global Eurozone Manufacturing PMI",
         "country_filter": None,  # match on event name alone
