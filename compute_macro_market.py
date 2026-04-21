@@ -648,6 +648,16 @@ REGIME_RULES = {
     "GL_CLI2": lambda r, z: _r(r, z,  1, -1, "US-leads-China", "China-leads-US"),
     "EU_CLI1": lambda r, z: _r(r, z,  1, -1, "EU-above-trend", "EU-below-trend",  "near-trend"),
     "AS_CLI1": lambda r, z: _r(r, z,  1, -1, "Asia-above-trend","Asia-below-trend","near-trend"),
+    # Standalone country CLIs (OECD amplitude-adjusted, long-run avg = 100)
+    "US_CLI1": lambda r, z: _r(r, z,  1, -1, "US-above-trend",        "US-below-trend",        "near-trend"),
+    "CA_CLI1": lambda r, z: _r(r, z,  1, -1, "Canada-above-trend",    "Canada-below-trend",    "near-trend"),
+    "DE_CLI1": lambda r, z: _r(r, z,  1, -1, "Germany-above-trend",   "Germany-below-trend",   "near-trend"),
+    "FR_CLI1": lambda r, z: _r(r, z,  1, -1, "France-above-trend",    "France-below-trend",    "near-trend"),
+    "UK_CLI1": lambda r, z: _r(r, z,  1, -1, "UK-above-trend",        "UK-below-trend",        "near-trend"),
+    "IT_CLI1": lambda r, z: _r(r, z,  1, -1, "Italy-above-trend",     "Italy-below-trend",     "near-trend"),
+    "JP_CLI1": lambda r, z: _r(r, z,  1, -1, "Japan-above-trend",     "Japan-below-trend",     "near-trend"),
+    "CN_CLI1": lambda r, z: _r(r, z,  1, -1, "China-above-trend",     "China-below-trend",     "near-trend"),
+    "AU_CLI1": lambda r, z: _r(r, z,  1, -1, "Australia-above-trend", "Australia-below-trend", "near-trend"),
     # REG_CLI5 uses raw breadth value, not z-score
     "GL_CLI5": lambda r, z: (
         "broad-expansion" if not np.isnan(r) and r >= 0.7
@@ -1510,6 +1520,24 @@ def _calc_AS_CLI1(mi, **_):
     return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
+# ---------------------------------------------------------------------------
+# STANDALONE COUNTRY CLIs  (OECD amplitude-adjusted, long-run avg = 100)
+# ---------------------------------------------------------------------------
+# Each calculator simply returns the country's CLI series resampled to weekly
+# Fridays; `make_result` handles z-scoring and regime/fwd_regime assignment.
+# ---------------------------------------------------------------------------
+
+def _calc_US_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "USA_CLI"))
+def _calc_CA_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "CAN_CLI"))
+def _calc_DE_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "DEU_CLI"))
+def _calc_FR_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "FRA_CLI"))
+def _calc_UK_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "GBR_CLI"))
+def _calc_IT_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "ITA_CLI"))
+def _calc_JP_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "JPN_CLI"))
+def _calc_CN_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "CHN_CLI"))
+def _calc_AU_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "AUS_CLI"))
+
+
 def _calc_GL_CLI5(mi, **_):
     """
     Global growth breadth (diffusion): fraction of 9 countries where
@@ -1602,6 +1630,15 @@ _ASIA_REGIONAL_CALCULATORS = {
     "EU_CLI1":  _calc_EU_CLI1,
     "AS_CLI1":  _calc_AS_CLI1,
     "GL_CLI5":  _calc_GL_CLI5,
+    "US_CLI1":  _calc_US_CLI1,
+    "CA_CLI1":  _calc_CA_CLI1,
+    "DE_CLI1":  _calc_DE_CLI1,
+    "FR_CLI1":  _calc_FR_CLI1,
+    "UK_CLI1":  _calc_UK_CLI1,
+    "IT_CLI1":  _calc_IT_CLI1,
+    "JP_CLI1":  _calc_JP_CLI1,
+    "CN_CLI1":  _calc_CN_CLI1,
+    "AU_CLI1":  _calc_AU_CLI1,
     "GL_G2": _calc_GL_G2,
     "GL_G1":   _calc_GL_G1,
     "FX_CMD6": _calc_FX_CMD6,
