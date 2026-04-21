@@ -28,7 +28,7 @@ The project evolved from a single hardcoded pipeline into a sequence of lettered
 | Phase A — US Macro (FRED) | 43 FRED series (yields, inflation, labour, credit, surveys). Snapshot + weekly history from 1947. | `fetch_macro_us_fred.py` → `macro_us`, `macro_us_hist` | Production |
 | Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
 | Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
-| Phase D — PMI / FMP | ISM Manufacturing & Services PMI; additional regional Fed survey sub-indices | FMP required (FRED removed ISM data in 2016) | Decision gate resolved; awaiting `FMP_API_KEY` |
+| Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | Three tiers: FRED rows, DB.nomics primary, FMP calendar for proprietary S&P Global PMIs | Decision gate resolved; `FMP_API_KEY` registered; three-tier plan in section 5.7 |
 | Phase E — Macro-Market Indicators | 68 composite indicators with 156w rolling z-scores, regimes, forward regimes | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
 | Phase G — Sheets Export Audit | Tab inventory (9 active), protected-tab guards across all writers, legacy-tab cleanup, batch-write coverage | Single source of truth in `library_utils.py`; guards added to 3 previously-missing writers on 2026-04-21 | Mostly Done |
@@ -61,9 +61,9 @@ Covers 11 economies: USA, CAN, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CHE, and EA19 
 
 Outputs to `macro_intl` (snapshot) and `macro_intl_hist` (weekly Friday spine, forward-filled from native monthly/quarterly/annual cadence). Recent fixes (2026-04-21): OECD 3-month rate MEASURE code corrected from `IRST` to `IR3TIB` on `DSD_STES@DF_FINMARK`; IMF Euro Area entity code corrected from `XM` to `EURO`. Known structural gap: OECD does not publish CLI for EA19 or CHE — `compute_macro_market.py` uses the DEU+FRA average as the Eurozone CLI proxy.
 
-#### Phase D — PMI / FMP — Decision Gate Resolved; Awaiting API Key
+#### Phase D — Business Survey Data — Decision Gate Resolved; Three-Tier Plan Ready
 
-Intended to fill two gaps: ISM Manufacturing PMI and ISM Services PMI composites (S&P Global licence-gated on FRED), and additional regional Fed survey sub-indices not published via FRED. **Decision gate resolved 2026-04-21:** ISM data has been unavailable via FRED since June 2016 (licensing pulled; all 22 series deleted from FRED APIs). Series like `NAPM`, `NAPMPI`, `NMFCI`, `NMFBAI` are flagged discontinued — there is no FRED path. FMP (Financial Modeling Prep, free tier 250 calls/day) carries the ISM composites under its own licence and is the most direct fix. `FMP_API_KEY` secret is not yet registered — that's the only remaining blocker. See section 5.1 for the full implementation plan. The broader proposal in section 5.7 (DB.nomics, UMich portal, ECB SDW, BoJ) may supersede Phase D as a single umbrella "Phase H — Additional Sources" effort.
+Rescoped from "ISM PMI via FMP" to a broader global-survey build covering US ISM, S&P Global country PMIs (EZ/UK/JP/CN), ZEW, IFO, ECB Bank Lending Survey, Japan Tankan, and EC Economic Sentiment — the full business-survey suite a global asset allocator needs. **Decision gate resolved 2026-04-21:** ISM unavailable on FRED since June 2016; S&P Global country PMIs are proprietary and not on FRED or DB.nomics; ZEW/IFO/NBS have no free APIs. **Three-tier solution:** (1) add 11 OECD confidence + Dallas Fed series already on FRED to `macro_library_fred.csv` — zero new code; (2) build `fetch_macro_dbnomics.py` to cover ISM, ECB BLS, BoJ Tankan, Eurostat ESI — free API, no key, clean time-series format; (3) build narrow `fetch_macro_fmp.py` for proprietary S&P Global PMIs and institute surveys (ZEW/IFO/NBS/Caixin) that only the FMP calendar can supply freely. `FMP_API_KEY` registered in GitHub Secrets on 2026-04-21. Full plan in section 5.7.
 
 #### Phase E — Macro-Market Indicators — Production
 
@@ -203,6 +203,18 @@ Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the lar
 | Clear-range bug | `fetch_macro_us_fred.py` cleared only `A:Z` (26 columns) before writing — would leave stale data if schema grew past column Z. Widened to `A:ZZ`. |
 | Tab inventory documented | 9 active tabs catalogued in section 1 Phase G (writer module, snapshot vs history, protected status). |
 
+### Phase D Source Evaluation — Global Business Survey Data (completed 2026-04-21)
+
+| Change | Detail |
+|---|---|
+| Gap mapped region-by-region | US, Eurozone, Germany, UK, Japan, China surveys catalogued. 14 series identified as missing; best source assigned to each. |
+| 8 candidate sources evaluated | FRED, DB.nomics, FMP, ECB SDW, Bank of Japan, Eurostat, UMich portal, Trading Economics, Investing.com, S&P Global direct. |
+| **Three-tier strategy adopted** | T1: FRED additions (11 OECD confidence + Dallas Fed rows — zero new code). T2: DB.nomics primary module for ISM + ECB BLS + BoJ Tankan + Eurostat ESI (all open-licensed). T3: FMP calendar for S&P Global proprietary PMIs (EZ/UK/JP/CN) and institute-published surveys (ZEW/IFO/NBS/Caixin) that have no other free source. |
+| 15 new indicators scoped | Including `GL_PMI1` equal-weight global PMI proxy (US ISM + EZ + JP + UK + CN) — single most important missing global-growth regime signal. |
+| 3 sources skipped | Trading Economics (paid, ~$49+/month), Investing.com (broken — Cloudflare since 2023), S&P Global/ISM direct (no API). |
+| UMich portal deferred | No official API; ICE/ICC correlate highly with FRED headline `UMCSENT`. Low marginal value. |
+| Implementation plan written | Section 5.7 updated with gap map, three-tier target-series tables, 15 indicator definitions, step-by-step build order, non-API fallbacks for ZEW/IFO if FMP coverage is shallow. |
+
 ### Phase F Progress — EMFX Basket Added & Prior Items Audited (completed 2026-04-21)
 
 | Change | Detail |
@@ -269,8 +281,8 @@ These were evaluated and deliberately excluded:
 | Goldman Sachs FCI | Proprietary | Chicago Fed NFCI (FRED: NFCI) |
 | Bloomberg FCI | Bloomberg terminal required | Chicago Fed NFCI |
 | MOVE Index | Bloomberg terminal required | 30-day realised vol on ^TNX (future) |
-| JP Morgan Global PMI | S&P Global licence required | Equal-weight ISM + EZ PMI + Japan PMI (future) |
-| EM Currencies Index (EMFX) | JP Morgan proprietary | Basket of CNY/INR/KRW/TWD vs USD (future) |
+| JP Morgan Global PMI | S&P Global licence required | Equal-weight ISM + EZ PMI + Japan PMI — ISM via DB.nomics (section 5.7) |
+| EM Currencies Index (EMFX) | JP Morgan proprietary | Implemented as `FX_EM1` — basket of CNY/INR/KRW/TWD vs USD |
 | China 10Y yield (FRED) | Data quality issues | CNYB.L ETF as proxy |
 
 ---
@@ -279,24 +291,20 @@ These were evaluated and deliberately excluded:
 
 ### 5.1 Phase D — PMI / Survey Data
 
-**Priority:** Low-medium — regional Fed surveys are already covered via FRED in `macro_us`.
-**Status:** Decision gate resolved 2026-04-21 — **FRED is not a viable source for ISM PMI.** Implementation blocked on owner registering `FMP_API_KEY` secret.
+**Priority:** Medium-high — business survey data is the largest structural gap in the indicator suite for a global asset allocator.
+**Status:** Three-tier plan finalised 2026-04-21. `FMP_API_KEY` registered. See section 5.7 for full implementation plan, target series lists, and 15 new indicators.
 
-**Decision gate resolution:** ISM (Institute for Supply Management) data has not been available via FRED since **June 2016**, when all 22 series from the Manufacturing and Non-Manufacturing ISM Reports on Business were deleted from FRED's database, Excel add-in, APIs, and all other services for licensing reasons. Series like `NAPM`, `NAPMPI`, `NMFCI`, `NMFBAI`, `NMFNOI` are either fully removed or flagged discontinued. The licensing agreement is between ISM and S&P Global / Markit and has not been restored.
+**The gap:** ISM PMI (US), S&P Global country PMIs (EZ/UK/JP/CN), ECB Bank Lending Survey, BoJ Tankan, ZEW, IFO, EC Economic Sentiment — none currently in the pipeline. FRED removed all 22 ISM series in June 2016 (S&P Global licence pulled). S&P Global country PMIs are proprietary and only available free via calendar redistribution. ZEW, IFO, NBS have no free APIs.
 
-FRED *does* still carry:
-- Regional Fed surveys (Philadelphia, Empire State / New York, Richmond, Kansas City, Dallas) — **already in `macro_library_fred.csv`**.
-- OECD Composite Leading Indicators (different licence) — covered in Phase C.
-- `MANEMP` and other manufacturing employment / output series — covered in Phase A.
+**Three-tier approach (details in 5.7):**
 
-**Conclusion — FRED cannot close the ISM PMI gap.** Paid FMP (Financial Modeling Prep) free tier (250 calls/day) carries the ISM Manufacturing & Services composites and sub-indices under its own licence arrangement and is the most direct fix. DB.nomics and Trading Economics are secondary options but less reliable in coverage.
+| Tier | Source | Coverage | Effort |
+|---|---|---|---|
+| 1 | FRED (add 11 rows to existing library) | OECD business/consumer confidence for DE, UK, JP, FR, IT, CN; Dallas Fed Mfg | Zero new code |
+| 2 | DB.nomics (new `fetch_macro_dbnomics.py`) | US ISM + sub-indices; ECB Bank Lending Survey; BoJ Tankan; Eurostat ESI / sector confidence | One new module |
+| 3 | FMP calendar (narrow `fetch_macro_fmp.py`) | S&P Global EZ/UK/JP/CN PMIs; ZEW; IFO; NBS China PMI; Caixin PMI | One narrow module |
 
-**Action when ready to implement:**
-1. Register a free FMP API key at `financialmodelingprep.com` → store as `FMP_API_KEY` GitHub Actions secret.
-2. Create `fetch_macro_fmp.py` mirroring the FRED fetch pattern (per-series `try/except`, 0.6s rate limit, exponential backoff).
-3. Drive series list from a new `data/macro_library_fmp.csv` with the same schema shape as `macro_library_fred.csv`.
-4. Register new indicators in `compute_macro_market.py` via the standard 4-point pattern (CSV row + `_calc_*` function + REGIME_RULES entry + dispatcher registration).
-5. Priority series: ISM Manufacturing composite PMI, ISM Manufacturing New Orders, ISM Services composite PMI, ISM Services Business Activity. These unblock the Phase F "Global PMI proxy" as well.
+**Total output:** 15 new macro-market indicators, including `GL_PMI1` (equal-weight global PMI proxy across US / EZ / JP / UK / CN) — the single most important missing global-growth regime indicator. Implementation order: Tier 1 → Tier 2 PoC → Tier 2 build → Tier 3 PoC → Tier 3 build → indicator registration. See section 5.7 for step-by-step plan.
 
 ### 5.2 Instrument Expansion
 
@@ -366,42 +374,193 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 ### 5.7 Expand Macro Data Library from Additional Sources
 
-**Priority:** Medium — fills known gaps (esp. PMI & survey sub-indices) and broadens indicator coverage.
-**Status:** Not started. Follows directly from Stage 3 finding that FRED only carries a subset of the desired UMich data.
+**Priority:** Medium-high — business survey data is the biggest structural gap in the indicator suite for a global asset allocator.
+**Status:** Source evaluation completed 2026-04-21. **Three-tier strategy:** Tier 1 FRED additions (zero new code); Tier 2 DB.nomics primary module (ISM, ECB BLS, Tankan, Eurostat ESI); Tier 3 FMP backup for proprietary S&P Global PMIs (EZ/UK/JP/CN) that DB.nomics cannot redistribute.
 
-The FRED API does not carry several high-value survey series (e.g. UMich Index of Consumer Expectations, UMich Current Conditions, ISM PMI composites), and OECD / IMF SDMX endpoints are fragile. To fill these gaps, evaluate alternative data sources and add a new fetch module for each that proves viable.
+The FRED API does not carry the S&P Global-licensed PMIs (ISM and all country-level S&P Global PMIs), and OECD SDMX covers only the OECD-harmonised business/consumer confidence composites. A global asset allocator needs a wider survey suite: ISM (US), S&P Global PMI (EZ/UK/JP/CN), ZEW and IFO (Germany), ECB Bank Lending Survey (Eurozone), Tankan (Japan), and EC Economic Sentiment Indicator (EU). A systematic evaluation of 8 candidate sources was conducted on 2026-04-21 focusing on breadth of global coverage.
 
-**Candidate sources:**
+#### Global Gap Map — What's Missing by Region
 
-| Source | What it covers | Access | Notes |
+**Already on FRED (in our library):** US SLOOS (5 series), UMich Consumer Sentiment, Conference Board Consumer Confidence, OECD US Business Confidence, OECD Eurozone Consumer Confidence, 4 Regional Fed surveys (Philly, Empire, Richmond, KC), UMich 1Y inflation expectations.
+
+**Already on FRED (not yet in library — Tier 1 instant wins):** OECD business/consumer confidence composites for DE, UK, JP, FR, IT, CN (`BSCICP02*` / `CSCICP02*` series), Dallas Fed Mfg General Business Activity (`BACTUAMFRBDAL`).
+
+**Missing — requires new source:**
+
+| Region | Survey | Frequency | Best Source |
 |---|---|---|---|
-| UMich Surveys of Consumers (data.sca.isr.umich.edu) | Full UMich survey components: ICE (Expectations), ICC (Current Conditions), buying-conditions sub-indices, inflation expectations 1Y/5Y, unemployment expectations | CSV/XLSX downloads from the source portal | One-month publication delay; use as primary source for UMich sub-indices. Requires direct HTTP download + parser. |
-| DB.nomics | Aggregates ~70 data providers (INSEE, Destatis, ONS, Bank of Japan, BIS, ECB, Eurostat) under a unified JSON API | Free REST API, no key required: `api.db.nomics.world` | Good fallback for OECD DF_FINMARK gaps. Covers long-run historical series missing from free FRED tier. One unified schema across providers. |
-| Investing.com | Economic calendar + survey releases (ISM PMI components, regional Fed surveys, global PMI) | Scrape or paid API (`investpy` / Investing.com API) | Useful for S&P Global / ISM PMI which are licence-gated on FRED. Check ToS before scraping. |
-| S&P Global / ISM direct | ISM Manufacturing & Services PMI composite + sub-indices (new orders, employment, prices) | ISM website publishes headline monthly; sub-indices require subscription | Headline values free — enough for regime signal. Markit/S&P Global composites require paid tier. |
-| Trading Economics | Global PMI, consumer confidence, business confidence for 200+ countries | Free tier: 500 calls/month; paid API for more | Useful for EM coverage that OECD doesn't reach. |
-| ECB Statistical Data Warehouse (SDW) | Euro-area bank lending survey, consumer/business confidence, EA CLI, €STR, HICP | Free REST API: `sdw-wsrest.ecb.europa.eu` | Official Eurozone source; more reliable than OECD's EA19 aggregate which has coverage gaps. |
-| Bank of Japan | Tankan survey, core CPI, BoJ sentiment | Free download from boj.or.jp | Fills Japan survey gap (Tankan is currently absent). |
-| Financial Modeling Prep (site.financialmodelingprep.com) | Economic calendar, PMI, unemployment, GDP, inflation, central bank rates, sector macro data for major economies | Free tier (250 calls/day) + paid plans at financialmodelingprep.com; requires API key | Already referenced in repo as `FMP_API_KEY` for Phase D (4.1). Simple REST JSON API; good fit for PMI and survey data not on FRED. Paid tier unlocks full historical macro calendar. |
+| US | ISM Manufacturing PMI composite + sub-indices (New Orders, Employment, Prices, Production) | Monthly | DB.nomics `ISM/*` |
+| US | ISM Services PMI composite + Business Activity sub-index | Monthly | DB.nomics `ISM/nm-*` |
+| Eurozone | S&P Global / HCOB Manufacturing PMI | Monthly | **FMP calendar** (S&P Global proprietary — not on DB.nomics) |
+| Eurozone | S&P Global / HCOB Services PMI | Monthly | **FMP calendar** |
+| Eurozone | ECB Bank Lending Survey (credit standards enterprises / households) | Quarterly | DB.nomics `ECB/BLS` |
+| Eurozone | EC Economic Sentiment Indicator (ESI) + sector confidence | Monthly | DB.nomics `Eurostat/teibs020` |
+| Germany | ZEW Economic Sentiment | Monthly | **FMP calendar** (ZEW has no free API) |
+| Germany | IFO Business Climate | Monthly | **FMP calendar** (IFO has no free API) |
+| UK | S&P Global UK Manufacturing / Services PMI | Monthly | **FMP calendar** |
+| Japan | BoJ Tankan Large Manufacturers / Non-Mfr DI + forecasts | Quarterly | DB.nomics `BOJ/CO` |
+| Japan | au Jibun Bank Japan Manufacturing / Services PMI (S&P Global) | Monthly | **FMP calendar** |
+| China | NBS Manufacturing / Non-Manufacturing PMI | Monthly | **FMP calendar** (NBS has no free API) |
+| China | Caixin Manufacturing / Services PMI (S&P Global) | Monthly | **FMP calendar** |
 
-**Priority additions (by impact):**
+This split drives the three-tier strategy: DB.nomics covers everything that is open-licensed (ISM, ECB, BoJ, Eurostat); FMP's calendar fills the S&P Global proprietary gap (EZ/UK/JP/CN PMIs) and the institute-published surveys (ZEW/IFO) that lack free APIs.
 
-1. **UMich sub-indices (ICE, ICC)** — direct from data.sca.isr.umich.edu. Restores what was removed in Stage 3.
-2. **ISM Manufacturing & Services PMI** — headline + new orders sub-index. Core global-growth signal currently missing.
-3. **Eurozone PMI (Markit/S&P Global) composite** — via DB.nomics or ECB SDW.
-4. **Japan Tankan survey** — large-manufacturer sentiment, quarterly.
-5. **DB.nomics as OECD fallback** — when OECD SDMX endpoints return no data, try the same series via DB.nomics' mirror of OECD data.
+#### Source Evaluation (completed 2026-04-21)
 
-**Implementation pattern:**
+| Source | Verdict | Rationale |
+|---|---|---|
+| **FRED** | **TIER 1 — free additions** | OECD business/consumer confidence composites for all major countries already on FRED (`BSCICP02*`, `CSCICP02*`). Dallas Fed manufacturing also on FRED. Add ~10 rows to `macro_library_fred.csv` — zero new code. |
+| **DB.nomics** | **TIER 2 — primary new module** | Free REST API, no key, no rate limit. Clean time-series output (not calendar events). Covers ISM with full sub-indices, ECB BLS (20,913 series), BoJ Tankan, Eurostat ESI / sector confidence — a single module handles all open-licensed surveys. Python `dbnomics` package returns DataFrames. |
+| **FMP** | **TIER 3 — backup for proprietary feeds** | `FMP_API_KEY` registered. Economic calendar is the only practical free source for S&P Global country PMIs (EZ/UK/JP/CN are proprietary — not redistributed on DB.nomics), and for institute-published surveys (ZEW/IFO/NBS) that have no free API. Calendar events need transformation to time series. 250 calls/day. |
+| **ECB SDW** | **BACKUP — BLS only** | Free SDMX 2.1 REST API (`data-api.ecb.europa.eu`). Use only if DB.nomics `ECB/BLS` coverage is incomplete. |
+| **Bank of Japan direct** | **BACKUP — Tankan only** | Free REST API (`stat-search.boj.or.jp`). Use only if DB.nomics `BOJ/CO` is incomplete. |
+| **Eurostat direct** | **BACKUP — ESI only** | Free REST API. Use only if DB.nomics `Eurostat/*` is incomplete. |
+| **UMich portal** | **DEFER** | No official API. Headline `UMCSENT` already on FRED. ICE/ICC sub-indices move in high correlation with headline. Marginal value. |
+| **Trading Economics** | **SKIP** | Paid API — minimum ~$49/month. Same data available free via DB.nomics + FMP. |
+| **Investing.com** | **SKIP** | `investpy` broken since 2023 (Cloudflare). Scraping violates ToS. |
+| **S&P Global / ISM direct** | **SKIP** | No programmatic API. Paid institutional subscription for sub-indices. DB.nomics redistributes ISM; FMP carries S&P Global country PMIs via calendar. |
 
-Each new source should follow the FRED pattern:
-- One fetch module per source (e.g. `fetch_macro_umich.py`, `fetch_macro_dbnomics.py`)
-- Series list driven by a CSV library (e.g. `data/macro_library_umich.csv`)
-- Exponential backoff on HTTP errors; respect source rate limits
-- Output to `data/macro_<source>.csv` + append to `data/macro_<source>_hist.csv`
-- Register new series in `compute_macro_market.py` via the standard 4-point pattern (INDICATOR_META, `_calc_*`, REGIME_RULES, dispatcher)
+#### Detailed Findings per Source
 
-**Decision gate:** Before implementing, shortlist the 5-10 highest-priority series across these sources and verify each is (a) reachable via a stable, free API and (b) not already covered by an existing indicator. Build a proof-of-concept fetch script first — don't commit to infrastructure until one source is proven.
+**DB.nomics (`api.db.nomics.world`)**
+- Provider `ISM` hosts both Manufacturing and Non-Manufacturing (Services) ISM datasets as separate dataset codes. Confirmed available:
+  - Manufacturing PMI composite: `ISM/pmi/pm`
+  - Non-Manufacturing/Services PMI composite: `ISM/nm-pmi/pm`
+  - Manufacturing sub-indices: inventories (`ISM/inventories`), customers' inventories (`ISM/cusinv`), prices, new-orders, production, employment, supplier deliveries, exports, imports, backlog
+  - Non-Manufacturing sub-indices: prices (`ISM/nm-prices`), inventories (`ISM/nm-inventories`), business activity, new orders, employment
+- Provider `ECB` dataset `BLS` (Bank Lending Survey Statistics): 20,913 series. Covers credit standards for enterprises and households, demand conditions, lending margins. Quarterly, ~2003–present. Dimensions: frequency, reference area, bank selection, BLS item.
+- Provider `BOJ` exists — Tankan data expected under dataset code `CO` (same as official BoJ API).
+- API: `dbnomics.fetch_series('ISM', 'pmi', 'pm')` → pandas DataFrame. No API key, no rate limit documented.
+- Last ISM data retrieval: January 7, 2026. **Risk: data may lag by 1-3 months.** Must verify freshness during proof-of-concept.
+
+**FMP (`financialmodelingprep.com`)**
+- Economic Calendar endpoint: `GET /api/v3/economic_calendar?from=YYYY-MM-DD&to=YYYY-MM-DD&apikey=KEY` — returns JSON with fields: event name, country, date (UTC), actual, previous, estimate, impact.
+- Economic Indicators endpoint: `GET /stable/economic-indicators?country=US&apikey=KEY` — broader macro data (GDP, CPI, unemployment).
+- ISM PMI: carried as economic calendar events ("ISM Manufacturing PMI", "ISM Services PMI") with actual/previous/estimate values. This is event-style data, not a dedicated time-series endpoint — needs transformation to build a monthly time series from calendar entries.
+- Free tier: 250 calls/day. Sufficient for ~5-10 ISM series fetched daily.
+- `FMP_API_KEY` already in GitHub Secrets as of 2026-04-21.
+
+**ECB SDW → ECB Data Portal API (`data-api.ecb.europa.eu`)**
+- SDMX 2.1 REST API. Migrated from old `sdw-wsrest.ecb.europa.eu` address (redirects ended Oct 2025 — use new URL).
+- BLS dataset key structure: `BLS.{freq}.{ref_area}.{bank_selection}.{bls_item}.{maturity_category}.{currency_denomination}.{collateralisation}.{...}` — deeply nested.
+- Python: `sdmx1` package (already used by similar projects). `import sdmx; ecb = sdmx.Client("ECB"); data = ecb.data("BLS", key={...})`.
+- Also covers: consumer/business confidence (ESI/BCI), €STR, HICP, monetary aggregates.
+- Data quality: official source, highest reliability for Euro area data.
+
+**Bank of Japan (`stat-search.boj.or.jp`)**
+- REST API with 3 operation modes documented in `api_manual_en.pdf`. Database code "CO" for Tankan.
+- Tankan Large Manufacturers DI: quarterly (March, June, September, December). Range: -100 to +100 (% favorable − % unfavorable). Latest: DI = 17 (March 2026).
+- Flat file downloads also available — predefined Tankan files updated on release day (~10:00 JST).
+- Python: `bojpy` package wraps the API.
+- Also on DB.nomics as provider `BOJ` — prefer DB.nomics to avoid building a separate BoJ module.
+
+**UMich Surveys of Consumers (`data.sca.isr.umich.edu`)**
+- Data: ICS (headline — already `UMCSENT` on FRED), ICE (Index of Consumer Expectations), ICC (Index of Current Conditions), 1Y/5Y inflation expectations, buying-conditions sub-indices.
+- Access: CSV/XLSX files downloadable from `data.sca.isr.umich.edu/tables.php`. No official REST API.
+- Publication delay: ~1 month. Preliminary release mid-month, final release end-of-month.
+- Sub-index correlation: ICE and ICC move in high correlation with ICS headline — marginal signal value.
+- Implementation cost: requires HTML parsing to locate download URLs (fragile), or hardcoded direct URLs that break when site layout changes.
+
+#### Recommended Implementation Plan — Three Tiers
+
+**Tier 1 — FRED additions (no new code; ~10 CSV rows)**
+
+Add rows to `data/macro_library_fred.csv` for OECD-harmonised business/consumer confidence already hosted on FRED, plus the missing Dallas Fed regional survey. Picks up on the next daily run with no module changes.
+
+| FRED series | Label | Country | Frequency |
+|---|---|---|---|
+| `BSCICP02DEM460S` | OECD Business Confidence — Germany | DEU | Monthly |
+| `BSCICP02GBQ460S` | OECD Business Confidence — UK | GBR | Quarterly |
+| `BSCICP02JPM460S` | OECD Business Confidence — Japan | JPN | Monthly |
+| `BSCICP02FRM460S` | OECD Business Confidence — France | FRA | Monthly |
+| `BSCICP02ITM460S` | OECD Business Confidence — Italy | ITA | Monthly |
+| `BSCICP02CNM460S` | OECD Business Confidence — China | CHN | Monthly |
+| `CSCICP02DEM460S` | OECD Consumer Confidence — Germany | DEU | Monthly |
+| `CSCICP02GBM460S` | OECD Consumer Confidence — UK | GBR | Monthly |
+| `CSCICP02JPM460S` | OECD Consumer Confidence — Japan | JPN | Monthly |
+| `CSCICP02CNM460S` | OECD Consumer Confidence — China | CHN | Monthly |
+| `BACTUAMFRBDAL` | Dallas Fed Mfg — General Business Activity | US | Monthly |
+
+**Tier 2 — DB.nomics primary module (`fetch_macro_dbnomics.py`)**
+
+One new fetch module using the `dbnomics` Python package. Series driven by `data/macro_library_dbnomics.csv`. Covers ISM (full sub-indices), ECB Bank Lending Survey, BoJ Tankan, and Eurostat ESI / sector confidence.
+
+| DB.nomics ID | Series | Frequency | Region |
+|---|---|---|---|
+| `ISM/pmi/pm` | ISM Manufacturing PMI composite | Monthly | US |
+| `ISM/new-orders/pm` | ISM Manufacturing New Orders | Monthly | US |
+| `ISM/nm-pmi/pm` | ISM Services PMI composite | Monthly | US |
+| `ISM/nm-business/pm` | ISM Services Business Activity | Monthly | US |
+| `ECB/BLS/<credit-std-enterprises>` | ECB BLS — Credit standards, enterprises | Quarterly | Eurozone |
+| `ECB/BLS/<credit-std-households>` | ECB BLS — Credit standards, households | Quarterly | Eurozone |
+| `Eurostat/teibs020/<ESI-EA>` | EC Economic Sentiment Indicator (EA19) | Monthly | Eurozone |
+| `Eurostat/teibs020/<IND-EA>` | EC Industry Confidence (EA19) | Monthly | Eurozone |
+| `Eurostat/teibs020/<SVC-EA>` | EC Services Confidence (EA19) | Monthly | Eurozone |
+| `BOJ/CO/<large-mfr-di>` | Tankan Large Manufacturers DI | Quarterly | Japan |
+| `BOJ/CO/<large-mfr-forecast>` | Tankan Large Manufacturers Forecast DI | Quarterly | Japan |
+| `BOJ/CO/<large-nonmfr-di>` | Tankan Large Non-Manufacturers DI | Quarterly | Japan |
+
+Exact dimension keys for `ECB/BLS`, `Eurostat/teibs020`, and `BOJ/CO` must be resolved during the PoC (each has 5-10 dimensions). Advantages over FMP for these series: clean time-series format (not calendar events), deeper history, no API key limit, no rate limit.
+
+**Tier 3 — FMP calendar backup (`fetch_macro_fmp.py`)**
+
+Narrow module covering only what DB.nomics cannot redistribute — S&P Global country PMIs and institute-published German surveys. Fetches the FMP economic calendar over a rolling window, filters by event name, transforms calendar entries into a monthly time series. Uses registered `FMP_API_KEY`.
+
+| FMP calendar event | Survey | Frequency | Region |
+|---|---|---|---|
+| `Eurozone Markit Manufacturing PMI` / `HCOB Eurozone Manufacturing PMI` | S&P Global EZ Mfg PMI | Monthly | Eurozone |
+| `Eurozone Markit Services PMI` / `HCOB Eurozone Services PMI` | S&P Global EZ Services PMI | Monthly | Eurozone |
+| `Germany ZEW Economic Sentiment` | ZEW Economic Sentiment | Monthly | Germany |
+| `Germany Ifo Business Climate` | IFO Business Climate | Monthly | Germany |
+| `UK Markit Manufacturing PMI` / `UK Services PMI` | S&P Global UK PMI | Monthly | UK |
+| `Japan Jibun Bank Manufacturing PMI` / `Services PMI` | S&P Global Japan PMI | Monthly | Japan |
+| `China NBS Manufacturing PMI` / `Non-Manufacturing PMI` | NBS China PMI | Monthly | China |
+| `China Caixin Manufacturing PMI` / `Services PMI` | Caixin / S&P Global China PMI | Monthly | China |
+
+PoC must confirm FMP carries these exact event names with ≥3 years of history. If FMP history is shallow (<3 years), use FMP for current values only and skip z-score regime classification for those indicators until sufficient history accumulates.
+
+#### New Indicators (Phase E additions after Tiers 1-3 complete)
+
+| ID | Formula | Group | Source Tier |
+|---|---|---|---|
+| `US_PMI1` | ISM Manufacturing PMI — raw level, 156w z-score | Growth & Activity | T2 |
+| `US_PMI2` | ISM Mfg New Orders − Inventories (orders momentum proxy) | Growth & Activity | T2 |
+| `US_SVC1` | ISM Services PMI composite — raw level, 156w z-score | Growth & Activity | T2 |
+| `EU_PMI1` | S&P Global Eurozone Manufacturing PMI — 156w z-score | Growth & Activity | T3 |
+| `EU_PMI2` | S&P Global Eurozone Services PMI — 156w z-score | Growth & Activity | T3 |
+| `EU_BLS1` | ECB BLS credit standards enterprises (net %, inverted) | Credit & Lending | T2 |
+| `EU_ESI1` | EC Economic Sentiment Indicator (EA19) | Growth & Activity | T2 |
+| `DE_ZEW1` | ZEW Economic Sentiment — 156w z-score | Growth & Activity | T3 |
+| `DE_IFO1` | IFO Business Climate — 156w z-score | Growth & Activity | T3 |
+| `UK_PMI1` | S&P Global UK Composite PMI — 156w z-score | Growth & Activity | T3 |
+| `JP_TK1` | Tankan Large Manufacturers DI — 156w z-score | Growth & Activity | T2 |
+| `JP_PMI1` | Jibun Bank Japan Composite PMI — 156w z-score | Growth & Activity | T3 |
+| `CN_PMI1` | NBS China Manufacturing PMI — 156w z-score | Growth & Activity | T3 |
+| `CN_PMI2` | Caixin China Manufacturing PMI — 156w z-score | Growth & Activity | T3 |
+| `GL_PMI1` | Global PMI proxy — equal-weight US ISM + EZ + JP + UK + CN PMI | Growth & Activity | Composite of T2+T3 |
+
+#### Implementation Order
+
+1. **Tier 1 first** (30 minutes) — add 11 rows to `macro_library_fred.csv` with correct `country` codes. Verify on next daily run. No risk.
+2. **Tier 2 PoC** — `poc_dbnomics.py` standalone script: fetch all 12 target series via `dbnomics.fetch_series()`, print last observation date, save sample CSVs, resolve exact `ECB/BLS`, `Eurostat/teibs020`, `BOJ/CO` dimension keys. Confirm each series is ≤3 months stale.
+3. **Tier 2 build** — `fetch_macro_dbnomics.py` mirroring FRED pattern (per-series `try/except`, CSV-driven). Outputs `data/macro_dbnomics.csv` + `data/macro_dbnomics_hist.csv`. Register as Phase D in `fetch_data.py`. Add `dbnomics` to `requirements.txt`.
+4. **Tier 3 PoC** — `poc_fmp_calendar.py`: fetch FMP economic calendar for last 5 years, filter by country=EZ/DE/GB/JP/CN, group by `event` name, verify which target events appear and how many historical observations per event.
+5. **Tier 3 build** — `fetch_macro_fmp.py` that calls the economic calendar endpoint, filters by a curated event-name list in `data/macro_library_fmp.csv`, builds a monthly time series from the `actual` field indexed by release date. Register as Phase D-extension in `fetch_data.py`.
+6. **Register 15 new indicators** in `compute_macro_market.py` via the standard 4-point pattern (CSV row + `_calc_*` function + REGIME_RULES entry + dispatcher entry).
+7. **Build `GL_PMI1`** composite after both T2 and T3 are live — this is the single most important missing global-growth regime indicator.
+
+#### Non-API Fallbacks (only if PoC fails)
+
+If FMP's calendar turns out to have shallow history (<3 years) for key European/Asian surveys, the fallback options (in descending preference) are:
+
+1. **DB.nomics alternative providers** — check if S&P Global PMIs are indirectly hosted (e.g. via the `Eurostat` provider's industry confidence as a composite proxy, or via country central bank providers).
+2. **ZEW direct press-release scrape** — monthly release on `zew.de` has a consistent table structure. Parse once a month. Fragile but bounded risk (one small parser).
+3. **IFO direct press-release scrape** — same pattern on `ifo.de`.
+4. **Manual CSV update** — user downloads headline values once a month into `data/macro_manual_surveys.csv`. Last-resort option; only for 1-2 series where no free programmatic source exists.
+
+Skip UMich portal, Trading Economics, Investing.com, and S&P Global direct entirely (see source evaluation table above).
+
+**Dependencies:** `dbnomics` package must be added to `requirements.txt` for Tier 2. No new dependency for Tier 3 (FMP uses standard `requests`).
 
 ---
 
