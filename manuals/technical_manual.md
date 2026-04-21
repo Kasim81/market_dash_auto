@@ -97,6 +97,11 @@ market_dash_auto/
 │   ├── build_docx.py                  # Converts indicator_manual.md → .docx
 │   └── md_to_docx.py                  # Generic markdown → .docx converter (default: cheat sheet)
 │
+├── archive/                       # Historical / one-off artefacts kept for reference
+│   ├── generate_review_excel.py       # Pre-2026-04-08 indicator-review workbook generator (stale IDs)
+│   ├── indicator_groups_review.xlsx   # Input workbook used during the 2026-04 groups review
+│   └── indicator_groups_review_UPDATED.xlsx  # Output of that review — drove macro_indicator_library.csv
+│
 └── .github/workflows/
     └── update_data.yml            # GitHub Actions daily scheduler (+ builds indicator_explorer.html)
 ```
@@ -788,12 +793,12 @@ numpy
 requests
 google-auth
 google-api-python-client
-# dev-only: used by manuals/build_docx.py, manuals/md_to_docx.py, generate_review_excel.py
+# dev-only: used by manuals/build_docx.py, manuals/md_to_docx.py, archive/generate_review_excel.py
 python-docx
 openpyxl
 ```
 
-The last two (`python-docx`, `openpyxl`) are not touched by the daily GitHub Actions pipeline — they support the local documentation build (`manuals/build_docx.py`, `manuals/md_to_docx.py`) and the one-off indicator-review workbook generator (`generate_review_excel.py`).
+The last two (`python-docx`, `openpyxl`) are not touched by the daily GitHub Actions pipeline — they support the local documentation build (`manuals/build_docx.py`, `manuals/md_to_docx.py`) and the one-off indicator-review workbook generator in `archive/generate_review_excel.py` (kept for historical reference; uses pre-2026-04-08 indicator IDs and is no longer runnable against the current library without a rewrite).
 
 ### Running Locally
 
@@ -838,10 +843,15 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 | Issue | Module | Notes |
 |---|---|---|
-| OECD DF_FINMARK (short-term interest rate) returning zero data | fetch_macro_international.py | Query key needs investigation |
-| IMF `XM` code (Eurozone GDP Growth) returning no data | fetch_macro_international.py | IMF country code may have changed |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
 | UMCSE (UMich Expectations) returning null | fetch_macro_us_fred.py | May be FRED temporary issue |
+
+### Recently Fixed (pending first post-fix run to confirm)
+
+| Issue | Module | Fix |
+|---|---|---|
+| OECD `DF_FINMARK` short-term interest rates returned zero data | `data/macro_library_oecd.csv` | `MEASURE` code corrected from `IRST` to `IR3TIB` (3-month interbank rate) — fixed 2026-04-21 |
+| IMF `XM` (Eurozone GDP Growth) returned no data | `fetch_macro_international.py` | `IMF_CODE_MAP` updated: IMF DataMapper v1 API uses `EURO` for the Euro Area — fixed 2026-04-21 |
 
 ### Resolved / Removed
 
@@ -865,12 +875,13 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### Metadata / Label Issues
 
-| Ticker | Issue | Recommended Fix |
-|---|---|---|
-| `^IRX` | Labeled "US 2Y Treasury Yield" but is 13-week T-bill (3-month) | Rename to "US 3-Month T-Bill" or swap ticker |
-| XLE, XLB, XLI etc. | Region "North America" | Should be "US" — S&P 500 sectors are US-only |
-| `IWF` | Region "North America" | Should be "US" — Russell 1000 Growth is US-only |
-| `^VIX` | Region "Global" | Should be "US" — measures S&P 500 implied vol |
+Status verified against `data/index_library.csv` on 2026-04-21 — see `forward_plan.md` §3 for detail.
+
+| Ticker | Previously Flagged | Current State | Action |
+|---|---|---|---|
+| `^IRX` | Labeled "US 2Y Treasury Yield" | `name = "US 3-Month Treasury Yield"` | Already fixed |
+| `^VIX` | Region "Global" | Region empty | Deferred — "US" region not yet in `REGION_ORDER` |
+| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged | Deferred — add `"US"` to `REGION_ORDER` + audit all US-only rows first |
 
 ### Remaining Redundancy Items
 
