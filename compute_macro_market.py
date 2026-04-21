@@ -210,6 +210,8 @@ INDICATOR_META = {
                   "log(INXG.L / IGLT.L) — IL vs nominal gilt ETF ratio"),
     "EU_I3":     ("Europe & UK", "UK–Germany gilt-bund spread",
                   "IRLTLT01GBM156N - IRLTLT01DEM156N (FRED)"),
+    "EU_I4":     ("Europe & UK", "Euro HY credit spread",
+                  "BAMLHE00EHYIOAS (FRED) — ICE BofA Euro High Yield OAS, bps"),
     "EU_R1":     ("Europe & UK", "UK credit conditions",
                   "log(SLXX.L / IGLT.L)"),
     "EU_FX1":    ("Europe & UK", "EUR vs European cyclicals",
@@ -310,7 +312,7 @@ def fetch_supplemental_fred() -> dict:
 
     Series fetched:
       PIORECRUSDM      — Iron Ore price (World Bank monthly, via FRED) [AS_C1, AS_C2]
-      BAMLHE00EHYIOAS  — ICE BofA Euro HY OAS (EU_I1 primary / fallback)
+      BAMLHE00EHYIOAS  — ICE BofA Euro HY OAS [EU_I4 primary; EU_I1 fallback]
       IRLTLT01CNM156N  — China 10Y govt bond yield (OECD via FRED) [AS_I1]
       IRLTLT01INM156N  — India 10Y govt bond yield (OECD via FRED) [AS_I2]
       IRLTLT01GBM156N  — UK 10Y Gilt yield (OECD via FRED) [EU_I2, EU_I3]
@@ -690,6 +692,11 @@ REGIME_RULES = {
     "EU_I1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
     "EU_I2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
     "EU_I3":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
+    "EU_I4":  lambda r, z: (
+        "stress"  if (not np.isnan(r) and r > 700) or (not np.isnan(z) and z > 1.5)
+        else ("frothy" if not np.isnan(z) and z < -1 and not np.isnan(r) and r < 400
+              else "normal")
+    ),
     "EU_R1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
     "EU_FX1": lambda r, z: _r(r, z,  1, -1, "EU-macro-friendly","EU-strain"),
     # Asia
@@ -1228,6 +1235,15 @@ def _calc_EU_I3(supp, **_):
 # EU RATES  (EU_R1)
 # ---------------------------------------------------------------------------
 
+def _calc_EU_I4(supp, **_):
+    """
+    Euro HY credit spread: FRED BAMLHE00EHYIOAS — ICE BofA Euro High Yield OAS, bps.
+    Widening = euro credit stress; tightening = risk appetite.
+    """
+    s = supp.get("BAMLHE00EHYIOAS", pd.Series(dtype=float))
+    return _to_weekly_friday(s)
+
+
 def _calc_EU_R1(cp, **_):
     """
     UK credit conditions: log(SLXX.L / IGLT.L) — UK IG Corp ETF vs Gilt ETF.
@@ -1259,6 +1275,7 @@ _EU_CALCULATORS = {
     "EU_I1":  _calc_EU_I1,
     "EU_I2":  _calc_EU_I2,
     "EU_I3":  _calc_EU_I3,
+    "EU_I4":  _calc_EU_I4,
     "EU_R1":  _calc_EU_R1,
     "EU_FX1": _calc_EU_FX1,
 }
