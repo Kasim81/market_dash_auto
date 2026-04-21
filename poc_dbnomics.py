@@ -104,21 +104,20 @@ EUROSTAT_CANDIDATES = {
 # back to searching BOJ datasets.
 # ---------------------------------------------------------------------------
 
-BOJ_TANKAN_CANDIDATES = {
-    "Tankan Large Mfr DI": [
-        "BOJ/CO/DI_L_MFG",
-        "BOJ/CO/BSTTTSAC110Q",
-        "BOJ/tankan/DI_L_MFG",
+JAPAN_BSVY_CANDIDATES = {
+    "Japan Business Tendency (OECD)": [
+        # OECD MEI Business Tendency Surveys — Japan composite / manufacturing
+        "OECD/MEI_BTS_COS/JPN.BSCICP02.STSA.M",
+        "OECD/MEI_BTS_COS/JPN.BSCICP03.STSA.M",
+        "OECD/MEI_BTS_COS/JPN.BSCI.BLSA.M",
     ],
-    "Tankan Large Mfr Forecast DI": [
-        "BOJ/CO/DI_L_MFG_F",
-        "BOJ/CO/BSTTTSAC120Q",
-        "BOJ/tankan/DI_L_MFG_F",
+    "Japan Mfg Confidence (OECD)": [
+        "OECD/KEI/BSCI.JPN.BLSA.M",
+        "OECD/KEI/BSCICP03.JPN.BLSA.M",
     ],
-    "Tankan Large Non-Mfr DI": [
-        "BOJ/CO/DI_L_NMFG",
-        "BOJ/CO/BSTTTSAC210Q",
-        "BOJ/tankan/DI_L_NMFG",
+    "Japan Consumer Confidence (OECD)": [
+        "OECD/MEI_BTS_COS/JPN.CSCICP02.STSA.M",
+        "OECD/MEI_BTS_COS/JPN.CSCICP03.STSA.M",
     ],
 }
 
@@ -254,10 +253,14 @@ def try_candidates(label: str, candidates: list[str]) -> tuple[dict | None, str 
 # ---------------------------------------------------------------------------
 
 def explore_and_match(provider: str, dataset: str, keywords: list[str],
-                      limit: int = 500) -> list[dict]:
+                      limit: int = 500, required_substrings: list[str] = None) -> list[dict]:
     """
-    List series in a dataset, return those whose series_name contains
+    List series in a dataset, return those whose series_name+code contains
     ALL keywords (case-insensitive).
+
+    required_substrings: optional list of strings that MUST appear in the
+    series_code (e.g., ['U2'] to require Euro Area).  Applied after keyword
+    filtering.
     """
     url = f"{BASE}/series/{provider}/{dataset}?limit={limit}&offset=0"
     try:
@@ -274,6 +277,10 @@ def explore_and_match(provider: str, dataset: str, keywords: list[str],
             code = (d.get("series_code") or "").lower()
             combined = name + " " + code
             if all(k in combined for k in kw_lower):
+                if required_substrings:
+                    code_upper = (d.get("series_code") or "").upper()
+                    if not all(req.upper() in code_upper for req in required_substrings):
+                        continue
                 matches.append(d)
         return matches
     except Exception as e:
@@ -384,14 +391,16 @@ def main():
             print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
                   f"({info['years']}y), last={info['last_value']}, {info['days_ago']}d ago")
         else:
-            print(f"  No candidate hit.  Exploring ECB/BLS dataset by keyword...")
+            print(f"  No candidate hit.  Exploring ECB/BLS dataset by keyword (U2 filter)...")
             kw_map = {
-                "Credit Std Enterprises": ["credit", "standards", "enterprise", "net"],
-                "Credit Std Households": ["credit", "standards", "household", "net"],
+                "Credit Std Enterprises": ["standards", "enterprise"],
+                "Credit Std Households":  ["standards", "household"],
             }
             short = label.split("—")[-1].strip()
             kws = kw_map.get(short, short.lower().split())
-            matches = explore_and_match("ECB", "BLS", kws, limit=500)
+            # Filter: must be Euro Area (U2) and factor=ST (standards)
+            matches = explore_and_match("ECB", "BLS", kws, limit=2000,
+                                        required_substrings=["Q.U2.", ".ST."])
             if matches:
                 print(f"  Found {len(matches)} keyword matches.  Top 5:")
                 for m in matches[:5]:
@@ -444,12 +453,18 @@ def main():
             print(f"  No candidate hit.  Exploring Eurostat datasets...")
             for ds in ("teibs010", "teibs020", "ei_bssi_m_r2"):
                 kw_map = {
-                    "EC Economic Sentiment (EA)":  ["sentiment", "ea"],
-                    "EC Industry Confidence (EA)":  ["industry", "ea"],
-                    "EC Services Confidence (EA)":  ["services", "ea"],
+                    "EC Economic Sentiment (EA)":  ["sentiment"],
+                    "EC Industry Confidence (EA)":  ["industry", "confidence"],
+                    "EC Services Confidence (EA)":  ["services", "confidence"],
                 }
                 kws = kw_map.get(label, label.lower().split())
-                matches = explore_and_match("Eurostat", ds, kws, limit=200)
+                # Euro Area country code in Eurostat: EA19 (pre-2023) or EA20 (current)
+                matches = (explore_and_match("Eurostat", ds, kws, limit=500,
+                                             required_substrings=[".EA20"])
+                           or explore_and_match("Eurostat", ds, kws, limit=500,
+                                                required_substrings=[".EA19"])
+                           or explore_and_match("Eurostat", ds, kws, limit=500,
+                                                required_substrings=[".EA."]))
                 if matches:
                     print(f"  Found {len(matches)} matches in Eurostat/{ds}.  Top 3:")
                     for m in matches[:3]:
@@ -474,32 +489,40 @@ def main():
                 print(f"  FAIL: no matching series found")
 
     # -----------------------------------------------------------------------
-    # Part 4: BOJ Tankan
+    # Part 4: Japan Business Surveys via OECD provider
+    # BOJ Tankan is NOT on DB.nomics (BOJ provider only has BP/CGPI/SPPI).
+    # Switch to OECD business tendency surveys for Japan.
     # -----------------------------------------------------------------------
     print("\n" + "=" * 70)
-    print("PART 4 — BOJ Tankan (3 series, dataset code uncertain)")
+    print("PART 4 — Japan Business Surveys via OECD (Tankan unavailable on DB.nomics)")
     print("=" * 70)
 
-    # First, check what datasets BOJ has on DB.nomics
-    print("\n  Listing BOJ datasets on DB.nomics...")
-    boj_datasets = list_datasets("BOJ")
-    if boj_datasets:
-        print(f"  Found {len(boj_datasets)} BOJ datasets:")
-        for ds in boj_datasets[:20]:
+    print("\n  Listing OECD business-survey datasets on DB.nomics...")
+    oecd_datasets = list_datasets("OECD")
+    bts_datasets = []
+    if oecd_datasets:
+        for ds in oecd_datasets:
+            code = (ds.get("code") or "").upper()
+            name = (ds.get("name") or ds.get("description") or "").lower()
+            if any(k in code for k in ("BTS", "MEI", "KEI", "BCI", "CLI")) or \
+               any(k in name for k in ("tendency", "confidence", "sentiment", "business cycle")):
+                bts_datasets.append(ds)
+        print(f"  Found {len(bts_datasets)} business-survey-relevant OECD datasets:")
+        for ds in bts_datasets[:20]:
             code = ds.get("code", "?")
-            name = (ds.get("name") or ds.get("description") or "")[:70]
+            name = (ds.get("name") or "")[:70]
             n = ds.get("nb_series", "?")
             print(f"    {code}: {name} ({n} series)")
     else:
-        print("  WARNING: BOJ provider not found or has no datasets on DB.nomics")
+        print("  WARNING: OECD provider not found on DB.nomics")
 
-    for label, candidates in BOJ_TANKAN_CANDIDATES.items():
+    for label, candidates in JAPAN_BSVY_CANDIDATES.items():
         print(f"\n  Trying candidates for: {label}")
         doc, sid = try_candidates(label, candidates)
         if doc:
             info = analyse_series(doc)
             info["series_id"] = sid
-            info["group"] = "BOJ_Tankan"
+            info["group"] = "Japan_BSVY"
             results.append(info)
             resolved[label] = sid
             save_sample(sid, doc, label)
@@ -508,31 +531,31 @@ def main():
             print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
                   f"({info['years']}y), last={info['last_value']}, {info['days_ago']}d ago")
         else:
-            # Search across all BOJ datasets for Tankan keywords
-            print(f"  No candidate hit.  Searching BOJ datasets for Tankan keywords...")
+            print(f"  No candidate hit.  Searching OECD business-survey datasets for JPN...")
             kw_map = {
-                "Tankan Large Mfr DI":          ["tankan", "large", "manufactur"],
-                "Tankan Large Mfr Forecast DI": ["tankan", "large", "manufactur", "forecast"],
-                "Tankan Large Non-Mfr DI":      ["tankan", "large", "non-manufactur"],
+                "Japan Business Tendency (OECD)":   ["business", "confidence"],
+                "Japan Mfg Confidence (OECD)":      ["manufacturing", "confidence"],
+                "Japan Consumer Confidence (OECD)": ["consumer", "confidence"],
             }
-            kws = kw_map.get(label, ["tankan"])
+            kws = kw_map.get(label, ["business", "confidence"])
             found = False
-            for ds in boj_datasets[:15]:
+            for ds in bts_datasets[:10]:
                 ds_code = ds.get("code", "")
-                matches = explore_and_match("BOJ", ds_code, kws, limit=100)
+                matches = explore_and_match("OECD", ds_code, kws, limit=500,
+                                            required_substrings=["JPN"])
                 if matches:
-                    print(f"  Found {len(matches)} matches in BOJ/{ds_code}.  Top 3:")
+                    print(f"  Found {len(matches)} JPN matches in OECD/{ds_code}.  Top 3:")
                     for m in matches[:3]:
                         code = m.get("series_code", "?")
                         name = (m.get("series_name") or "")[:80]
                         print(f"    {code}: {name}")
                     best = matches[0]
-                    best_sid = f"BOJ/{ds_code}/{best['series_code']}"
+                    best_sid = f"OECD/{ds_code}/{best['series_code']}"
                     doc2 = fetch_series(best_sid)
                     if doc2:
                         info = analyse_series(doc2)
                         info["series_id"] = best_sid
-                        info["group"] = "BOJ_Tankan"
+                        info["group"] = "Japan_BSVY"
                         results.append(info)
                         resolved[label] = best_sid
                         save_sample(best_sid, doc2, label)
@@ -541,8 +564,9 @@ def main():
                     found = True
                     break
             if not found:
-                results.append({"name": label, "ok": False, "reason": "not on DB.nomics", "group": "BOJ_Tankan"})
-                print(f"  FAIL: Tankan series not found on DB.nomics")
+                results.append({"name": label, "series_id": candidates[0], "ok": False,
+                                "reason": "not found on OECD", "group": "Japan_BSVY"})
+                print(f"  FAIL: Japan business survey not found via OECD")
 
     # -----------------------------------------------------------------------
     # Summary
