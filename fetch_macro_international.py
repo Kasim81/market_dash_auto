@@ -73,6 +73,8 @@ import numpy as np
 import pandas as pd
 from datetime import date, datetime, timedelta, timezone
 
+from library_utils import SHEETS_PROTECTED_TABS
+
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
@@ -1187,6 +1189,9 @@ def _ensure_tab(sheets, tab_name: str) -> None:
 
 
 def _write_tab(sheets, tab_name: str, values: list) -> None:
+    if tab_name in SHEETS_PROTECTED_TABS:
+        print(f"[Phase C] REFUSED: '{tab_name}' is a protected tab")
+        return
     sheets.values().clear(
         spreadsheetId=SHEET_ID, range=f"{tab_name}!A:ZZ"
     ).execute()

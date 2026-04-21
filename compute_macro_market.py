@@ -66,6 +66,8 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 
+from library_utils import SHEETS_PROTECTED_TABS
+
 # ---------------------------------------------------------------------------
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
@@ -640,6 +642,7 @@ REGIME_RULES = {
     "AS_IN_R1":  lambda r, z: _r(r, z,  1, -1, "India-carry-attractive","India-underperform"),
     "FX_CN1": lambda r, z: _r(r, z,  1, -1, "CNY-strengthening", "CNY-weakening"),
     "FX_1": lambda r, z: _r(r, z,  1, -1, "INR-strengthening", "INR-weakening"),
+    "FX_EM1": lambda r, z: _r(r, z,  1, -1, "EMFX-strengthening", "EMFX-weakening"),
     "FX_CMD5":  lambda r, z: _r(r, z,  1, -1, "China-infra-optimism","China-demand-disappoint"),
     "FX_CMD4":  lambda r, z: _r(r, z,  1, -1, "China-commodity-lead","global-commodity-lead"),
     "AS_CN_G1":  lambda r, z: _r(r, z,  1, -1, "China-outperform-EM", "China-underperform-EM"),
@@ -1450,6 +1453,28 @@ def _calc_FX_1(cp, **_):
     return np.log(inr / sma26.replace(0, np.nan))
 
 
+def _calc_FX_EM1(cp, **_):
+    """
+    EMFX basket momentum: equal-weight CNY, INR, KRW, TWD vs USD.
+    Each FX=X quote is indirect (FCY per USD). Invert via -log so a
+    RISING basket corresponds to the EM currencies collectively
+    STRENGTHENING vs USD. Raw = basket − 26wk SMA (already in log space).
+    Positive → EMFX strengthening (EM-risk-on, weak-USD, capital inflows).
+    """
+    tickers = ["CNY=X", "INR=X", "KRW=X", "TWD=X"]
+    legs = []
+    for t in tickers:
+        s = _to_weekly_friday(_p(cp, t)).dropna()
+        if s.empty:
+            continue
+        legs.append(-np.log(s.replace(0, np.nan)))
+    if not legs:
+        return pd.Series(dtype=float)
+    basket = pd.concat(legs, axis=1).ffill().dropna().mean(axis=1)
+    sma26 = basket.rolling(26, min_periods=13).mean()
+    return (basket - sma26).dropna()
+
+
 # ---------------------------------------------------------------------------
 # ASIA COMMODITIES  (AS_C1–C2)
 # ---------------------------------------------------------------------------
@@ -1622,6 +1647,7 @@ _ASIA_REGIONAL_CALCULATORS = {
     "AS_IN_R1":    _calc_AS_IN_R1,
     "FX_CN1":   _calc_FX_CN1,
     "FX_1":   _calc_FX_1,
+    "FX_EM1":   _calc_FX_EM1,
     "FX_CMD5":    _calc_FX_CMD5,
     "FX_CMD4":    _calc_FX_CMD4,
     "AS_CN_G1":    _calc_AS_CN_G1,
@@ -1901,6 +1927,9 @@ def push_macro_to_google_sheets(df_snapshot: pd.DataFrame, df_hist: pd.DataFrame
 
     def write_sheet(tab_name: str, df: pd.DataFrame):
         """Ensure tab exists, clear it, then write the DataFrame."""
+        if tab_name in SHEETS_PROTECTED_TABS:
+            print(f"  [sheets] REFUSED: '{tab_name}' is a protected tab")
+            return
         ensure_tab_exists(tab_name)
         sheets.values().clear(
             spreadsheetId=SHEET_ID,

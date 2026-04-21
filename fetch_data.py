@@ -17,6 +17,7 @@ from library_utils import (
     REGION_ORDER as _LIB_REGION_ORDER,
     COMP_FX_TICKERS,
     COMP_FCY_PER_USD,
+    SHEETS_LEGACY_TABS_TO_DELETE,
     lib_sort_key as _lib_sort_key,
 )
 
@@ -718,18 +719,14 @@ def push_to_google_sheets(df_main, df_comp=None):
         ).execute()
         print(f"  ✓ Written {len(values)-1} rows to '{tab_name}' tab")
 
-    # Remove legacy / deprecated tabs on every run.
-    # - "Market Data" (with space): never created by code; reappears via Apps Script
-    # - "sentiment_data": consolidated into macro_us + macro_intl
-    # - "macro_surveys": consolidated into macro_us
-    # - "macro_surveys_hist": consolidated into macro_us_hist
-    TABS_TO_DELETE = {"Market Data", "sentiment_data", "macro_surveys", "macro_surveys_hist", "market_data_hist"}
+    # Remove legacy / deprecated tabs on every run — list sourced from
+    # library_utils.SHEETS_LEGACY_TABS_TO_DELETE (single source of truth).
     try:
         meta = sheets.get(spreadsheetId=SPREADSHEET_ID).execute()
         delete_requests = []
         for sheet in meta.get("sheets", []):
             title = sheet["properties"]["title"]
-            if title in TABS_TO_DELETE:
+            if title in SHEETS_LEGACY_TABS_TO_DELETE:
                 delete_requests.append(
                     {"deleteSheet": {"sheetId": sheet["properties"]["sheetId"]}}
                 )

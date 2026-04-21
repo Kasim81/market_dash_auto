@@ -28,10 +28,10 @@ The project evolved from a single hardcoded pipeline into a sequence of lettered
 | Phase A — US Macro (FRED) | 43 FRED series (yields, inflation, labour, credit, surveys). Snapshot + weekly history from 1947. | `fetch_macro_us_fred.py` → `macro_us`, `macro_us_hist` | Production |
 | Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
 | Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
-| Phase D — PMI / FMP | ISM Manufacturing & Services PMI; additional regional Fed survey sub-indices | (not yet built) | Not started |
+| Phase D — PMI / FMP | ISM Manufacturing & Services PMI; additional regional Fed survey sub-indices | FMP required (FRED removed ISM data in 2016) | Decision gate resolved; awaiting `FMP_API_KEY` |
 | Phase E — Macro-Market Indicators | 68 composite indicators with 156w rolling z-scores, regimes, forward regimes | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
-| Phase G — Sheets Export Audit | Verify tab push correctness, GID inventory, batch-write coverage, protected-tab guard | (housekeeping, ongoing) | Partial |
+| Phase G — Sheets Export Audit | Tab inventory (9 active), protected-tab guards across all writers, legacy-tab cleanup, batch-write coverage | Single source of truth in `library_utils.py`; guards added to 3 previously-missing writers on 2026-04-21 | Mostly Done |
 
 ### Phase-by-Phase Detail
 
@@ -61,9 +61,9 @@ Covers 11 economies: USA, CAN, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CHE, and EA19 
 
 Outputs to `macro_intl` (snapshot) and `macro_intl_hist` (weekly Friday spine, forward-filled from native monthly/quarterly/annual cadence). Recent fixes (2026-04-21): OECD 3-month rate MEASURE code corrected from `IRST` to `IR3TIB` on `DSD_STES@DF_FINMARK`; IMF Euro Area entity code corrected from `XM` to `EURO`. Known structural gap: OECD does not publish CLI for EA19 or CHE — `compute_macro_market.py` uses the DEU+FRA average as the Eurozone CLI proxy.
 
-#### Phase D — PMI / FMP — Not Started
+#### Phase D — PMI / FMP — Decision Gate Resolved; Awaiting API Key
 
-Intended to fill two gaps: ISM Manufacturing PMI and ISM Services PMI composites (S&P Global licence-gated on FRED), and additional regional Fed survey sub-indices not published via FRED. `FMP_API_KEY` secret is not registered. **Decision gate:** before building a new `fetch_pmi.py` module, check whether `NAPM` / `NMFCI` / `NMFBAI` (or equivalents) are now reachable on FRED — if so, add rows to `macro_library_fred.csv` and Phase D becomes a no-op. If not, register for a free FMP key (250 calls/day) and implement a module that mirrors the FRED fetch pattern. The broader proposal in section 5.7 (DB.nomics, UMich portal, ECB SDW, BoJ) may supersede Phase D as a single umbrella "Phase H — Additional Sources" effort.
+Intended to fill two gaps: ISM Manufacturing PMI and ISM Services PMI composites (S&P Global licence-gated on FRED), and additional regional Fed survey sub-indices not published via FRED. **Decision gate resolved 2026-04-21:** ISM data has been unavailable via FRED since June 2016 (licensing pulled; all 22 series deleted from FRED APIs). Series like `NAPM`, `NAPMPI`, `NMFCI`, `NMFBAI` are flagged discontinued — there is no FRED path. FMP (Financial Modeling Prep, free tier 250 calls/day) carries the ISM composites under its own licence and is the most direct fix. `FMP_API_KEY` secret is not yet registered — that's the only remaining blocker. See section 5.1 for the full implementation plan. The broader proposal in section 5.7 (DB.nomics, UMich portal, ECB SDW, BoJ) may supersede Phase D as a single umbrella "Phase H — Additional Sources" effort.
 
 #### Phase E — Macro-Market Indicators — Production
 
@@ -71,20 +71,39 @@ Intended to fill two gaps: ISM Manufacturing PMI and ISM Services PMI composites
 
 #### Phase F — Calculated Fields — Partial
 
-Several synthetic fields from the original handover are already covered by Phase E indicators (HY/IG ratio → `US_Cr3`; value/growth → `US_EQ_F2`; US 5-regime credit spread → `US_Cr2`). Outstanding items:
+Several synthetic fields from the original handover are already covered by Phase E indicators (HY/IG ratio → `US_Cr3`; value/growth → `US_EQ_F2`; US 5-regime credit spread → `US_Cr2`; EM vs DM equity ratio → `GL_G1` as EEM/URTH; EMFX basket → `FX_EM1` as of 2026-04-21; MOVE index → already ingested as `^MOVE` and used in `US_V2`). Outstanding items:
 
-- EMFX basket (equal-weight CNY, INR, KRW, TWD vs USD)
-- EEM / IWDA ratio (FX-adjusted EM vs DM)
-- Explicit MOVE proxy — 30-day realised volatility on `^TNX`
 - Global PMI proxy — equal-weight ISM + Eurozone PMI + Japan PMI (blocked on Phase D)
-- Global yield curve — average of US / DE / UK / JP 10Y-2Y spreads
+- Global yield curve — average of US / DE / UK / JP 10Y-2Y spreads (needs DE/UK 2Y yields + JP 2Y/10Y added to `macro_library_fred.csv`)
 - Per-index breadth-above-200DMA — requires in-house computation from constituent closes; no free feed exists for `$SPXA200R`-style symbols
 
-See section 5.3 for details. Audit each against the 68 existing indicators before building duplicates.
+See section 5.3 for the audit. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`.
 
-#### Phase G — Sheets Export Audit — Partial
+#### Phase G — Sheets Export Audit — Mostly Done (2026-04-21)
 
-Core push infrastructure is production-proven across all 13 tabs — batch writes (10k rows/call), protected-tab guard on `market_data` / `sentiment_data`, NaN → empty-string conversion, legacy tab deletion (`TABS_TO_DELETE`). Outstanding housekeeping: record GIDs for every tab created since the original handover, verify exact lowercase-underscore tab names, build a one-shot audit script that cross-checks the push list against the tab inventory. Low priority — no user-visible failures.
+Tab inventory (all 9 active tabs, all lowercase-underscore, all production):
+
+| Tab | Writer module | Snapshot/History | Notes |
+|---|---|---|---|
+| `market_data` | `fetch_data.py` | snapshot | Simple pipeline; consumed by downstream `trigger.py`. **Protected.** |
+| `market_data_comp` | `fetch_data.py` | snapshot | Comp pipeline (~390 instruments). |
+| `market_data_comp_hist` | `fetch_hist.py` | history (weekly) | Weekly Friday-close prices from 1990. |
+| `macro_us` | `fetch_macro_us_fred.py` | snapshot | 43 FRED series. |
+| `macro_us_hist` | `fetch_hist.py` | history (weekly) | Weekly Friday FRED history from 1947. |
+| `macro_intl` | `fetch_macro_international.py` | snapshot | 11-country macro. |
+| `macro_intl_hist` | `fetch_macro_international.py` | history (weekly) | Weekly Friday international macro. |
+| `macro_market` | `compute_macro_market.py` | snapshot | 68 composite indicators. |
+| `macro_market_hist` | `compute_macro_market.py` | history (weekly) | Weekly indicator history. |
+
+Audit findings fixed on 2026-04-21:
+
+- **Protected-tab guard was missing** in three writer modules (`fetch_macro_us_fred.py`, `fetch_macro_international.py`, `compute_macro_market.py`). All three now check against the shared `SHEETS_PROTECTED_TABS` constant in `library_utils.py`. Previously only `fetch_hist.py` had a guard (with its own local copy of the list).
+- **Single source of truth for tab state**: `library_utils.py` now exports `SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, and `SHEETS_LEGACY_TABS_TO_DELETE` as `frozenset`s. `fetch_data.py` uses the shared legacy-delete list instead of its own inline set.
+- **Clear-range bug**: `fetch_macro_us_fred.py` cleared only `A:Z` (26 columns) before writing — would leave stale data if the schema grew beyond column Z. Widened to `A:ZZ` (702 columns) to match the other writers.
+
+Outstanding (low value): record Sheets GIDs for each tab in `technical_manual.md`; build an automated "tab drift" audit that flags tabs in the Sheet but not in `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE`.
+
+Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the largest tab (`market_data_comp_hist`, ~9,000 rows) sits within the Sheets API's single-call payload limit at current column count, so no other writer has hit a batching need yet. Revisit if column count grows significantly.
 
 ---
 
@@ -165,6 +184,33 @@ Core push infrastructure is production-proven across all 13 tabs — batch write
 | Stage 4 | IMF Euro Area real GDP returning no data | `XM` replaced with `EURO` in `IMF_CODE_MAP` in `fetch_macro_international.py` — IMF DataMapper v1 uses `EURO` (see `imf.org/external/datamapper/profile/EURO`). |
 | Stage 5 | OECD `DF_FINMARK` short-term interest rates returning zero data | MEASURE code corrected from `IRST` to `IR3TIB` (3-month interbank) on `DSD_STES@DF_FINMARK` in `data/macro_library_oecd.csv`. `IRSTCI` (call money) and `IRLT` (long-term) are the other valid codes. |
 
+### Phase D Decision Gate Resolved (completed 2026-04-21)
+
+| Finding | Detail |
+|---|---|
+| FRED cannot carry ISM PMI | Confirmed via FRED's own 2016 announcement: all 22 ISM series (Manufacturing + Non-Manufacturing Reports on Business) were deleted for licensing reasons and have not been restored. `NAPM`, `NAPMPI`, `NMFCI`, `NMFBAI`, `NMFNOI` are all discontinued. |
+| Path forward | FMP (Financial Modeling Prep, free tier 250 calls/day) — carries ISM composites + sub-indices under its own licence. Requires `FMP_API_KEY` registration + new `fetch_macro_fmp.py` module + `data/macro_library_fmp.csv`. See section 5.1 for the full plan. |
+| Unblocks | Phase F "Global PMI proxy" (equal-weight ISM + Eurozone PMI + Japan PMI) once both ISM and EZ/JP PMI are available. |
+
+### Phase G — Sheets Export Audit (completed 2026-04-21)
+
+| Change | Detail |
+|---|---|
+| Shared tab-state constants in `library_utils.py` | Added `SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE` as `frozenset`s — single source of truth for tab state across all 5 writer modules. |
+| Protected-tab guards added | `fetch_macro_us_fred.py`, `fetch_macro_international.py`, `compute_macro_market.py` now each check against `SHEETS_PROTECTED_TABS` before writing. Previously only `fetch_hist.py` had a guard (with its own local set). |
+| `fetch_data.py` legacy-tab list consolidated | Replaced the inline `TABS_TO_DELETE` set with the shared `SHEETS_LEGACY_TABS_TO_DELETE` import. |
+| `fetch_hist.py` local set removed | Replaced local `PROTECTED_TABS = {...}` with the shared import. |
+| Clear-range bug | `fetch_macro_us_fred.py` cleared only `A:Z` (26 columns) before writing — would leave stale data if schema grew past column Z. Widened to `A:ZZ`. |
+| Tab inventory documented | 9 active tabs catalogued in section 1 Phase G (writer module, snapshot vs history, protected status). |
+
+### Phase F Progress — EMFX Basket Added & Prior Items Audited (completed 2026-04-21)
+
+| Change | Detail |
+|---|---|
+| New indicator `FX_EM1` | Equal-weight EMFX basket momentum (CNY, INR, KRW, TWD). Each `FX=X` quote is indirect (FCY per USD); basket uses `-log(FX)` so RISING basket = EM currencies strengthening vs USD. Raw = `basket − 26wk SMA`. Regime: z > +1 = EMFX-strengthening; z < -1 = EMFX-weakening. |
+| Phase F audit | EEM/IWDA ratio found already covered by `GL_G1` (EEM / URTH in USD — MSCI World USD-denominated ETF is the functional equivalent of IWDA.L after FX). No new indicator needed. |
+| MOVE proxy confirmed unnecessary | `^MOVE` is already ingested via the comp pipeline and used in `US_V2` (cross-asset volatility). |
+
 ### Previously Resolved Issues
 
 | Issue | Resolution |
@@ -234,15 +280,23 @@ These were evaluated and deliberately excluded:
 ### 5.1 Phase D — PMI / Survey Data
 
 **Priority:** Low-medium — regional Fed surveys are already covered via FRED in `macro_us`.
-**Status:** Not started. `FMP_API_KEY` secret not registered.
+**Status:** Decision gate resolved 2026-04-21 — **FRED is not a viable source for ISM PMI.** Implementation blocked on owner registering `FMP_API_KEY` secret.
 
-**Decision needed:** Check whether ISM Manufacturing PMI and ISM Services PMI are available via FRED directly. If so, FMP may be unnecessary — add them to `macro_library_fred.csv` and the existing FRED fetch pattern handles the rest. If not, register for a free FMP API key and implement a new module.
+**Decision gate resolution:** ISM (Institute for Supply Management) data has not been available via FRED since **June 2016**, when all 22 series from the Manufacturing and Non-Manufacturing ISM Reports on Business were deleted from FRED's database, Excel add-in, APIs, and all other services for licensing reasons. Series like `NAPM`, `NAPMPI`, `NMFCI`, `NMFBAI`, `NMFNOI` are either fully removed or flagged discontinued. The licensing agreement is between ISM and S&P Global / Markit and has not been restored.
 
-FRED series to check first:
-- `NAPM` — ISM Manufacturing PMI (may have replaced `NAPMPI`)
-- `NMFCI`, `NMFBAI` — ISM Non-Manufacturing (Services)
-- Empire State Manufacturing: check FRED coverage
-- Philly Fed components: many available on FRED
+FRED *does* still carry:
+- Regional Fed surveys (Philadelphia, Empire State / New York, Richmond, Kansas City, Dallas) — **already in `macro_library_fred.csv`**.
+- OECD Composite Leading Indicators (different licence) — covered in Phase C.
+- `MANEMP` and other manufacturing employment / output series — covered in Phase A.
+
+**Conclusion — FRED cannot close the ISM PMI gap.** Paid FMP (Financial Modeling Prep) free tier (250 calls/day) carries the ISM Manufacturing & Services composites and sub-indices under its own licence arrangement and is the most direct fix. DB.nomics and Trading Economics are secondary options but less reliable in coverage.
+
+**Action when ready to implement:**
+1. Register a free FMP API key at `financialmodelingprep.com` → store as `FMP_API_KEY` GitHub Actions secret.
+2. Create `fetch_macro_fmp.py` mirroring the FRED fetch pattern (per-series `try/except`, 0.6s rate limit, exponential backoff).
+3. Drive series list from a new `data/macro_library_fmp.csv` with the same schema shape as `macro_library_fred.csv`.
+4. Register new indicators in `compute_macro_market.py` via the standard 4-point pattern (CSV row + `_calc_*` function + REGIME_RULES entry + dispatcher registration).
+5. Priority series: ISM Manufacturing composite PMI, ISM Manufacturing New Orders, ISM Services composite PMI, ISM Services Business Activity. These unblock the Phase F "Global PMI proxy" as well.
 
 ### 5.2 Instrument Expansion
 
@@ -269,25 +323,22 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 | Field | Formula | Status |
 |---|---|---|
 | HY/IG ratio | BAMLH0A0HYM2 / BAMLC0A0CM | Covered by US_Cr3 (HY-IG spread) |
-| EMFX basket | Equal-weight CNY, INR, KRW, TWD vs USD | Not yet implemented |
-| EEM/IWDA ratio | EEM / IWDA.L (FX-adjusted) | Not yet implemented |
-| MOVE proxy | 30-day realised vol on ^TNX | Not yet implemented |
+| EMFX basket | Equal-weight CNY, INR, KRW, TWD vs USD (inverted so rising = EM FX strengthening) | Implemented 2026-04-21 as `FX_EM1` |
+| EEM/IWDA ratio | EEM / URTH (MSCI World ETF in USD — functional equivalent of IWDA.L after FX adjustment) | Covered by `GL_G1` |
+| MOVE proxy | 30-day realised vol on ^TNX | Not needed — `^MOVE` ticker itself is in the comp pipeline (used in `US_V2`) |
 | Global PMI proxy | Equal-weight ISM + Eurozone PMI + Japan PMI | Depends on Phase D |
-| Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented |
+| Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented (US/DE/UK 10Y available; needs 2Y for DE/UK + full JP curve) |
 | % stocks above 200-day MA | Per-index breadth: fraction of constituents with close > 200-day SMA. Not exposed by yfinance as a field and no free FRED/OECD feed exists; StockCharts symbols (`$SPXA200R`, `$NYA200R`, `$NDXA200R`) are proprietary. Compute in-house from constituent daily closes. Candidate indices: S&P 500 (highest signal-to-cost), Nasdaq 100, Russell 1000, FTSE 100. Naming: `US_EQ_B1` / `US_EQ_B2` etc. ("Equity - Breadth"). Adds ~500-1000 extra daily yfinance pulls per index. | Not yet implemented |
 
 **Action:** Audit the 68 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
 
 ### 5.4 Sheets Export Audit (Phase G)
 
-**Priority:** Low — housekeeping.
+**Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
 
-- Verify all active tabs are pushed correctly by the relevant modules
-- Confirm tab names match exactly (lowercase with underscores)
-- Record GIDs for all tabs created since the handover
-- Confirm batch write logic (10,000 rows per call) is used for large tabs
-- Confirm protected-tab guard blocks writes to `market_data` and `sentiment_data`
-- Verify legacy tab deletion (`TABS_TO_DELETE` in fetch_data.py) is working
+**Remaining (low value):**
+- Record Sheets GIDs for each of the 9 active tabs in `technical_manual.md` (housekeeping; only useful if downstream consumers need stable GID links).
+- Build an automated drift check: compare the tab set in the Sheet against `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE` and flag extras. Useful only if ad-hoc tabs are being created outside the pipeline.
 
 ### 5.5 Library Manager Utility
 
