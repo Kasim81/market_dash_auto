@@ -1,16 +1,19 @@
 """
 library_utils.py
 ================
-Shared constants and helpers for fetch_data.py and fetch_hist.py.
+Shared constants and helpers for the pipeline.
 
 Contains:
   - Sort order dicts (asset class, region, subclass, sector, etc.)
+  - INDICATOR_GROUP_ORDER / INDICATOR_SUB_GROUP_ORDER — display order for
+    macro-market indicator groups and sub-groups (used by build_html.py,
+    compute_macro_market.py, and any future consumers)
   - lib_sort_key() — sort key function for index_library.csv rows
   - COMP_FX_TICKERS — single authoritative currency → yfinance ticker map
   - COMP_FCY_PER_USD — set of indirect-quote currencies (1 USD = X FCY)
 
-Both fetch_data.py and fetch_hist.py import from here.
-Do NOT duplicate these definitions in those files.
+Imported by fetch_data.py, fetch_hist.py, build_html.py, and
+compute_macro_market.py.  Do NOT duplicate these definitions elsewhere.
 """
 
 # ---------------------------------------------------------------------------
@@ -63,17 +66,17 @@ EQUITY_SUBCLASS_ORDER = {
     "Equity Small Cap (Value)":  4,
     "Equity Sector":             5,
     "Equity Industry Group":     6,
-    "Factor":                    7,
-    "Equity Factor":             7,
+    "Equity Industry":           7,
+    "Factor":                    8,
+    "Equity Factor":             8,
 }
 
 SECTOR_ORDER = {
     "Blend": 0, "Value": 1, "Growth": 2,
-    "Energy": 10, "Materials": 11, "Industrials": 12,
-    "Consumer Discretionary": 13, "Consumer Staples": 14,
-    "Health Care": 15, "Financials": 16,
-    "Information Technology": 17, "Communication Services": 18,
-    "Utilities": 19, "Real Estate": 20,
+    "Consumer Staples": 10, "Health Care": 11, "Utilities": 12,
+    "Industrials": 13, "Energy": 14, "Communication Services": 15,
+    "Information Technology": 16, "Consumer Discretionary": 17,
+    "Materials": 18, "Financials": 19, "Real Estate": 20,
     "Mega-Cap Tech / Growth": 30, "Equal Weight": 31,
     "Momentum": 32, "Dividend Growth": 33, "Quality": 34,
     "Dividend/Quality": 35, "Low Volatility": 36,
@@ -120,6 +123,60 @@ SPREAD_SUBCLASS_ORDER = {
 }
 
 # ---------------------------------------------------------------------------
+# INDICATOR GROUP / SUB-GROUP ORDER
+# Controls display order in build_html.py (indicator explorer sidebar)
+# and any future consumers.  Follows the same pattern as ASSET_CLASS_GROUP,
+# REGION_ORDER, etc.
+# ---------------------------------------------------------------------------
+
+INDICATOR_GROUP_ORDER = {
+    "US":               1,
+    "UK":               2,
+    "Europe":           3,
+    "Japan":            4,
+    "Asia":             5,
+    "Global":           6,
+    "FX & Commodities": 7,
+}
+
+INDICATOR_SUB_GROUP_ORDER = {
+    # ── US ──
+    "Equity - Growth":          1,
+    "Equity - Factor (Style)":  2,
+    "Equity - Factor (Size)":   3,
+    "CrossAsset - Growth":      4,
+    "CrossAsset - Inflation":   5,
+    "Credit":                   6,
+    "Rates - Growth":           7,
+    "Rates - Inflation":        8,
+    "Rates":                    9,
+    "Volatility":              10,
+    "Macro":                   11,
+    "Macro - Survey":          12,
+    "Mmtm - Equity":           13,
+    "Mmtm - CrossAsset":       14,
+    "Mmtm - Credit":           15,
+    "Mmtm - Volatility":       16,
+    # ── UK ──  (shared labels reuse the same sort key above)
+    # ── Europe ──
+    "CLI":                     17,
+    # ── Asia ──
+    "China - Equity (Growth)":        18,
+    "China - Equity - Factor (Size)": 19,
+    "China - Rates":                  20,
+    "India - Equity - Factor (Size)": 21,
+    "India - Rates":                  22,
+    # ── FX & Commodities ──
+    "China - FX Mmtm":         23,
+    "India - FX Mmtm":         24,
+    "Japan - FX Mmtm":         25,
+    "Growth (China infra)":    26,
+    "Growth (China broad)":    27,
+    "Growth Mmtm":             28,
+    "Inflation":               29,
+}
+
+# ---------------------------------------------------------------------------
 # SORT KEY FUNCTION
 # ---------------------------------------------------------------------------
 
@@ -139,6 +196,10 @@ def lib_sort_key(row) -> tuple:
     if ac == "Equity":
         s   = EQUITY_SUBCLASS_ORDER.get(asc, 50)
         sec = SECTOR_ORDER.get(sector, 50)
+        # Industry Groups and Industries: sort by ticker (GICS code) instead of name
+        if asc in ("Equity Industry Group", "Equity Industry"):
+            ticker = str(row.get("ticker_yfinance_pr", "") or "")
+            return (g, r, s, sec, ticker)
         return (g, r, s, sec, name)
 
     if ac == "Fixed Income":

@@ -21,7 +21,8 @@ Fetches macro indicators for 11 major economies from three free public APIs:
 
 Countries: AUS, CAN, CHE, CHN, DEU, EA19, FRA, GBR, ITA, JPN, USA
   Note: CHN and EA19 have partial coverage (absent from OECD LFS unemployment).
-  Note: EA19 = Eurozone; World Bank equivalent code is EMU.
+  Note: EA19 = Eurozone. Equivalent codes on other sources:
+        World Bank → EMU; IMF DataMapper → EURO.
 
 Outputs:
   data/macro_intl.csv          — snapshot (latest + prior + change per country×indicator)
@@ -125,10 +126,9 @@ COUNTRY_META = {
 }
 
 # IMF DataMapper country codes → our OECD-aligned codes
-# IMF uses 3-letter ISO codes for countries, and its own aggregate codes:
-#   EURO = Euro Area (not the SDMX standard "XM")
-#   EUQ  = Europe (broader, includes non-euro countries)
-#   EU   = European Union
+# IMF uses 3-letter ISO codes for countries; "EURO" for Euro Area (entity code
+# visible at https://www.imf.org/external/datamapper/profile/EURO). The legacy
+# "XM" code returns no data from the v1 DataMapper API.
 IMF_CODE_MAP = {
     "AUS":  "AUS",
     "CAN":  "CAN",
