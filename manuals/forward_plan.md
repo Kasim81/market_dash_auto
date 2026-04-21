@@ -1,32 +1,94 @@
 # Market Dashboard — Forward Plan
 
 > Last updated: 2026-04-21
-> Based on: Project Plan 260327.md, multifreq_plan.md, MarketDashboard_ClaudeCode_Handover.md, METADATA_REDUNDANCY_REVIEW.md, archive/indicator_groups_review_UPDATED.xlsx
+> Based on: [`manuals/technical_manual.md`](technical_manual.md), [`manuals/multifreq_plan.md`](multifreq_plan.md), `archive/indicator_groups_review_UPDATED.xlsx`, and the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history — content consolidated into `technical_manual.md` and this file).
 
 ---
 
 ## Table of Contents
 
-1. [Completed Work](#1-completed-work)
-2. [Bug Fixes & Data Quality](#2-bug-fixes--data-quality)
-3. [Metadata & Label Corrections](#3-metadata--label-corrections)
-4. [New Feature Development](#4-new-feature-development)
-5. [Multi-Frequency Pipeline (Phase 2)](#5-multi-frequency-pipeline-phase-2)
-6. [Operational & Infrastructure](#6-operational--infrastructure)
+1. [Project Phase Summary (A-G)](#1-project-phase-summary-a-g)
+2. [Completed Work](#2-completed-work)
+3. [Bug Fixes & Data Quality](#3-bug-fixes--data-quality)
+4. [Metadata & Label Corrections](#4-metadata--label-corrections)
+5. [New Feature Development](#5-new-feature-development)
+6. [Multi-Frequency Pipeline (Phase 2)](#6-multi-frequency-pipeline-phase-2)
+7. [Operational & Infrastructure](#7-operational--infrastructure)
 
 ---
 
-## 1. Completed Work
+## 1. Project Phase Summary (A-G)
 
-### Production Phases
+The project evolved from a single hardcoded pipeline into a sequence of lettered phases (A-G). Phase labels follow the convention used in `fetch_data.py` and `manuals/technical_manual.md`. Each runtime phase is wrapped in its own `try/except` so a failure in a later phase cannot affect earlier outputs.
 
-| Phase | Description | Status |
-|---|---|---|
-| Simple Pipeline | ~70 library-driven instruments — daily snapshot | Production |
-| Comp Pipeline | ~390 library-driven instruments — daily snapshot + weekly history | Production |
-| Phase A — US Macro (FRED) | ~43 FRED series — snapshot + weekly history | Production |
-| Phase C — International Macro | OECD CLI, unemployment, CPI, GDP, rates for 11 countries | Production |
-| Phase E — Macro-Market Indicators | 68 composite indicators (z-scores, regimes, fwd_regimes) | Production |
+| Phase | Scope | Module(s) / Tab(s) | Status |
+|---|---|---|---|
+| Simple Pipeline | Original 66-instrument daily snapshot; consumed downstream by `trigger.py` | `fetch_data.py` → `market_data`, `sentiment_data` | Production |
+| Comp Pipeline | Library-driven ~390-instrument snapshot + weekly history from 1990 | `fetch_data.py`, `fetch_hist.py` → `market_data_comp`, `market_data_comp_hist` | Production |
+| Phase A — US Macro (FRED) | 43 FRED series (yields, inflation, labour, credit, surveys). Snapshot + weekly history from 1947. | `fetch_macro_us_fred.py` → `macro_us`, `macro_us_hist` | Production |
+| Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
+| Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
+| Phase D — PMI / FMP | ISM Manufacturing & Services PMI; additional regional Fed survey sub-indices | (not yet built) | Not started |
+| Phase E — Macro-Market Indicators | 68 composite indicators with 156w rolling z-scores, regimes, forward regimes | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
+| Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
+| Phase G — Sheets Export Audit | Verify tab push correctness, GID inventory, batch-write coverage, protected-tab guard | (housekeeping, ongoing) | Partial |
+
+### Phase-by-Phase Detail
+
+#### Simple Pipeline — Production
+
+66 hardcoded instruments (SPX, NDX, sector ETFs, FX majors, FRED yields, Fear & Greed, VIX term structure). Writes to the `market_data` and `sentiment_data` tabs. Preserved indefinitely for compatibility with `trigger.py`, which runs at 06:15 London time on a local Windows machine and reads `market_data` (GID `68683176`) only. No further work planned — the simple pipeline is frozen.
+
+#### Comp Pipeline — Production
+
+Library-driven expansion of the simple pipeline. ~390 instruments from `data/index_library.csv`; daily snapshot (`market_data_comp`) plus weekly Friday-close history from 1990 (`market_data_comp_hist`). 18-currency FX coverage via `COMP_FX_TICKERS` / `COMP_FCY_PER_USD` in `library_utils.py`. Pence correction dynamic (`.L` suffix + median > 50). Semantic `broad_asset_class` + `units` now read from the CSV rather than computed in code. The 7-step refactoring (section 2) completed the transition from hardcoded lists to library-driven dispatch.
+
+#### Phase A — US Macro (FRED) — Production
+
+43 FRED series covering growth (yield curve, M2, building permits, claims, payrolls, unemployment, INDPRO, retail sales), inflation (CPI, core CPI, core PCE, PPI, TIPS breakevens, MICH), monetary policy (Fed funds, 2Y/10Y Treasury, real rates), financial conditions (HY / IG spreads, IG yield, NFCI, SLOOS), survey data (UMich, Conference Board, regional Feds), and commodities (iron ore). Snapshot updated daily; weekly history forward-filled to the Friday spine back to 1947. Series list entirely in `data/macro_library_fred.csv` — no Python changes needed to add or remove series. Recent: `UMCSE` and `UMCSC` (UMich sub-indices, not valid FRED series IDs) removed; `BAMLC0A0CMEY`, `BAMLCC0A0CMTRIV`, `PIORECRUSDM`, `IRLTLT01GBM156N`, `IRLTLT01DEM156N` added.
+
+#### Phase B — Surveys — Consolidated
+
+The original handover planned a dedicated `fetch_macro_surveys.py` module for SLOOS detail, regional Fed surveys, and UMich sub-indices. All in-scope series are now carried by the FRED library and written to the `macro_us` / `macro_us_hist` tabs. Phase B has been explicitly closed in `fetch_data.py` with the comment: *"Phase B (fetch_macro_surveys.py) has been consolidated into macro_us."* Superseded by Phase A; no separate module will be built.
+
+#### Phase C — International Macro — Production
+
+Covers 11 economies: USA, CAN, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CHE, and EA19 (Eurozone). Three library CSVs (`macro_library_oecd.csv`, `macro_library_worldbank.csv`, `macro_library_imf.csv`) drive the fetch. Sources:
+
+- **OECD SDMX** (`sdmx.oecd.org`) — CLI, unemployment, 3-month interbank rate
+- **World Bank WDI** — CPI YoY
+- **IMF DataMapper v1** — real GDP growth
+
+Outputs to `macro_intl` (snapshot) and `macro_intl_hist` (weekly Friday spine, forward-filled from native monthly/quarterly/annual cadence). Recent fixes (2026-04-21): OECD 3-month rate MEASURE code corrected from `IRST` to `IR3TIB` on `DSD_STES@DF_FINMARK`; IMF Euro Area entity code corrected from `XM` to `EURO`. Known structural gap: OECD does not publish CLI for EA19 or CHE — `compute_macro_market.py` uses the DEU+FRA average as the Eurozone CLI proxy.
+
+#### Phase D — PMI / FMP — Not Started
+
+Intended to fill two gaps: ISM Manufacturing PMI and ISM Services PMI composites (S&P Global licence-gated on FRED), and additional regional Fed survey sub-indices not published via FRED. `FMP_API_KEY` secret is not registered. **Decision gate:** before building a new `fetch_pmi.py` module, check whether `NAPM` / `NMFCI` / `NMFBAI` (or equivalents) are now reachable on FRED — if so, add rows to `macro_library_fred.csv` and Phase D becomes a no-op. If not, register for a free FMP key (250 calls/day) and implement a module that mirrors the FRED fetch pattern. The broader proposal in section 5.7 (DB.nomics, UMich portal, ECB SDW, BoJ) may supersede Phase D as a single umbrella "Phase H — Additional Sources" effort.
+
+#### Phase E — Macro-Market Indicators — Production
+
+68 composite indicators computed from Phase A + Phase C outputs and the comp-pipeline market data. Each indicator produces: raw value, 156-week (3-year) rolling z-score, regime classification, forward regime signal (`improving`/`stable`/`deteriorating`, with optional `[leading]` suffix), and z-score trend diagnostics (`intensifying` / `fading` / `reversing` / `stable`) against 1w, 4w, 13w lookbacks. Metadata is a single source of truth in `data/macro_indicator_library.csv` — no hardcoded `INDICATOR_META` dict in Python. Group / sub-group hierarchy drives the three-level sidebar in `docs/indicator_explorer.html`. Outputs `macro_market` (snapshot) and `macro_market_hist` (weekly history). Recent additions: 9 standalone country-level CLI indicators (US_CLI1 through AU_CLI1), `EU_I4` Euro HY credit spread indicator; cross-wired EU indicator calculators fixed (Stage 2).
+
+#### Phase F — Calculated Fields — Partial
+
+Several synthetic fields from the original handover are already covered by Phase E indicators (HY/IG ratio → `US_Cr3`; value/growth → `US_EQ_F2`; US 5-regime credit spread → `US_Cr2`). Outstanding items:
+
+- EMFX basket (equal-weight CNY, INR, KRW, TWD vs USD)
+- EEM / IWDA ratio (FX-adjusted EM vs DM)
+- Explicit MOVE proxy — 30-day realised volatility on `^TNX`
+- Global PMI proxy — equal-weight ISM + Eurozone PMI + Japan PMI (blocked on Phase D)
+- Global yield curve — average of US / DE / UK / JP 10Y-2Y spreads
+- Per-index breadth-above-200DMA — requires in-house computation from constituent closes; no free feed exists for `$SPXA200R`-style symbols
+
+See section 5.3 for details. Audit each against the 68 existing indicators before building duplicates.
+
+#### Phase G — Sheets Export Audit — Partial
+
+Core push infrastructure is production-proven across all 13 tabs — batch writes (10k rows/call), protected-tab guard on `market_data` / `sentiment_data`, NaN → empty-string conversion, legacy tab deletion (`TABS_TO_DELETE`). Outstanding housekeeping: record GIDs for every tab created since the original handover, verify exact lowercase-underscore tab names, build a one-shot audit script that cross-checks the push list against the tab inventory. Low priority — no user-visible failures.
+
+---
+
+## 2. Completed Work
 
 ### 7-Step Refactoring (completed 2026-03-30)
 
@@ -83,6 +145,26 @@
 | Sort orders | Sectors now follow custom ordering (Consumer Staples first); Industry Groups and Industries sorted by GICS ticker code |
 | Forward regime system | `fwd_regime` column added: improving/stable/deteriorating with optional [leading] suffix |
 
+### OECD CLI Standalone Country Indicators (completed 2026-04-20)
+
+| Change | Detail |
+|---|---|
+| 9 new Phase E indicators | `US_CLI1`, `CA_CLI1`, `DE_CLI1`, `FR_CLI1`, `UK_CLI1`, `IT_CLI1`, `JP_CLI1`, `CN_CLI1`, `AU_CLI1` — one standalone CLI indicator per OECD-available country |
+| Data source | Reads each country's `*_CLI` column from `macro_intl` (populated by `fetch_macro_international.py`) |
+| Regime classification | Above/below-trend regimes via the existing z-score rules; `naturally_leading = True` |
+| Rationale | Restores a direct country-level leading-indicator view after the USSLIND (FRED) discontinuation. Commit `52b38cb`. |
+
+### Bug Fix Sprint (completed 2026-04-21, merged via PR #64 / #65)
+
+| Stage | Issue | Fix |
+|---|---|---|
+| Stage 1 | `^VIX` / `^MOVE` `region` was blank; earlier audit proposed "US" | Owner decision: set `region = "North America"`, `country_market = "United States"` to match XLE/XLB/etc. convention. `data/index_library.csv` updated. |
+| Stage 2 | Several EU indicator calculators in `compute_macro_market.py` were cross-wired to wrong country series | All EU indicators re-mapped to correct OECD series; verified end-to-end. |
+| Stage 2+ | Missing Euro HY credit spread indicator | `EU_I4` added — Euro HY credit spread equivalent of `US_Cr2`. |
+| Stage 3 | `UMCSE` / `UMCSC` (UMich sub-indices) returned null from FRED | Confirmed not valid FRED series IDs — FRED carries only the headline `UMCSENT`. Both removed from `data/macro_library_fred.csv` and corresponding columns dropped from `data/macro_us_hist.csv`. Future work to restore via UMich portal tracked under section 5.7. |
+| Stage 4 | IMF Euro Area real GDP returning no data | `XM` replaced with `EURO` in `IMF_CODE_MAP` in `fetch_macro_international.py` — IMF DataMapper v1 uses `EURO` (see `imf.org/external/datamapper/profile/EURO`). |
+| Stage 5 | OECD `DF_FINMARK` short-term interest rates returning zero data | MEASURE code corrected from `IRST` to `IR3TIB` (3-month interbank) on `DSD_STES@DF_FINMARK` in `data/macro_library_oecd.csv`. `IRSTCI` (call money) and `IRLT` (long-term) are the other valid codes. |
+
 ### Previously Resolved Issues
 
 | Issue | Resolution |
@@ -101,7 +183,7 @@
 
 ---
 
-## 2. Bug Fixes & Data Quality
+## 3. Bug Fixes & Data Quality
 
 ### Priority 1: Currently Broken Data Sources
 
@@ -118,7 +200,7 @@
 
 ---
 
-## 3. Metadata & Label Corrections
+## 4. Metadata & Label Corrections
 
 Status of the label items previously flagged in `METADATA_REDUNDANCY_REVIEW.md` against the current `data/index_library.csv` (verified 2026-04-21):
 
@@ -147,9 +229,9 @@ These were evaluated and deliberately excluded:
 
 ---
 
-## 4. New Feature Development
+## 5. New Feature Development
 
-### 4.1 Phase D — PMI / Survey Data
+### 5.1 Phase D — PMI / Survey Data
 
 **Priority:** Low-medium — regional Fed surveys are already covered via FRED in `macro_us`.
 **Status:** Not started. `FMP_API_KEY` secret not registered.
@@ -162,7 +244,7 @@ FRED series to check first:
 - Empire State Manufacturing: check FRED coverage
 - Philly Fed components: many available on FRED
 
-### 4.2 Instrument Expansion
+### 5.2 Instrument Expansion
 
 **Priority:** Medium — broadens market coverage.
 **Status:** Blocked on owner decision.
@@ -180,7 +262,7 @@ Once confirmed, add rows to `index_library.csv` — no new Python modules needed
 4. For `.L` tickers: pence correction is automatic (no code change needed)
 5. For new currencies: add to `COMP_FX_TICKERS` and `COMP_FCY_PER_USD` in `library_utils.py`
 
-### 4.3 Calculated Fields Expansion
+### 5.3 Calculated Fields Expansion
 
 Several calculated fields were proposed but not yet implemented. Some may already be covered by the 68 macro-market indicators — audit before building duplicates.
 
@@ -196,7 +278,7 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 
 **Action:** Audit the 68 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
 
-### 4.4 Sheets Export Audit (Phase G)
+### 5.4 Sheets Export Audit (Phase G)
 
 **Priority:** Low — housekeeping.
 
@@ -207,7 +289,7 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 - Confirm protected-tab guard blocks writes to `market_data` and `sentiment_data`
 - Verify legacy tab deletion (`TABS_TO_DELETE` in fetch_data.py) is working
 
-### 4.5 Library Manager Utility
+### 5.5 Library Manager Utility
 
 **Priority:** Low — developer tooling.
 
@@ -219,7 +301,7 @@ Create `library_manager.py` — a standalone utility for maintaining `index_libr
 - Check metadata consistency (no duplicate tickers, all required fields filled)
 - Run manually (`python library_manager.py`), not as part of the daily pipeline
 
-### 4.6 Incremental Fetch Mode (fetch_hist.py)
+### 5.6 Incremental Fetch Mode (fetch_hist.py)
 
 **Priority:** Medium — performance improvement.
 
@@ -231,7 +313,7 @@ Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run 
 
 This would reduce daily historical data runtime from ~10 minutes to seconds.
 
-### 4.7 Expand Macro Data Library from Additional Sources
+### 5.7 Expand Macro Data Library from Additional Sources
 
 **Priority:** Medium — fills known gaps (esp. PMI & survey sub-indices) and broadens indicator coverage.
 **Status:** Not started. Follows directly from Stage 3 finding that FRED only carries a subset of the desired UMich data.
@@ -272,7 +354,7 @@ Each new source should follow the FRED pattern:
 
 ---
 
-## 5. Multi-Frequency Pipeline (Phase 2)
+## 6. Multi-Frequency Pipeline (Phase 2)
 
 **Priority:** High impact but large effort. Detailed implementation plan in [`manuals/multifreq_plan.md`](multifreq_plan.md).
 **Status:** Not started.
@@ -325,12 +407,12 @@ Google Sheets limit is 10M cells. Headroom is tight. Future optimisation: drop `
 
 ---
 
-## 6. Operational & Infrastructure
+## 7. Operational & Infrastructure
 
 ### GitHub Actions
 
 - **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
-- **Run timeout:** Currently set to 120 minutes. Monitor if incremental fetch mode (section 4.6) reduces this.
+- **Run timeout:** Currently set to 120 minutes. Monitor if incremental fetch mode (section 5.6) reduces this.
 
 ### Google Sheets
 
