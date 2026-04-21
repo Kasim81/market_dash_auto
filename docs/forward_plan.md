@@ -73,7 +73,7 @@ These are returning no data and need investigation:
 
 | Issue | Module | Suggested Action |
 |---|---|---|
-| OECD DF_FINMARK (short-term interest rates) returning zero data for all 11 countries | fetch_macro_international.py | Investigate correct SDMX query key for the new `sdmx.oecd.org` API. The dataflow ID may have changed during the July 2024 migration. Test with a direct browser query first. |
+| ~~OECD DF_FINMARK (short-term interest rates) returning zero data for all 10 countries~~ | Resolved 2026-04-21 | MEASURE code `IRST` was not valid in the new `sdmx.oecd.org` DSD_STES schema. Valid measure codes are `IR3TIB` (3-Month Interbank — what we want), `IRSTCI` (call money), `IRLT` (long-term). Fixed key template in `macro_library_oecd.csv`: `{countries}.M.IRST.PA.....` → `{countries}.M.IR3TIB.PA.....`. RATE_3M (and `*_RATE_3M` history columns) will populate on next pipeline run. |
 | ~~IMF `XM` code (Eurozone GDP Growth) returning no data~~ | Resolved 2026-04-21 | `XM` is the SDMX standard code for Euro Area, but the IMF DataMapper API uses its own code `EURO`. Fixed in `IMF_CODE_MAP`: `"XM": "EA19"` → `"EURO": "EA19"`. EA19_GDP_GROWTH will populate on next pipeline run. |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural limitation — OECD doesn't publish CLI for these codes. Consider using DEU+FRA average as Eurozone proxy (already done in `compute_macro_market.py`). Document as known gap. |
 | ~~UMCSE & UMCSC (UMich sub-indices) returning null~~ | Resolved — removed | `UMCSE` and `UMCSC` are not valid FRED series IDs. The UMich sub-indices (Expectations, Current Conditions) are not available via the FRED API; only the headline `UMCSENT` is. Both removed from `macro_library_fred.csv` and `macro_us_hist.csv`. |

@@ -772,7 +772,6 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 | Issue | Module | Notes |
 |---|---|---|
-| OECD DF_FINMARK (short-term interest rate) returning zero data | fetch_macro_international.py | Query key needs investigation |
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
 
 ### Tickers Confirmed Unavailable via yfinance
