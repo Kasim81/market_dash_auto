@@ -90,12 +90,12 @@ These are returning no data and need investigation:
 
 These are minor fixes to `index_library.csv` metadata that don't affect pipeline logic but improve data quality:
 
-| Ticker | Current Value | Correct Value | Field |
-|---|---|---|---|
-| `^IRX` | name: "US 2Y Treasury Yield" | "US 3-Month T-Bill Yield" | `name` |
-| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE | region: "North America" | "US" | `region` |
-| `IWF` | region: "North America" | "US" | `region` |
-| `^VIX` | region: "Global" | "US" | `region` |
+All metadata corrections have been applied:
+
+- `^IRX` name was already corrected to "US 3-Month Treasury Yield"
+- `^VIX` region set to "North America" (was blank)
+- `^MOVE` region set to "North America" (was blank)
+- XLE, XLB, etc. region kept as "North America" (intentional — groups US & Canada)
 
 ### Excluded Indicators (Do Not Implement Without Instruction)
 

@@ -793,12 +793,10 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### Metadata / Label Issues
 
-| Ticker | Issue | Recommended Fix |
-|---|---|---|
-| `^IRX` | Labeled "US 2Y Treasury Yield" but is 13-week T-bill (3-month) | Rename to "US 3-Month T-Bill" or swap ticker |
-| XLE, XLB, XLI etc. | Region "North America" | Should be "US" — S&P 500 sectors are US-only |
-| `IWF` | Region "North America" | Should be "US" — Russell 1000 Growth is US-only |
-| `^VIX` | Region "Global" | Should be "US" — measures S&P 500 implied vol |
+All previously identified metadata issues have been resolved:
+- `^IRX` name corrected to "US 3-Month Treasury Yield"
+- `^VIX` and `^MOVE` region set to "North America" (were blank)
+- US sector ETFs (XLE, XLB, etc.) intentionally labelled "North America" (groups US & Canada)
 
 ### Remaining Redundancy Items
 
