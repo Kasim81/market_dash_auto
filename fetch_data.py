@@ -901,6 +901,36 @@ except Exception as _comp_hist_err:
     print("[CompHist] Existing pipeline outputs are unaffected")
 
 # ============================================================
+# PHASE D (TIER 2) — BUSINESS SURVEY DATA (DB.NOMICS)
+# Fetches ISM, ECB BLS, Eurostat ESI, BOJ Tankan from DB.nomics.
+# Outputs: data/macro_dbnomics.csv, data/macro_dbnomics_hist.csv
+#          Google Sheets tabs: macro_dbnomics, macro_dbnomics_hist
+# Runs before Phase E so indicators can consume the history.
+# ============================================================
+
+try:
+    from fetch_macro_dbnomics import run_phase_d
+    run_phase_d()
+except Exception as _phase_d_err:
+    print(f"[Phase D] Non-fatal import/run error: {_phase_d_err}")
+    print("[Phase D] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# PHASE D (TIER 3) — PROPRIETARY PMI / SURVEY DATA (FMP)
+# Fetches S&P Global PMIs (EZ/UK/JP/CN), ZEW, IFO, NBS, Caixin
+# from the FMP economic calendar.
+# Outputs: data/macro_fmp.csv, data/macro_fmp_hist.csv
+#          Google Sheets tabs: macro_fmp, macro_fmp_hist
+# ============================================================
+
+try:
+    from fetch_macro_fmp import run_phase_d_fmp
+    run_phase_d_fmp()
+except Exception as _phase_d_fmp_err:
+    print(f"[Phase D FMP] Non-fatal import/run error: {_phase_d_fmp_err}")
+    print("[Phase D FMP] Existing pipeline outputs are unaffected")
+
+# ============================================================
 # PHASE E — MACRO-MARKET INDICATORS
 # Computes 50 composite macro-market indicators as weekly
 # time series with rolling z-scores and regime classifications.
