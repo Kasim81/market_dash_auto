@@ -694,7 +694,6 @@ REGIME_RULES = {
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
-    "EU_BLS1": lambda r, z: _r(r, z,  1, -1, "credit-easing",     "credit-tightening"),
     "EU_ESI1": lambda r, z: _r(r, z,  1, -1, "above-avg-sentiment","below-avg-sentiment"),
     "DE_ZEW1": lambda r, z: _r(r, z,  1, -1, "optimistic",         "pessimistic"),
     "DE_IFO1": lambda r, z: _r(r, z,  1, -1, "above-avg-climate",  "below-avg-climate"),
@@ -1759,7 +1758,7 @@ _ASIA_REGIONAL_CALCULATORS = {
 }
 
 # ===========================================================================
-# INDICATOR CALCULATORS — PHASE D SURVEYS  (15 indicators)
+# INDICATOR CALCULATORS — PHASE D SURVEYS  (13 indicators)
 #
 # These use data from DB.nomics (dbn) and FMP calendar (fmp) history CSVs.
 # Column names match the col field in macro_library_dbnomics.csv and
@@ -1789,12 +1788,6 @@ def _calc_EU_PMI1(fmp, **_):
 def _calc_EU_PMI2(fmp, **_):
     """S&P Global Eurozone Services PMI — raw level from FMP calendar."""
     return _to_weekly_friday(_get_col(fmp, "EZ_SVC_PMI"))
-
-def _calc_EU_BLS1(dbn, **_):
-    """ECB BLS credit standards for enterprises (net % tightening, inverted).
-    Inverted so that positive z-score = easing (growth-positive)."""
-    raw = _get_col(dbn, "ECB_BLS_NFC")
-    return _to_weekly_friday(-raw)
 
 def _calc_EU_ESI1(dbn, **_):
     """EC Economic Sentiment Indicator (EA) — raw level, 156w z-score."""
@@ -1855,7 +1848,6 @@ _PHASE_D_CALCULATORS = {
     "US_SVC1":  _calc_US_SVC1,
     "EU_PMI1":  _calc_EU_PMI1,
     "EU_PMI2":  _calc_EU_PMI2,
-    "EU_BLS1":  _calc_EU_BLS1,
     "EU_ESI1":  _calc_EU_ESI1,
     "DE_ZEW1":  _calc_DE_ZEW1,
     "DE_IFO1":  _calc_DE_IFO1,
