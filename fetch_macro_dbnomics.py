@@ -8,22 +8,14 @@ WHAT THIS MODULE DOES
 ---------------------
 Fetches macro survey indicators from the DB.nomics public API:
 
-  ISM (Institute for Supply Management):
-    · Manufacturing PMI composite + New Orders sub-index
-    · Services PMI composite + Business Activity sub-index
+  Eurostat (Euro Area):
+    · Economic Sentiment Indicator (EA)  — ei_bssi_m_r2
+    · Industry Confidence (EA)           — ei_bssi_m_r2
+    · Services Confidence (EA)           — ei_bssi_m_r2
 
-  ECB Bank Lending Survey (BLS):
-    · Credit standards — loans to enterprises (net % tightening)
-    · Credit standards — housing loans to households (net % tightening)
-
-  Eurostat:
-    · Economic Sentiment Indicator (EA)
-    · Industry Confidence (EA)
-    · Services Confidence (EA)
-
-  BOJ Tankan:
-    · Large Manufacturers DI + Forecast DI
-    · Large Non-Manufacturers DI
+  Note: ISM moved to FMP Tier 3 (DB.nomics mirror stale).
+  ECB BLS dataset absent from DB.nomics (HTTP 404).
+  BOJ Tankan absent from DB.nomics.
 
 Outputs:
   data/macro_dbnomics.csv          — snapshot (latest + prior + change)
