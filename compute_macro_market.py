@@ -702,7 +702,6 @@ REGIME_RULES = {
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
-    "JP_TK1":  lambda r, z: _r(r, z,  1, -1, "optimistic",         "pessimistic"),
     "JP_PMI1": lambda r, z: (
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
@@ -1767,19 +1766,19 @@ _ASIA_REGIONAL_CALCULATORS = {
 # macro_library_fmp.csv respectively.
 # ===========================================================================
 
-# --- US PMI (from DB.nomics ISM) ---
+# --- US PMI (from FMP calendar — DB.nomics ISM mirror too stale) ---
 
-def _calc_US_PMI1(dbn, **_):
+def _calc_US_PMI1(fmp, **_):
     """ISM Manufacturing PMI composite — raw level, 156w z-score."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI"))
+    return _to_weekly_friday(_get_col(fmp, "ISM_MFG_PMI"))
 
-def _calc_US_PMI2(dbn, **_):
+def _calc_US_PMI2(fmp, **_):
     """ISM Manufacturing New Orders momentum proxy (raw New Orders level)."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
+    return _to_weekly_friday(_get_col(fmp, "ISM_MFG_NEWORD"))
 
-def _calc_US_SVC1(dbn, **_):
+def _calc_US_SVC1(fmp, **_):
     """ISM Services PMI composite — raw level, 156w z-score."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_SVC_PMI"))
+    return _to_weekly_friday(_get_col(fmp, "ISM_SVC_PMI"))
 
 # --- Eurozone surveys (T2 DB.nomics + T3 FMP) ---
 
@@ -1817,11 +1816,7 @@ def _calc_UK_PMI1(fmp, **_):
     """S&P Global UK Manufacturing PMI — raw level from FMP calendar."""
     return _to_weekly_friday(_get_col(fmp, "UK_MFG_PMI"))
 
-# --- Japan (T2 DB.nomics Tankan + T3 FMP) ---
-
-def _calc_JP_TK1(dbn, **_):
-    """BoJ Tankan Large Manufacturers DI — raw level from DB.nomics."""
-    return _to_weekly_friday(_get_col(dbn, "JP_TANKAN_MFG"))
+# --- Japan (T3 FMP only — Tankan not available on DB.nomics) ---
 
 def _calc_JP_PMI1(fmp, **_):
     """Jibun Bank Japan Manufacturing PMI — raw level from FMP calendar."""
@@ -1839,12 +1834,12 @@ def _calc_CN_PMI2(fmp, **_):
 
 # --- Global composite ---
 
-def _calc_GL_PMI1(dbn, fmp, **_):
+def _calc_GL_PMI1(fmp, **_):
     """Equal-weight global manufacturing PMI proxy.
-    Average of US ISM Mfg + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs.
+    Average of US ISM Mfg + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs — all from FMP.
     Single most important global growth regime signal."""
     components = [
-        _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI")),
+        _to_weekly_friday(_get_col(fmp, "ISM_MFG_PMI")),
         _to_weekly_friday(_get_col(fmp, "EZ_MFG_PMI")),
         _to_weekly_friday(_get_col(fmp, "UK_MFG_PMI")),
         _to_weekly_friday(_get_col(fmp, "JP_MFG_PMI")),
@@ -1865,7 +1860,6 @@ _PHASE_D_CALCULATORS = {
     "DE_ZEW1":  _calc_DE_ZEW1,
     "DE_IFO1":  _calc_DE_IFO1,
     "UK_PMI1":  _calc_UK_PMI1,
-    "JP_TK1":   _calc_JP_TK1,
     "JP_PMI1":  _calc_JP_PMI1,
     "CN_PMI1":  _calc_CN_PMI1,
     "CN_PMI2":  _calc_CN_PMI2,

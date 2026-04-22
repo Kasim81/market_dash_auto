@@ -2,11 +2,16 @@
 """
 poc_dbnomics.py — Phase D Tier 2 Proof of Concept
 
-Verifies all 12 target DB.nomics series are reachable, have sufficient history,
-and are reasonably fresh (last observation within 90 days).
+Verifies the 5 target DB.nomics series (ECB BLS x2 + Eurostat x3) are
+reachable, have sufficient history, and are reasonably fresh.
 
-Also resolves placeholder dimension keys for ECB/BLS, Eurostat, and BOJ/Tankan
-datasets whose exact series codes were unknown at planning time.
+Also resolves placeholder dimension keys for ECB/BLS and Eurostat datasets
+whose exact series codes were unknown at planning time.
+
+Scope change (post-round-1 findings):
+  - ISM moved to Tier 3 FMP (DB.nomics mirror was 4-8 months stale)
+  - BOJ Tankan dropped entirely (not available on DB.nomics)
+  - Japan sentiment comes from JP_MFG_PMI via poc_fmp_calendar.py
 
 Usage:  python poc_dbnomics.py
 Output: prints a summary table; writes sample CSVs to data/poc_dbnomics/
@@ -33,19 +38,17 @@ SAMPLE_DIR = os.path.join("data", "poc_dbnomics")
 MIN_YEARS = 3  # minimum acceptable history depth
 
 # ---------------------------------------------------------------------------
-# Part 1 — ISM (known series codes)
+# NOTE on scope (post-round-1 findings):
+#   - ISM was moved to Tier 3 (FMP calendar) — DB.nomics ISM mirror is 4-8
+#     months stale. See poc_fmp_calendar.py for ISM verification.
+#   - BOJ Tankan is not available on DB.nomics (BOJ provider only has 3
+#     datasets: BP, CGPI, SPPI). Japan sentiment comes from JP_MFG_PMI
+#     via FMP calendar.
+#   - This PoC now verifies only ECB BLS + Eurostat (5 series, all EA).
 # ---------------------------------------------------------------------------
 
-ISM_SERIES = {
-    "ISM Mfg PMI":          ["ISM/pmi/pm"],
-    "ISM Mfg New Orders":   ["ISM/new-orders/pm", "ISM/mno/pm", "ISM/noi/pm"],
-    "ISM Svc PMI":          ["ISM/nm-pmi/pm"],
-    "ISM Svc Business Act": ["ISM/nm-business/pm", "ISM/nm-business-activity/pm",
-                              "ISM/nm-ba/pm"],
-}
-
 # ---------------------------------------------------------------------------
-# Part 2 — ECB Bank Lending Survey (need dimension resolution)
+# Part 1 — ECB Bank Lending Survey (need dimension resolution)
 #
 # ECB/BLS has ~20k series.  We want:
 #   - Credit standards for loans to enterprises (net % tightening, EA)
@@ -56,68 +59,52 @@ ISM_SERIES = {
 # ---------------------------------------------------------------------------
 
 ECB_BLS_CANDIDATES = {
+    # Candidates derived from confirmed Austria pattern Q.AT.ALL.{factor}.E.{size}.B3.ST.S.FNET
+    # substituting AT → U2 (Euro Area, changing composition).
+    # Dimension 4 (factor): Z=aggregate/all factors, BC=bank competition,
+    #   CP=capital position, BSC=balance-sheet constraints, CS=credit standards summary
     "ECB BLS — Credit Std Enterprises": [
-        # Most likely: Q.U2.ALL.Z.B3.Z.Z.ST.S.BWFNET
-        #   Q=Quarterly, U2=EA changing composition, ALL=all banks
-        #   B3=loans to enterprises, ST=standards, BWFNET=balanced weighted net %
-        "ECB/BLS/Q.U2.ALL.Z.B3.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.B.Z.Z.ST.S.BWFNET",
-        # Fallback: search
+        "ECB/BLS/Q.U2.ALL.Z.E.LE.B3.ST.S.FNET",      # aggregate factor, large enterprise
+        "ECB/BLS/Q.U2.ALL.Z.E.Z.B3.ST.S.FNET",       # aggregate factor, all sizes
+        "ECB/BLS/Q.U2.ALL.Z.E.SME.B3.ST.S.FNET",     # aggregate factor, SME
+        "ECB/BLS/Q.U2.ALL.BC.E.LE.B3.ST.S.FNET",     # bank competition factor
+        "ECB/BLS/Q.U2.ALL.BC.E.Z.B3.ST.S.FNET",
     ],
     "ECB BLS — Credit Std Households": [
-        "ECB/BLS/Q.U2.ALL.Z.B5.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.B6.Z.Z.ST.S.BWFNET",
-        "ECB/BLS/Q.U2.ALL.Z.H.Z.Z.ST.S.BWFNET",
+        "ECB/BLS/Q.U2.ALL.Z.H.H.B3.ST.S.FNET",       # aggregate factor, housing loans
+        "ECB/BLS/Q.U2.ALL.Z.H.C.B3.ST.S.FNET",       # aggregate factor, consumer credit
+        "ECB/BLS/Q.U2.ALL.BC.H.H.B3.ST.S.FNET",      # bank competition factor, housing
+        "ECB/BLS/Q.U2.ALL.BC.H.C.B3.ST.S.FNET",      # bank competition factor, consumer
     ],
 }
 
 # ---------------------------------------------------------------------------
-# Part 3 — Eurostat ESI / Confidence
+# Part 2 — Eurostat ESI / Confidence
 #
 # teibs010 = ESI composite; teibs020 = sector confidence
 # Series codes: M.<indicator>.<adjustment>.<country>
 # ---------------------------------------------------------------------------
 
 EUROSTAT_CANDIDATES = {
+    # NB: teibs010/teibs020 are summary tables with only ~12 obs of history.
+    # Prefer ei_bssi_m_r2 (Business and Consumer Surveys, full history).
     "EC Economic Sentiment (EA)": [
-        "Eurostat/teibs010/M.BS-ESI-I.SA.EA",
-        "Eurostat/teibs010/M.BS-ESI-I.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ESI-I.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ESI-I.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA19",
     ],
     "EC Industry Confidence (EA)": [
-        "Eurostat/teibs020/M.BS-ICI-BAL.SA.EA",
-        "Eurostat/teibs020/M.BS-ICI-BAL.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ICI-BAL.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-ICI-BAL.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA19",
     ],
     "EC Services Confidence (EA)": [
-        "Eurostat/teibs020/M.BS-SCI-BAL.SA.EA",
-        "Eurostat/teibs020/M.BS-SCI-BAL.SA.EA19",
-        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA",
-    ],
-}
-
-# ---------------------------------------------------------------------------
-# Part 4 — BOJ Tankan
-#
-# BOJ provider on DB.nomics.  Tankan dataset code is uncertain — try CO,
-# tankan, and TANKAN.  If provider exists but dataset is missing, we fall
-# back to searching BOJ datasets.
-# ---------------------------------------------------------------------------
-
-JAPAN_BSVY_CANDIDATES = {
-    "Japan Business Tendency (OECD)": [
-        # OECD MEI Business Tendency Surveys — Japan composite / manufacturing
-        "OECD/MEI_BTS_COS/JPN.BSCICP02.STSA.M",
-        "OECD/MEI_BTS_COS/JPN.BSCICP03.STSA.M",
-        "OECD/MEI_BTS_COS/JPN.BSCI.BLSA.M",
-    ],
-    "Japan Mfg Confidence (OECD)": [
-        "OECD/KEI/BSCI.JPN.BLSA.M",
-        "OECD/KEI/BSCICP03.JPN.BLSA.M",
-    ],
-    "Japan Consumer Confidence (OECD)": [
-        "OECD/MEI_BTS_COS/JPN.CSCICP02.STSA.M",
-        "OECD/MEI_BTS_COS/JPN.CSCICP03.STSA.M",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-SCI-BAL.EA20",
+        "Eurostat/ei_bssi_m_r2/M.SA.BS-SCI-BAL.EA19",
+        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20",
+        "Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA19",
     ],
 }
 
@@ -156,6 +143,39 @@ def search_dataset(provider: str, dataset: str, limit: int = 200) -> list:
         data = r.json()
         return data.get("series", {}).get("docs", [])
     except Exception:
+        return []
+
+
+def fetch_dataset_metadata(provider: str, dataset: str) -> dict:
+    """Fetch dataset metadata showing available dimensions and codes."""
+    url = f"{BASE}/dataset/{provider}/{dataset}"
+    try:
+        r = requests.get(url, timeout=30)
+        print(f"    [metadata] GET {url} → HTTP {r.status_code}")
+        if r.status_code != 200:
+            return {}
+        return r.json().get("dataset", {})
+    except Exception as e:
+        print(f"    [metadata] exception: {e}")
+        return {}
+
+
+def fetch_series_by_dimensions(provider: str, dataset: str,
+                               dimensions: dict, limit: int = 100) -> list:
+    """
+    Fetch series filtered by dimension values (server-side filter).
+    dimensions: {dim_name: [value1, value2]} — uses DB.nomics dimensions param.
+    """
+    dim_json = json.dumps(dimensions)
+    url = f"{BASE}/series/{provider}/{dataset}?dimensions={dim_json}&limit={limit}"
+    try:
+        r = requests.get(url, timeout=30)
+        print(f"    [dimquery] HTTP {r.status_code}, {len(r.text)} bytes")
+        if r.status_code != 200:
+            return []
+        return r.json().get("series", {}).get("docs", [])
+    except Exception as e:
+        print(f"    [dimquery] exception: {e}")
         return []
 
 
@@ -299,82 +319,10 @@ def main():
     now = datetime.now()
 
     # -----------------------------------------------------------------------
-    # Part 1: ISM (known)
+    # Part 1: ECB Bank Lending Survey
     # -----------------------------------------------------------------------
     print("=" * 70)
-    print("PART 1 — ISM Manufacturing & Services (4 series)")
-    print("=" * 70)
-
-    # First, list all ISM datasets for diagnostics
-    print("\n  Listing ISM datasets on DB.nomics...")
-    ism_datasets = list_datasets("ISM")
-    if ism_datasets:
-        print(f"  Found {len(ism_datasets)} ISM datasets:")
-        for ds in ism_datasets:
-            code = ds.get("code", "?")
-            name = (ds.get("name") or ds.get("description") or "")[:70]
-            n = ds.get("nb_series", "?")
-            print(f"    {code}: {name} ({n} series)")
-    else:
-        print("  WARNING: ISM provider not found or has no datasets on DB.nomics")
-
-    for label, candidates in ISM_SERIES.items():
-        print(f"\n  Trying candidates for: {label}")
-        doc, sid = try_candidates(label, candidates)
-        if doc:
-            info = analyse_series(doc)
-            info["series_id"] = sid
-            info["group"] = "ISM"
-            results.append(info)
-            resolved[label] = sid
-            save_sample(sid, doc, label)
-            status = "STALE" if info["stale"] else "OK"
-            print(f"  {status}: resolved as {sid}")
-            print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
-                  f"({info['years']}y), last value={info['last_value']}, "
-                  f"{info['days_ago']}d ago")
-        else:
-            # Explore ISM datasets by keyword
-            print(f"  No candidate hit.  Searching ISM datasets by keyword...")
-            kw_map = {
-                "ISM Mfg New Orders":   ["new", "order"],
-                "ISM Svc Business Act": ["business", "activity"],
-            }
-            kws = kw_map.get(label, label.lower().split())
-            found = False
-            for ds in ism_datasets:
-                ds_code = ds.get("code", "")
-                matches = explore_and_match("ISM", ds_code, kws, limit=50)
-                if matches:
-                    print(f"  Found {len(matches)} matches in ISM/{ds_code}.  Top 3:")
-                    for m in matches[:3]:
-                        code = m.get("series_code", "?")
-                        name = (m.get("series_name") or "")[:80]
-                        print(f"    {code}: {name}")
-                    best = matches[0]
-                    best_sid = f"ISM/{ds_code}/{best['series_code']}"
-                    doc2 = fetch_series(best_sid)
-                    if doc2:
-                        info = analyse_series(doc2)
-                        info["series_id"] = best_sid
-                        info["group"] = "ISM"
-                        results.append(info)
-                        resolved[label] = best_sid
-                        save_sample(best_sid, doc2, label)
-                        status = "STALE" if info["stale"] else "OK"
-                        print(f"  {status}: {info['n_obs']} obs, {info['first']} → {info['last']}")
-                    found = True
-                    break
-            if not found:
-                results.append({"name": label, "series_id": candidates[0], "ok": False,
-                                "reason": "not on DB.nomics", "group": "ISM"})
-                print(f"  FAIL: ISM series not found on DB.nomics")
-
-    # -----------------------------------------------------------------------
-    # Part 2: ECB Bank Lending Survey
-    # -----------------------------------------------------------------------
-    print("\n" + "=" * 70)
-    print("PART 2 — ECB Bank Lending Survey (2 series, need dimension resolution)")
+    print("PART 1 — ECB Bank Lending Survey (2 series, need dimension resolution)")
     print("=" * 70)
     for label, candidates in ECB_BLS_CANDIDATES.items():
         print(f"\n  Trying candidates for: {label}")
@@ -391,16 +339,59 @@ def main():
             print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
                   f"({info['years']}y), last={info['last_value']}, {info['days_ago']}d ago")
         else:
-            print(f"  No candidate hit.  Exploring ECB/BLS dataset by keyword (U2 filter)...")
-            kw_map = {
-                "Credit Std Enterprises": ["standards", "enterprise"],
-                "Credit Std Households":  ["standards", "household"],
-            }
-            short = label.split("—")[-1].strip()
-            kws = kw_map.get(short, short.lower().split())
-            # Filter: must be Euro Area (U2) and factor=ST (standards)
-            matches = explore_and_match("ECB", "BLS", kws, limit=2000,
-                                        required_substrings=["Q.U2.", ".ST."])
+            print(f"  No candidate hit.  Fetching ECB/BLS dimension metadata...")
+            meta = fetch_dataset_metadata("ECB", "BLS")
+            print(f"  Metadata keys: {list(meta.keys())[:20] if meta else '(empty)'}")
+            dims_order = meta.get("dimensions_codes_order", []) if meta else []
+            dims_labels = meta.get("dimensions_values_labels", {}) if meta else {}
+            if dims_order:
+                print(f"  Dataset has {len(dims_order)} dimensions: {dims_order}")
+                for dim_name in dims_order:
+                    vals = dims_labels.get(dim_name, {})
+                    if isinstance(vals, dict):
+                        sample = list(vals.items())[:6]
+                    elif isinstance(vals, list):
+                        sample = vals[:6]
+                    else:
+                        sample = []
+                    print(f"    {dim_name}: {sample}")
+            else:
+                print("  WARNING: no dimension metadata returned")
+
+            # Try server-side dimensions filter (requires knowing dim names)
+            matches = []
+            if dims_order:
+                ref_area_dim = next((d for d in dims_order
+                                     if d.upper() in ("REF_AREA", "AREA", "COUNTRY", "BLS_COUNTRY")),
+                                    None)
+                if ref_area_dim:
+                    print(f"  Trying server-side filter: {ref_area_dim}=U2 ...")
+                    docs = fetch_series_by_dimensions("ECB", "BLS",
+                                                     {ref_area_dim: ["U2"]}, limit=200)
+                    print(f"  Returned {len(docs)} series with {ref_area_dim}=U2")
+                    # Filter client-side for "ST" (standards) in series_code
+                    short = label.split("—")[-1].strip()
+                    kws_filter = ["enterprise"] if "Enterprises" in short else ["household"]
+                    for d in docs:
+                        code = (d.get("series_code") or "").upper()
+                        name = (d.get("series_name") or "").lower()
+                        if ".ST." not in code:
+                            continue
+                        if not any(k in name for k in kws_filter):
+                            continue
+                        matches.append(d)
+                    print(f"  After filtering for .ST. + keyword: {len(matches)} matches")
+
+            if not matches:
+                print(f"\n  Falling back to keyword listing (limit=500)...")
+                kw_map = {
+                    "Credit Std Enterprises": ["standards", "enterprise"],
+                    "Credit Std Households":  ["standards", "household"],
+                }
+                short = label.split("—")[-1].strip()
+                kws = kw_map.get(short, short.lower().split())
+                matches = explore_and_match("ECB", "BLS", kws, limit=500,
+                                            required_substrings=["Q.U2.", ".ST."])
             if matches:
                 print(f"  Found {len(matches)} keyword matches.  Top 5:")
                 for m in matches[:5]:
@@ -429,10 +420,10 @@ def main():
                 print(f"  FAIL: no matching series found in ECB/BLS")
 
     # -----------------------------------------------------------------------
-    # Part 3: Eurostat ESI / Confidence
+    # Part 2: Eurostat ESI / Confidence
     # -----------------------------------------------------------------------
     print("\n" + "=" * 70)
-    print("PART 3 — Eurostat ESI + Sector Confidence (3 series)")
+    print("PART 2 — Eurostat ESI + Sector Confidence (3 series)")
     print("=" * 70)
     for label, candidates in EUROSTAT_CANDIDATES.items():
         print(f"\n  Trying candidates for: {label}")
@@ -451,10 +442,11 @@ def main():
         else:
             # Explore: try listing teibs010 and teibs020
             print(f"  No candidate hit.  Exploring Eurostat datasets...")
-            for ds in ("teibs010", "teibs020", "ei_bssi_m_r2"):
+            # Prefer ei_bssi_m_r2 (full history) over teibs010/020 (summary, 12 obs only)
+            for ds in ("ei_bssi_m_r2", "teibs010", "teibs020"):
                 kw_map = {
                     "EC Economic Sentiment (EA)":  ["sentiment"],
-                    "EC Industry Confidence (EA)":  ["industry", "confidence"],
+                    "EC Industry Confidence (EA)":  ["industrial", "confidence"],
                     "EC Services Confidence (EA)":  ["services", "confidence"],
                 }
                 kws = kw_map.get(label, label.lower().split())
@@ -487,86 +479,6 @@ def main():
             else:
                 results.append({"name": label, "ok": False, "reason": "no match", "group": "Eurostat"})
                 print(f"  FAIL: no matching series found")
-
-    # -----------------------------------------------------------------------
-    # Part 4: Japan Business Surveys via OECD provider
-    # BOJ Tankan is NOT on DB.nomics (BOJ provider only has BP/CGPI/SPPI).
-    # Switch to OECD business tendency surveys for Japan.
-    # -----------------------------------------------------------------------
-    print("\n" + "=" * 70)
-    print("PART 4 — Japan Business Surveys via OECD (Tankan unavailable on DB.nomics)")
-    print("=" * 70)
-
-    print("\n  Listing OECD business-survey datasets on DB.nomics...")
-    oecd_datasets = list_datasets("OECD")
-    bts_datasets = []
-    if oecd_datasets:
-        for ds in oecd_datasets:
-            code = (ds.get("code") or "").upper()
-            name = (ds.get("name") or ds.get("description") or "").lower()
-            if any(k in code for k in ("BTS", "MEI", "KEI", "BCI", "CLI")) or \
-               any(k in name for k in ("tendency", "confidence", "sentiment", "business cycle")):
-                bts_datasets.append(ds)
-        print(f"  Found {len(bts_datasets)} business-survey-relevant OECD datasets:")
-        for ds in bts_datasets[:20]:
-            code = ds.get("code", "?")
-            name = (ds.get("name") or "")[:70]
-            n = ds.get("nb_series", "?")
-            print(f"    {code}: {name} ({n} series)")
-    else:
-        print("  WARNING: OECD provider not found on DB.nomics")
-
-    for label, candidates in JAPAN_BSVY_CANDIDATES.items():
-        print(f"\n  Trying candidates for: {label}")
-        doc, sid = try_candidates(label, candidates)
-        if doc:
-            info = analyse_series(doc)
-            info["series_id"] = sid
-            info["group"] = "Japan_BSVY"
-            results.append(info)
-            resolved[label] = sid
-            save_sample(sid, doc, label)
-            status = "STALE" if info["stale"] else "OK"
-            print(f"  {status}: resolved as {sid}")
-            print(f"         {info['n_obs']} obs, {info['first']} → {info['last']} "
-                  f"({info['years']}y), last={info['last_value']}, {info['days_ago']}d ago")
-        else:
-            print(f"  No candidate hit.  Searching OECD business-survey datasets for JPN...")
-            kw_map = {
-                "Japan Business Tendency (OECD)":   ["business", "confidence"],
-                "Japan Mfg Confidence (OECD)":      ["manufacturing", "confidence"],
-                "Japan Consumer Confidence (OECD)": ["consumer", "confidence"],
-            }
-            kws = kw_map.get(label, ["business", "confidence"])
-            found = False
-            for ds in bts_datasets[:10]:
-                ds_code = ds.get("code", "")
-                matches = explore_and_match("OECD", ds_code, kws, limit=500,
-                                            required_substrings=["JPN"])
-                if matches:
-                    print(f"  Found {len(matches)} JPN matches in OECD/{ds_code}.  Top 3:")
-                    for m in matches[:3]:
-                        code = m.get("series_code", "?")
-                        name = (m.get("series_name") or "")[:80]
-                        print(f"    {code}: {name}")
-                    best = matches[0]
-                    best_sid = f"OECD/{ds_code}/{best['series_code']}"
-                    doc2 = fetch_series(best_sid)
-                    if doc2:
-                        info = analyse_series(doc2)
-                        info["series_id"] = best_sid
-                        info["group"] = "Japan_BSVY"
-                        results.append(info)
-                        resolved[label] = best_sid
-                        save_sample(best_sid, doc2, label)
-                        status = "STALE" if info["stale"] else "OK"
-                        print(f"  {status}: {info['n_obs']} obs, {info['first']} → {info['last']}")
-                    found = True
-                    break
-            if not found:
-                results.append({"name": label, "series_id": candidates[0], "ok": False,
-                                "reason": "not found on OECD", "group": "Japan_BSVY"})
-                print(f"  FAIL: Japan business survey not found via OECD")
 
     # -----------------------------------------------------------------------
     # Summary
@@ -613,8 +525,8 @@ def main():
 
     if fail_count:
         print(f"\n  WARNING: {fail_count} series failed.  Check output above for fallback options.")
-        print("  BOJ Tankan may need direct BoJ API (https://www.boj.or.jp/en/statistics/tk/).")
-        print("  ECB BLS may need direct ECB SDW API (https://data-api.ecb.europa.eu/).")
+        print("  ECB BLS fallback: direct ECB SDW API (https://data-api.ecb.europa.eu/).")
+        print("  Eurostat fallback: direct Eurostat REST API.")
 
     print(f"\n  Sample CSVs saved to: {SAMPLE_DIR}/")
     return 0 if fail_count == 0 else 1
