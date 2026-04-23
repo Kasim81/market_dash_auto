@@ -88,7 +88,8 @@ from googleapiclient.discovery import build
 # ---------------------------------------------------------------------------
 
 FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
-FMP_BASE = "https://financialmodelingprep.com/api/v3/economic_calendar"
+FMP_BASE = "https://financialmodelingprep.com/stable/economic-calendar"
+FMP_BASE_LEGACY = "https://financialmodelingprep.com/api/v3/economic_calendar"
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 SHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
@@ -210,8 +211,8 @@ def _probe_fmp_api() -> list[str]:
     probe_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
     endpoints = [
-        ("v3 (legacy)", FMP_BASE),
-        ("stable", "https://financialmodelingprep.com/stable/economic-calendar"),
+        ("v3 (legacy)", FMP_BASE_LEGACY),
+        ("stable", FMP_BASE),
     ]
 
     for label, url in endpoints:
