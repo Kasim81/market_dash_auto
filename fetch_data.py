@@ -929,12 +929,6 @@ try:
 except Exception as _phase_d_fmp_err:
     print(f"[Phase D FMP] Non-fatal import/run error: {_phase_d_fmp_err}")
     print("[Phase D FMP] Existing pipeline outputs are unaffected")
-    try:
-        import pathlib as _pl
-        _pl.Path("data/fmp_debug.txt").write_text(
-            f"FMP IMPORT/RUN ERROR: {_phase_d_fmp_err}\n")
-    except Exception:
-        pass
 
 # ============================================================
 # PHASE E — MACRO-MARKET INDICATORS

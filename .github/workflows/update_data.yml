@@ -53,7 +53,6 @@ jobs:
         [ -f data/macro_dbnomics_hist.csv ] && git add -f data/macro_dbnomics_hist.csv || true
         [ -f data/macro_fmp.csv ] && git add -f data/macro_fmp.csv || true
         [ -f data/macro_fmp_hist.csv ] && git add -f data/macro_fmp_hist.csv || true
-        [ -f data/fmp_debug.txt ] && git add -f data/fmp_debug.txt || true
         [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
         [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
         git diff --staged --quiet || (

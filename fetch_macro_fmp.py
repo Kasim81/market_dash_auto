@@ -89,7 +89,6 @@ from googleapiclient.discovery import build
 
 FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
 FMP_BASE = "https://financialmodelingprep.com/stable/economic-calendar"
-FMP_BASE_LEGACY = "https://financialmodelingprep.com/api/v3/economic_calendar"
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 SHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
@@ -202,46 +201,6 @@ def _fetch_calendar_chunk(start_date: str, end_date: str) -> list[dict]:
 
     print(f"    [FAIL] All {BACKOFF_MAX_RETRIES} attempts failed for {start_date}→{end_date}")
     return []
-
-
-def _probe_fmp_api() -> list[str]:
-    """Diagnostic calls to verify API key against old + new endpoints."""
-    diag = []
-    probe_end = datetime.now().strftime("%Y-%m-%d")
-    probe_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-
-    endpoints = [
-        ("v3 (legacy)", FMP_BASE_LEGACY),
-        ("stable", FMP_BASE),
-    ]
-
-    for label, url in endpoints:
-        params = {"from": probe_start, "to": probe_end, "apikey": FMP_API_KEY}
-        try:
-            resp = requests.get(url, params=params, timeout=15)
-            diag.append(f"--- {label}: {url}")
-            diag.append(f"  HTTP {resp.status_code}, "
-                        f"content-type={resp.headers.get('content-type','?')}, "
-                        f"body length={len(resp.text)}")
-            diag.append(f"  Body (first 500 chars): {resp.text[:500]}")
-            if resp.status_code == 200:
-                try:
-                    data = resp.json()
-                    if isinstance(data, list):
-                        diag.append(f"  Parsed: list with {len(data)} items")
-                        if data:
-                            diag.append(f"  First item keys: {list(data[0].keys())}")
-                            diag.append(f"  First item: {str(data[0])[:300]}")
-                    elif isinstance(data, dict):
-                        diag.append(f"  Parsed: dict with keys {list(data.keys())}")
-                except Exception as e:
-                    diag.append(f"  JSON parse error: {e}")
-        except Exception as e:
-            diag.append(f"--- {label}: {url}")
-            diag.append(f"  Request failed: {e}")
-        time.sleep(0.5)
-
-    return diag
 
 
 def _fetch_full_calendar() -> list[dict]:
@@ -617,104 +576,30 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
-# DEBUG LOG (temporary — remove after FMP verification)
-# ---------------------------------------------------------------------------
-
-_DEBUG_FILE = pathlib.Path(__file__).parent / "data" / "fmp_debug.txt"
-
-
-def _write_debug_log(lines: list[str]) -> None:
-    """Write diagnostic info to a file that gets committed by CI."""
-    try:
-        with open(_DEBUG_FILE, "w") as f:
-            f.write(f"FMP Debug Log — {datetime.now(timezone.utc).isoformat()}\n")
-            f.write("=" * 50 + "\n")
-            for line in lines:
-                f.write(line + "\n")
-    except Exception as e:
-        print(f"[FMP debug] Could not write debug log: {e}")
-
-
-# ---------------------------------------------------------------------------
 # ENTRY POINT
 # ---------------------------------------------------------------------------
 
 def run_phase_d_fmp() -> None:
     """
-    Full Phase D Tier 3 run.  Safe to call from fetch_data.py or standalone.
+    DISABLED — FMP free tier no longer includes economic calendar access.
+
+    Both /api/v3/economic_calendar (HTTP 403 "Legacy Endpoint") and
+    /stable/economic-calendar (HTTP 402 "Restricted Endpoint: not available
+    under your current subscription") are paywalled as of August 2025.
+
+    The fetch logic below (_fetch_full_calendar, _build_all_series, snapshot
+    + history builders) is preserved in case we later find a drop-in free
+    calendar source or upgrade the FMP subscription. Currently unused.
+
+    See manuals/forward_plan.md §3.7 for the alternative-source plan.
     """
     print("\n" + "=" * 60)
     print("Phase D (Tier 3) — PMI / Survey Data (FMP Calendar)")
     print("=" * 60)
-
-    _debug_log = []
-
-    if not FMP_API_KEY:
-        print("[Phase D FMP] FMP_API_KEY not set — skipping")
-        _debug_log.append("SKIP: FMP_API_KEY not set (empty or missing)")
-        _write_debug_log(_debug_log)
-        return
-
-    _debug_log.append(f"API key present: {len(FMP_API_KEY)} chars")
-    print(f"[Phase D FMP] API key present ({len(FMP_API_KEY)} chars)")
-    start = time.time()
-
-    try:
-        # Diagnostic probe
-        print("\n  Running API probe...")
-        _debug_log.extend(_probe_fmp_api())
-
-        # Fetch calendar
-        print("\n  Fetching FMP economic calendar...")
-        all_events = _fetch_full_calendar()
-        _debug_log.append(f"Calendar events fetched: {len(all_events)}")
-        if not all_events:
-            print("[Phase D FMP] No calendar events returned — exiting cleanly")
-            _debug_log.append("EXIT: No calendar events returned")
-            _write_debug_log(_debug_log)
-            return
-
-        print(f"\n  Total calendar events: {len(all_events)}")
-        if all_events:
-            sample = all_events[0]
-            _debug_log.append(f"Sample event keys: {list(sample.keys())[:10]}")
-            _debug_log.append(f"Sample event: {str(sample)[:300]}")
-
-        # Match + transform
-        print("\n  Matching events to library indicators...")
-        series_data = _build_all_series(all_events)
-
-        filled = sum(1 for _, obs in series_data.items() if obs)
-        _debug_log.append(f"Indicators with data: {filled}/{len(INDICATORS)}")
-
-        # Snapshot
-        snap_df = _build_snapshot(series_data)
-        snap_df.insert(0, "row_id", range(1, len(snap_df) + 1))
-        save_snapshot_csv(snap_df)
-        push_snapshot_to_sheets(snap_df)
-
-        # History
-        print("\n  --- History Build ---")
-        hist_df = build_history(series_data)
-        if not hist_df.empty:
-            save_hist_csv(hist_df)
-            push_hist_to_sheets(hist_df)
-
-        elapsed = round(time.time() - start, 1)
-        _debug_log.append(f"Complete in {elapsed}s — "
-                          f"{filled}/{len(INDICATORS)} indicators, "
-                          f"{len(hist_df)} history rows")
-        print(f"\n[Phase D FMP] Complete in {elapsed}s — "
-              f"{filled}/{len(INDICATORS)} indicators with data, "
-              f"{len(hist_df)} history rows × {len(hist_df.columns)} columns")
-
-    except Exception as e:
-        _debug_log.append(f"FATAL ERROR: {e}")
-        print(f"[Phase D FMP] Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
-
-    _write_debug_log(_debug_log)
+    print("[Phase D FMP] DISABLED — FMP free tier no longer includes "
+          "economic calendar (both /v3 and /stable paywalled as of Aug 2025).")
+    print("[Phase D FMP] See manuals/forward_plan.md §3.7 for replacement plan.")
+    return
 
 
 if __name__ == "__main__":
