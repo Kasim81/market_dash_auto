@@ -884,9 +884,9 @@ def load_macro_dbnomics_hist() -> pd.DataFrame:
       · macro_dbnomics_hist.csv (DB.nomics API — ISM, Eurostat)
       · macro_ifo_hist.csv      (ifo Institute Excel — German business climate)
 
-    Future survey sources (Investing.com scraper, ECB RTD, etc.) should append
-    additional load calls below and merge via outer-join. Column names must be
-    unique across sources (enforced by this function).
+    Future survey sources (e.g. BoJ Tankan) should append additional load calls
+    below and merge via outer-join. Column names must be unique across sources
+    (enforced by this function).
     """
     dbn = _load_survey_hist_csv(MACRO_DBN_HIST_CSV, "macro_dbnomics_hist")
     ifo = _load_survey_hist_csv(MACRO_IFO_HIST_CSV, "macro_ifo_hist")
@@ -1761,13 +1761,18 @@ _ASIA_REGIONAL_CALCULATORS = {
 # INDICATOR CALCULATORS — PHASE D SURVEYS
 #
 # Column names match the col field in the corresponding library CSV.
-# Source mapping (post-FMP death, 2026-04-23):
+# Source mapping (post-FMP rebuild, 2026-04-23):
 #   US_PMI1/PMI2/SVC1 → DB.nomics ISM (macro_library_dbnomics.csv)
 #   EU_ESI1           → DB.nomics Eurostat (macro_library_dbnomics.csv)
-#   DE_IFO1           → planned: ifo Excel fetcher
-#   DE_ZEW1           → planned: ECB RTD API (or Investing.com scrape fallback)
-#   EU_PMI1/2, UK_PMI1, JP_PMI1, CN_PMI1/2 → planned: Investing.com scraper
-# Orphaned calculators return empty until their new source module lands.
+#   EU_PMI1           → EC Industry Confidence (EU_IND_CONF, DB.nomics Eurostat)
+#   EU_PMI2           → EC Services Confidence (EU_SVC_CONF, DB.nomics Eurostat)
+#   DE_IFO1           → ifo Institute Excel (fetch_macro_ifo.py)
+#   UK_PMI1           → OECD BCI for UK (GBR_BUS_CONF, FRED BSCICP02GBM460S)
+#   CN_PMI1           → OECD BCI for China (CHN_BUS_CONF, FRED CHNBSCICP02STSAM)
+#   GL_PMI1           → z-score composite of ISM + EU_IND_CONF + GBR + CHN BCI
+#   DE_ZEW1           → PROPRIETARY (ZEW Mannheim)
+#   JP_PMI1           → PROPRIETARY (S&P Global); BoJ Tankan (quarterly) future
+#   CN_PMI2           → PROPRIETARY (S&P Global / Caixin)
 # ===========================================================================
 
 # --- US ISM (DB.nomics — mirror may lag 4-8 months) ---
@@ -1790,20 +1795,23 @@ def _calc_EU_ESI1(dbn, **_):
     """EC Economic Sentiment Indicator (EA) — raw level, 156w z-score. Source: DB.nomics Eurostat."""
     return _to_weekly_friday(_get_col(dbn, "EU_ESI"))
 
-# --- Orphaned — awaiting new source module ---
+# --- PMI proxies (free survey equivalents) ---
 
-def _calc_EU_PMI1(**_):
-    """S&P Global Eurozone Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape (event 201)."""
-    return pd.Series(dtype=float)
+def _calc_EU_PMI1(dbn, **_):
+    """Eurozone Manufacturing survey proxy — EC Industry Confidence (ICI).
+    Same 3 PMI questions (production expectations, order books, stocks).
+    Source: DB.nomics Eurostat ei_bssi_m_r2."""
+    return _to_weekly_friday(_get_col(dbn, "EU_IND_CONF"))
 
-def _calc_EU_PMI2(**_):
-    """S&P Global Eurozone Services PMI. AWAITING SOURCE — planned: Investing.com scrape (event 272)."""
-    return pd.Series(dtype=float)
+def _calc_EU_PMI2(dbn, **_):
+    """Eurozone Services survey proxy — EC Services Confidence.
+    Source: DB.nomics Eurostat ei_bssi_m_r2."""
+    return _to_weekly_friday(_get_col(dbn, "EU_SVC_CONF"))
 
 def _calc_DE_ZEW1(**_):
-    """ZEW Economic Sentiment. AWAITING SOURCE — planned: Investing.com scrape (event 144).
-    ECB RTD / Bundesbank / DB.nomics verified absent 2026-04-23 — ZEW is proprietary
-    (ZEW Mannheim licences the historical archive)."""
+    """ZEW Economic Sentiment — PROPRIETARY (ZEW Mannheim).
+    No free API/redistribution. German business sentiment covered by
+    DE_IFO1 (ifo) and DEU_BUS_CONF (OECD BCI via FRED)."""
     return pd.Series(dtype=float)
 
 def _calc_DE_IFO1(dbn, **_):
@@ -1811,31 +1819,49 @@ def _calc_DE_IFO1(dbn, **_):
     Source: ifo Institute Excel (ifo.de/en/ifo-time-series)."""
     return _to_weekly_friday(_get_col(dbn, "DE_IFO"))
 
-def _calc_UK_PMI1(**_):
-    """S&P Global UK Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape."""
-    return pd.Series(dtype=float)
+def _calc_UK_PMI1(mi, **_):
+    """UK Manufacturing survey proxy — OECD Business Confidence (monthly).
+    CBI-survey-derived composite, 100 = long-run average.
+    Source: FRED BSCICP02GBM460S."""
+    return _to_weekly_friday(_get_col(mi, "GBR_BUS_CONF"))
 
 def _calc_JP_PMI1(**_):
-    """au Jibun Bank Japan Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape (event 202)."""
+    """Japan Manufacturing PMI — PROPRIETARY (S&P Global / au Jibun Bank).
+    No monthly free source on FRED or DB.nomics. BoJ Tankan (quarterly)
+    is the best free alternative; requires dedicated fetcher (future work)."""
     return pd.Series(dtype=float)
 
-def _calc_CN_PMI1(**_):
-    """NBS China Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape (event 594)."""
-    return pd.Series(dtype=float)
+def _calc_CN_PMI1(mi, **_):
+    """China Manufacturing survey proxy — OECD BCI (NBS PMI components, monthly).
+    100 = long-run average. Source: FRED CHNBSCICP02STSAM."""
+    return _to_weekly_friday(_get_col(mi, "CHN_BUS_CONF"))
 
 def _calc_CN_PMI2(**_):
-    """Caixin China Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape (event 753)."""
+    """Caixin China Manufacturing PMI — PROPRIETARY (S&P Global / Caixin).
+    Chinese manufacturing covered by CN_PMI1 (OECD BCI from NBS components)."""
     return pd.Series(dtype=float)
 
 # --- Global composite ---
 
-def _calc_GL_PMI1(dbn, **_):
-    """Equal-weight global manufacturing PMI proxy.
-    Components: US ISM Mfg (dbn) + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs.
-    Only the US ISM component has a live source today; others populate once
-    Investing.com scraper lands. Until then, this averages ISM alone."""
-    ism = _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI"))
-    return ism  # Single-component mean == the component itself.
+def _calc_GL_PMI1(dbn, mi, **_):
+    """Equal-weight global manufacturing survey composite.
+    Z-score-normalises each component individually (different scales),
+    then averages available z-scores. Degrades gracefully when components
+    are missing — uses whatever is available."""
+    components = [
+        _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI")),
+        _to_weekly_friday(_get_col(dbn, "EU_IND_CONF")),
+        _to_weekly_friday(_get_col(mi, "GBR_BUS_CONF")),
+        _to_weekly_friday(_get_col(mi, "CHN_BUS_CONF")),
+    ]
+    zscores = []
+    for s in components:
+        if s is not None and not s.empty:
+            zscores.append(_rolling_zscore(s))
+    if not zscores:
+        return pd.Series(dtype=float)
+    combined = pd.concat(zscores, axis=1).mean(axis=1)
+    return combined
 
 
 _PHASE_D_CALCULATORS = {

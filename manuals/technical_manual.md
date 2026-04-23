@@ -848,7 +848,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | Issue | Module | Notes |
 |---|---|---|
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
-| 12 Phase E Survey/PMI indicators return `Insufficient Data` | `fetch_macro_fmp.py` (disabled), `compute_macro_market.py` | FMP economic calendar paywalled since Aug 2025. Affects: US_PMI1, US_PMI2, US_SVC1, EU_PMI1, EU_PMI2, DE_ZEW1, DE_IFO1, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2, GL_PMI1. Replacement plan in `manuals/pipeline_review.md` §1. |
+| 3 Phase E Survey indicators return `Insufficient Data` | `compute_macro_market.py` | DE_ZEW1 (ZEW Mannheim, proprietary), JP_PMI1 (S&P Global, proprietary), CN_PMI2 (S&P Global/Caixin, proprietary). No free monthly source exists. German sentiment covered by DE_IFO1 + DEU_BUS_CONF; Chinese manufacturing by CN_PMI1 (OECD BCI). BoJ Tankan (quarterly) is future option for JP_PMI1. |
 
 ### Recently Fixed (pending first post-fix run to confirm)
 

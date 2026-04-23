@@ -24,7 +24,7 @@ The project evolved from a single hardcoded pipeline into a sequence of lettered
 | Phase A — US Macro (FRED) | 43 FRED series (yields, inflation, labour, credit, surveys). Snapshot + weekly history from 1947. | `fetch_macro_us_fred.py` → `macro_us`, `macro_us_hist` | Production |
 | Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
 | Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
-| Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | T1 FRED (8 series) + T2 DB.nomics (Eurostat + ISM) live. T3 FMP calendar **deleted** (paywalled 2025-08); replacement = DB.nomics ISM (wired) + ifo Excel (wired) + Investing.com scrape (pending, 7 indicators). | Production for 4/12 broken indicators (US_PMI1/PMI2/SVC1 via DB.nomics, DE_IFO1 via ifo Excel). 7 Phase E indicators still return `Insufficient Data` pending Investing.com scraper. See §2.3 and `manuals/pipeline_review.md` §1. |
+| Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | T1 FRED (8 series incl. new CHN_BUS_CONF) + T2 DB.nomics (Eurostat + ISM) live. T3 FMP calendar **deleted** (paywalled 2025-08). Rebuild **mostly complete** — 8 of 12 broken indicators restored via free proxies, 3 proprietary (no free source), 1 composite auto-rebuilds. | Production for 8/12 indicators. 3 proprietary (DE_ZEW1, JP_PMI1, CN_PMI2) return `Insufficient Data` — no free monthly source exists. See §2.3. |
 | Phase E — Macro-Market Indicators | 91 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
 | Phase G — Sheets Export Audit | Tab inventory (9 active), protected-tab guards across all writers, legacy-tab cleanup, batch-write coverage | Single source of truth in `library_utils.py`; guards added to 3 previously-missing writers on 2026-04-21 | Mostly Done |
@@ -143,7 +143,7 @@ Key updates applied:
 
 **Branch:** `claude/review-project-status-5x54q` (local) — also pushed.
 
-**Status (2026-04-23):** The original 3-tier design (FRED / DB.nomics / FMP) was completed through Tier 2. Tier 3 FMP was paywalled and the entire calendar module has been **deleted** from the repo. Rebuild is **partially complete** — 4 of 12 broken Phase E indicators restored.
+**Status (2026-04-23):** The original 3-tier design (FRED / DB.nomics / FMP) was completed through Tier 2. Tier 3 FMP was paywalled and the entire calendar module has been **deleted** from the repo. Rebuild is **mostly complete** — 8 of 12 broken Phase E indicators restored using free proxy sources. 3 remain proprietary with no free monthly equivalent.
 
 **Replacement plan** (source-per-indicator detail in `manuals/pipeline_review.md` §1):
 
@@ -151,25 +151,29 @@ Key updates applied:
 |---|---|---|
 | US_PMI1, US_PMI2, US_SVC1 | DB.nomics ISM (`ISM/pmi/pm`, `ISM/neword`, `ISM/nm-pmi/pm`) | **Wired 2026-04-23** (commit `1667276`). Mirror may lag 4-8m. |
 | DE_IFO1 | ifo Institute Excel (`ifo.de/en/ifo-time-series`, 1991+ history) | **Wired 2026-04-23** (commit `f35a0aa`). New module `fetch_macro_ifo.py`. |
-| DE_ZEW1 | Investing.com economic calendar scrape (event 144) | Pending. ECB RTD / Bundesbank / DB.nomics all probed 2026-04-23 and confirmed absent — ZEW is proprietary (ZEW Mannheim licences the archive). |
-| EU_PMI1, EU_PMI2, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2 | Investing.com economic calendar scrape | Pending — new module `fetch_macro_investing.py` covering all 7 indicators (ZEW + 6 PMIs). |
-| GL_PMI1 | Auto-rebuilds once 5 mfg-PMI components restored | Depends on scraper above. |
+| EU_PMI1 | EC Industry Confidence (`EU_IND_CONF`, DB.nomics Eurostat) | **Wired 2026-04-23.** Same 3 PMI questions (production expectations, order books, stocks). Already in `dbn`. |
+| EU_PMI2 | EC Services Confidence (`EU_SVC_CONF`, DB.nomics Eurostat) | **Wired 2026-04-23.** Monthly, 1995+. Already in `dbn`. |
+| UK_PMI1 | OECD BCI for UK (`GBR_BUS_CONF`, FRED `BSCICP02GBM460S`) | **Wired 2026-04-23.** Upgraded from quarterly to monthly series. CBI-survey-derived, 1977+. Already in `mi`. |
+| CN_PMI1 | OECD BCI for China (`CHN_BUS_CONF`, FRED `CHNBSCICP02STSAM`) | **Wired 2026-04-23.** NBS PMI-derived, monthly, Feb 2000+. New row in `macro_library_fred.csv`. |
+| GL_PMI1 | Z-score-normalised 4-region composite (ISM + EU_IND_CONF + GBR_BUS_CONF + CHN_BUS_CONF) | **Wired 2026-04-23.** Degrades gracefully — averages whatever components are available. |
+| DE_ZEW1 | **PROPRIETARY** — ZEW Mannheim licences the archive | No free API. German sentiment covered by DE_IFO1 + DEU_BUS_CONF. |
+| JP_PMI1 | **PROPRIETARY** — S&P Global / au Jibun Bank | No monthly free source. BoJ Tankan (quarterly) is future option. |
+| CN_PMI2 | **PROPRIETARY** — S&P Global / Caixin | Chinese manufacturing covered by CN_PMI1 (OECD BCI). |
 
-**Run order (remaining work):**
+**Completed steps:**
 
-1. ~~Add 3 DB.nomics ISM rows~~ — **done**.
-2. ~~Build ifo Excel fetcher~~ — **done**.
-3. ~~Probe ECB RTD for ZEW~~ — **done**, confirmed absent. ZEW moved to Investing.com scrape plan.
-4. **Build Investing.com scraper module** — economic calendar event pages covering ZEW (event 144), EU_PMI1 (201), EU_PMI2 (272), UK_PMI1 (TBD), JP_PMI1 (202), CN_PMI1 (594), CN_PMI2 (753). Output schema matches a new `macro_investing_hist.csv` file merged into the `dbn` DataFrame by `load_macro_dbnomics_hist()` (the compute layer treats all survey sources as one merged DataFrame).
-5. **Run `python fetch_data.py` end-to-end**; confirm the 8 remaining Phase E indicators populate (7 scraped + GL_PMI1 composite).
-6. **Post-rebuild cleanup** — drop `BSCICP02GBQ460S` from `macro_library_fred.csv` once UK_PMI1 has ≥3y scraped history.
+1. ~~Add 3 DB.nomics ISM rows~~ — **done** (commit `1667276`).
+2. ~~Build ifo Excel fetcher~~ — **done** (commit `f35a0aa`).
+3. ~~Probe ECB RTD for ZEW~~ — **done** (commit `c3e8c5a`), confirmed absent.
+4. ~~Evaluate Investing.com scraper~~ — **rejected** 2026-04-23. Fragile anti-bot protections, frequent HTML changes, and Cloudflare blocking make scraping unreliable for a nightly CI pipeline. Free proxy alternatives found instead.
+5. ~~Wire EU_PMI1/2 to EC Industry/Services Confidence~~ — **done** 2026-04-23. Data already flowed via DB.nomics; calculators rewired.
+6. ~~Wire UK_PMI1 to OECD BCI, add CHN_BUS_CONF, wire CN_PMI1~~ — **done** 2026-04-23.
+7. ~~Rebuild GL_PMI1 as z-score composite~~ — **done** 2026-04-23.
 
-**Files expected to change in the remaining work:**
-- `fetch_macro_investing.py` (new module — main remaining work)
-- `compute_macro_market.py` — rewrite 7 stub calculators (EU_PMI1/2, UK_PMI1, JP_PMI1, CN_PMI1/2, DE_ZEW1) to read from the merged `dbn` DataFrame. Restore GL_PMI1 to the original 5-component average.
-- `library_utils.py`, `.github/workflows/update_data.yml` — register the new CSV / tabs.
+**Remaining work (future, separate PRs):**
 
-**Design constraint:** `fetch_macro_investing.py` writes a history CSV with the 8-row metadata prefix matching `macro_dbnomics_hist.csv` / `macro_ifo_hist.csv`. Columns use the existing compute-layer names (`EZ_MFG_PMI`, `EZ_SVC_PMI`, `UK_MFG_PMI`, `JP_MFG_PMI`, `CN_NBS_PMI`, `CN_CAIXIN_PMI`, `DE_ZEW`). The `_load_survey_hist_csv` helper in `compute_macro_market.py` picks it up with a one-line addition to `load_macro_dbnomics_hist()`.
+- **BoJ Tankan fetcher** — quarterly Large Manufacturing DI via `stat-search.boj.or.jp`. Would give JP_PMI1 a quarterly proxy. Similar architecture to `fetch_macro_ifo.py`.
+- **First CI verification** — next nightly run at 03:17 UTC validates the full pipeline with all new sources.
 
 
 ---
@@ -191,11 +195,15 @@ Key updates applied:
 | 2a | DB.nomics Eurostat | EU_ESI, EU_IND_CONF, EU_SVC_CONF | Production |
 | 2b | DB.nomics ISM | US ISM Mfg, ISM New Orders, ISM Services (may lag 4-8m) | **Production 2026-04-23** |
 | 3a | ifo Institute Excel (`fetch_macro_ifo.py`) | DE_IFO1 (1991+ monthly) | **Production 2026-04-23** |
-| 3b | Investing.com scrape (planned `fetch_macro_investing.py`) | DE_ZEW1, EU_PMI1/2, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2 | Planned — remaining work |
-| ~~3c~~ | ~~ECB RTD API~~ | ~~DE_ZEW1 via `RTD.M.S0.S.Y_ZEWES.F`~~ | **Rejected** 2026-04-23 — ZEW not freely published by any aggregator |
-| ~~3d~~ | ~~FMP calendar~~ | ~~S&P Global PMIs + ZEW + IFO~~ | **Deleted** 2026-04-23 — endpoints paywalled Aug 2025 |
+| 3b | EC Industry/Services Confidence (DB.nomics Eurostat, already in T2a) | EU_PMI1 → EU_IND_CONF, EU_PMI2 → EU_SVC_CONF | **Production 2026-04-23** — proxy using same PMI methodology |
+| 3c | OECD BCI for UK (FRED `BSCICP02GBM460S`) | UK_PMI1 → GBR_BUS_CONF (monthly, CBI-derived) | **Production 2026-04-23** — upgraded from quarterly to monthly |
+| 3d | OECD BCI for China (FRED `CHNBSCICP02STSAM`) | CN_PMI1 → CHN_BUS_CONF (monthly, NBS-derived) | **Production 2026-04-23** — new FRED library row |
+| 3e | Z-score composite (computed from T1-3d) | GL_PMI1 = avg(ISM, EU_IND_CONF, GBR_BUS_CONF, CHN_BUS_CONF) | **Production 2026-04-23** |
+| ~~3f~~ | ~~Investing.com scrape~~ | ~~7 indicators~~ | **Rejected** 2026-04-23 — fragile anti-bot protections; free proxies found instead |
+| ~~3g~~ | ~~ECB RTD API~~ | ~~DE_ZEW1~~ | **Rejected** 2026-04-23 — ZEW proprietary |
+| ~~3h~~ | ~~FMP calendar~~ | ~~S&P Global PMIs + ZEW + IFO~~ | **Deleted** 2026-04-23 — endpoints paywalled Aug 2025 |
 
-**Total output:** 13 Phase D composite indicators (unchanged from pre-FMP-death design). The 12 FMP-dependent Phase E composites currently show `Insufficient Data` and will repopulate once Tier 2b/3a/3b/3c land.
+**Total output:** 13 Phase D composite indicators. 10 now live. 3 proprietary (DE_ZEW1, JP_PMI1, CN_PMI2) — no free monthly source exists; these return `Insufficient Data`. Future BoJ Tankan fetcher (quarterly) could partially address JP_PMI1.
 
 **Full indicator-to-source mapping:** see `manuals/pipeline_review.md` §1 and §5.
 
