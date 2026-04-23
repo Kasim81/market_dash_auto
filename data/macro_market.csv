@@ -62,7 +62,7 @@ US_EQ_F2,US,Equity - Factor (Style),Style / value vs growth (S&P 500),2026-04-17
 US_R3,US,Rates - Growth,Yield-curve slope (market return),2026-04-17,0.536,1.0368,0.9913,1.0381,1.4471,1.5654,stable,steep,stable,US 10-Year Treasury Yield (^TNX yfinance) minus US 2-Year Treasury Yield (DGS2 FRED)
 US_CA_G1,US,CrossAsset - Growth,Risk-on vs risk-off,2026-04-17,3.430403,1.5856,1.3086,1.0449,1.5547,1.5856,intensifying,risk-on,stable,S&P 500 ETF (SPY) / ICE BofA US Treasury Index (GOVT)
 US_Cr4,US,Credit,HY vs treasuries (credit risk),2026-04-17,-3.176819,1.4131,1.3943,1.1377,1.4945,1.474,intensifying,credit-appetite,stable,iShares USD High Yield Corp Bond UCITS ETF (IHYU.L) / ICE BofA US Treasury Index (GOVT)
-US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-17,-0.090261,1.692,1.0909,0.9588,0.9812,1.692,intensifying,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
+US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-17,-0.090261,1.692,1.0909,0.9588,0.9811,1.692,intensifying,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
 US_G4,US,Equity - Growth,Growth / market breadth,2026-04-17,-1.251468,-1.2717,-1.0698,-0.9048,-1.2188,1.2897,intensifying,narrow-concentrated,stable,S&P 500 Equal-Weight ETF (RSP) / SPDR S&P 500 ETF (SPY)
 US_ISM1,US,Macro - Survey,Leading / ISM Manufacturing New Orders,,,,,,,,,Insufficient Data,n/a,ISM Manufacturing New Orders Index (NAPMOI via FRED monthly)
 US_R6,US,Rates,Rates / mortgage affordability,2026-04-24,2.0,-1.4768,-1.3677,-1.7384,-2.3497,2.3262,fading,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
