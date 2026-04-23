@@ -24,7 +24,7 @@ The project evolved from a single hardcoded pipeline into a sequence of lettered
 | Phase A — US Macro (FRED) | 43 FRED series (yields, inflation, labour, credit, surveys). Snapshot + weekly history from 1947. | `fetch_macro_us_fred.py` → `macro_us`, `macro_us_hist` | Production |
 | Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
 | Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
-| Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | Three tiers: FRED rows, DB.nomics primary, FMP calendar for proprietary S&P Global PMIs | PoC verification in progress on `claude/review-project-status-5x54q`: T1 FRED done (8/11 confirmed); T2 DB.nomics done (3 Eurostat — ISM moved to T3, ECB BLS + BOJ Tankan dropped); T3 FMP PoC pending (12 events). See section 2.3 "Resume Here". |
+| Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | T1 FRED (8 series) + T2 DB.nomics (3 Eurostat) live. T3 FMP calendar **dead** (paywalled 2025-08); replacement plan targets DB.nomics ISM + ifo Excel + Investing.com scrape + ECB RTD. | T1+T2 Production; T3 Broken — replacement in progress. 12 Phase E indicators return `Insufficient Data` until rebuild lands. See §2.3 and `manuals/pipeline_review.md` §1. |
 | Phase E — Macro-Market Indicators | 91 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
 | Phase G — Sheets Export Audit | Tab inventory (9 active), protected-tab guards across all writers, legacy-tab cleanup, batch-write coverage | Single source of truth in `library_utils.py`; guards added to 3 previously-missing writers on 2026-04-21 | Mostly Done |
@@ -139,54 +139,42 @@ Key updates applied:
 - Excluded indicators reference table added
 - New CSV files (`reference_indicators.csv`, `macro_library_dbnomics.csv`) added to inventory
 
-### 2.3 Phase D Verification — Business Survey Data
+### 2.3 Phase D Rebuild — FMP Replacement Plan
 
-**Branch:** `claude/review-project-status-5x54q` (local) — also pushed. All code changes described below are already committed.
+**Branch:** `claude/review-project-status-5x54q` (local) — also pushed.
 
-**Current state:** Library CSVs and calculators align with PoC findings. 13 Phase D indicators wired. The two end-to-end tests and the FMP PoC are what's left before Phase D is production.
+**Status (2026-04-23):** The original 3-tier design (FRED / DB.nomics / FMP) was completed through Tier 2. **Tier 3 FMP is dead** — both `/v3/economic_calendar` (HTTP 403) and `/stable/economic-calendar` (HTTP 402) are paywalled as of August 2025, verified via CI diagnostic probes 2026-04-22. `run_phase_d_fmp()` is disabled (early-return in `fetch_macro_fmp.py`). Twelve Phase E composites now return `Insufficient Data`: US_PMI1, US_PMI2, US_SVC1, EU_PMI1, EU_PMI2, DE_ZEW1, DE_IFO1, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2, GL_PMI1.
 
-**Run order when you pick this up:**
+**Replacement plan** (source-per-indicator detail in `manuals/pipeline_review.md` §1):
 
-1. **Tier 2 e2e test** — no API key needed:
-   ```
-   python fetch_macro_dbnomics.py
-   ```
-   Expect: 3 Eurostat series → `data/macro_dbnomics.csv` + `data/macro_dbnomics_hist.csv`. Sheets push skipped locally (no `GOOGLE_CREDENTIALS` env var in dev).
+| Indicator(s) | Replacement | Work |
+|---|---|---|
+| US_PMI1, US_PMI2, US_SVC1 | DB.nomics ISM (`ISM/pmi/pm`, `ISM/neword`, `ISM/nm-pmi/pm`) + scrape overlay for 4-8m staleness | Add 3 rows to `macro_library_dbnomics.csv` — existing fetcher handles rest |
+| DE_IFO1 | ifo Institute free Excel download (`ifo.de/en/ifo-time-series`, 1991+ history) | New small fetcher (one function) |
+| DE_ZEW1 | ECB RTD API (`RTD.M.S0.S.Y_ZEWES.F`) — free, no key | One API probe; if confirmed, add to DB.nomics library via `ECB/RTD` provider |
+| EU_PMI1, EU_PMI2, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2 | Investing.com economic calendar scrape | New module `fetch_macro_investing.py` covering all 11 indicators |
+| GL_PMI1 | Auto-rebuilds once 5 components restored | No direct work |
 
-2. **Tier 3 FMP PoC** — needs `FMP_API_KEY`:
-   ```
-   FMP_API_KEY=<your_key> python poc_fmp_calendar.py
-   ```
-   Expect: per-event report showing whether each of 12 target events appears, with history depth. Note which events don't exist on FMP — action plan:
-   - ISM_MFG_NEWORD missing → drop `US_PMI2` indicator from `compute_macro_market.py` + `macro_indicator_library.csv`.
-   - ISM_SVC_BUSACT missing → remove from `US_SVC1` composite (currently doesn't reference it; only `ISM_SVC_PMI` is used) — library row still safe to drop.
-   - Any country PMI missing → drop corresponding indicator (e.g. UK_PMI1 → fall back to FRED quarterly; JP_PMI1 → Japan has no business-survey signal, flag to user).
+**Run order when rebuilding:**
 
-3. **Tier 3 e2e test** (same runtime `FMP_API_KEY`):
-   ```
-   FMP_API_KEY=<your_key> python fetch_macro_fmp.py
-   ```
-   Expect: 12 events → `data/macro_fmp.csv` + `data/macro_fmp_hist.csv`.
+1. **Add 3 DB.nomics ISM rows**, run `python fetch_macro_dbnomics.py`, verify ISM series populate `macro_dbnomics.csv`. Accept staleness for now.
+2. **Build ifo Excel fetcher** — single HTTP GET + pandas `read_excel`, output to `data/macro_fmp.csv` schema (reuse column `DE_IFO`).
+3. **Probe ECB RTD** for ZEW — if works, add to DB.nomics library; else fall back to Investing.com scrape for ZEW too.
+4. **Build Investing.com scraper module** — economic calendar event pages with event IDs documented in `pipeline_review.md` §1. Output schema matches `macro_fmp.csv`/`macro_fmp_hist.csv` so `compute_macro_market.py` calculators don't need changes.
+5. **Run `python fetch_data.py` end-to-end**; confirm all 12 Phase E indicators populate. Delete `fetch_macro_fmp.py` once all 11 replacements are live (the file is now a dead stub).
+6. **Post-rebuild cleanup** — drop `BSCICP02GBQ460S` from `macro_library_fred.csv` once UK_PMI1 has ≥3y scraped history. Remove `FMP_API_KEY` from workflow env (secret can stay unused).
 
-4. **Full pipeline** (needs `GOOGLE_CREDENTIALS` + `FMP_API_KEY`):
-   ```
-   GOOGLE_CREDENTIALS=<sa_json> FMP_API_KEY=<key> python fetch_data.py
-   ```
-   Or rely on the GitHub Actions scheduled run. Confirm `macro_market` / `macro_market_hist` contain the 13 new Phase D indicator rows and that `GL_PMI1` composite has non-NaN values.
+**Files expected to change:**
+- `data/macro_library_dbnomics.csv` (+3 ISM rows, possibly +1 ECB RTD ZEW row)
+- `fetch_macro_ifo.py` (new, small)
+- `fetch_macro_investing.py` (new, main work)
+- `fetch_data.py` (wire new fetchers into phase dispatch; remove FMP import)
+- `.github/workflows/update_data.yml` (add git-add lines for any new intermediate CSVs; remove `FMP_API_KEY` env line eventually)
+- Delete `fetch_macro_fmp.py`, `poc_fmp_calendar.py`, `data/macro_library_fmp.csv` once rebuild is complete.
 
-5. **Post-FMP cleanup** — once UK_PMI1 verified with ≥3y history, drop `BSCICP02GBQ460S` from `macro_library_fred.csv` (currently flagged as fallback).
+**Design constraint:** All replacement fetchers must write to column names matching the existing `compute_macro_market.py` `_calc_*_PMI*` / `_calc_DE_*` dispatchers (`ISM_MFG_PMI`, `ISM_MFG_NEWORD`, `ISM_SVC_PMI`, `EZ_MFG_PMI`, `EZ_SVC_PMI`, `UK_MFG_PMI`, `JP_MFG_PMI`, `CN_NBS_PMI`, `CN_CAIXIN_PMI`, `DE_ZEW`, `DE_IFO`). The compute layer stays untouched — only the data source changes.
 
-**Known unknowns to resolve during steps 2-3:**
-- Which ISM sub-indices does FMP carry? Headline PMI near-certain; New Orders and Services Business Activity uncertain.
-- Do the Chinese Caixin / NBS PMIs appear on FMP as distinct events, or merged?
-- How much history does FMP give per event — 3+ years needed for z-score regimes.
-
-**Files that would change during the above steps:**
-- If any indicator is dropped: `compute_macro_market.py` (calculator, dispatcher, regime rule) + `data/macro_indicator_library.csv` + `data/macro_library_fmp.csv`.
-- `macro_library_fred.csv` if UK fallback dropped.
-- No changes expected to `fetch_macro_dbnomics.py` / `fetch_macro_fmp.py` (both are library-driven).
-
-**Context for resuming without scrollback:** Verification has been running in rounds on branch `claude/poc-verification-round-2` (4 PoC rounds executed) and findings merged into `claude/review-project-status-5x54q`. ECB BLS (HTTP 404 on DB.nomics), BoJ Tankan (absent), and ISM (stale on DB.nomics) drove the Tier 2→3 migration. All library CSVs reflect post-PoC scope.
+**Context for resuming without scrollback:** Steps 1-3 of the FMP post-mortem are complete. Step 1 confirmed both FMP endpoints paywalled. Step 2 identified replacement sources per indicator. Step 3 produced `manuals/pipeline_review.md`. Step 4 (this docs update) is landing now. Next pickup: start executing the Stage 1 rebuild listed above.
 
 
 ---
@@ -200,15 +188,21 @@ Key updates applied:
 
 **The gap:** ISM PMI (US), S&P Global country PMIs (EZ/UK/JP/CN), ECB Bank Lending Survey, BoJ Tankan, ZEW, IFO, EC Economic Sentiment — none currently in the pipeline. FRED removed all 22 ISM series in June 2016 (S&P Global licence pulled). S&P Global country PMIs are proprietary and only available free via calendar redistribution. ZEW, IFO, NBS have no free APIs.
 
-**Three-tier approach :**
+**Revised approach (post-FMP death, 2026-04-23):**
 
-| Tier | Source | Coverage | Effort |
+| Tier | Source | Coverage | Status |
 |---|---|---|---|
-| 1 | FRED (add 11 rows to existing library) | OECD business/consumer confidence for DE, UK, JP, FR, IT, CN; Dallas Fed Mfg | Zero new code |
-| 2 | DB.nomics (new `fetch_macro_dbnomics.py`) | US ISM + sub-indices; ECB Bank Lending Survey; BoJ Tankan; Eurostat ESI / sector confidence | One new module |
-| 3 | FMP calendar (narrow `fetch_macro_fmp.py`) | S&P Global EZ/UK/JP/CN PMIs; ZEW; IFO; NBS China PMI; Caixin PMI | One narrow module |
+| 1 | FRED (rows in `macro_library_fred.csv`) | OECD business/consumer confidence for DE, UK, JP, FR, IT, CN; Dallas Fed Mfg | Production |
+| 2a | DB.nomics Eurostat (live) | EU_ESI, EU_IND_CONF, EU_SVC_CONF | Production |
+| 2b | DB.nomics ISM (planned) | US ISM Mfg, ISM New Orders, ISM Services (4-8m lag tolerated) | Planned — row addition |
+| 3a | ifo Institute free Excel | DE_IFO1 (1991+ monthly) | Planned — new small fetcher |
+| 3b | ECB RTD API | DE_ZEW1 (if `RTD.M.S0.S.Y_ZEWES.F` probe succeeds) | Planned — verify then add |
+| 3c | Investing.com scrape (new `fetch_macro_investing.py`) | EU_PMI1/2, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2, latest-reading overlay for DB.nomics ISM | Planned — main new module |
+| ~~3d~~ | ~~FMP calendar~~ | ~~S&P Global PMIs + ZEW + IFO~~ | **Disabled** — `/v3` and `/stable` endpoints paywalled Aug 2025 |
 
-**Total output:** 15 new macro-market indicators, including `GL_PMI1` (equal-weight global PMI proxy across US / EZ / JP / UK / CN) — the single most important missing global-growth regime indicator. Implementation order: Tier 1 → Tier 2 PoC → Tier 2 build → Tier 3 PoC → Tier 3 build → indicator registration. 
+**Total output:** 13 Phase D composite indicators (unchanged from pre-FMP-death design). The 12 FMP-dependent Phase E composites currently show `Insufficient Data` and will repopulate once Tier 2b/3a/3b/3c land.
+
+**Full indicator-to-source mapping:** see `manuals/pipeline_review.md` §1 and §5.
 
 ### 3.2 Instrument Expansion
 

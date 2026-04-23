@@ -837,7 +837,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | `FRED_API_KEY` | Exists | All FRED API calls |
 | `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
 | `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
-| `FMP_API_KEY` | Exists | Registered 2026-04-21; used by Phase D FMP calendar module (`fetch_macro_fmp.py`) for ISM + S&P Global PMIs |
+| `FMP_API_KEY` | Exists but unused | Registered 2026-04-21. **Phase D FMP module disabled 2026-04-22** — FMP free tier no longer includes economic calendar (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained in case a replacement FMP product launches. See `manuals/pipeline_review.md` §1 for replacement plan. |
 
 ---
 
@@ -848,6 +848,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | Issue | Module | Notes |
 |---|---|---|
 | OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
+| 12 Phase E Survey/PMI indicators return `Insufficient Data` | `fetch_macro_fmp.py` (disabled), `compute_macro_market.py` | FMP economic calendar paywalled since Aug 2025. Affects: US_PMI1, US_PMI2, US_SVC1, EU_PMI1, EU_PMI2, DE_ZEW1, DE_IFO1, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2, GL_PMI1. Replacement plan in `manuals/pipeline_review.md` §1. |
 
 ### Recently Fixed (pending first post-fix run to confirm)
 
