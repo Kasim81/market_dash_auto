@@ -204,20 +204,42 @@ def _fetch_calendar_chunk(start_date: str, end_date: str) -> list[dict]:
 
 
 def _probe_fmp_api() -> list[str]:
-    """One small diagnostic call to verify API key and endpoint."""
+    """Diagnostic calls to verify API key against old + new endpoints."""
     diag = []
     probe_end = datetime.now().strftime("%Y-%m-%d")
     probe_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    url = FMP_BASE
-    params = {"from": probe_start, "to": probe_end, "apikey": FMP_API_KEY}
-    try:
-        resp = requests.get(url, params=params, timeout=15)
-        diag.append(f"Probe HTTP {resp.status_code}, "
-                    f"content-type={resp.headers.get('content-type','?')}, "
-                    f"body length={len(resp.text)}")
-        diag.append(f"Probe body (first 500 chars): {resp.text[:500]}")
-    except Exception as e:
-        diag.append(f"Probe request failed: {e}")
+
+    endpoints = [
+        ("v3 (legacy)", FMP_BASE),
+        ("stable", "https://financialmodelingprep.com/stable/economic-calendar"),
+    ]
+
+    for label, url in endpoints:
+        params = {"from": probe_start, "to": probe_end, "apikey": FMP_API_KEY}
+        try:
+            resp = requests.get(url, params=params, timeout=15)
+            diag.append(f"--- {label}: {url}")
+            diag.append(f"  HTTP {resp.status_code}, "
+                        f"content-type={resp.headers.get('content-type','?')}, "
+                        f"body length={len(resp.text)}")
+            diag.append(f"  Body (first 500 chars): {resp.text[:500]}")
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                    if isinstance(data, list):
+                        diag.append(f"  Parsed: list with {len(data)} items")
+                        if data:
+                            diag.append(f"  First item keys: {list(data[0].keys())}")
+                            diag.append(f"  First item: {str(data[0])[:300]}")
+                    elif isinstance(data, dict):
+                        diag.append(f"  Parsed: dict with keys {list(data.keys())}")
+                except Exception as e:
+                    diag.append(f"  JSON parse error: {e}")
+        except Exception as e:
+            diag.append(f"--- {label}: {url}")
+            diag.append(f"  Request failed: {e}")
+        time.sleep(0.5)
+
     return diag
 
 

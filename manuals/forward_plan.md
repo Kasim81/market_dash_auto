@@ -608,8 +608,35 @@ These 20 indicators can be captured immediately by adding rows to the existing F
 
 This is a display-only change — no new data computation needed. The `cycle_timing` column already exists in the CSV.
 
----
+### 3.9 PE Ratio Integration
 
+**Priority:** Medium-high — valuation data is a core input for a macro-market dashboard.
+**Status:** Not started.
+
+**Objective:** Integrate price-to-earnings (PE) ratio data for major indices (S&P 500, Nasdaq 100, FTSE 100, Euro Stoxx 50, Nikkei 225, MSCI EM, etc.) and/or individual equity markets. PE ratios provide valuation context for equity regime signals and can feed forward-PE-based composite indicators in Phase E.
+
+**Data categories to source:**
+- **Trailing PE (TTM)** — based on reported earnings over the trailing 12 months
+- **Forward PE** — based on consensus analyst estimates (more forward-looking; leading indicator)
+- **CAPE / Shiller PE** — cyclically adjusted PE (10-year real earnings); useful as long-run valuation anchor
+- **Sector PE breakdowns** — per-sector PE for S&P 500 / other major indices
+
+**Candidate free sources (prioritised):**
+
+| Source | Coverage | Access | Notes |
+|---|---|---|---|
+| **yfinance** | Trailing PE for individual tickers and ETFs (via `info["trailingPE"]`, `info["forwardPE"]`) | Free, already in pipeline | Snapshot only — no historical time series. Good for daily current PE but not PE history. |
+| **FMP `/stable/ratios`** | TTM and forward PE for individual stocks and ETFs | API key (already have) | Historic annual/quarterly ratios available. Check if index-level PE aggregates are exposed. |
+| **FRED** | Shiller CAPE (`CAPE10`? — verify) | Free | May not exist as a direct FRED series. Robert Shiller's dataset is available as a free Excel download from his Yale page. |
+| **multpl.com** | S&P 500 PE, Shiller PE, earnings yield | Free website, no API | Would require scraping — fragile. |
+| **Barclays / Bloomberg** | Forward PE, sector breakdowns | Proprietary | Not freely available |
+
+**Potential Phase E indicators:**
+- `US_V3` or similar — S&P 500 forward PE z-score (valuation regime)
+- `GL_V1` — cross-region PE spread (US vs EM, US vs Europe)
+- CAPE-based long-run valuation signal
+
+**Action:** Investigate which free sources provide historical PE time series (not just snapshots). yfinance is already integrated but lacks history. FMP ratios endpoint should be tested alongside the calendar endpoint probe. Shiller CAPE dataset is a reliable free download. Design the integration path (new fetch module vs extension of existing comp pipeline) based on what source data is available.
 
 ---
 
