@@ -5,7 +5,7 @@ Indicator,EC Economic Sentiment Indicator (EA),EC Industry Confidence (EA),EC Se
 Region,EA,EA,EA
 Units,Index (long-run avg = 100),Balance (% points),Balance (% points)
 Frequency,Weekly (from Monthly ffill),Weekly (from Monthly ffill),Weekly (from Monthly ffill)
-Last Updated,2026-04-23 12:11 UTC,2026-04-23 12:11 UTC,2026-04-23 12:11 UTC
+Last Updated,2026-04-23 15:59 UTC,2026-04-23 15:59 UTC,2026-04-23 15:59 UTC
 Date,EU_ESI,EU_IND_CONF,EU_SVC_CONF
 1999-12-31,114.8000,2.3000,32.0000
 2000-01-07,114.8000,2.3000,32.0000

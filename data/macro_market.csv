@@ -18,11 +18,11 @@ M5,US,Mmtm - Volatility,Momentum – vol-filtered equity exposure,2026-04-17,0.1
 EU_G3,Europe,Equity - Growth,Growth / cyclicals vs defensives (Europe),2026-04-17,0.701192,1.1927,0.7193,0.5665,1.5643,1.558,stable,pro-growth-EU,stable,(STOXX Europe 600 Industrials + STOXX Europe 600 Banks + STOXX Europe 600 Technology) / (STOXX Europe 600 Utilities + STOXX Europe 600 Consumer Staples)
 UK_G1,UK,Equity - Growth,UK domestic vs global,2026-04-17,0.777195,-2.1788,-2.8958,-2.7891,-1.8652,3.3633,fading,global-preferred,stable,FTSE 250 / FTSE 100
 EU_G2,Europe,Equity - Growth,Eurozone vs US leadership,2026-04-17,-2.351706,0.1969,0.498,-0.3413,0.2753,0.8897,fading,neutral,stable,Euro Stoxx 50 / S&P 500
-EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-24,2.84,-0.9936,-0.8462,-0.4639,-1.5106,1.418,stable,neutral,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
+EU_Cr1,Europe,Credit,IG Spread - EUR,2026-04-24,2.83,-1.0092,-0.8462,-0.4639,-1.5106,1.418,stable,EU-easy,stable,yield(ICE BofA Euro Corporate Bond Index) - yield(ICE BofA Euro Government Bond Index)
 UK_R2,UK,Rates - Inflation,Breakeven - Proxy (return) - GBP,2026-04-17,0.145204,-0.8663,-0.8483,-0.7981,-1.1251,1.2695,stable,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
 UK_Cr1,UK,Credit,UK credit conditions,2026-04-17,-2.095028,1.4286,1.3767,0.9167,1.2357,1.4286,intensifying,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
 EU_G4,Europe,Equity - Growth,EUR vs European cyclicals,2026-04-17,0.465621,-0.2156,-1.1903,-1.4635,0.4307,1.738,fading,neutral,stable,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
-AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-24,-0.061064,0.5453,0.3773,0.2809,-0.4558,0.5453,intensifying,neutral,stable,CSI 500 / CSI 300
+AS_CN_G3,Asia,China - Equity - Factor (Size),China size / domestic cycle,2026-04-24,-0.052507,0.6251,0.3773,0.2809,-0.4558,0.6251,intensifying,neutral,stable,CSI 500 / CSI 300
 AS_CN_G2,Asia,China - Equity (Growth),China vs global DM,2026-04-17,0.899969,1.3697,1.0811,0.9153,0.765,1.3697,intensifying,China-outperform,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
 AS_IN_G1,Asia,India - Equity - Factor (Size),India domestic growth breadth,2026-04-17,3.029781,-0.7738,-0.5661,-0.1405,-0.4584,0.7738,intensifying,neutral,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
 AS_CN_R1,Asia,China - Rates,China rates vs US,,,,,,,,,Insufficient Data,n/a,"China 10Y Govt Bond Yield (IRLTLT01CNM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
@@ -37,8 +37,8 @@ US_R4,US,Rates - Inflation,Inflation Breakeven,2026-04-17,2.36,0.7518,0.7593,1.0
 UK_R1,UK,Rates - Growth,GB10Y vs DM10Y,2026-03-06,1.795462,-0.1969,-0.668,-0.5788,-0.5193,0.7318,fading,neutral,stable,UK 10-Year Gilt Yield - Germany 10-Year Bund Yield
 FX_CMD5,FX & Commodities,Growth (China infra),Growth / China infrastructure,2026-03-06,107.577273,-0.2749,-0.9172,-0.9509,-0.3901,0.9509,fading,neutral,stable,Iron Ore (World Bank Price Index) / Copper
 FX_CMD4,FX & Commodities,Growth (China broad),Growth / China vs global commodities,2026-04-17,-6.679437,-1.3678,-1.4925,-1.8611,-1.7181,2.1837,fading,global-commodity-lead,stable,Iron Ore (World Bank Price Index) / Invesco DB Commodity Index Fund
-US_JOBS1,US,Macro,Labour market / Leading,2026-04-17,-5.090498,-1.2348,-1.438,-1.7513,-0.9485,1.7513,fading,overheating,stable,Initial Jobless Claims 4-Week Avg (IC4WSA) – YoY % change and z-score
-US_JOBS3,US,Macro,Labour market composite,2026-04-17,-0.343492,0.5342,0.6317,0.7959,0.1232,0.7959,fading,mid-cycle,stable,"Equal-weighted composite of z-scores of inverted unemployment rate (UNRATE), payroll growth (PAYEMS YoY) and inverted IC4WSA"
+US_JOBS1,US,Macro,Labour market / Leading,2026-04-17,-4.977376,-1.2155,-1.438,-1.7513,-0.9485,1.7513,fading,overheating,stable,Initial Jobless Claims 4-Week Avg (IC4WSA) – YoY % change and z-score
+US_JOBS3,US,Macro,Labour market composite,2026-04-17,-0.349912,0.5225,0.6317,0.7959,0.1232,0.7959,fading,mid-cycle,stable,"Equal-weighted composite of z-scores of inverted unemployment rate (UNRATE), payroll growth (PAYEMS YoY) and inverted IC4WSA"
 US_G6,US,Macro,Real activity / Growth,2026-04-17,0.843241,1.2031,1.2309,1.2049,1.5235,1.5011,stable,strong-growth,stable,Composite of z-scores of 12-month change in Industrial Production (INDPRO) and Retail Sales ex-Autos (RSXFS)
 US_HOUS1,US,Macro,Housing / Construction,2026-04-17,-2.531646,0.2055,0.2204,-0.4038,-0.0441,0.4298,fading,neutral,stable [leading],Building Permits (PERMIT) – 12-month % change and z-score
 US_M2,US,Macro,Liquidity,2026-04-17,4.095428,0.8654,0.8752,1.0292,1.0918,1.2313,fading,neutral,stable,M2 Money Supply (M2SL) – YoY % change and z-score
@@ -62,7 +62,7 @@ US_EQ_F2,US,Equity - Factor (Style),Style / value vs growth (S&P 500),2026-04-17
 US_R3,US,Rates - Growth,Yield-curve slope (market return),2026-04-17,0.536,1.0368,0.9913,1.0381,1.4471,1.5654,stable,steep,stable,US 10-Year Treasury Yield (^TNX yfinance) minus US 2-Year Treasury Yield (DGS2 FRED)
 US_CA_G1,US,CrossAsset - Growth,Risk-on vs risk-off,2026-04-17,3.430403,1.5856,1.3086,1.0449,1.5547,1.5856,intensifying,risk-on,stable,S&P 500 ETF (SPY) / ICE BofA US Treasury Index (GOVT)
 US_Cr4,US,Credit,HY vs treasuries (credit risk),2026-04-17,-3.176819,1.4131,1.3943,1.1377,1.4945,1.474,intensifying,credit-appetite,stable,iShares USD High Yield Corp Bond UCITS ETF (IHYU.L) / ICE BofA US Treasury Index (GOVT)
-US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-17,-0.090261,1.692,1.0909,0.9588,0.9811,1.692,intensifying,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
+US_G5,US,Equity - Growth,Growth / technology leadership,2026-04-17,-0.090261,1.692,1.0909,0.9588,0.9812,1.692,intensifying,tech-led,stable,Invesco QQQ Trust (QQQ) / SPDR S&P 500 ETF (SPY)
 US_G4,US,Equity - Growth,Growth / market breadth,2026-04-17,-1.251468,-1.2717,-1.0698,-0.9048,-1.2188,1.2897,intensifying,narrow-concentrated,stable,S&P 500 Equal-Weight ETF (RSP) / SPDR S&P 500 ETF (SPY)
 US_ISM1,US,Macro - Survey,Leading / ISM Manufacturing New Orders,,,,,,,,,Insufficient Data,n/a,ISM Manufacturing New Orders Index (NAPMOI via FRED monthly)
 US_R6,US,Rates,Rates / mortgage affordability,2026-04-24,2.0,-1.4768,-1.3677,-1.7384,-2.3497,2.3262,fading,housing-easy,stable,30-Year Fixed Mortgage Rate (MORTGAGE30US FRED) minus 10-Year Treasury Yield (DGS10 FRED)
