@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-04-22
+> Last updated: 2026-04-23
 > Based on: [`manuals/technical_manual.md`](technical_manual.md), [`manuals/multifreq_plan.md`](multifreq_plan.md), `archive/indicator_groups_review_UPDATED.xlsx`, and the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history — content consolidated into `technical_manual.md` and this file).
 
 ---
@@ -29,7 +29,7 @@ The project evolved from a single hardcoded pipeline into a sequence of lettered
 | Phase B — Surveys | Planned standalone surveys module (SLOOS, regional Fed, UMich sub-indices) | Consolidated into Phase A (`macro_us`) | Consolidated |
 | Phase C — International Macro | OECD CLI / unemployment / short rates + World Bank CPI + IMF GDP for 11 economies | `fetch_macro_international.py` → `macro_intl`, `macro_intl_hist` | Production |
 | Phase D — Business Survey Data | Global PMI / bank lending / business confidence across US, EZ, DE, UK, JP, CN | Three tiers: FRED rows, DB.nomics primary, FMP calendar for proprietary S&P Global PMIs | PoC verification in progress on `claude/review-project-status-5x54q`: T1 FRED done (8/11 confirmed); T2 DB.nomics done (3 Eurostat — ISM moved to T3, ECB BLS + BOJ Tankan dropped); T3 FMP PoC pending (12 events). See section 5.7 "Resume Here". |
-| Phase E — Macro-Market Indicators | 68 composite indicators with 156w rolling z-scores, regimes, forward regimes | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
+| Phase E — Macro-Market Indicators | 91 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns: EMFX basket, EEM/IWDA, MOVE proxy, global PMI/yield curve, breadth-above-200DMA | Partially covered in `compute_macro_market.py` | Partial |
 | Phase G — Sheets Export Audit | Tab inventory (9 active), protected-tab guards across all writers, legacy-tab cleanup, batch-write coverage | Single source of truth in `library_utils.py`; guards added to 3 previously-missing writers on 2026-04-21 | Mostly Done |
 
@@ -73,7 +73,7 @@ Indicator count reduced from 15 to 13 (dropped JP_TK1 and EU_BLS1). Full resume-
 
 #### Phase E — Macro-Market Indicators — Production
 
-68 composite indicators computed from Phase A + Phase C outputs and the comp-pipeline market data. Each indicator produces: raw value, 156-week (3-year) rolling z-score, regime classification, forward regime signal (`improving`/`stable`/`deteriorating`, with optional `[leading]` suffix), and z-score trend diagnostics (`intensifying` / `fading` / `reversing` / `stable`) against 1w, 4w, 13w lookbacks. Metadata is a single source of truth in `data/macro_indicator_library.csv` — no hardcoded `INDICATOR_META` dict in Python. Group / sub-group hierarchy drives the three-level sidebar in `docs/indicator_explorer.html`. Outputs `macro_market` (snapshot) and `macro_market_hist` (weekly history). Recent additions: 9 standalone country-level CLI indicators (US_CLI1 through AU_CLI1), `EU_I4` Euro HY credit spread indicator; cross-wired EU indicator calculators fixed (Stage 2).
+91 composite indicators computed from Phase A + Phase C outputs and the comp-pipeline market data. Each indicator produces: raw value, 156-week (3-year) rolling z-score, regime classification, forward regime signal (`improving`/`stable`/`deteriorating`, with optional `[leading]` suffix), and z-score trend diagnostics (`intensifying` / `fading` / `reversing` / `stable`) against 1w, 4w, 13w lookbacks. A `cycle_timing` column (L/C/G) classifies each indicator's position in the business cycle (89 Leading, 2 Coincident, 0 Lagging — see section 5.8). Metadata is a single source of truth in `data/macro_indicator_library.csv` — no hardcoded `INDICATOR_META` dict in Python. Group / sub-group hierarchy drives the three-level sidebar in `docs/indicator_explorer.html`. Outputs `macro_market` (snapshot) and `macro_market_hist` (weekly history). Recent additions: 9 standalone country-level CLI indicators (US_CLI1 through AU_CLI1), `EU_I4` Euro HY credit spread indicator; cross-wired EU indicator calculators fixed (Stage 2).
 
 #### Phase F — Calculated Fields — Partial
 
@@ -626,6 +626,138 @@ If FMP's calendar turns out to have shallow history (<3 years) for key European/
 Skip UMich portal, Trading Economics, Investing.com, and S&P Global direct entirely (see source evaluation table above).
 
 **Dependencies:** `dbnomics` package must be added to `requirements.txt` for Tier 2. No new dependency for Tier 3 (FMP uses standard `requests`).
+
+### 5.8 Cycle Timing Framework (L/C/G) & Indicator Coverage Expansion
+
+**Priority:** Medium-high — foundational for regime-aware allocation and charting.
+**Status:** Phase E `cycle_timing` column added (2026-04-23). Reference cross-reference complete. Gap analysis and source prioritisation documented below. HTML integration pending.
+
+#### Overview
+
+A reference document (`manuals/Macro Market Indicators Reference.docx`) catalogues 206 macro/market indicators across 6 regions (US, UK, Eurozone, Japan, China, Global), each classified by **cycle timing**:
+
+- **Leading (L)** — turns 3-12 months ahead of the business cycle (blue shading `#DCE7F2` in source doc)
+- **Coincident (C)** — confirms the current state of the cycle (beige shading `#E8E4D9`)
+- **Lagging (G)** — confirms trends already in place; turns after the cycle (pink shading `#EDE0E0`)
+
+These colour codes were extracted programmatically from the Word document's cell shading using `python-docx`. All 206 indicators with their L/C/G classifications, cross-reference status, and source flags are recorded in `data/reference_indicators.csv`.
+
+#### What's Been Done
+
+1. **`data/reference_indicators.csv` created** — 206 rows, 10 columns: `region, number, indicator, category_source, notes, cycle_timing, match_status, matched_to, source_available, flags`.
+2. **`data/macro_indicator_library.csv` updated** — new `cycle_timing` column added to all 91 Phase E indicators. Result: 89 Leading, 2 Coincident, 0 Lagging. The library is overwhelmingly forward-looking by design; coincident components are `US_JOBS3` (labour composite blending L+C+G) and `US_G6` (IP + Retail Sales, both coincident).
+3. **Cross-reference completed** — every one of the 206 reference indicators matched against our 4 source libraries (FRED 52 series, DB.nomics 3 series, FMP 12 events, yfinance 390 instruments) and 91 Phase E indicators.
+
+#### Coverage Summary (206 Reference Indicators)
+
+| Match Status | Count | Description |
+|---|---|---|
+| Full | 44 | Fully captured in our pipeline |
+| Partial | 22 | Close proxy or related series captured |
+| None | 140 | Not yet captured |
+
+| Flag | Count | Meaning |
+|---|---|---|
+| PROPRIETARY | 51 | No free API available — user review needed |
+| NEW_SOURCE | 54 | Requires new fetcher module (BoE, ONS, ECB SDW, BoJ, e-Stat, BIS, CPB, OFR) |
+| FRED_ADD/CHECK | 29 | Zero-code addition to `macro_library_fred.csv` or needs FRED ID verification |
+| FMP_CHECK | 19 | May be available on FMP economic calendar — verify in PoC |
+| DBNOMICS_ADD/CHECK | 11 | Available or potentially available on DB.nomics |
+| DERIVED | 4 | Computed indicator requiring multiple source series |
+| BETTER_SOURCE_PREFERRED | 1 | Available as snapshot only; historic time series preferred |
+
+#### Gap Summary by Region
+
+| Region | Total | Full | Partial | None | Actionable Gaps | Proprietary |
+|---|---|---|---|---|---|---|
+| US | 37 | 19 | 2 | 16 | 14 | 4 |
+| UK | 36 | 2 | 2 | 32 | 25 | 11 |
+| Eurozone | 36 | 9 | 7 | 20 | 18 | 3 |
+| Japan | 35 | 2 | 4 | 29 | 29 | 4 |
+| China | 36 | 3 | 4 | 29 | 9 | 19 |
+| Global | 26 | 9 | 3 | 14 | 4 | 9 |
+| **Total** | **206** | **44** | **22** | **140** | **99** | **51** |
+
+**Key observations:**
+- **US** is best covered (57% Full/Partial). Remaining gaps are mostly FRED_ADD (zero-code CSV rows).
+- **UK** and **Japan** have the largest actionable gaps (25 and 29 respectively) — these need new source modules (ONS, BoE, e-Stat, BoJ).
+- **China** has the most proprietary gaps (19) — NBS data has no free foreign API. Practical coverage limited to FRED OECD mirrors + FMP PMIs.
+- **Eurozone** is well-served by existing Eurostat/DB.nomics + FMP, with ECB SDW as the main new source needed.
+
+#### Prioritised FRED Additions (Zero-Code — Add Rows to `macro_library_fred.csv`)
+
+These 20 indicators can be captured immediately by adding rows to the existing FRED library CSV:
+
+| Region | Indicator | FRED Series ID |
+|---|---|---|
+| US | Average Weekly Hours, Manufacturing | AWHMAN |
+| US | Non-Defence Capital Goods Orders ex-Air | NEWORDER (verify) |
+| US | Capacity Utilization | TCU |
+| US | Real Personal Income less Transfers | W875RX1 |
+| US | Real Personal Consumption Expenditures | PCEC96 |
+| US | Manufacturing & Trade Sales | CMRMTSPL |
+| US | Chicago Fed National Activity Index | CFNAI |
+| US | Unit Labour Costs | ULCNFB |
+| US | Average Duration of Unemployment | UEMPMEAN |
+| US | Commercial & Industrial Loans Outstanding | TOTCI |
+| US | Corporate Profits (NIPA) | CP or A053RC1Q027SBEA |
+| US | Retail Sales Control Group | RSFSXMV |
+| UK | Bank Rate (BoE) | BOEBRBS |
+| Eurozone | Germany Industrial Production | DEUPROINDMISMEI |
+| Eurozone | ECB Deposit Facility Rate | ECBDFR |
+| Eurozone | HICP Inflation | EA19CPALTT01GYM |
+| Japan | JPY REER (BIS) | RBJPBIS |
+| Japan | Industrial Production | JPNPROINDMISMEI |
+| Japan | BoJ Policy Rate | IRSTCB01JPM156N |
+| China | PPI Inflation | CHNPPIALLMINMEI |
+
+#### New Source Modules Needed (by indicator count)
+
+| Source | Indicators | Key Series | Effort |
+|---|---|---|---|
+| **e-Stat (Japan)** | 16 | Machinery orders, housing starts, economy watchers, retail sales, tertiary industry, coincident/leading indices, labour, household spending | Medium — free API with registration; `estat-api-client` package available |
+| **ONS API (UK)** | 14 | Monthly GDP, IP, retail sales, employment, wages, CPI, claimant count, productivity, BICS | Medium — beta REST API; dataset IDs known (mgdp, iop, rsi) |
+| **BoJ Statistics (Japan)** | 6 | Tankan (all variants), JGB curve, M2/M3 | Low-medium — REST API; `bojpy` package wraps it |
+| **BoE BOESD (UK)** | 4 | Credit conditions survey, mortgage approvals, M4 lending, UK 2Y gilt yield | Low — free interactive database with CSV download; may need scraper |
+| **ECB SDW (Eurozone)** | 4 | Bank Lending Survey, M3, negotiated wages, 2Y Bund yield | Low-medium — SDMX 2.1 REST API; `sdmx1` package |
+| **BIS SDMX (Global)** | 2 | Household debt/GDP, global credit impulse components | Low — SDMX API |
+| **CPB (Netherlands)** | 2 | World Trade Monitor, World Industrial Production | Low — free CSV download, monthly |
+| **OFR (US/Global)** | 1 | Financial Stress Index | Low — free CSV/JSON API, daily |
+| **Atlanta Fed** | 1 | GDPNow | Low — JSON API, snapshot-only (append through time) |
+| **Bundesbank SDMX** | 1 | Germany Factory Orders | Low — SDMX API |
+
+**Recommended build order** (highest impact, lowest effort first):
+1. FRED additions (20 series, zero code)
+2. CPB + OFR (3 series, simple downloaders, high signal value)
+3. ONS API (14 UK series — fills the largest single-region gap)
+4. e-Stat (16 Japan series — fills the second-largest gap)
+5. ECB SDW (4 EZ series — complements existing Eurostat coverage)
+6. BoE BOESD (4 UK series — complements ONS)
+7. BoJ Statistics (6 Japan series — complements e-Stat)
+8. BIS + Bundesbank + Atlanta Fed (4 series — lower priority)
+
+#### Proprietary Indicators (User Review)
+
+51 indicators are flagged PROPRIETARY in `data/reference_indicators.csv`. The user should review these to determine if any can be sourced via institutional access. Key categories:
+
+- **S&P Global Flash PMIs** (3) — subscriber-only; we capture final PMIs via FMP
+- **Conference Board composites** (4) — LEI/CLI; we use OECD CLI as substitute
+- **China NBS sub-data** (12) — property, FAI, retail sales, electricity; no free foreign API. Wind/CEIC/Bloomberg only
+- **Baltic Dry Index** (2) — Baltic Exchange; no reliable free API or yfinance ticker
+- **Sell-side cycle models** (1) — GS/BCA/TS Lombard; subscription research
+- **CBI, Lloyds, Sentix, Reuters Tankan** (5) — UK/EU business surveys with no free API
+- **Other** (24) — various proprietary feeds across regions
+
+#### HTML Charting Tool Integration (Pending)
+
+**TODO:** Ensure the `cycle_timing` (L/C/G) classification feeds through to `docs/indicator_explorer.html`. Specifically:
+
+1. **`build_html.py`** — read `cycle_timing` from `macro_indicator_library.csv` and pass it to the JavaScript data layer.
+2. **`indicator_explorer.html` / `indicator_explorer_mkt.js`** — display L/C/G badge or colour code next to each indicator in the sidebar and detail panel. Colour convention: blue for Leading, amber/beige for Coincident, pink/red for Lagging.
+3. **Optional filter** — allow sidebar filtering by cycle timing (show only Leading, only Coincident, etc.).
+4. **Legend** — add a small legend explaining L/C/G terminology.
+
+This is a display-only change — no new data computation needed. The `cycle_timing` column already exists in the CSV.
 
 ---
 
