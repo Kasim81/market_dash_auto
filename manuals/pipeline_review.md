@@ -41,15 +41,15 @@ FMP's free tier no longer includes the economic calendar (HTTP 402 on `/stable/e
 | **US_SVC1** (ISM Services) | US #2 | **DB.nomics `ISM/nm-pmi/pm`** + scrape overlay | Same pattern. |
 | **EU_PMI1** (EZ Mfg PMI) | Eurozone #1 | **Investing.com scrape** (event 201) | Proprietary S&P Global — no free API. Scrape is the only option. |
 | **EU_PMI2** (EZ Svc PMI) | Eurozone #2 | **Investing.com scrape** (event 272) | Same — proprietary. |
-| **DE_ZEW1** (ZEW Sentiment) | Eurozone #6 | **ECB RTD API** (primary, needs verification) or Investing.com scrape (event 144) | Free, no key. ZEW directly doesn't offer time-series download. |
-| **DE_IFO1** (IFO Climate) | Eurozone #4 | **ifo Institute Excel** (`ifo.de/en/ifo-time-series`, 1991+) | Free monthly Excel download — best option. ECB RTD as backup. |
+| **DE_ZEW1** (ZEW Sentiment) | Eurozone #6 | **Investing.com scrape** (event 144) | ZEW is proprietary — ECB RTD / Bundesbank / DB.nomics probed 2026-04-23 and confirmed absent. ZEW Mannheim licences the historical archive. Scrape is the only free path. |
+| **DE_IFO1** (IFO Climate) | Eurozone #4 | **ifo Institute Excel** (`ifo.de/en/ifo-time-series`, 1991+) | Free monthly Excel download — wired 2026-04-23 (`fetch_macro_ifo.py`). |
 | **UK_PMI1** (UK Mfg PMI) | UK #1 | **Investing.com scrape** (event TBD) | Proprietary S&P Global. Retain existing FRED OECD proxy `BSCICP02GBQ460S` as fallback. |
 | **JP_PMI1** (JP Mfg PMI) | Japan #1 | **Investing.com scrape** (event 202) | Proprietary Jibun Bank / S&P Global. FRED `BSCICP03JPM665S` usable as different-scale proxy. |
 | **CN_PMI1** (NBS Mfg) | China #1 | **Investing.com scrape** (event 594) | Government-published but no convenient API. NBS `data.stats.gov.cn` undocumented API as backup. |
 | **CN_PMI2** (Caixin Mfg) | China #3 | **Investing.com scrape** (event 753) | Proprietary Caixin / S&P Global. No free proxy exists anywhere. |
 | **GL_PMI1** (Global proxy) | Global #2 (partial) | Auto-rebuilds once above 5 components (ISM / EZ / UK / JP / CN NBS) are restored. | No separate sourcing. |
 
-**Net new sources required**: 1 (Investing.com scraper). 1 file addition (ifo Excel fetcher). 1 probe (ECB RTD). Three rows added to `macro_library_dbnomics.csv`. Existing infra handles the rest.
+**Net new sources required**: 1 (Investing.com scraper — covers 7 indicators including ZEW). 1 new fetcher (ifo Excel — **wired 2026-04-23**). Three rows added to `macro_library_dbnomics.csv` for ISM (**wired 2026-04-23**). Existing infra handles the rest.
 
 ---
 
@@ -203,7 +203,7 @@ Ordered by ROI (signal restored / effort required). Each stage delivers coverage
 ### Stage 1 — Restore broken pipeline (fix what existed) — 12 indicators
 1. Add 3 ISM rows to `macro_library_dbnomics.csv` (US_PMI1, US_PMI2, US_SVC1). **Zero new infra.**
 2. Add ifo Excel downloader for DE_IFO1. **One new function.**
-3. Probe ECB RTD for ZEW sentiment (verify `RTD.M.S0.S.Y_ZEWES.F`) — if works, DE_ZEW1 restored via ECB API.
+3. ~~Probe ECB RTD for ZEW sentiment~~ — **done 2026-04-23**: ZEW confirmed absent from ECB RTD / DB.nomics / Bundesbank / FRED. ZEW is proprietary (ZEW Mannheim licences the archive); only the Investing.com scrape path remains viable.
 4. Build Investing.com economic calendar scraper module (`fetch_macro_investing.py`) covering the 6 remaining proprietary PMIs (EU_PMI1, EU_PMI2, UK_PMI1, JP_PMI1, CN_PMI1, CN_PMI2) and latest-readings overlay for the 3 DB.nomics ISM series. **One new module.**
 5. GL_PMI1 restores automatically once 5 components above are back.
 

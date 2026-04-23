@@ -1801,7 +1801,9 @@ def _calc_EU_PMI2(**_):
     return pd.Series(dtype=float)
 
 def _calc_DE_ZEW1(**_):
-    """ZEW Economic Sentiment. AWAITING SOURCE — planned: ECB RTD RTD.M.S0.S.Y_ZEWES.F (fallback: Investing.com event 144)."""
+    """ZEW Economic Sentiment. AWAITING SOURCE — planned: Investing.com scrape (event 144).
+    ECB RTD / Bundesbank / DB.nomics verified absent 2026-04-23 — ZEW is proprietary
+    (ZEW Mannheim licences the historical archive)."""
     return pd.Series(dtype=float)
 
 def _calc_DE_IFO1(dbn, **_):
