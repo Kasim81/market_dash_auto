@@ -13,7 +13,12 @@ Fetches macro survey indicators from the DB.nomics public API:
     · Industry Confidence (EA)           — ei_bssi_m_r2
     · Services Confidence (EA)           — ei_bssi_m_r2
 
-  Note: ISM moved to FMP Tier 3 (DB.nomics mirror stale).
+  ISM (US):
+    · Manufacturing PMI                   — ISM/pmi
+    · Manufacturing New Orders            — ISM/neword
+    · Services PMI (Non-Manufacturing)    — ISM/nm-pmi
+
+  Note: ISM mirror may lag 4-8 months (known DB.nomics staleness).
   ECB BLS dataset absent from DB.nomics (HTTP 404).
   BOJ Tankan absent from DB.nomics.
 

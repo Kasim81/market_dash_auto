@@ -1765,19 +1765,28 @@ _ASIA_REGIONAL_CALCULATORS = {
 # macro_library_fmp.csv respectively.
 # ===========================================================================
 
-# --- US PMI (from FMP calendar — DB.nomics ISM mirror too stale) ---
+# --- US PMI (DB.nomics ISM mirror — moved from FMP after calendar paywalled) ---
 
-def _calc_US_PMI1(fmp, **_):
+def _calc_US_PMI1(dbn, fmp, **_):
     """ISM Manufacturing PMI composite — raw level, 156w z-score."""
-    return _to_weekly_friday(_get_col(fmp, "ISM_MFG_PMI"))
+    s = _get_col(dbn, "ISM_MFG_PMI")
+    if s.dropna().empty:
+        s = _get_col(fmp, "ISM_MFG_PMI")
+    return _to_weekly_friday(s)
 
-def _calc_US_PMI2(fmp, **_):
+def _calc_US_PMI2(dbn, fmp, **_):
     """ISM Manufacturing New Orders momentum proxy (raw New Orders level)."""
-    return _to_weekly_friday(_get_col(fmp, "ISM_MFG_NEWORD"))
+    s = _get_col(dbn, "ISM_MFG_NEWORD")
+    if s.dropna().empty:
+        s = _get_col(fmp, "ISM_MFG_NEWORD")
+    return _to_weekly_friday(s)
 
-def _calc_US_SVC1(fmp, **_):
+def _calc_US_SVC1(dbn, fmp, **_):
     """ISM Services PMI composite — raw level, 156w z-score."""
-    return _to_weekly_friday(_get_col(fmp, "ISM_SVC_PMI"))
+    s = _get_col(dbn, "ISM_SVC_PMI")
+    if s.dropna().empty:
+        s = _get_col(fmp, "ISM_SVC_PMI")
+    return _to_weekly_friday(s)
 
 # --- Eurozone surveys (T2 DB.nomics + T3 FMP) ---
 
@@ -1827,16 +1836,21 @@ def _calc_CN_PMI2(fmp, **_):
 
 # --- Global composite ---
 
-def _calc_GL_PMI1(fmp, **_):
+def _calc_GL_PMI1(dbn, fmp, **_):
     """Equal-weight global manufacturing PMI proxy.
-    Average of US ISM Mfg + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs — all from FMP.
-    Single most important global growth regime signal."""
+    Average of US ISM Mfg + EZ Mfg + UK Mfg + JP Mfg + CN NBS PMIs.
+    ISM from DB.nomics (dbn), others from FMP (fmp) until Investing.com scraper lands."""
+    def _best(col):
+        s = _get_col(dbn, col)
+        if s.dropna().empty:
+            s = _get_col(fmp, col)
+        return _to_weekly_friday(s)
     components = [
-        _to_weekly_friday(_get_col(fmp, "ISM_MFG_PMI")),
-        _to_weekly_friday(_get_col(fmp, "EZ_MFG_PMI")),
-        _to_weekly_friday(_get_col(fmp, "UK_MFG_PMI")),
-        _to_weekly_friday(_get_col(fmp, "JP_MFG_PMI")),
-        _to_weekly_friday(_get_col(fmp, "CN_NBS_PMI")),
+        _best("ISM_MFG_PMI"),
+        _best("EZ_MFG_PMI"),
+        _best("UK_MFG_PMI"),
+        _best("JP_MFG_PMI"),
+        _best("CN_NBS_PMI"),
     ]
     combined = pd.concat(components, axis=1)
     return combined.mean(axis=1, skipna=True)
