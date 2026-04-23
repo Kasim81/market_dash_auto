@@ -1,0 +1,207 @@
+region,number,indicator,category_source,notes,cycle_timing,match_status,matched_to,source_available,flags
+US,1,ISM Manufacturing PMI (New Orders sub-index),Business survey / ISM,New orders is the most forward-looking PMI component; leads industrial production by 3–6 months.,L,Full,FMP: ISM_MFG_NEWORD → US_PMI2,FMP calendar (historic via date-range query),
+US,2,ISM Services PMI (Business Activity),Business survey / ISM,Services dominate US GDP (~70%); new orders and employment sub-indices particularly watched.,L,Full,FMP: ISM_SVC_PMI → US_SVC1; ISM_SVC_BUSACT,FMP calendar,
+US,3,S&P Global Flash Composite PMI,Business survey / S&P Global,Released mid-month ahead of official data; captures both manufacturing and services.,L,None,,,PROPRIETARY — S&P Global subscriber-only
+US,4,Conference Board LEI (composite),Composite / Conference Board,10-component index; 3D rule (diffusion + 6m growth) flags recessions.,L,None,,,PROPRIETARY — Conference Board subscription. We use OECD CLI (US_CLI1) as substitute
+US,5,"Average Weekly Hours, Manufacturing",Labour / BLS,Hours are cut before headcount; LEI component.,L,None,,FRED: AWHMAN,FRED_ADD
+US,6,Initial Jobless Claims (weekly),Labour / DOL,Highest-frequency labour signal; 4-week moving average preferred.,L,Full,FRED: IC4WSA → US_JOBS1,FRED (historic),
+US,7,Building Permits (new private housing),Housing / Census,Permits lead starts; interest-rate sensitive and cycle-leading.,L,Full,FRED: PERMIT → US_HOUS1,FRED (historic),
+US,8,Yield Curve: 10Y–3M Treasury Spread,Rates / Fed,NY Fed's preferred recession model variable; inversion has preceded every recession since 1960.,L,Full,FRED: T10Y3M → US_R1,FRED (historic),
+US,9,Yield Curve: 10Y–2Y Treasury Spread,Rates / Fed,Market-standard curve measure; complements 10Y-3M.,L,Full,"FRED: T10Y2Y → US_R2, US_R3",FRED (historic),
+US,10,High-Yield Credit Spread (ICE BofA HY OAS),Credit / ICE BofA,Leads equity peaks by 2–8 weeks; combined with inverted curve = strong recession signal.,L,Full,FRED: BAMLH0A0HYM2 → US_Cr2,FRED (historic),
+US,11,Investment Grade Credit Spread (ICE BofA IG OAS),Credit / ICE BofA,Cleaner signal of funding conditions for quality issuers.,L,Full,FRED: BAMLC0A0CM → US_Cr1,FRED (historic),
+US,12,S&P 500 Index,Equities / S&P,Classic leading indicator; discounts ~6 months ahead.,L,Full,"yfinance: SPY/^GSPC → M1, US_G1-G6, etc.",yfinance (historic),
+US,13,Conference Board Leading Credit Index,Credit / Conference Board,"Composite: swap spreads, LIBOR-TBill, margin debit, AAII sentiment, SLOOS tightening, buybacks.",L,None,,,PROPRIETARY — Conference Board subscription
+US,14,Senior Loan Officer Opinion Survey (SLOOS),Credit / Fed,Net % of banks tightening C&I / CRE / household credit standards; leads defaults.,L,Full,FRED: DRTSCILM + 4 other SLOOS series,FRED (historic),
+US,15,Michigan Consumer Sentiment – Expectations,Consumer / U.Michigan,Forward-looking sub-index; feeds the Conference Board LEI.,L,Partial,FRED: UMCSENT (headline only),,Expectations sub-index not on FRED. UMich portal only — no API
+US,16,NFIB Small Business Optimism Index,Business survey / NFIB,"Small-cap proxy; hiring plans, capex plans, earnings sub-indices predictive.",L,None,,,"PROPRIETARY — NFIB publishes monthly, no free API. FMP_CHECK"
+US,17,Philadelphia Fed Manufacturing Index,Regional Fed survey,Released before ISM; regional Fed surveys aggregate into a useful early read.,L,Full,FRED: GACDFSA066MSFRBPHI,FRED (historic),
+US,18,Empire State Manufacturing Index (NY Fed),Regional Fed survey,First major regional survey of the month.,L,Full,FRED: GACDISA066MSFRBNY,FRED (historic),
+US,19,Manufacturers' New Orders – Non-Defence Capital Goods ex-Air,Orders / Census,Proxy for business capex intentions; LEI component.,L,None,,FRED: NEWORDER or ADXTNO (verify ID),FRED_ADD
+US,20,"M2 Money Supply (real, YoY)",Monetary / Fed,Real money growth historically correlates with future nominal demand.,L,Full,FRED: M2SL → US_M2,FRED (historic),
+US,21,Non-Farm Payrolls,Labour / BLS,Most watched CEI component; defines NBER business-cycle dates.,C,Full,FRED: PAYEMS → US_JOBS3,FRED (historic),
+US,22,Industrial Production Index,Output / Fed G.17,Physical output measure; CEI component.,C,Full,FRED: INDPRO → US_G6,FRED (historic),
+US,23,Capacity Utilization,Output / Fed G.17,Signals inflation pressure when elevated; cycle-coincident.,C,None,,FRED: TCU,FRED_ADD
+US,24,Real Personal Income less Transfers,Income / BEA,Private-sector income generating capacity; CEI component.,C,None,,FRED: W875RX1,FRED_ADD
+US,25,Retail Sales (Control Group),Consumer / Census,Feeds directly into GDP consumption estimate.,C,Partial,"FRED: RSXFS → US_G6 (ex-Autos, not Control Group)",FRED: RSFSXMV for exact match,FRED_ADD — consider swapping or adding
+US,26,Real Personal Consumption Expenditures,Consumer / BEA,~68% of GDP; tracks business cycle closely.,C,None,,FRED: PCEC96,FRED_ADD
+US,27,Manufacturing & Trade Sales,Output / Census,CEI component covering wholesale + retail + manufacturing.,C,None,,FRED: CMRMTSPL,FRED_ADD
+US,28,Chicago Fed National Activity Index (CFNAI),Composite / Chicago Fed,Weighted average of 85 monthly indicators; 3-month MA <-0.7 signals recession.,C,None,,FRED: CFNAI,FRED_ADD
+US,29,GDPNow / Nowcasts (Atlanta & NY Fed),Composite / Fed,Real-time GDP tracker updated with each data release.,C,None,,"Atlanta Fed API (JSON, free)","NEW_SOURCE:ATLANTA_FED — snapshot only, append through time; BETTER_SOURCE_PREFERRED"
+US,30,Unemployment Rate,Labour / BLS,Peaks several months after recessions end; Sahm Rule (0.5pp rise in 3m MA) flags recession.,G,Full,FRED: UNRATE → US_JOBS3,FRED (historic),
+US,31,Core CPI (YoY),Prices / BLS,Inflation lags cycle by 2–4 quarters; guides Fed policy.,G,Full,FRED: CPILFESL,FRED (historic),
+US,32,Core PCE Deflator,Prices / BEA,Fed's preferred inflation gauge; lagging indicator.,G,Full,FRED: PCEPILFE,FRED (historic),
+US,33,Unit Labour Costs,Labour / BLS,Wage inflation measure; turns after cycle.,G,None,,FRED: ULCNFB (quarterly),FRED_ADD
+US,34,Average Duration of Unemployment,Labour / BLS,LAG component; extends well into recoveries.,G,None,,FRED: UEMPMEAN,FRED_ADD
+US,35,Commercial & Industrial Loans Outstanding,Credit / Fed H.8,Bank lending volumes lag new-order signals.,G,None,,FRED: TOTCI,FRED_ADD
+US,36,Fed Funds Rate,Rates / Fed,Reacts with lag to activity and inflation data.,G,Full,FRED: FEDFUNDS,FRED (historic),
+US,37,"Corporate Profits (economy-wide, NIPA)",Earnings / BEA,Confirms cycle turns; lagging for index construction though forward-looking for equities.,G,None,,FRED: CP or A053RC1Q027SBEA (quarterly),FRED_ADD
+UK,1,S&P Global UK Manufacturing PMI,Business survey / S&P Global,Weighted composite of 5 sub-indices; new orders weighted 30%.,L,Full,FMP: UK_MFG_PMI → UK_PMI1,FMP calendar (verify history depth in PoC),
+UK,2,S&P Global UK Services PMI,Business survey / S&P Global,"Services ~80% of UK GDP; output, new orders, employment sub-indices.",L,None,,FMP calendar (check for UK Services PMI),FMP_CHECK
+UK,3,S&P Global UK Composite PMI (Flash),Business survey / S&P Global,Flash release mid-month; broadly consistent with GDP quarterly growth.,L,None,,,"PROPRIETARY — S&P Global Flash, subscriber-only"
+UK,4,S&P Global UK Construction PMI,Business survey / S&P Global,"Residential, commercial, civil engineering sub-indices.",L,None,,FMP calendar (check for UK Construction PMI),FMP_CHECK — low priority
+UK,5,CBI Industrial Trends Survey,Business survey / CBI,Monthly balance of manufacturers' expectations for output over next 3 months.,L,None,,FMP calendar (check for CBI Industrial Trends),FMP_CHECK; PROPRIETARY if not on FMP
+UK,6,CBI Financial Services Survey,Business survey / CBI,"Quarterly; banks, insurers, fund managers — useful given UK financial-services weighting.",L,None,,,"PROPRIETARY — CBI quarterly, no free API"
+UK,7,GfK Consumer Confidence Index,Consumer / GfK-NIM,Since 1974; leading indicator of retail sales and household consumption.,L,None,,FMP calendar (check for GfK Consumer Confidence),FMP_CHECK
+UK,8,Bank of England Agents' Summary of Business Conditions,Business survey / BoE,Qualitative regional intelligence published alongside MPC meetings.,L,None,,,"PROPRIETARY — qualitative BoE publication, no numerical series"
+UK,9,BoE Credit Conditions Survey,Credit / BoE,Quarterly net balance of lender tightening; leads loan growth.,L,None,,"BoE Statistical Interactive Database (free, no auth)",NEW_SOURCE:BOE
+UK,10,Lloyds Business Barometer,Business survey / Lloyds,Monthly; trading prospects and economic optimism components.,L,None,,,"PROPRIETARY — Lloyds press release, no API"
+UK,11,FTSE 100 & FTSE 250,Equities / LSE,FTSE 250 more domestic and a better UK cycle bellwether than FTSE 100.,L,Full,"yfinance: ^FTSE, ^FTMC → UK_G1",yfinance (historic),
+UK,12,UK Gilt Yield Curve (10Y–2Y),Rates / BoE,Less predictive than US curve but a useful monetary-stance gauge.,L,Partial,FRED: IRLTLT01GBM156N (10Y only),BoE Statistical Interactive Database for 2Y yield,NEW_SOURCE:BOE — missing UK 2Y gilt
+UK,13,Sterling iTraxx Crossover (sub-IG CDS),Credit / Markit,European HY credit spread proxy; UK issuers included.,L,None,,,PROPRIETARY — Markit/IHS iTraxx CDS. We use UK_Cr1 as proxy
+UK,14,Mortgage Approvals (for house purchase),Housing / BoE,Leads housing-transaction volumes by 1–2 months.,L,None,,BoE Statistical Interactive Database: LPMB3TA,NEW_SOURCE:BOE
+UK,15,RICS Housing Market Survey (price balance),Housing / RICS,Forward-looking balance of surveyors reporting price rises vs falls.,L,None,,FMP calendar (check for RICS),FMP_CHECK; PROPRIETARY if not on FMP
+UK,16,Halifax / Nationwide House Price Indices,"Housing / Halifax, Nationwide",Monthly lender-based price series; leading for consumer wealth effect.,L,None,,FMP calendar (check for Halifax/Nationwide HPI); ONS HPI via ONS API,FMP_CHECK; NEW_SOURCE:ONS
+UK,17,Index of Services (monthly),Output / ONS,Monthly services output — faster than quarterly GDP.,L,None,,ONS API: dataset ios,NEW_SOURCE:ONS
+UK,18,HMRC PAYE Real-Time Payroll Employees,Labour / HMRC,Monthly admin-data payroll count; timelier than LFS.,L,None,,ONS API,NEW_SOURCE:ONS
+UK,19,ONS Business Insights and Conditions Survey (BICS),Business survey / ONS,Bi-weekly; performance expectations over next 12 months.,L,None,,ONS API (experimental format),"NEW_SOURCE:ONS — non-standard format, lower priority"
+UK,20,Money Supply: M4 & M4 Lending (ex IOFCs),Monetary / BoE,Broad money excluding intermediate financial corporations.,L,None,,BoE Statistical Interactive Database: LPMAUYN,NEW_SOURCE:BOE
+UK,21,Monthly GDP (rolling 3-month),Output / ONS,ONS monthly GDP estimate — more granular than quarterly.,C,None,,ONS API: dataset mgdp,NEW_SOURCE:ONS
+UK,22,Industrial Production Index,Output / ONS,Manufacturing + mining + utilities; cycle-coincident.,C,None,,ONS API: dataset iop,NEW_SOURCE:ONS
+UK,23,Manufacturing Output (IoP sub-component),Output / ONS,Cyclical anchor.,C,None,,ONS API: iop sub-series,NEW_SOURCE:ONS
+UK,24,Retail Sales Volume (inc & ex fuel),Consumer / ONS,Volume-based consumption indicator.,C,None,,ONS API: dataset rsi,NEW_SOURCE:ONS
+UK,25,LFS Employment Level & Employment Rate,Labour / ONS,Headline employment from Labour Force Survey (with known reliability caveats currently).,C,None,,ONS API (LFS — known reliability issues),NEW_SOURCE:ONS
+UK,26,BRC Retail Sales Monitor,Consumer / BRC-KPMG,Monthly LFL retail sales; released ahead of ONS figures.,C,None,,,"PROPRIETARY — BRC-KPMG press release, no API"
+UK,27,New Car Registrations,Consumer / SMMT,Big-ticket discretionary spend proxy.,C,None,,,"PROPRIETARY — SMMT press release, no API"
+UK,28,Workforce Jobs Series,Labour / ONS,Employer-survey-based; used alongside LFS.,C,None,,ONS API,NEW_SOURCE:ONS
+UK,29,"Unemployment Rate (ILO, LFS)",Labour / ONS,Lagging indicator; turns after output has turned.,G,None,,ONS API; also OECD SDMX (already in Phase C),NEW_SOURCE:ONS; PARTIAL_PHASE_C
+UK,30,Claimant Count,Labour / ONS / DWP,Narrower admin measure of benefit claimants; lags cycle.,G,None,,ONS API,NEW_SOURCE:ONS
+UK,31,CPI Inflation (headline & core),Prices / ONS,Lags output cycle; CPIH and RPI also tracked.,G,Partial,Phase C: World Bank CPI YoY for GBR (annual),ONS API or FRED: GBRCPIALLMINMEI (monthly),FRED_ADD or NEW_SOURCE:ONS
+UK,32,Average Weekly Earnings (regular & total pay),Labour / ONS,Wage growth lags labour market tightness.,G,None,,ONS API,NEW_SOURCE:ONS
+UK,33,Bank Rate (Bank of England),Rates / BoE,MPC decisions react to backward-looking data.,G,None,,BoE BOESD: IUMBEDR; also FRED: BOEBRBS,FRED_ADD or NEW_SOURCE:BOE
+UK,34,Household Debt to Disposable Income,Credit / ONS,Slow-moving; currently trending lower from 2022 peak.,G,None,,,"PROPRIETARY — ONS quarterly, slow-moving. Low priority"
+UK,35,Insolvencies (corporate & personal),Credit / Insolvency Service,Bankruptcies peak well after recessions.,G,None,,,"PROPRIETARY — Insolvency Service, gov.uk download only"
+UK,36,Productivity (output per hour),Productivity / ONS,Quarterly; structural but cycle-sensitive.,G,None,,ONS API (quarterly),NEW_SOURCE:ONS
+Eurozone,1,HCOB Eurozone Manufacturing PMI,Business survey / S&P Global,Headline PMI for the bloc's factory sector; new orders closely watched.,L,Full,FMP: EZ_MFG_PMI → EU_PMI1,FMP calendar,
+Eurozone,2,HCOB Eurozone Services PMI,Business survey / S&P Global,Largest component of eurozone output.,L,Full,FMP: EZ_SVC_PMI → EU_PMI2,FMP calendar,
+Eurozone,3,HCOB Eurozone Composite PMI (Flash),Business survey / S&P Global,Flash release 10 days before month-end.,L,None,,,"PROPRIETARY — S&P Global Flash, subscriber-only"
+Eurozone,4,ifo Business Climate Index (Germany),Business survey / ifo,Key German leading indicator; current + expectations components.,L,Full,FMP: DE_IFO → DE_IFO1,FMP calendar,
+Eurozone,5,ifo Expectations Sub-index,Business survey / ifo,Forward-looking 6m business outlook; strong lead on German GDP.,L,None,,FMP calendar (check for ifo Expectations sub-index),FMP_CHECK
+Eurozone,6,ZEW Indicator of Economic Sentiment (Germany & EZ),Investor survey / ZEW,Monthly survey of financial analysts on 6m outlook; very market-sensitive.,L,Full,FMP: DE_ZEW → DE_ZEW1,FMP calendar,
+Eurozone,7,Sentix Investor Confidence (Euro Area),Investor survey / Sentix,First-mover sentiment indicator; tends to lead ZEW and ifo.,L,None,,,"PROPRIETARY — Sentix, no free API"
+Eurozone,8,European Commission Economic Sentiment Indicator (ESI),Composite / EC DG-ECFIN,"Weighted: industry 40%, services 30%, consumer 20%, retail 5%, construction 5%.",L,Full,DB.nomics: EU_ESI → EU_ESI1,"DB.nomics Eurostat (historic, verified 552 obs)",
+Eurozone,9,EC Industrial Confidence,Business survey / EC,"Production expectations, order books, stocks.",L,Full,DB.nomics: EU_IND_CONF,"DB.nomics Eurostat (historic, verified 552 obs)",Not yet wired to standalone Phase E indicator
+Eurozone,10,EC Services Confidence,Business survey / EC,Demand expectations and business situation.,L,Full,DB.nomics: EU_SVC_CONF,"DB.nomics Eurostat (historic, verified 369 obs)",Not yet wired to standalone Phase E indicator
+Eurozone,11,EC Consumer Confidence (Flash),Consumer / EC,Released late in month; 12m expectations component most useful.,L,Partial,FRED: CSCICP03EZM665S (OECD proxy),FRED (historic),Close equivalent to EC flash release
+Eurozone,12,INSEE Business Climate (France),Business survey / INSEE,Monthly industry survey; important for the second-largest EZ economy.,L,Partial,FRED: BSCICP02FRM460S (OECD proxy),FRED (historic),Functionally equivalent to INSEE composite
+Eurozone,13,ISTAT Business Confidence (Italy),Business survey / ISTAT,"Manufacturing, construction, retail, services components.",L,Partial,FRED: BSCICP02ITM460S (OECD proxy),FRED (historic),Functionally equivalent to ISTAT composite
+Eurozone,14,Bund Yield Curve (10Y–2Y),Rates / ECB,Monetary-stance signal for euro area.,L,Partial,FRED: IRLTLT01DEM156N (10Y only),ECB SDW or Bundesbank API for 2Y,NEW_SOURCE:ECB_SDW — missing DE 2Y yield
+Eurozone,15,"Peripheral Spreads: BTP-Bund, OAT-Bund",Rates / ECB,Sovereign risk proxy; indicator of eurozone integration stress.,L,Full,Phase E: EU_R1 (BTP-Bund from FRED),FRED (historic),
+Eurozone,16,iTraxx Europe Main & Crossover (CDS),Credit / Markit,IG and HY corporate credit spreads.,L,None,,,PROPRIETARY — Markit/IHS iTraxx CDS. We use EU_Cr1 as proxy
+Eurozone,17,EuroStoxx 50 / Stoxx Europe 600,Equities / Stoxx,Cycle-leading equity benchmarks.,L,Full,"yfinance: FEZ, STOXX sector ETFs → EU_G3, EU_G4",yfinance (historic),
+Eurozone,18,V2X (Euro Stoxx 50 Volatility Index),Volatility / Eurex,European equivalent of VIX.,L,None,,yfinance: ^V2X (check availability),YFINANCE_CHECK
+Eurozone,19,ECB Bank Lending Survey (BLS),Credit / ECB,Quarterly net % of banks tightening standards; leads loan growth.,L,None,,ECB SDW API direct (absent from DB.nomics),"NEW_SOURCE:ECB_SDW — deferred, was EU_BLS1"
+Eurozone,20,M3 Money Supply (real YoY),Monetary / ECB,Long-standing ECB reference aggregate.,L,None,,ECB SDW: BSI dataset; or DB.nomics ECB/BSI,NEW_SOURCE:ECB_SDW or DBNOMICS_CHECK
+Eurozone,21,Credit Impulse (change in flow of new credit),Credit / ECB,Change in rate of credit growth; leads activity.,L,None,,,DERIVED — requires ECB credit data + GDP. No single-source series
+Eurozone,22,Construction PMI & Permits,"Housing / S&P Global, Eurostat",Cycle-sensitive sector; permits lead starts.,L,None,,FMP calendar (Construction PMI); Eurostat/DB.nomics (permits),FMP_CHECK; DBNOMICS_CHECK
+Eurozone,23,Eurozone Industrial Production,Output / Eurostat,Bloc-level factory output.,C,None,,Eurostat API or DB.nomics Eurostat: STS_INPR_M,DBNOMICS_ADD — historic series available
+Eurozone,24,Eurozone Retail Sales Volume,Consumer / Eurostat,Harmonised retail volume index.,C,None,,Eurostat API or DB.nomics Eurostat: STS_TRTU_M,DBNOMICS_ADD
+Eurozone,25,Eurozone GDP (flash & final),Output / Eurostat,Flash released ~45 days after quarter-end.,C,Partial,Phase C: IMF GDP growth for EA (annual),Eurostat API for quarterly GDP,DBNOMICS_ADD or NEW_SOURCE:EUROSTAT
+Eurozone,26,Euro Area Unemployment Rate,Labour / Eurostat,Broadly coincident in EZ due to labour-market rigidities (slightly more coincident than lagging vs US).,C,Partial,Phase C: OECD unemployment for EA19 (monthly),OECD SDMX (already in pipeline),Close match
+Eurozone,27,Employment Change (quarterly),Labour / Eurostat,Cycle-coincident.,C,None,,Eurostat API (quarterly),DBNOMICS_ADD
+Eurozone,28,Germany Factory Orders,Orders / Destatis,Key early read on German industrial cycle.,C,None,,Bundesbank SDMX API; or FMP calendar,NEW_SOURCE:BUNDESBANK or FMP_CHECK
+Eurozone,29,Germany Industrial Production,Output / Destatis,Bellwether for euro-area manufacturing.,C,None,,FRED: DEUPROINDMISMEI,FRED_ADD
+Eurozone,30,HICP Inflation (headline & core),Prices / Eurostat,ECB target variable; lags cycle.,G,Partial,Phase C: World Bank CPI YoY for EA (annual),FRED: EA19CPALTT01GYM or Eurostat API,FRED_ADD or DBNOMICS_ADD
+Eurozone,31,Negotiated Wage Growth,Labour / ECB,Quarterly; ECB closely watched post-inflation shock.,G,None,,ECB SDW (quarterly),NEW_SOURCE:ECB_SDW — low priority
+Eurozone,32,ECB Deposit Facility Rate,Rates / ECB,Policy rate responds to lagging data.,G,None,,FRED: ECBDFR; or ECB SDW,FRED_ADD
+Eurozone,33,Corporate Insolvencies,Credit / Eurostat,Peak well after trough.,G,None,,Eurostat API (quarterly),DBNOMICS_ADD — low priority
+Eurozone,34,Unit Labour Costs,Labour / Eurostat,Confirms cycle with lag.,G,None,,Eurostat API or OECD SDMX (quarterly),DBNOMICS_ADD — low priority
+Eurozone,35,Labour Cost Index YoY,Labour / Eurostat,Quarterly; lagging.,G,None,,Eurostat API (quarterly),DBNOMICS_ADD — low priority
+Eurozone,36,Productivity per Hour Worked,Productivity / Eurostat,Structural variable; cycle-sensitive.,G,None,,Eurostat API or OECD SDMX (quarterly),DBNOMICS_ADD — low priority
+Japan,1,au Jibun Bank Japan Manufacturing PMI,Business survey / S&P Global,Monthly factory survey; new orders sub-index watched.,L,Full,FMP: JP_MFG_PMI → JP_PMI1,FMP calendar,
+Japan,2,au Jibun Bank Japan Services PMI,Business survey / S&P Global,Services sector survey.,L,None,,FMP calendar (check for JP Services PMI),FMP_CHECK
+Japan,3,Tankan: Large Manufacturers DI (current & outlook),Business survey / BoJ,Quarterly; outlook component is the forward-looking read.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ
+Japan,4,Tankan: Large Non-Manufacturers DI,Business survey / BoJ,Services-side twin of the manufacturing Tankan.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ
+Japan,5,Tankan: Small Enterprises DI,Business survey / BoJ,Broader SME coverage; useful for domestic-demand read.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ — lower priority
+Japan,6,Tankan All-Industry Capex Plans (FY),Business survey / BoJ,Fiscal-year capex intentions — key for equity strategists.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ
+Japan,7,Reuters Tankan,Business survey / Reuters,Monthly; useful bridge between quarterly Tankan releases.,L,None,,,"PROPRIETARY — Reuters/LSEG, no free API"
+Japan,8,"Japan Leading Economic Index (ESRI, composite)",Composite / Cabinet Office,"12-component index incl. inventory ratios, machinery orders, TOPIX, consumer sentiment.",L,None,,"e-Stat API (free, registration required)",NEW_SOURCE:ESTAT
+Japan,9,Conference Board LEI Japan,Composite / Conference Board,"10 components incl. operating profits, dwelling starts, TOPIX, yield spread, machinery orders.",L,None,,,PROPRIETARY — Conference Board subscription
+Japan,10,"Machinery Orders (core, private ex-ships)",Orders / Cabinet Office,Capex proxy; leads investment by ~6 months.,L,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,11,Machine Tool Orders YoY (JMTBA),Orders / JMTBA,Export-sensitive capex gauge; early global cycle read.,L,None,,FMP calendar (check); otherwise JMTBA press release,FMP_CHECK; PROPRIETARY if not on FMP
+Japan,12,Housing Starts (dwellings started),Housing / MLIT,Cycle-sensitive residential starts.,L,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,13,Economy Watchers Survey – Outlook DI,Business survey / Cabinet Office,"Taxi drivers, hoteliers, retailers — ground-level outlook.",L,None,,e-Stat API; FMP calendar may also carry,NEW_SOURCE:ESTAT; FMP_CHECK
+Japan,14,TOPIX / Nikkei 225,Equities / TSE,Topix featured in multiple LEI composites.,L,Full,"yfinance: ^N225, EWJ → JP_G1",yfinance (historic),
+Japan,15,JGB Yield Curve (10Y–2Y),"Rates / BoJ, MoF","Given YCC legacy, less signal than US; still monitored.",L,None,,BoJ Time-Series Statistics,NEW_SOURCE:BOJ
+Japan,16,JPY Trade-Weighted Real Effective Exchange Rate,FX / BIS,Weak JPY historically supports exporter earnings.,L,None,,FRED: RBJPBIS (BIS REER via FRED),FRED_ADD
+Japan,17,Consumer Confidence Index (Cabinet Office),Consumer / Cabinet Office,Five-component household survey.,L,Partial,FRED: CSCICP02JPM460S (OECD proxy),FRED (historic),
+Japan,18,Inventory-to-Shipments Ratio (manufacturing),Inventories / METI,Ratio component in LEI; stock overhangs signal weakness.,L,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,19,Money Supply (M2 & M3 YoY),Monetary / BoJ,Monetary signal.,L,None,,BoJ Time-Series Statistics,NEW_SOURCE:BOJ
+Japan,20,Business Conditions DI (BSI Large Manufacturing),Business survey / MoF-CAO,Quarterly joint MoF/Cabinet Office survey.,L,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,21,Japan Coincident Economic Index (ESRI),Composite / Cabinet Office,11-component CEI; defines official Japanese business cycle dates.,C,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,22,Industrial Production (METI),Output / METI,Coincident cycle measure.,C,None,,FRED: JPNPROINDMISMEI; or e-Stat API,FRED_ADD
+Japan,23,Tertiary Industry Activity Index,Output / METI,Services sector output index.,C,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,24,Retail Sales (MoM & YoY),Consumer / METI,Monthly retail turnover.,C,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,25,Household Spending (MIAC),Consumer / MIAC,Household consumption survey.,C,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,26,Real GDP (quarterly),Output / Cabinet Office,Preliminary and revised releases.,C,Partial,Phase C: IMF GDP growth for JPN (annual),e-Stat API for quarterly GDP,NEW_SOURCE:ESTAT
+Japan,27,Jobs-to-Applicants Ratio (Active openings),Labour / MHLW,Classic Japanese labour-market tightness gauge; moves with cycle.,C,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,28,Exports (MoF trade statistics),Trade / MoF,Japan is export-cyclical; semi/auto components key.,C,None,,e-Stat API or MoF Trade Statistics,NEW_SOURCE:ESTAT
+Japan,29,Unemployment Rate,Labour / MIAC,Low and slow-moving by DM standards; still lags.,G,Partial,Phase C: OECD unemployment for JPN,OECD SDMX (already in pipeline),
+Japan,30,Core CPI (ex-fresh food),Prices / MIAC,BoJ target measure.,G,Partial,Phase C: World Bank CPI YoY for JPN (annual),FRED: JPNCPIALLMINMEI; or e-Stat API,FRED_ADD
+Japan,31,Core-Core CPI (ex food and energy),Prices / MIAC,Underlying inflation; more lagging than headline.,G,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,32,Real Cash Earnings,Labour / MHLW,Wage growth lags cycle.,G,None,,e-Stat API,NEW_SOURCE:ESTAT
+Japan,33,BoJ Policy Rate,Rates / BoJ,Policy response lags data.,G,None,,FRED: IRSTCB01JPM156N; or BoJ API,FRED_ADD
+Japan,34,Corporate Bankruptcies (TSR / Teikoku),"Credit / TSR, Teikoku Databank",Peak after recessions.,G,None,,FMP calendar (check); otherwise TSR press release,FMP_CHECK; PROPRIETARY if not on FMP
+Japan,35,Capacity Utilization Rate (manufacturing),Output / METI,Turns with a small lag.,G,None,,e-Stat API,NEW_SOURCE:ESTAT
+China,1,NBS Manufacturing PMI,Business survey / NBS,Official PMI; skew towards SOEs and large firms.,L,Full,FMP: CN_NBS_PMI → CN_PMI1,FMP calendar,
+China,2,NBS Non-Manufacturing PMI (Services + Construction),Business survey / NBS,Services and construction activity; construction sub reads property/infrastructure.,L,None,,FMP calendar (check for NBS Non-Mfg PMI),FMP_CHECK
+China,3,Caixin Manufacturing PMI,"Business survey / S&P Global, Caixin",Skewed toward smaller private exporters; often diverges from NBS.,L,Full,FMP: CN_CAIXIN_PMI → CN_PMI2,FMP calendar,
+China,4,Caixin Services PMI,"Business survey / S&P Global, Caixin",Private-sector services read.,L,None,,FMP calendar (check for Caixin Services PMI),FMP_CHECK
+China,5,Caixin Composite PMI,"Business survey / S&P Global, Caixin",Weighted combination of manufacturing and services.,L,None,,FMP calendar (check); derivable from mfg+svc,FMP_CHECK
+China,6,NBS PMI New Orders sub-index,Business survey / NBS,Leading component within PMI.,L,None,,,PROPRIETARY — NBS PMI sub-indices not on free sources
+China,7,NBS PMI New Export Orders sub-index,Business survey / NBS,External demand gauge.,L,None,,,PROPRIETARY — NBS PMI sub-indices not on free sources
+China,8,Credit Impulse (TSF change as % of GDP),Credit / PBoC,China's single most-important macro variable globally; leads IP by ~6m.,L,None,,,DERIVED_PROPRIETARY — requires PBoC TSF + GDP. No free API for TSF
+China,9,Total Social Financing (TSF) flow & stock,Credit / PBoC,Broadest credit aggregate including shadow banking.,L,None,,,"PROPRIETARY — PBoC TSF, no official English API. Wind/CEIC/Bloomberg only"
+China,10,New RMB Loans,Credit / PBoC,Bank-lending flow; key monthly release.,L,None,,,"PROPRIETARY — PBoC new loans, same sourcing issue as TSF"
+China,11,M1 & M2 Money Supply YoY,Monetary / PBoC,M1-M2 spread watched as liquidity / animal-spirits gauge.,L,None,,FRED: MYAGM2CNM189N (M2 via OECD),FRED_ADD
+China,12,China Conference Board LEI,Composite / Conference Board,"Components: manuf PMI, order book, consumer expectations, raw material supply, floor space started, total loans, yield curve.",L,None,,,PROPRIETARY — Conference Board subscription
+China,13,Property Sales Floor Space (residential),Housing / NBS / CRIC,30-city daily data + monthly NBS series; leads property investment.,L,None,,,"PROPRIETARY — NBS property data, no free foreign API. Wind/CEIC only"
+China,14,Property New Starts (floor space started),Housing / NBS,Leading housing cycle indicator.,L,None,,,"PROPRIETARY — NBS property data, same as #13"
+China,15,Baltic Dry Index,Trade / Baltic Exchange,Dry bulk shipping rates — leading indicator of commodity demand from China.,L,None,,,PROPRIETARY — Baltic Exchange. No free API. No reliable yfinance ticker
+China,16,CSI 300 / Hang Seng / MSCI China,"Equities / CSI, HSI, MSCI",Onshore (A-share) vs offshore flows give different reads.,L,Full,"yfinance: FXI, ^HSI, MCHI → AS_CN_G1-G3",yfinance (historic),
+China,17,PBoC 7-day Reverse Repo Rate,Rates / PBoC,Monetary stance signal.,L,None,,FRED: IRSTCB01CNM156N (OECD); FMP calendar PBoC decisions,FRED_ADD; FMP_CHECK
+China,18,China Sovereign Yield Curve (10Y–2Y),Rates / PBoC,Less predictive than DM but watched for domestic cycle.,L,Partial,FRED: IRLTLT01CNM156N (10Y) → AS_CN_R1,Missing 2Y — ChinaBond or Wind only,PROPRIETARY for 2Y yield
+China,19,"Li Keqiang Index (electricity, rail freight, bank loans)",Composite / unofficial,Proxy used when official GDP trusted less; still referenced.,L,None,,,"DERIVED_PROPRIETARY — Li Keqiang Index components (electricity, rail, loans) all NBS/PBoC"
+China,20,CCFI / SCFI Container Freight Indices,Trade / Shanghai Shipping Exchange,Export demand signal.,L,None,,,"PROPRIETARY — Shanghai Shipping Exchange, no foreign API"
+China,21,Passenger Car Retail Sales (CPCA weekly),Consumer / CPCA,High-frequency consumer durables proxy.,L,None,,,PROPRIETARY — CPCA paid subscription
+China,22,Industrial Production YoY,Output / NBS,Main monthly activity data point alongside retail sales and FAI.,C,None,,FRED: check for CHNPROINDMISMEI or similar OECD series,FRED_CHECK
+China,23,Retail Sales YoY (nominal & real),Consumer / NBS,Consumer demand gauge.,C,None,,,"PROPRIETARY — NBS retail sales, no free foreign API"
+China,24,Fixed Asset Investment (FAI) YoY YTD,Investment / NBS,"Split into real estate, manufacturing, infrastructure.",C,None,,,"PROPRIETARY — NBS FAI, no free foreign API"
+China,25,Real GDP (quarterly YoY & QoQ),Output / NBS,Official GDP — market treats with scepticism but still moves markets.,C,Partial,Phase C: IMF GDP growth for CHN (annual),FMP calendar (check for China GDP release),FMP_CHECK
+China,26,Manufacturing Value-Added Growth,Output / NBS,Sub-component of industrial production.,C,None,,,"PROPRIETARY — NBS sub-component, no free API"
+China,27,Electricity Production & Consumption YoY,Output / NBS,Hard indicator less subject to reporting smoothing.,C,None,,,"PROPRIETARY — NBS electricity, no reliable free source"
+China,28,Industrial Profits YoY YTD,Earnings / NBS,Corporate earnings proxy.,C,None,,,"PROPRIETARY — NBS industrial profits, no free API"
+China,29,Imports (USD YoY),Trade / Customs,Domestic demand barometer given commodity intensity.,C,None,,FRED: check for XTIMVA01CNM667S (imports via OECD),FRED_CHECK
+China,30,Exports (USD YoY),Trade / Customs,External demand gauge.,C,None,,FRED: check for XTEXVA01CNM667S (exports via OECD),FRED_CHECK
+China,31,CPI Inflation,Prices / NBS,Headline and core; food-weighted given pork cycle.,G,Partial,Phase C: World Bank CPI YoY for CHN (annual),FRED: CHNCPIALLMINMEI (monthly),FRED_ADD
+China,32,PPI Inflation,Prices / NBS,Commodity-sensitive; leads CPI for goods but lags overall activity.,G,None,,FRED: CHNPPIALLMINMEI,FRED_ADD
+China,33,Urban Surveyed Unemployment Rate,Labour / NBS,Incomplete coverage; slow-moving.,G,Partial,Phase C: OECD unemployment for CHN,OECD SDMX (already in pipeline),
+China,34,"Youth Unemployment (16–24, ex-students)",Labour / NBS,Politically sensitive; reporting methodology has changed.,G,None,,,"PROPRIETARY — NBS youth unemployment, no free API. Low reliability"
+China,35,Residential Property Prices (70-city),Housing / NBS,Primary market series; confirms cycle with lag.,G,None,,,PROPRIETARY — NBS 70-city property prices. CEIC/Wind only
+China,36,Household Debt to GDP,"Credit / PBoC, NBS",Slow-moving structural measure.,G,None,,BIS SDMX API: household debt/GDP,NEW_SOURCE:BIS
+Global,1,J.P. Morgan Global Composite PMI (S&P Global),Business survey / S&P Global,GDP-weighted aggregate of 40+ country PMIs; single best global growth gauge.,L,None,,,"PROPRIETARY — J.P. Morgan / S&P Global. GDP-weighted, not freely available. GL_PMI1 is our equal-weight proxy"
+Global,2,J.P. Morgan Global Manufacturing PMI,Business survey / S&P Global,Manufacturing-only cut; more cyclically volatile.,L,Partial,Phase E: GL_PMI1 (equal-weight proxy),GL_PMI1 is our 5-country equal-weight approximation,Our proxy uses equal weights not GDP weights; close substitute
+Global,3,OECD Composite Leading Indicator (CLI) - all countries,Composite / OECD,Country-standardised CLIs for 38+ economies; flags turning points.,L,Full,"Phase C + Phase E: 9 country CLIs + GL_CLI1-2, GL_CLI5, EU_CLI1, AS_CLI1",OECD SDMX (historic),
+Global,4,Conference Board Global LEI,Composite / Conference Board,Aggregates country LEIs into global composite.,L,None,,,PROPRIETARY — Conference Board subscription
+Global,5,Global Credit Impulse (BIS / private aggregates),Credit / BIS,Sum of major-economy credit impulses; correlated with global trade.,L,None,,BIS SDMX API has credit-to-GDP gap data,DERIVED — requires summing country credit impulses. BIS has components; NEW_SOURCE:BIS
+Global,6,Baltic Dry Index (BDI),Trade / Baltic Exchange,Dry-bulk shipping rates; global commodity demand signal.,L,None,,,PROPRIETARY — Baltic Exchange. No free API. No reliable yfinance ticker
+Global,7,Drewry World Container Index,Trade / Drewry,Container freight; leads goods trade.,L,None,,,PROPRIETARY — Drewry subscription. Free headline on drewry.co.uk but no API
+Global,8,Semiconductor Billings (SIA) / Book-to-Bill,"Trade / SIA, SEMI",Classic early cycle tech leading indicator.,L,None,,,PROPRIETARY — SIA members only. SEMI book-to-bill discontinued in 2016. No free API
+Global,9,Copper Price / Copper-Gold Ratio,"Commodities / LME, LBMA","""Doctor Copper"" — industrial demand signal; ratio tracks US 10Y.",L,Full,"yfinance: HG=F, GC=F → FX_CMD1 (copper/gold)",yfinance (historic),
+Global,10,Brent / WTI Crude Prices,"Commodities / ICE, NYMEX",Demand-driven moves signal cycle; supply-driven shocks impair signal.,L,Full,"yfinance: CL=F, BZ=F → FX_CMD3 (oil/gold)",yfinance (historic),
+Global,11,Bloomberg Commodity Index (BCOM),Commodities / Bloomberg,Broad commodity basket.,L,Partial,"yfinance: DBC (Invesco DB Commodity Fund) → FX_CMD4, FX_CMD6, GL_CA_I1",yfinance (historic),DBC is our proxy for BCOM — not identical weighting but close
+Global,12,MSCI ACWI / MSCI World,Equities / MSCI,Global equity benchmarks as leading cycle indicator.,L,Full,"yfinance: ACWI, URTH → GL_G2, GL_G1",yfinance (historic),
+Global,13,Global Equity Breadth (% above 200-day MA),Equities / proprietary,Internal health of equity uptrend.,L,None,,,PROPRIETARY — requires constituent-level data. No free feed for $SPXA200R-style symbols. Noted in forward_plan.md Phase F
+Global,14,US Dollar Index (DXY) / BBDXY,"FX / ICE, Bloomberg",Strong USD typically tightens global financial conditions.,L,Full,yfinance: DX-Y.NYB → FX_CMD2,yfinance (historic),
+Global,15,DM High-Yield Credit Spreads (Global HY),Credit / ICE BofA,Global HY OAS; leading risk-asset indicator.,L,Full,FRED: BAMLH0A0HYM2 → US_Cr2,FRED (historic),US HY OAS as proxy for global DM HY. No free global HY OAS series
+Global,16,EM Sovereign Spreads (EMBI Global),Credit / J.P. Morgan,Hard-currency EM risk premium vs Treasuries.,L,None,,FRED: BAMLEMHBHYCRSP (check availability),FRED_CHECK — J.P. Morgan EMBI spread may be on FRED via ICE BofA
+Global,17,OFR Financial Stress Index,Financial conditions / OFR,"33-variable daily stress index; credit, equity, funding, safe assets, volatility.",L,None,,OFR website: free download + API,"NEW_SOURCE:OFR — https://www.financialresearch.gov/financial-stress-index/ (CSV/JSON, free, daily)"
+Global,18,Goldman Sachs / Bloomberg Financial Conditions Index,"Financial conditions / GS, Bloomberg","Composite of rates, spreads, equity, FX.",L,Partial,"FRED: NFCI (Chicago Fed, not GS FCI)",FRED (historic),NFCI is our substitute for GS FCI. GS FCI is proprietary
+Global,19,VIX / V2X / VXN (equity volatility),"Volatility / CBOE, Eurex",Implied vol indices — inverse to risk appetite.,L,Full,"yfinance: ^VIX, ^VIX3M → US_V1, M5",yfinance (historic),VIX covered. V2X — check yfinance ^V2X. VXN (Nasdaq vol) not in library
+Global,20,MOVE Index (Treasury vol),Volatility / ICE BofA,Rates-market volatility; leading for credit stress.,L,Full,yfinance: ^MOVE → US_V2,yfinance (historic),
+Global,21,Global Gold Price / Real Yield Relationship,Commodities / LBMA,Gold vs TIPS yield — real-rates gauge and safe-haven demand.,L,Full,"yfinance: GC=F + FRED: DFII10 → US_R5, FX_CMD3",yfinance + FRED (historic),Gold and TIPS real yield both in pipeline
+Global,22,GS / BCA / TS Lombard Cycle Models,Composite / sell-side & independent research,Discretionary cycle dashboards used by many allocators.,L,None,,,PROPRIETARY — sell-side/independent research subscription
+Global,23,Global Trade Volumes (CPB World Trade Monitor),Trade / CPB Netherlands,Widely-used monthly global trade aggregate.,C,None,,CPB website: free download (CSV),"NEW_SOURCE:CPB — https://www.cpb.nl/en/world-trade-monitor (monthly, free download, no auth)"
+Global,24,World Industrial Production (CPB),Output / CPB Netherlands,Counterpart to world trade series.,C,None,,CPB website: same source as trade monitor,NEW_SOURCE:CPB
+Global,25,Earnings Revisions Ratio (IBES / Refinitiv),"Earnings / LSEG, Factset",Upgrades vs downgrades; coincident with fundamentals.,C,None,,,PROPRIETARY — LSEG/Refinitiv IBES subscription
+Global,26,MSCI Regional Earnings Growth (trailing),Earnings / MSCI,Actual earnings delivery across regions.,C,None,,,PROPRIETARY — MSCI data subscription
