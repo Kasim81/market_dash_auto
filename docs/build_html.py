@@ -83,7 +83,8 @@ def load_indicator_meta() -> dict:
     """Load indicator metadata from macro_indicator_library.csv.
 
     Returns dict keyed by indicator ID with metadata, group, sub_group,
-    and naturally_leading flag — all driven by the CSV (source of truth).
+    naturally_leading flag, and cycle_timing (L/C/G) — all driven by the
+    CSV (source of truth).
     """
     lib = pd.read_csv(IND_LIB)
     meta = {}
@@ -92,13 +93,14 @@ def load_indicator_meta() -> dict:
         if not ind_id:
             continue
         meta[ind_id] = {
-            "category":    str(row.get("category", "")).strip(),
-            "group":       str(row.get("group", "")).strip(),
-            "sub_group":   str(row.get("sub_group", "")).strip(),
-            "formula":     str(row.get("formula_using_library_names", "")).strip(),
-            "interp":      str(row.get("economic_interpretation", "")).strip(),
-            "regime_desc": str(row.get("regime_classification", "")).strip(),
-            "leading":     str(row.get("naturally_leading", "")).strip().upper() == "TRUE",
+            "category":     str(row.get("category", "")).strip(),
+            "group":        str(row.get("group", "")).strip(),
+            "sub_group":    str(row.get("sub_group", "")).strip(),
+            "formula":      str(row.get("formula_using_library_names", "")).strip(),
+            "interp":       str(row.get("economic_interpretation", "")).strip(),
+            "regime_desc":  str(row.get("regime_classification", "")).strip(),
+            "leading":      str(row.get("naturally_leading", "")).strip().upper() == "TRUE",
+            "cycle_timing": str(row.get("cycle_timing", "")).strip().upper(),
         }
     return meta
 
@@ -494,10 +496,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:10px;color:#8b949e;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;max-width:220px
 }
-.series-leading{
-  font-size:9px;color:#d29922;background:#272115;
-  border:1px solid #3d2f0d;border-radius:3px;
-  padding:0 4px;flex-shrink:0
+.series-cycle{
+  font-size:9px;font-weight:600;
+  border-radius:3px;padding:0 5px;flex-shrink:0;
+  font-family:"SFMono-Regular",Consolas,monospace
+}
+.series-cycle.L{
+  color:#58a6ff;background:#0d1f33;border:1px solid #1f3a5f
+}
+.series-cycle.C{
+  color:#d29922;background:#272115;border:1px solid #3d2f0d
+}
+.series-cycle.G{
+  color:#f85149;background:#2d1416;border:1px solid #5c1e22
 }
 .series-dates{
   font-size:9px;color:#484f58;white-space:nowrap;flex-shrink:0;
@@ -940,7 +951,7 @@ function buildSubGroupSection(sgName, ids, indicators){
       key:    indId,
       id:     indId,
       name:   shortName,
-      leading: meta.leading || false,
+      cycle:  meta.cycle_timing || '',
     }));
   });
 
@@ -1087,7 +1098,7 @@ function getSeriesDateRange(source, key){
   return {};
 }
 
-function makeSeriesItem({source, key, id, name, leading, variant}){
+function makeSeriesItem({source, key, id, name, cycle, variant}){
   const {first, last} = getSeriesDateRange(source, key);
 
   const wrap = el('div','series-item');
@@ -1110,8 +1121,10 @@ function makeSeriesItem({source, key, id, name, leading, variant}){
 
   wrap.append(cb, labelWrap);
 
-  if(leading){
-    const badge = el('span','series-leading','LEADING');
+  if(cycle === 'L' || cycle === 'C' || cycle === 'G'){
+    const title = {L:'Leading', C:'Coincident', G:'Lagging'}[cycle];
+    const badge = el('span','series-cycle ' + cycle, cycle);
+    badge.title = title;
     wrap.appendChild(badge);
   }
 
