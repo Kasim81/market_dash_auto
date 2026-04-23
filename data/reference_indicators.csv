@@ -36,7 +36,7 @@ US,34,Average Duration of Unemployment,Labour / BLS,LAG component; extends well 
 US,35,Commercial & Industrial Loans Outstanding,Credit / Fed H.8,Bank lending volumes lag new-order signals.,G,None,,FRED: TOTCI,FRED_ADD
 US,36,Fed Funds Rate,Rates / Fed,Reacts with lag to activity and inflation data.,G,Full,FRED: FEDFUNDS,FRED (historic),
 US,37,"Corporate Profits (economy-wide, NIPA)",Earnings / BEA,Confirms cycle turns; lagging for index construction though forward-looking for equities.,G,None,,FRED: CP or A053RC1Q027SBEA (quarterly),FRED_ADD
-UK,1,S&P Global UK Manufacturing PMI,Business survey / S&P Global,Weighted composite of 5 sub-indices; new orders weighted 30%.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
+UK,1,S&P Global UK Manufacturing PMI,Business survey / S&P Global,Weighted composite of 5 sub-indices; new orders weighted 30%.,L,Partial,Phase E: UK_PMI1 (OECD BCI proxy),FRED BSCICP02GBM460S — CBI-survey-derived OECD BCI (monthly),PROXY — actual S&P Global PMI is proprietary; OECD BCI from CBI survey is closest free equivalent
 UK,2,S&P Global UK Services PMI,Business survey / S&P Global,"Services ~80% of UK GDP; output, new orders, employment sub-indices.",L,None,,FMP calendar (check for UK Services PMI),FMP_CHECK
 UK,3,S&P Global UK Composite PMI (Flash),Business survey / S&P Global,Flash release mid-month; broadly consistent with GDP quarterly growth.,L,None,,,"PROPRIETARY — S&P Global Flash, subscriber-only"
 UK,4,S&P Global UK Construction PMI,Business survey / S&P Global,"Residential, commercial, civil engineering sub-indices.",L,None,,FMP calendar (check for UK Construction PMI),FMP_CHECK — low priority
@@ -72,12 +72,12 @@ UK,33,Bank Rate (Bank of England),Rates / BoE,MPC decisions react to backward-lo
 UK,34,Household Debt to Disposable Income,Credit / ONS,Slow-moving; currently trending lower from 2022 peak.,G,None,,,"PROPRIETARY — ONS quarterly, slow-moving. Low priority"
 UK,35,Insolvencies (corporate & personal),Credit / Insolvency Service,Bankruptcies peak well after recessions.,G,None,,,"PROPRIETARY — Insolvency Service, gov.uk download only"
 UK,36,Productivity (output per hour),Productivity / ONS,Quarterly; structural but cycle-sensitive.,G,None,,ONS API (quarterly),NEW_SOURCE:ONS
-Eurozone,1,HCOB Eurozone Manufacturing PMI,Business survey / S&P Global,Headline PMI for the bloc's factory sector; new orders closely watched.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
-Eurozone,2,HCOB Eurozone Services PMI,Business survey / S&P Global,Largest component of eurozone output.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
+Eurozone,1,HCOB Eurozone Manufacturing PMI,Business survey / S&P Global,Headline PMI for the bloc's factory sector; new orders closely watched.,L,Partial,Phase E: EU_PMI1 (EC Industry Confidence proxy),DB.nomics Eurostat ei_bssi_m_r2 EU_IND_CONF — same 3 PMI questions,PROXY — actual S&P Global PMI is proprietary; EC ICI uses identical methodology (production expectations + order books + stocks)
+Eurozone,2,HCOB Eurozone Services PMI,Business survey / S&P Global,Largest component of eurozone output.,L,Partial,Phase E: EU_PMI2 (EC Services Confidence proxy),DB.nomics Eurostat ei_bssi_m_r2 EU_SVC_CONF,PROXY — actual S&P Global PMI is proprietary; EC Services Confidence is closest free equivalent
 Eurozone,3,HCOB Eurozone Composite PMI (Flash),Business survey / S&P Global,Flash release 10 days before month-end.,L,None,,,"PROPRIETARY — S&P Global Flash, subscriber-only"
 Eurozone,4,ifo Business Climate Index (Germany),Business survey / ifo,Key German leading indicator; current + expectations components.,L,Full,ifo Excel: DE_IFO → DE_IFO1,"ifo Institute Excel (ifo.de, monthly 1991+)",Direct Excel download; scrape landing page for monthly URL
 Eurozone,5,ifo Expectations Sub-index,Business survey / ifo,Forward-looking 6m business outlook; strong lead on German GDP.,L,None,,FMP calendar (check for ifo Expectations sub-index),FMP_CHECK
-Eurozone,6,ZEW Indicator of Economic Sentiment (Germany & EZ),Investor survey / ZEW,Monthly survey of financial analysts on 6m outlook; very market-sensitive.,L,None,,"Investing.com scrape (planned, event 144)","SCRAPE_PLANNED — ZEW proprietary, no free API (ECB RTD probed 2026-04-23)"
+Eurozone,6,ZEW Indicator of Economic Sentiment (Germany & EZ),Investor survey / ZEW,Monthly survey of financial analysts on 6m outlook; very market-sensitive.,L,None,,,PROPRIETARY — ZEW Mannheim licences historical archive. No free API. German sentiment covered by DE_IFO1 (ifo) + DEU_BUS_CONF (OECD BCI via FRED)
 Eurozone,7,Sentix Investor Confidence (Euro Area),Investor survey / Sentix,First-mover sentiment indicator; tends to lead ZEW and ifo.,L,None,,,"PROPRIETARY — Sentix, no free API"
 Eurozone,8,European Commission Economic Sentiment Indicator (ESI),Composite / EC DG-ECFIN,"Weighted: industry 40%, services 30%, consumer 20%, retail 5%, construction 5%.",L,Full,DB.nomics: EU_ESI → EU_ESI1,"DB.nomics Eurostat (historic, verified 552 obs)",
 Eurozone,9,EC Industrial Confidence,Business survey / EC,"Production expectations, order books, stocks.",L,Full,DB.nomics: EU_IND_CONF,"DB.nomics Eurostat (historic, verified 552 obs)",Not yet wired to standalone Phase E indicator
@@ -108,7 +108,7 @@ Eurozone,33,Corporate Insolvencies,Credit / Eurostat,Peak well after trough.,G,N
 Eurozone,34,Unit Labour Costs,Labour / Eurostat,Confirms cycle with lag.,G,None,,Eurostat API or OECD SDMX (quarterly),DBNOMICS_ADD — low priority
 Eurozone,35,Labour Cost Index YoY,Labour / Eurostat,Quarterly; lagging.,G,None,,Eurostat API (quarterly),DBNOMICS_ADD — low priority
 Eurozone,36,Productivity per Hour Worked,Productivity / Eurostat,Structural variable; cycle-sensitive.,G,None,,Eurostat API or OECD SDMX (quarterly),DBNOMICS_ADD — low priority
-Japan,1,au Jibun Bank Japan Manufacturing PMI,Business survey / S&P Global,Monthly factory survey; new orders sub-index watched.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
+Japan,1,au Jibun Bank Japan Manufacturing PMI,Business survey / S&P Global,Monthly factory survey; new orders sub-index watched.,L,None,,,PROPRIETARY — S&P Global. No monthly free source. BoJ Tankan (quarterly) is best free alternative; needs dedicated fetcher
 Japan,2,au Jibun Bank Japan Services PMI,Business survey / S&P Global,Services sector survey.,L,None,,FMP calendar (check for JP Services PMI),FMP_CHECK
 Japan,3,Tankan: Large Manufacturers DI (current & outlook),Business survey / BoJ,Quarterly; outlook component is the forward-looking read.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ
 Japan,4,Tankan: Large Non-Manufacturers DI,Business survey / BoJ,Services-side twin of the manufacturing Tankan.,L,None,,BoJ Statistics API: database CO,NEW_SOURCE:BOJ
@@ -143,9 +143,9 @@ Japan,32,Real Cash Earnings,Labour / MHLW,Wage growth lags cycle.,G,None,,e-Stat
 Japan,33,BoJ Policy Rate,Rates / BoJ,Policy response lags data.,G,None,,FRED: IRSTCB01JPM156N; or BoJ API,FRED_ADD
 Japan,34,Corporate Bankruptcies (TSR / Teikoku),"Credit / TSR, Teikoku Databank",Peak after recessions.,G,None,,FMP calendar (check); otherwise TSR press release,FMP_CHECK; PROPRIETARY if not on FMP
 Japan,35,Capacity Utilization Rate (manufacturing),Output / METI,Turns with a small lag.,G,None,,e-Stat API,NEW_SOURCE:ESTAT
-China,1,NBS Manufacturing PMI,Business survey / NBS,Official PMI; skew towards SOEs and large firms.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
+China,1,NBS Manufacturing PMI,Business survey / NBS,Official PMI; skew towards SOEs and large firms.,L,Partial,Phase E: CN_PMI1 (OECD BCI proxy),FRED CHNBSCICP02STSAM — OECD-standardised NBS PMI components (monthly),PROXY — OECD BCI derived from NBS PMI data; 100-centred not 50-centred but z-score normalisation makes them comparable
 China,2,NBS Non-Manufacturing PMI (Services + Construction),Business survey / NBS,Services and construction activity; construction sub reads property/infrastructure.,L,None,,FMP calendar (check for NBS Non-Mfg PMI),FMP_CHECK
-China,3,Caixin Manufacturing PMI,"Business survey / S&P Global, Caixin",Skewed toward smaller private exporters; often diverges from NBS.,L,None,,Investing.com scrape (planned),SCRAPE_PLANNED — FMP calendar dead 2025-08
+China,3,Caixin Manufacturing PMI,"Business survey / S&P Global, Caixin",Skewed toward smaller private exporters; often diverges from NBS.,L,None,,,PROPRIETARY — S&P Global / Caixin. Chinese manufacturing covered by CN_PMI1 (OECD BCI from NBS components)
 China,4,Caixin Services PMI,"Business survey / S&P Global, Caixin",Private-sector services read.,L,None,,FMP calendar (check for Caixin Services PMI),FMP_CHECK
 China,5,Caixin Composite PMI,"Business survey / S&P Global, Caixin",Weighted combination of manufacturing and services.,L,None,,FMP calendar (check); derivable from mfg+svc,FMP_CHECK
 China,6,NBS PMI New Orders sub-index,Business survey / NBS,Leading component within PMI.,L,None,,,PROPRIETARY — NBS PMI sub-indices not on free sources
