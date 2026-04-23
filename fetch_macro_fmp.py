@@ -88,7 +88,7 @@ from googleapiclient.discovery import build
 # ---------------------------------------------------------------------------
 
 FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
-FMP_BASE = "https://financialmodelingprep.com/api/v3/economic_calendar"
+FMP_BASE = "https://financialmodelingprep.com/stable/economic-calendar"
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 SHEET_ID = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
@@ -171,6 +171,8 @@ def _fetch_calendar_chunk(start_date: str, end_date: str) -> list[dict]:
                 if isinstance(data, dict) and "Error Message" in data:
                     print(f"    [API error] {data['Error Message']}")
                     return []
+                print(f"    [Unexpected response type] {type(data).__name__}: "
+                      f"{str(data)[:300]}")
                 return []
 
             elif resp.status_code == 429:
@@ -579,55 +581,25 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
 
 def run_phase_d_fmp() -> None:
     """
-    Full Phase D Tier 3 run.  Safe to call from fetch_data.py or standalone.
+    DISABLED — FMP free tier no longer includes economic calendar access.
+
+    Both /api/v3/economic_calendar (HTTP 403 "Legacy Endpoint") and
+    /stable/economic-calendar (HTTP 402 "Restricted Endpoint: not available
+    under your current subscription") are paywalled as of August 2025.
+
+    The fetch logic below (_fetch_full_calendar, _build_all_series, snapshot
+    + history builders) is preserved in case we later find a drop-in free
+    calendar source or upgrade the FMP subscription. Currently unused.
+
+    See manuals/forward_plan.md §3.7 for the alternative-source plan.
     """
     print("\n" + "=" * 60)
     print("Phase D (Tier 3) — PMI / Survey Data (FMP Calendar)")
     print("=" * 60)
-
-    if not FMP_API_KEY:
-        print("[Phase D FMP] FMP_API_KEY not set — skipping")
-        return
-
-    start = time.time()
-
-    try:
-        # Fetch calendar
-        print("\n  Fetching FMP economic calendar...")
-        all_events = _fetch_full_calendar()
-        if not all_events:
-            print("[Phase D FMP] No calendar events returned — exiting cleanly")
-            return
-
-        print(f"\n  Total calendar events: {len(all_events)}")
-
-        # Match + transform
-        print("\n  Matching events to library indicators...")
-        series_data = _build_all_series(all_events)
-
-        # Snapshot
-        snap_df = _build_snapshot(series_data)
-        snap_df.insert(0, "row_id", range(1, len(snap_df) + 1))
-        save_snapshot_csv(snap_df)
-        push_snapshot_to_sheets(snap_df)
-
-        # History
-        print("\n  --- History Build ---")
-        hist_df = build_history(series_data)
-        if not hist_df.empty:
-            save_hist_csv(hist_df)
-            push_hist_to_sheets(hist_df)
-
-        filled = sum(1 for _, obs in series_data.items() if obs)
-        elapsed = round(time.time() - start, 1)
-        print(f"\n[Phase D FMP] Complete in {elapsed}s — "
-              f"{filled}/{len(INDICATORS)} indicators with data, "
-              f"{len(hist_df)} history rows × {len(hist_df.columns)} columns")
-
-    except Exception as e:
-        print(f"[Phase D FMP] Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
+    print("[Phase D FMP] DISABLED — FMP free tier no longer includes "
+          "economic calendar (both /v3 and /stable paywalled as of Aug 2025).")
+    print("[Phase D FMP] See manuals/forward_plan.md §3.7 for replacement plan.")
+    return
 
 
 if __name__ == "__main__":

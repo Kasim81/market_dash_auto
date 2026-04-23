@@ -28,6 +28,7 @@ jobs:
       env:
         FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: |
         git pull --rebase
         python fetch_data.py
@@ -48,6 +49,10 @@ jobs:
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true
         [ -f data/macro_market.csv ] && git add -f data/macro_market.csv || true
         [ -f data/macro_market_hist.csv ] && git add -f data/macro_market_hist.csv || true
+        [ -f data/macro_dbnomics.csv ] && git add -f data/macro_dbnomics.csv || true
+        [ -f data/macro_dbnomics_hist.csv ] && git add -f data/macro_dbnomics_hist.csv || true
+        [ -f data/macro_fmp.csv ] && git add -f data/macro_fmp.csv || true
+        [ -f data/macro_fmp_hist.csv ] && git add -f data/macro_fmp_hist.csv || true
         [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
         [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
         git diff --staged --quiet || (
