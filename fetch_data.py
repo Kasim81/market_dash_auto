@@ -916,6 +916,21 @@ except Exception as _phase_d_err:
     print("[Phase D] Existing pipeline outputs are unaffected")
 
 # ============================================================
+# PHASE D (ifo) — GERMAN BUSINESS CLIMATE
+# Downloads monthly ifo Excel and extracts DE_IFO / DE_IFO_SIT / DE_IFO_EXP.
+# Outputs: data/macro_ifo.csv, data/macro_ifo_hist.csv
+#          Google Sheets tabs: macro_ifo, macro_ifo_hist
+# Compute layer merges macro_ifo_hist into the same `dbn` survey DataFrame.
+# ============================================================
+
+try:
+    from fetch_macro_ifo import run_phase_d_ifo
+    run_phase_d_ifo()
+except Exception as _phase_d_ifo_err:
+    print(f"[Phase D ifo] Non-fatal error: {_phase_d_ifo_err}")
+    print("[Phase D ifo] Existing pipeline outputs are unaffected")
+
+# ============================================================
 # PHASE E — MACRO-MARKET INDICATORS
 # Computes 50 composite macro-market indicators as weekly
 # time series with rolling z-scores and regime classifications.

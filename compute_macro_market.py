@@ -86,6 +86,7 @@ COMP_HIST_CSV       = "data/market_data_comp_hist.csv"
 MACRO_US_HIST_CSV   = "data/macro_us_hist.csv"
 MACRO_INTL_HIST_CSV = "data/macro_intl_hist.csv"
 MACRO_DBN_HIST_CSV  = "data/macro_dbnomics_hist.csv"
+MACRO_IFO_HIST_CSV  = "data/macro_ifo_hist.csv"
 # FRED API settings — mirrors fetch_macro_us_fred.py
 FRED_BASE_URL      = "https://api.stlouisfed.org/fred/series/observations"
 FRED_REQUEST_DELAY = 0.6    # seconds between calls — ~100 req/min, under 120 limit
@@ -860,23 +861,44 @@ def load_macro_intl_hist() -> pd.DataFrame:
     return df
 
 
-def load_macro_dbnomics_hist() -> pd.DataFrame:
-    """
-    Load macro_dbnomics_hist.csv (Phase D Tier 2 — ISM, ECB BLS, Eurostat, Tankan).
-    Returns DataFrame with DatetimeIndex; empty DataFrame if file absent.
-    """
-    if not os.path.exists(MACRO_DBN_HIST_CSV):
-        print(f"  [load] {MACRO_DBN_HIST_CSV} not found — DB.nomics indicators will be empty")
+def _load_survey_hist_csv(path: str, label: str) -> pd.DataFrame:
+    """Load one survey-source history CSV (8-row metadata prefix, then Date +
+    numeric columns). Returns empty DataFrame if the file is absent."""
+    if not os.path.exists(path):
+        print(f"  [load] {path} not found — {label} indicators will be empty")
         return pd.DataFrame()
-    df = pd.read_csv(MACRO_DBN_HIST_CSV, skiprows=8, index_col="Date", low_memory=False)
+    df = pd.read_csv(path, skiprows=8, index_col="Date", low_memory=False)
     df.index = pd.to_datetime(df.index, errors="coerce")
     df = df[df.index.notna()].sort_index()
     if "row_id" in df.columns:
         df = df.drop(columns=["row_id"])
     df = df.apply(pd.to_numeric, errors="coerce")
     df = df[df.index >= HIST_START]
-    print(f"  [load] macro_dbnomics_hist: {df.shape[0]} rows × {df.shape[1]} cols")
+    print(f"  [load] {label}: {df.shape[0]} rows × {df.shape[1]} cols")
     return df
+
+
+def load_macro_dbnomics_hist() -> pd.DataFrame:
+    """
+    Load and merge all Phase D survey-source histories into a single DataFrame:
+      · macro_dbnomics_hist.csv (DB.nomics API — ISM, Eurostat)
+      · macro_ifo_hist.csv      (ifo Institute Excel — German business climate)
+
+    Future survey sources (Investing.com scraper, ECB RTD, etc.) should append
+    additional load calls below and merge via outer-join. Column names must be
+    unique across sources (enforced by this function).
+    """
+    dbn = _load_survey_hist_csv(MACRO_DBN_HIST_CSV, "macro_dbnomics_hist")
+    ifo = _load_survey_hist_csv(MACRO_IFO_HIST_CSV, "macro_ifo_hist")
+
+    frames = [f for f in (dbn, ifo) if not f.empty]
+    if not frames:
+        return pd.DataFrame()
+    merged = pd.concat(frames, axis=1, join="outer").sort_index()
+    dupes = merged.columns[merged.columns.duplicated()].tolist()
+    if dupes:
+        raise RuntimeError(f"Duplicate survey-source columns: {dupes}")
+    return merged
 
 
 # ===========================================================================
@@ -1782,9 +1804,10 @@ def _calc_DE_ZEW1(**_):
     """ZEW Economic Sentiment. AWAITING SOURCE — planned: ECB RTD RTD.M.S0.S.Y_ZEWES.F (fallback: Investing.com event 144)."""
     return pd.Series(dtype=float)
 
-def _calc_DE_IFO1(**_):
-    """IFO Business Climate. AWAITING SOURCE — planned: ifo Institute Excel (ifo.de/en/ifo-time-series)."""
-    return pd.Series(dtype=float)
+def _calc_DE_IFO1(dbn, **_):
+    """IFO Business Climate (Germany, 2015=100, SA) — raw level, 156w z-score.
+    Source: ifo Institute Excel (ifo.de/en/ifo-time-series)."""
+    return _to_weekly_friday(_get_col(dbn, "DE_IFO"))
 
 def _calc_UK_PMI1(**_):
     """S&P Global UK Manufacturing PMI. AWAITING SOURCE — planned: Investing.com scrape."""
