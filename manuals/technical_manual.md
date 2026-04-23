@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -19,6 +19,7 @@
 11. [Key Design Patterns](#11-key-design-patterns)
 12. [Environment Setup](#12-environment-setup)
 13. [Known Issues & Status](#13-known-issues--status)
+14. [Operational Notes](#14-operational-notes)
 
 ---
 
@@ -42,8 +43,8 @@ The pipeline runs automatically every day at **03:17 UTC** via GitHub Actions (`
 | `macro_us_hist` | ~42 US FRED series | Weekly history from 1947 | FRED API |
 | `macro_intl` | 5 indicators x 11 countries | Daily snapshot | OECD + World Bank + IMF + FRED |
 | `macro_intl_hist` | 5 indicators x 11 countries | Weekly history from 1960 | OECD + World Bank + IMF + FRED |
-| `macro_market` | 68 composite indicators | Weekly snapshot | Derived from above datasets |
-| `macro_market_hist` | 68 composite indicators | Weekly history from 2000 | Derived from above datasets |
+| `macro_market` | 91 composite indicators | Weekly snapshot | Derived from above datasets |
+| `macro_market_hist` | 91 composite indicators | Weekly history from 2000 | Derived from above datasets |
 
 ### Codebase Size
 
@@ -59,7 +60,7 @@ market_dash_auto/
 ├── fetch_hist.py                  # Historical time series — macro_us + comp (1,062 lines)
 ├── fetch_macro_us_fred.py         # US FRED macro indicators + surveys (510 lines)
 ├── fetch_macro_international.py   # International macro — OECD / World Bank / IMF (1,426 lines)
-├── compute_macro_market.py        # 68 macro-market composite indicators (1,967 lines)
+├── compute_macro_market.py        # 91 macro-market composite indicators (1,967 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key (271 lines)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -71,7 +72,7 @@ market_dash_auto/
 │   ├── macro_library_oecd.csv         # OECD indicator definitions (3 indicators)
 │   ├── macro_library_imf.csv          # IMF indicator definitions (1 indicator)
 │   ├── macro_library_worldbank.csv    # World Bank indicator definitions (1 indicator)
-│   ├── macro_indicator_library.csv    # 68 macro-market indicator definitions
+│   ├── macro_indicator_library.csv    # 91 macro-market indicator definitions
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
 │   ├── market_data_comp_hist.csv      # OUTPUT — comp-pipeline weekly history
@@ -244,7 +245,7 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `macro_us_hist` | `fetch_hist.py` | `data/macro_us_hist.csv` | Weekly FRED history from 1947 |
 | `macro_intl` | `fetch_macro_international.py` | `data/macro_intl.csv` | 11-country macro snapshot |
 | `macro_intl_hist` | `fetch_macro_international.py` | `data/macro_intl_hist.csv` | Weekly international history from 1960 |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 68-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 91-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
@@ -280,7 +281,9 @@ https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4
 | `macro_library_oecd.csv` | 3 | fetch_macro_international.py | OECD indicator definitions (CLI, unemployment) |
 | `macro_library_worldbank.csv` | 1 | fetch_macro_international.py | World Bank indicator definition (CPI) |
 | `macro_library_imf.csv` | 1 | fetch_macro_international.py | IMF indicator definition (GDP growth) |
-| `macro_indicator_library.csv` | 68 | compute_macro_market.py, docs/build_html.py | Macro-market indicator definitions (id, category, group, sub_group, naturally_leading, formula, interpretation, regime rules) |
+| `macro_indicator_library.csv` | 91 | compute_macro_market.py, docs/build_html.py | Macro-market indicator definitions (id, category, group, sub_group, naturally_leading, formula, interpretation, regime_classification, cycle_timing) |
+| `macro_library_dbnomics.csv` | 3 | fetch_macro_dbnomics.py | DB.nomics/Eurostat series definitions (ESI, Industry Confidence, Services Confidence) |
+| `reference_indicators.csv` | 206 | Reference only | Cross-reference of 206 macro/market indicators from reference document with L/C/G cycle timing, match status, and source flags |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
@@ -293,7 +296,7 @@ https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4
 | `macro_us_hist.csv` | ~4,144 | fetch_hist.py | Weekly FRED history, 8 metadata prefix rows + data |
 | `macro_intl.csv` | ~59 | fetch_macro_international.py | International macro snapshot |
 | `macro_intl_hist.csv` | ~3,466 | fetch_macro_international.py | Weekly international history, 8 metadata prefix rows + data |
-| `macro_market.csv` | ~68 | compute_macro_market.py | Macro-market indicator snapshot |
+| `macro_market.csv` | ~91 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 
 ---
@@ -526,11 +529,11 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 
 ### 9.6 `compute_macro_market.py` (1,967 lines)
 
-**Role:** Phase E — 68 composite macro-market indicators with z-scores, regime classifications, and forward regime signals.
+**Role:** Phase E — 91 composite macro-market indicators with z-scores, regime classifications, and forward regime signals.
 
 All indicator metadata is loaded from `macro_indicator_library.csv` at import time — no hardcoded indicator definitions in Python. The CSV is the single source of truth for group, sub_group, category, formula description, and naturally_leading flag.
 
-#### Indicator Families (68 total)
+#### Indicator Families (91 total)
 
 | Group | Sub-group(s) | IDs | Description |
 |---|---|---|---|
@@ -573,11 +576,11 @@ Each indicator goes through:
 | `_sum_log_ratio(nums, dens)` | Average of multiple log-ratios — composite indicators |
 | `_rolling_zscore(series)` | Rolling z-score (156w window, 52w min) |
 | `_classify_fwd_regime(z, is_leading)` | Forward regime from trailing 8-week z-score slope |
-| `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 68 indicator calculations |
+| `compute_all_indicators(cp, mu, mi, supp)` | Orchestrate all 91 indicator calculations |
 | `build_snapshot_df(results)` | One row per indicator: id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note |
 | `_zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w)` | Classify recent z-score trajectory as `intensifying` (rising in magnitude vs 1w/4w and near the 13-week peak), `fading` (`\|z_now\| < 0.9 × \|z_4w\|`), `reversing` (sign flip vs 4w ago from a prior `\|z\| > 0.5`), or `stable`. |
 | `_sample_z(df, offset_weeks)` | Return zscore value `offset_weeks` Friday rows before the last non-null raw row (used to sample 1w/4w/13w history for trend classification). |
-| `build_hist_df(results)` | One row per date × 272 columns (68 indicators × 4 values: raw, zscore, regime, fwd_regime) |
+| `build_hist_df(results)` | One row per date × 364 columns (91 indicators × 4 values: raw, zscore, regime, fwd_regime) |
 | `push_macro_to_google_sheets(df_snapshot, df_hist)` | Write `macro_market` and `macro_market_hist` tabs to Sheets |
 | `run_phase_e()` | **Entry point** — load inputs, compute, save + push |
 
@@ -590,10 +593,10 @@ Each indicator goes through:
 | `HIST_START` | `"2000-01-01"` | Start date for weekly spine |
 | `_FWD_SLOPE_POS` | +0.15 | Weekly z-score slope threshold for "improving" |
 | `_FWD_SLOPE_NEG` | -0.15 | Weekly z-score slope threshold for "deteriorating" |
-| `INDICATOR_META` | dict | Maps 68 IDs to `(group, sub_group, category, formula_note)` — loaded from CSV |
+| `INDICATOR_META` | dict | Maps 91 IDs to `(group, sub_group, category, formula_note)` — loaded from CSV |
 | `ALL_INDICATOR_IDS` | list | Ordered indicator IDs (CSV row order) |
 | `NATURALLY_LEADING` | frozenset | IDs flagged as naturally leading in the CSV |
-| `REGIME_RULES` | dict | Maps 68 IDs to regime classification lambdas |
+| `REGIME_RULES` | dict | Maps 91 IDs to regime classification lambdas |
 | `_US_CALCULATORS` | dict | US indicator calculator functions |
 | `_EU_CALCULATORS` | dict | Europe/UK indicator calculator functions |
 | `_ASIA_REGIONAL_CALCULATORS` | dict | Asia/Global/FX indicator calculator functions |
@@ -607,7 +610,7 @@ Each indicator goes through:
 
 | Function | Purpose |
 |---|---|
-| `load_indicator_library()` | Load `macro_indicator_library.csv` → dict keyed by ID with category, group, sub_group, formula, interpretation, regime description, leading flag |
+| `load_indicator_library()` | Load `macro_indicator_library.csv` → dict keyed by ID with category, group, sub_group, formula, interpretation, regime description, leading flag, cycle_timing (L/C/G) |
 | `build_macro_market(ind_meta)` | Load `macro_market_hist.csv`, extract time series per indicator |
 | `build_html(ind_meta, macro_data)` | Generate complete HTML with embedded JS/CSS |
 
@@ -617,6 +620,7 @@ Each indicator goes through:
 - **4-colour regime palette:** positive (green), negative (red), amber (gold), neutral (grey) — each maps a set of regime labels
 - **Forward regime display:** `fwd_regime` shown as a coloured badge alongside current regime
 - **Custom PNG snapshot:** Camera button composites chart title, Plotly chart image, legend entries, and regime colour key onto a single canvas
+- **Cycle timing badges:** L/C/G badges in sidebar (blue=Leading, amber=Coincident, red=Lagging) with tooltip for full label
 - **Search filter:** Live search that hides/shows group and sub-group sections dynamically
 
 #### Output Files
@@ -833,7 +837,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | `FRED_API_KEY` | Exists | All FRED API calls |
 | `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
 | `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
-| `FMP_API_KEY` | Missing | Not currently needed — may be needed for future PMI data |
+| `FMP_API_KEY` | Exists | Registered 2026-04-21; used by Phase D FMP calendar module (`fetch_macro_fmp.py`) for ISM + S&P Global PMIs |
 
 ---
 
@@ -876,13 +880,14 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### Metadata / Label Issues
 
-Status verified against `data/index_library.csv` on 2026-04-21 — see `forward_plan.md` §3 for detail.
+Status verified against `data/index_library.csv` on 2026-04-23.
 
 | Ticker | Previously Flagged | Current State | Action |
 |---|---|---|---|
 | `^IRX` | Labeled "US 2Y Treasury Yield" | `name = "US 3-Month Treasury Yield"` | Already fixed |
-| `^VIX` | Region "Global" | Region empty | Deferred — "US" region not yet in `REGION_ORDER` |
-| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged | Deferred — add `"US"` to `REGION_ORDER` + audit all US-only rows first |
+| `^VIX` | Region "Global" | `region = "North America"`, `country_market = "United States"` | Fixed 2026-04-21 |
+| `^MOVE` | Region blank | `region = "North America"`, `country_market = "United States"` | Fixed 2026-04-21 |
+| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged | No change — owner decision: "North America" groups US & Canada deliberately |
 
 ### Remaining Redundancy Items
 
@@ -896,6 +901,44 @@ These are lower-severity structural issues documented in `METADATA_REDUNDANCY_RE
 | 10 | Ratio/spread definitions hardcoded in comp pipeline | Resolved — moved to `compute_macro_market.py` as indicator functions |
 | 11 | `_ac_units` mapping hardcoded | Resolved — now read from `units` CSV column |
 | 12 | `build_market_meta_prefix()` used hardcoded lists | Resolved — metadata now read from instrument dicts populated from library |
+
+### Excluded Indicators (Do Not Implement Without Instruction)
+
+These were evaluated during the Phase D source evaluation and deliberately excluded:
+
+| Indicator | Reason | Proxy Used Instead |
+|---|---|---|
+| Atlanta Fed GDPNow | Web scrape only — no clean API | None |
+| Fed Funds Futures implied path | CME paid subscription | None |
+| Goldman Sachs FCI | Proprietary | Chicago Fed NFCI (FRED: NFCI) |
+| Bloomberg FCI | Bloomberg terminal required | Chicago Fed NFCI |
+| MOVE Index | Bloomberg terminal required | 30-day realised vol on ^TNX (future) |
+| JP Morgan Global PMI | S&P Global licence required | Equal-weight ISM + EZ PMI + Japan PMI (Phase D) |
+| EM Currencies Index (EMFX) | JP Morgan proprietary | Implemented as `FX_EM1` — basket of CNY/INR/KRW/TWD vs USD |
+| China 10Y yield (FRED) | Data quality issues | CNYB.L ETF as proxy |
+
+---
+
+## 14. Operational Notes
+
+### GitHub Actions
+
+- **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
+- **Run timeout:** Currently set to 120 minutes.
+
+### Google Sheets
+
+- **CDN caching:** GitHub raw CSV URLs cache aggressively. Always use the Sheets export URL with `gid=` parameter for up-to-date data.
+- **Legacy tab cleanup:** `SHEETS_LEGACY_TABS_TO_DELETE` in `library_utils.py` drives automatic removal of deprecated tabs (`Market Data`, `sentiment_data`, `macro_surveys`, `macro_surveys_hist`, `market_data_hist`) on every run.
+- **Spreadsheet ID:** `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac` — hardcoded in all 5 modules that write to Sheets.
+
+### Downstream Consumer: trigger.py
+
+`trigger.py` runs at 06:15 London time on a local Windows machine (`C:\Users\kasim\ClaudeWorkflow\`). It reads only the `market_data` tab (via Sheets CSV export, GID `68683176`). No other tabs are consumed. Changes to macro, history, or indicator tabs do not affect the downstream consumer.
+
+### index_library.csv Maintenance
+
+The library is built and maintained via a separate Claude project at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. See the `TECHNICAL_MANUAL.md` in that folder for the library build process. To add a new instrument without the library builder, add a row to `data/index_library.csv` with `validation_status = "CONFIRMED"`, verify the ticker, set `base_currency`, and optionally set `simple_dash = True`. Changes take effect on the next pipeline run.
 
 ---
 
