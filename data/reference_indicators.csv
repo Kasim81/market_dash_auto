@@ -179,29 +179,29 @@ China,33,Urban Surveyed Unemployment Rate,Labour / NBS,Incomplete coverage; slow
 China,34,"Youth Unemployment (16–24, ex-students)",Labour / NBS,Politically sensitive; reporting methodology has changed.,G,None,,,"PROPRIETARY — NBS youth unemployment, no free API. Low reliability"
 China,35,Residential Property Prices (70-city),Housing / NBS,Primary market series; confirms cycle with lag.,G,None,,,PROPRIETARY — NBS 70-city property prices. CEIC/Wind only
 China,36,Household Debt to GDP,"Credit / PBoC, NBS",Slow-moving structural measure.,G,None,,BIS SDMX API: household debt/GDP,NEW_SOURCE:BIS
-Global,1,J.P. Morgan Global Composite PMI (S&P Global),Business survey / S&P Global,GDP-weighted aggregate of 40+ country PMIs; single best global growth gauge.,L,,,,
-Global,2,J.P. Morgan Global Manufacturing PMI,Business survey / S&P Global,Manufacturing-only cut; more cyclically volatile.,L,,,,
-Global,3,OECD Composite Leading Indicator (CLI) - all countries,Composite / OECD,Country-standardised CLIs for 38+ economies; flags turning points.,L,,,,
-Global,4,Conference Board Global LEI,Composite / Conference Board,Aggregates country LEIs into global composite.,L,,,,
-Global,5,Global Credit Impulse (BIS / private aggregates),Credit / BIS,Sum of major-economy credit impulses; correlated with global trade.,L,,,,
-Global,6,Baltic Dry Index (BDI),Trade / Baltic Exchange,Dry-bulk shipping rates; global commodity demand signal.,L,,,,
-Global,7,Drewry World Container Index,Trade / Drewry,Container freight; leads goods trade.,L,,,,
-Global,8,Semiconductor Billings (SIA) / Book-to-Bill,"Trade / SIA, SEMI",Classic early cycle tech leading indicator.,L,,,,
-Global,9,Copper Price / Copper-Gold Ratio,"Commodities / LME, LBMA","""Doctor Copper"" — industrial demand signal; ratio tracks US 10Y.",L,,,,
-Global,10,Brent / WTI Crude Prices,"Commodities / ICE, NYMEX",Demand-driven moves signal cycle; supply-driven shocks impair signal.,L,,,,
-Global,11,Bloomberg Commodity Index (BCOM),Commodities / Bloomberg,Broad commodity basket.,L,,,,
-Global,12,MSCI ACWI / MSCI World,Equities / MSCI,Global equity benchmarks as leading cycle indicator.,L,,,,
-Global,13,Global Equity Breadth (% above 200-day MA),Equities / proprietary,Internal health of equity uptrend.,L,,,,
-Global,14,US Dollar Index (DXY) / BBDXY,"FX / ICE, Bloomberg",Strong USD typically tightens global financial conditions.,L,,,,
-Global,15,DM High-Yield Credit Spreads (Global HY),Credit / ICE BofA,Global HY OAS; leading risk-asset indicator.,L,,,,
-Global,16,EM Sovereign Spreads (EMBI Global),Credit / J.P. Morgan,Hard-currency EM risk premium vs Treasuries.,L,,,,
-Global,17,OFR Financial Stress Index,Financial conditions / OFR,"33-variable daily stress index; credit, equity, funding, safe assets, volatility.",L,,,,
-Global,18,Goldman Sachs / Bloomberg Financial Conditions Index,"Financial conditions / GS, Bloomberg","Composite of rates, spreads, equity, FX.",L,,,,
-Global,19,VIX / V2X / VXN (equity volatility),"Volatility / CBOE, Eurex",Implied vol indices — inverse to risk appetite.,L,,,,
-Global,20,MOVE Index (Treasury vol),Volatility / ICE BofA,Rates-market volatility; leading for credit stress.,L,,,,
-Global,21,Global Gold Price / Real Yield Relationship,Commodities / LBMA,Gold vs TIPS yield — real-rates gauge and safe-haven demand.,L,,,,
-Global,22,GS / BCA / TS Lombard Cycle Models,Composite / sell-side & independent research,Discretionary cycle dashboards used by many allocators.,L,,,,
-Global,23,Global Trade Volumes (CPB World Trade Monitor),Trade / CPB Netherlands,Widely-used monthly global trade aggregate.,C,,,,
-Global,24,World Industrial Production (CPB),Output / CPB Netherlands,Counterpart to world trade series.,C,,,,
-Global,25,Earnings Revisions Ratio (IBES / Refinitiv),"Earnings / LSEG, Factset",Upgrades vs downgrades; coincident with fundamentals.,C,,,,
-Global,26,MSCI Regional Earnings Growth (trailing),Earnings / MSCI,Actual earnings delivery across regions.,C,,,,
+Global,1,J.P. Morgan Global Composite PMI (S&P Global),Business survey / S&P Global,GDP-weighted aggregate of 40+ country PMIs; single best global growth gauge.,L,None,,,"PROPRIETARY — J.P. Morgan / S&P Global. GDP-weighted, not freely available. GL_PMI1 is our equal-weight proxy"
+Global,2,J.P. Morgan Global Manufacturing PMI,Business survey / S&P Global,Manufacturing-only cut; more cyclically volatile.,L,Partial,Phase E: GL_PMI1 (equal-weight proxy),GL_PMI1 is our 5-country equal-weight approximation,Our proxy uses equal weights not GDP weights; close substitute
+Global,3,OECD Composite Leading Indicator (CLI) - all countries,Composite / OECD,Country-standardised CLIs for 38+ economies; flags turning points.,L,Full,"Phase C + Phase E: 9 country CLIs + GL_CLI1-2, GL_CLI5, EU_CLI1, AS_CLI1",OECD SDMX (historic),
+Global,4,Conference Board Global LEI,Composite / Conference Board,Aggregates country LEIs into global composite.,L,None,,,PROPRIETARY — Conference Board subscription
+Global,5,Global Credit Impulse (BIS / private aggregates),Credit / BIS,Sum of major-economy credit impulses; correlated with global trade.,L,None,,BIS SDMX API has credit-to-GDP gap data,DERIVED — requires summing country credit impulses. BIS has components; NEW_SOURCE:BIS
+Global,6,Baltic Dry Index (BDI),Trade / Baltic Exchange,Dry-bulk shipping rates; global commodity demand signal.,L,None,,,PROPRIETARY — Baltic Exchange. No free API. No reliable yfinance ticker
+Global,7,Drewry World Container Index,Trade / Drewry,Container freight; leads goods trade.,L,None,,,PROPRIETARY — Drewry subscription. Free headline on drewry.co.uk but no API
+Global,8,Semiconductor Billings (SIA) / Book-to-Bill,"Trade / SIA, SEMI",Classic early cycle tech leading indicator.,L,None,,,PROPRIETARY — SIA members only. SEMI book-to-bill discontinued in 2016. No free API
+Global,9,Copper Price / Copper-Gold Ratio,"Commodities / LME, LBMA","""Doctor Copper"" — industrial demand signal; ratio tracks US 10Y.",L,Full,"yfinance: HG=F, GC=F → FX_CMD1 (copper/gold)",yfinance (historic),
+Global,10,Brent / WTI Crude Prices,"Commodities / ICE, NYMEX",Demand-driven moves signal cycle; supply-driven shocks impair signal.,L,Full,"yfinance: CL=F, BZ=F → FX_CMD3 (oil/gold)",yfinance (historic),
+Global,11,Bloomberg Commodity Index (BCOM),Commodities / Bloomberg,Broad commodity basket.,L,Partial,"yfinance: DBC (Invesco DB Commodity Fund) → FX_CMD4, FX_CMD6, GL_CA_I1",yfinance (historic),DBC is our proxy for BCOM — not identical weighting but close
+Global,12,MSCI ACWI / MSCI World,Equities / MSCI,Global equity benchmarks as leading cycle indicator.,L,Full,"yfinance: ACWI, URTH → GL_G2, GL_G1",yfinance (historic),
+Global,13,Global Equity Breadth (% above 200-day MA),Equities / proprietary,Internal health of equity uptrend.,L,None,,,PROPRIETARY — requires constituent-level data. No free feed for $SPXA200R-style symbols. Noted in forward_plan.md Phase F
+Global,14,US Dollar Index (DXY) / BBDXY,"FX / ICE, Bloomberg",Strong USD typically tightens global financial conditions.,L,Full,yfinance: DX-Y.NYB → FX_CMD2,yfinance (historic),
+Global,15,DM High-Yield Credit Spreads (Global HY),Credit / ICE BofA,Global HY OAS; leading risk-asset indicator.,L,Full,FRED: BAMLH0A0HYM2 → US_Cr2,FRED (historic),US HY OAS as proxy for global DM HY. No free global HY OAS series
+Global,16,EM Sovereign Spreads (EMBI Global),Credit / J.P. Morgan,Hard-currency EM risk premium vs Treasuries.,L,None,,FRED: BAMLEMHBHYCRSP (check availability),FRED_CHECK — J.P. Morgan EMBI spread may be on FRED via ICE BofA
+Global,17,OFR Financial Stress Index,Financial conditions / OFR,"33-variable daily stress index; credit, equity, funding, safe assets, volatility.",L,None,,OFR website: free download + API,"NEW_SOURCE:OFR — https://www.financialresearch.gov/financial-stress-index/ (CSV/JSON, free, daily)"
+Global,18,Goldman Sachs / Bloomberg Financial Conditions Index,"Financial conditions / GS, Bloomberg","Composite of rates, spreads, equity, FX.",L,Partial,"FRED: NFCI (Chicago Fed, not GS FCI)",FRED (historic),NFCI is our substitute for GS FCI. GS FCI is proprietary
+Global,19,VIX / V2X / VXN (equity volatility),"Volatility / CBOE, Eurex",Implied vol indices — inverse to risk appetite.,L,Full,"yfinance: ^VIX, ^VIX3M → US_V1, M5",yfinance (historic),VIX covered. V2X — check yfinance ^V2X. VXN (Nasdaq vol) not in library
+Global,20,MOVE Index (Treasury vol),Volatility / ICE BofA,Rates-market volatility; leading for credit stress.,L,Full,yfinance: ^MOVE → US_V2,yfinance (historic),
+Global,21,Global Gold Price / Real Yield Relationship,Commodities / LBMA,Gold vs TIPS yield — real-rates gauge and safe-haven demand.,L,Full,"yfinance: GC=F + FRED: DFII10 → US_R5, FX_CMD3",yfinance + FRED (historic),Gold and TIPS real yield both in pipeline
+Global,22,GS / BCA / TS Lombard Cycle Models,Composite / sell-side & independent research,Discretionary cycle dashboards used by many allocators.,L,None,,,PROPRIETARY — sell-side/independent research subscription
+Global,23,Global Trade Volumes (CPB World Trade Monitor),Trade / CPB Netherlands,Widely-used monthly global trade aggregate.,C,None,,CPB website: free download (CSV),"NEW_SOURCE:CPB — https://www.cpb.nl/en/world-trade-monitor (monthly, free download, no auth)"
+Global,24,World Industrial Production (CPB),Output / CPB Netherlands,Counterpart to world trade series.,C,None,,CPB website: same source as trade monitor,NEW_SOURCE:CPB
+Global,25,Earnings Revisions Ratio (IBES / Refinitiv),"Earnings / LSEG, Factset",Upgrades vs downgrades; coincident with fundamentals.,C,None,,,PROPRIETARY — LSEG/Refinitiv IBES subscription
+Global,26,MSCI Regional Earnings Growth (trailing),Earnings / MSCI,Actual earnings delivery across regions.,C,None,,,PROPRIETARY — MSCI data subscription
