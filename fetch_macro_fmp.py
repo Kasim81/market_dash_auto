@@ -171,6 +171,8 @@ def _fetch_calendar_chunk(start_date: str, end_date: str) -> list[dict]:
                 if isinstance(data, dict) and "Error Message" in data:
                     print(f"    [API error] {data['Error Message']}")
                     return []
+                print(f"    [Unexpected response type] {type(data).__name__}: "
+                      f"{str(data)[:300]}")
                 return []
 
             elif resp.status_code == 429:
@@ -199,6 +201,24 @@ def _fetch_calendar_chunk(start_date: str, end_date: str) -> list[dict]:
 
     print(f"    [FAIL] All {BACKOFF_MAX_RETRIES} attempts failed for {start_date}→{end_date}")
     return []
+
+
+def _probe_fmp_api() -> list[str]:
+    """One small diagnostic call to verify API key and endpoint."""
+    diag = []
+    probe_end = datetime.now().strftime("%Y-%m-%d")
+    probe_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    url = FMP_BASE
+    params = {"from": probe_start, "to": probe_end, "apikey": FMP_API_KEY}
+    try:
+        resp = requests.get(url, params=params, timeout=15)
+        diag.append(f"Probe HTTP {resp.status_code}, "
+                    f"content-type={resp.headers.get('content-type','?')}, "
+                    f"body length={len(resp.text)}")
+        diag.append(f"Probe body (first 500 chars): {resp.text[:500]}")
+    except Exception as e:
+        diag.append(f"Probe request failed: {e}")
+    return diag
 
 
 def _fetch_full_calendar() -> list[dict]:
@@ -574,6 +594,25 @@ def push_hist_to_sheets(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# DEBUG LOG (temporary — remove after FMP verification)
+# ---------------------------------------------------------------------------
+
+_DEBUG_FILE = pathlib.Path(__file__).parent / "data" / "fmp_debug.txt"
+
+
+def _write_debug_log(lines: list[str]) -> None:
+    """Write diagnostic info to a file that gets committed by CI."""
+    try:
+        with open(_DEBUG_FILE, "w") as f:
+            f.write(f"FMP Debug Log — {datetime.now(timezone.utc).isoformat()}\n")
+            f.write("=" * 50 + "\n")
+            for line in lines:
+                f.write(line + "\n")
+    except Exception as e:
+        print(f"[FMP debug] Could not write debug log: {e}")
+
+
+# ---------------------------------------------------------------------------
 # ENTRY POINT
 # ---------------------------------------------------------------------------
 
@@ -585,25 +624,45 @@ def run_phase_d_fmp() -> None:
     print("Phase D (Tier 3) — PMI / Survey Data (FMP Calendar)")
     print("=" * 60)
 
+    _debug_log = []
+
     if not FMP_API_KEY:
         print("[Phase D FMP] FMP_API_KEY not set — skipping")
+        _debug_log.append("SKIP: FMP_API_KEY not set (empty or missing)")
+        _write_debug_log(_debug_log)
         return
 
+    _debug_log.append(f"API key present: {len(FMP_API_KEY)} chars")
+    print(f"[Phase D FMP] API key present ({len(FMP_API_KEY)} chars)")
     start = time.time()
 
     try:
+        # Diagnostic probe
+        print("\n  Running API probe...")
+        _debug_log.extend(_probe_fmp_api())
+
         # Fetch calendar
         print("\n  Fetching FMP economic calendar...")
         all_events = _fetch_full_calendar()
+        _debug_log.append(f"Calendar events fetched: {len(all_events)}")
         if not all_events:
             print("[Phase D FMP] No calendar events returned — exiting cleanly")
+            _debug_log.append("EXIT: No calendar events returned")
+            _write_debug_log(_debug_log)
             return
 
         print(f"\n  Total calendar events: {len(all_events)}")
+        if all_events:
+            sample = all_events[0]
+            _debug_log.append(f"Sample event keys: {list(sample.keys())[:10]}")
+            _debug_log.append(f"Sample event: {str(sample)[:300]}")
 
         # Match + transform
         print("\n  Matching events to library indicators...")
         series_data = _build_all_series(all_events)
+
+        filled = sum(1 for _, obs in series_data.items() if obs)
+        _debug_log.append(f"Indicators with data: {filled}/{len(INDICATORS)}")
 
         # Snapshot
         snap_df = _build_snapshot(series_data)
@@ -618,16 +677,21 @@ def run_phase_d_fmp() -> None:
             save_hist_csv(hist_df)
             push_hist_to_sheets(hist_df)
 
-        filled = sum(1 for _, obs in series_data.items() if obs)
         elapsed = round(time.time() - start, 1)
+        _debug_log.append(f"Complete in {elapsed}s — "
+                          f"{filled}/{len(INDICATORS)} indicators, "
+                          f"{len(hist_df)} history rows")
         print(f"\n[Phase D FMP] Complete in {elapsed}s — "
               f"{filled}/{len(INDICATORS)} indicators with data, "
               f"{len(hist_df)} history rows × {len(hist_df.columns)} columns")
 
     except Exception as e:
+        _debug_log.append(f"FATAL ERROR: {e}")
         print(f"[Phase D FMP] Fatal error: {e}")
         import traceback
         traceback.print_exc()
+
+    _write_debug_log(_debug_log)
 
 
 if __name__ == "__main__":
