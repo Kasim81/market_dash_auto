@@ -2,7 +2,8 @@
 build_html.py
 =============
 Generates indicator_explorer.html (and companion indicator_explorer_mkt.js)
-from the four _hist CSVs.  Also writes intermediate payload JSON files for
+from the _hist CSVs (macro_market, macro_us, macro_intl, survey, market_comp).
+Also writes intermediate payload JSON files for
 inspection.
 
 Run from the docs/ directory (or anywhere — paths are resolved relative to
@@ -31,6 +32,8 @@ MACRO_US    = DATA / "macro_us_hist.csv"
 MACRO_INTL  = DATA / "macro_intl_hist.csv"
 MKT_COMP    = DATA / "market_data_comp_hist.csv"
 IND_LIB     = DATA / "macro_indicator_library.csv"
+MACRO_DBN   = DATA / "macro_dbnomics_hist.csv"
+MACRO_IFO   = DATA / "macro_ifo_hist.csv"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -240,7 +243,52 @@ def build_macro_intl() -> dict:
     return {"dates": dates, "series": series}
 
 
-# ── 5. market_data_comp_hist ──────────────────────────────────────────────────
+# ── 5. survey data (DB.nomics + ifo) ─────────────────────────────────────────
+
+def build_macro_survey() -> dict:
+    """Merge all survey-source history CSVs (DB.nomics, ifo) into one payload."""
+    frames = []
+    all_meta = {}
+    for path, label_key in [(MACRO_DBN, "Column ID"), (MACRO_IFO, "Column ID")]:
+        if not path.exists():
+            continue
+        meta_raw = pd.read_csv(path, header=None, nrows=8, low_memory=False)
+        df = pd.read_csv(path, skiprows=8, low_memory=False)
+        if "row_id" in df.columns:
+            df = df.drop(columns=["row_id"])
+        meta_labels = meta_raw.iloc[:, 1].tolist()
+        for ci in range(len(df.columns) - 1):
+            raw_vals = meta_raw.iloc[:, ci + 2].tolist()
+            m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
+            col_id = m.get(label_key, df.columns[ci + 1])
+            all_meta[col_id] = m
+        frames.append(df)
+
+    if not frames:
+        return {"dates": [], "series": {}}
+
+    merged = frames[0]
+    for f in frames[1:]:
+        merged = merged.merge(f, on="Date", how="outer", suffixes=("", "_dup"))
+        merged = merged[[c for c in merged.columns if not c.endswith("_dup")]]
+    merged = merged.sort_values("Date").reset_index(drop=True)
+
+    dates, merged = _parse_date_col(merged)
+    series = {}
+    for col in merged.columns:
+        col_s = str(col).strip()
+        vals = _series_to_list(merged[col])
+        first, last = _date_range(dates, vals)
+        series[col_s] = {
+            "meta": all_meta.get(col_s, {"Column ID": col_s}),
+            "values": vals,
+            "first_date": first,
+            "last_date": last,
+        }
+    return {"dates": dates, "series": series}
+
+
+# ── 6. market_data_comp_hist ──────────────────────────────────────────────────
 
 def build_market_comp() -> dict:
     # rows 0-10 = metadata, row 11 = headers, row 12+ = data
@@ -300,6 +348,9 @@ def main():
     print("Building macro_intl payload...")
     macro_intl_data = build_macro_intl()
 
+    print("Building macro_survey payload...")
+    macro_survey_data = build_macro_survey()
+
     print("Building market_comp payload...")
     mkt_comp_data = build_market_comp()
 
@@ -308,6 +359,7 @@ def main():
         "macro_market": macro_mkt_data,
         "macro_us":     macro_us_data,
         "macro_intl":   macro_intl_data,
+        "macro_survey": macro_survey_data,
     }
 
     # ── write output files ────────────────────────────────────────────────────
@@ -320,6 +372,7 @@ def main():
           f"across {len(macro_mkt_data['groups'])} groups")
     print(f"macro_us     : {len(macro_us_data['series'])} FRED series")
     print(f"macro_intl   : {len(macro_intl_data['series'])} intl series")
+    print(f"macro_survey : {len(macro_survey_data['series'])} survey series")
     print(f"market_comp  : {len(mkt_comp_data['series'])} series "
           f"across {len(mkt_comp_data['groups'])} asset classes")
     print(f"  asset classes: {list(mkt_comp_data['groups'].keys())}")
@@ -880,7 +933,17 @@ function buildSidebar(){
     'macro_intl',
     s => (s['Country'] ? s['Country'] + ' — ' : '') + (s['Indicator'] || s['Column ID'] || ''),
   ));
-  // 4. Market Data
+  // 4. Survey Data (DB.nomics + ifo)
+  if(MAIN_DATA.macro_survey && Object.keys(MAIN_DATA.macro_survey.series).length > 0){
+    tree.appendChild(buildSimpleSection(
+      'Survey Data (DB.nomics / ifo)',
+      MAIN_DATA.macro_survey.series,
+      MAIN_DATA.macro_survey.dates,
+      'macro_survey',
+      s => (s['Source'] ? s['Source'] + ' — ' : '') + (s['Indicator'] || s['Column ID'] || ''),
+    ));
+  }
+  // 5. Market Data
   tree.appendChild(buildMarketSection());
 }
 
