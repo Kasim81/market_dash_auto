@@ -837,7 +837,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | `FRED_API_KEY` | Exists | All FRED API calls |
 | `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
 | `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
-| `FMP_API_KEY` | Exists but unused | Registered 2026-04-21. **Phase D FMP module disabled 2026-04-22** — FMP free tier no longer includes economic calendar (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained in case a replacement FMP product launches. See `manuals/pipeline_review.md` §1 for replacement plan. |
+| `FMP_API_KEY` | Exists, reserved for future use | Registered 2026-04-21. **Phase D FMP calendar module deleted 2026-04-23** — economic calendar endpoint paywalled on free tier (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained for planned PE-ratio integration via `/stable/ratios` endpoint (still free; see `forward_plan.md` §3.9). Calendar-sourced indicators migrated to DB.nomics / ifo / Investing.com — see `pipeline_review.md` §1. |
 
 ---
 

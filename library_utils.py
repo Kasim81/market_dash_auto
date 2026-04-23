@@ -296,8 +296,6 @@ SHEETS_ACTIVE_TABS = frozenset({
     "macro_intl_hist",       # fetch_macro_international.py
     "macro_dbnomics",        # fetch_macro_dbnomics.py
     "macro_dbnomics_hist",   # fetch_macro_dbnomics.py
-    "macro_fmp",             # fetch_macro_fmp.py
-    "macro_fmp_hist",        # fetch_macro_fmp.py
     "macro_market",          # compute_macro_market.py
     "macro_market_hist",     # compute_macro_market.py
 })
