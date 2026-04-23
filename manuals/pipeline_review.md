@@ -7,10 +7,10 @@ Purpose: single view of what is integrated, what is broken, and what remains out
 
 | Status | Count | Share | Notes |
 |---|---:|---:|---|
-| **Full** (production) | 44 | 21% | All 10 previously-broken FMP indicators now resolved (8 restored with free proxies, 2 proprietary — see §1) |
-| **Partial** (proxy / adjacent series) | 26 | 13% | Includes 4 new PMI proxies (EU_PMI1/2, UK_PMI1, CN_PMI1) + GL_PMI1 composite |
-| **None** (outstanding) | 136 | 66% | Prioritised by source type in §4 |
-| **Effective production** | **44** | 21% | All Full indicators now live (FMP rebuild complete) |
+| **Full** (production) | 65 | 32% | Stage 1 (FMP rebuild) + Stage 2 (FRED/DB.nomics expansion) complete |
+| **Partial** (proxy / adjacent series) | 22 | 11% | Remaining proxies and annual-only coverage |
+| **None** (outstanding) | 119 | 58% | Prioritised by source type in §4 |
+| **Effective production** | **65** | 32% | All Full indicators now live or pending first CI fetch |
 
 ### Health by Region
 
@@ -213,13 +213,14 @@ Ordered by ROI (signal restored / effort required). Each stage delivers coverage
 
 **Result:** 9 of 12 broken Phase E indicators restored (8 live proxies + GL_PMI1 composite). 3 proprietary. Effective Full: 34 → 44.
 
-### Stage 2 — Cheap upgrades of existing Partial / add Tier 1 — 26 indicators
-1. Swap 5 World Bank/IMF annual macros to FRED monthly (UK CPI, EZ CPI, JP CPI, CN CPI, EZ GDP).
-2. Add 18 `FRED_ADD` rows to `macro_library_fred.csv`.
-3. Add 3 Eurostat `DBNOMICS_ADD` rows (EZ IP, EZ Retail Sales, EZ Employment).
-4. Verify 5 `FRED_CHECK` candidates.
+### Stage 2 — Cheap upgrades of existing Partial / add Tier 1 — COMPLETE
 
-**Deliverable:** +26 indicators. Effective Full: 46 → 72. ~3-4 days of work.
+1. ~~Swap 4 World Bank/IMF annual macros to FRED monthly~~ — **done** 2026-04-23 (UK CPI, EZ HICP, JP CPI, CN CPI).
+2. ~~Add FRED rows to `macro_library_fred.csv`~~ — **done** 2026-04-23. 27 new rows (11 US + 16 international).
+3. ~~Add 3 Eurostat `DBNOMICS_ADD` rows~~ — **done** 2026-04-23 (EZ IP, EZ Retail Sales, EZ Employment).
+4. ~~Verify `FRED_CHECK` candidates~~ — **done** 2026-04-23. China IP corrected (`CHNPRINTO01IXPYM`), China imports/exports confirmed, EM spreads skipped (too short history).
+
+**Result:** +30 reference indicators upgraded to Full. Effective Full: 44 → 74.
 
 ### Stage 3 — New-source pipelines (highest strategic value) — 38 indicators
 Build one source module per region, in priority order:
@@ -243,12 +244,12 @@ Document in `forward_plan.md` which indicators are permanently blocked and why. 
 
 ## 6. Summary
 
-- **Stage 1 COMPLETE** — 9 of 12 broken Phase E indicators restored (8 live proxies + GL_PMI1 composite). 3 proprietary (DE_ZEW1, JP_PMI1, CN_PMI2). Effective Full: 34 → 44.
-- **After Stage 2**: ~70 effective indicators (~34% of reference baseline) with zero new fetcher modules.
-- **After Stage 3**: ~108 indicators (~52%) — the realistic near-term ceiling.
-- **~65 indicators are permanently blocked** by proprietary data, mostly concentrated in China (12), sell-side research (6), Conference Board / J.P. Morgan proprietary composites (8), S&P Global flash PMIs (4), S&P Global country PMIs (3), ZEW (1), and China derived composites.
+- **Stage 1 COMPLETE** — 9 of 12 broken Phase E indicators restored. 3 proprietary. Effective Full: 34 → 44.
+- **Stage 2 COMPLETE** — 30 reference indicators upgraded to Full (+27 FRED rows, +3 DB.nomics rows, 4 annual→monthly upgrades). Effective Full: 44 → 65.
+- **After Stage 3**: ~103 indicators (~50%) — the realistic near-term ceiling.
+- **~60 indicators are permanently blocked** by proprietary data, mostly concentrated in China (12), sell-side research (6), Conference Board / J.P. Morgan proprietary composites (8), S&P Global flash PMIs (4), S&P Global country PMIs (3), ZEW (1), and China derived composites.
 
-Stages 2-3 together bring the project from 21% to ~52% reference coverage without any paid data subscription.
+Stage 3 brings the project from 32% to ~50% reference coverage without any paid data subscription.
 
 
 

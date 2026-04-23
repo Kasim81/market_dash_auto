@@ -191,8 +191,8 @@ Key updates applied:
 
 | Tier | Source | Coverage | Status |
 |---|---|---|---|
-| 1 | FRED (rows in `macro_library_fred.csv`) | OECD business/consumer confidence for DE, UK, JP, FR, IT, CN; Dallas Fed Mfg | Production |
-| 2a | DB.nomics Eurostat | EU_ESI, EU_IND_CONF, EU_SVC_CONF | Production |
+| 1 | FRED (rows in `macro_library_fred.csv`) | 80 series: OECD confidence, policy rates, CPI, IP, trade, labour, credit across US/UK/EZ/JP/CN | **Production — expanded 2026-04-23 (Stage 2: +27 rows)** |
+| 2a | DB.nomics Eurostat | EU_ESI, EU_IND_CONF, EU_SVC_CONF, EZ_IND_PROD, EZ_RETAIL_VOL, EZ_EMPLOYMENT | **Production — expanded 2026-04-23 (Stage 2: +3 rows)** |
 | 2b | DB.nomics ISM | US ISM Mfg, ISM New Orders, ISM Services (may lag 4-8m) | **Production 2026-04-23** |
 | 3a | ifo Institute Excel (`fetch_macro_ifo.py`) | DE_IFO1 (1991+ monthly) | **Production 2026-04-23** |
 | 3b | EC Industry/Services Confidence (DB.nomics Eurostat, already in T2a) | EU_PMI1 → EU_IND_CONF, EU_PMI2 → EU_SVC_CONF | **Production 2026-04-23** — proxy using same PMI methodology |

@@ -52,3 +52,30 @@ CSCICP02GBM460S,GBR_CON_CONF,UK Consumer Confidence,Survey,Consumer Sentiment,Co
 CSCICP02JPM460S,JPN_CON_CONF,Japan Consumer Confidence,Survey,Consumer Sentiment,Composite indicator (normal value = 100),Monthly,"OECD consumer opinion survey composite for Japan; below 100 = below-trend pessimism",412,JPN
 CSCICP02CNM460S,CHN_CON_CONF,China Consumer Confidence,Survey,Consumer Sentiment,Composite indicator (normal value = 100),Monthly,"OECD consumer opinion survey composite for China; below 100 = below-trend pessimism",413,CHN
 CHNBSCICP02STSAM,CHN_BUS_CONF,China Business Confidence,Survey,Business Sentiment,Composite indicator (normal value = 100),Monthly,"OECD business tendency survey composite (manufacturing) for China; NBS PMI-derived; 100 = long-run average. Feb 2000+.",414,CHN
+AWHMAN,,US Average Weekly Hours (Manufacturing),Growth,Labour Market,Hours (SA),Monthly,"Hours cut before headcount; LEI component. Decline leads payroll cuts by 1-3m.",420,
+NEWORDER,,US Manufacturers' New Orders: Nondefense Capital Goods ex-Aircraft,Growth,Leading Indicators,Millions USD (SA),Monthly,"Proxy for business capex intentions; LEI component. Feb 1992+.",425,
+TCU,,US Capacity Utilization (Total Industry),Growth,Real Activity,Percent of Capacity (SA),Monthly,"Above 80% signals inflation pressure; below 75% = excess slack. Cycle-coincident.",430,
+W875RX1,,US Real Personal Income less Transfers,Growth,Real Activity,Billions 2017 USD (SAAR),Monthly,"Private-sector income generating capacity; NBER CEI component.",432,
+PCEC96,,US Real Personal Consumption Expenditures,Growth,Real Activity,Billions 2017 USD (SAAR),Monthly,"~68% of GDP; tracks business cycle closely. Core demand metric.",434,
+CMRMTSPL,,US Manufacturing & Trade Sales,Growth,Real Activity,Millions USD (SA),Monthly,"CEI component covering wholesale + retail + manufacturing. Broad activity measure.",436,
+CFNAI,,Chicago Fed National Activity Index (CFNAI),Growth,Composite,Index,Monthly,"Weighted avg of 85 monthly indicators; 3m avg (MA3) < -0.7 signals recession.",438,
+ULCNFB,,US Unit Labour Costs (Nonfarm Business),Inflation,Labour Costs,Index 2012=100 (SA),Quarterly,"Wage inflation measure; turns after cycle peak. Rising = margin squeeze.",440,
+UEMPMEAN,,US Average Duration of Unemployment,Growth,Labour Market,Weeks (SA),Monthly,"LAG component; extends well into recoveries. >25 weeks = severe labour slack.",442,
+TOTCI,,US Commercial & Industrial Loans Outstanding,Financial Conditions,Credit Conditions,Billions USD (SA),Weekly,"Bank lending volumes lag new-order signals. YoY contraction = credit crunch.",444,
+CP,,US Corporate Profits After Tax (NIPA),Growth,Earnings,Billions USD (SAAR),Quarterly,"Economy-wide corporate profitability. Confirms cycle turns; forward-looking for equities.",446,
+GBRCPIALLMINMEI,GBR_CPI,UK CPI (All Items),Inflation,CPI,Index 2015=100,Monthly,"UK headline consumer prices. Replaces annual World Bank CPI proxy.",450,GBR
+BOERUKM,GBR_BANK_RATE,Bank of England Policy Rate,Monetary Policy,Policy Rate,Percent,Monthly,"BoE Bank Rate. MPC decisions react to backward-looking data.",452,GBR
+DEUPROINDMISMEI,DEU_IND_PROD,Germany Industrial Production,Growth,Real Activity,Index 2015=100 (SA),Monthly,"Bellwether for euro-area manufacturing. Leads EZ GDP.",454,DEU
+EA19CPALTT01GYM,EA_HICP,Eurozone HICP Inflation YoY,Inflation,CPI,Percent Change YoY,Monthly,"ECB target variable (2%). Replaces annual World Bank CPI proxy.",456,EA19
+ECBDFR,EA_DEPOSIT_RATE,ECB Deposit Facility Rate,Monetary Policy,Policy Rate,Percent,Daily,"ECB key policy rate since Oct 2019 corridor reform. Lagging indicator.",458,EA19
+RBJPBIS,JPN_REER,Japan Real Effective Exchange Rate (BIS),FX,Exchange Rates,Index 2020=100,Monthly,"Weak JPY supports exporter earnings. BIS broad REER; 1994+.",460,JPN
+JPNPROINDMISMEI,JPN_IND_PROD,Japan Industrial Production,Growth,Real Activity,Index 2015=100 (SA),Monthly,"METI monthly IP. Coincident cycle measure for Japan manufacturing.",462,JPN
+JPNCPIALLMINMEI,JPN_CPI,Japan CPI (All Items),Inflation,CPI,Index 2015=100,Monthly,"Japan headline consumer prices. Replaces annual World Bank CPI proxy.",464,JPN
+IRSTCB01JPM156N,JPN_POLICY_RATE,BoJ Policy Rate,Monetary Policy,Policy Rate,Percent,Monthly,"Bank of Japan short-term policy rate. OECD-sourced.",466,JPN
+MYAGM2CNM189N,CHN_M2,China M2 Money Supply YoY,Growth,Money Supply,Percent Change YoY,Monthly,"M1-M2 spread watched as liquidity / animal-spirits gauge. OECD-sourced.",470,CHN
+IRSTCB01CNM156N,CHN_POLICY_RATE,China PBoC Policy Rate,Monetary Policy,Policy Rate,Percent,Monthly,"PBoC 7-day reverse repo rate proxy. OECD central bank rate.",472,CHN
+CHNCPIALLMINMEI,CHN_CPI,China CPI (All Items),Inflation,CPI,Index 2015=100,Monthly,"China headline CPI. Replaces annual World Bank CPI proxy. Food-weighted.",474,CHN
+CHNPPIALLMINMEI,CHN_PPI,China PPI (All Commodities),Inflation,PPI,Index 2015=100,Monthly,"Commodity-sensitive; leads CPI for goods. NBS-sourced via OECD.",476,CHN
+CHNPRINTO01IXPYM,CHN_IND_PROD,China Industrial Production,Growth,Real Activity,Index 2015=100 (SA),Monthly,"Total industry excl. construction. OECD-sourced; 1990+.",478,CHN
+XTIMVA01CNM667S,CHN_IMPORTS,China Imports (Merchandise),Growth,Trade,USD Growth Rate YoY,Monthly,"Domestic demand barometer given commodity intensity. OECD-sourced.",480,CHN
+XTEXVA01CNM667S,CHN_EXPORTS,China Exports (Merchandise),Growth,Trade,USD Growth Rate YoY,Monthly,"External demand gauge; tracks global trade cycle. OECD-sourced.",482,CHN
