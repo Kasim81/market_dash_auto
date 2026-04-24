@@ -54,17 +54,16 @@ Called from fetch_data.py:
 import csv as csv_module
 import json
 import os
-import pathlib
 import time
-import requests
 import pandas as pd
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 
 from sources.base import (
     build_friday_spine,
     get_sheets_service,
     push_df_to_sheets,
 )
+from sources import dbnomics as dbn_src
 
 
 # ---------------------------------------------------------------------------
@@ -81,120 +80,14 @@ HIST_CSV     = "data/macro_dbnomics_hist.csv"
 
 HIST_START = "2000-01-01"
 
-DBNOMICS_BASE = "https://api.db.nomics.world/v22"
 REQUEST_DELAY = 0.5  # seconds between API requests (courtesy)
 
 # Exponential backoff
 BACKOFF_BASE = 2
 BACKOFF_MAX_RETRIES = 4
 
-_LIBRARY_CSV = pathlib.Path(__file__).parent / "data" / "macro_library_dbnomics.csv"
 
-
-# ---------------------------------------------------------------------------
-# LIBRARY LOADER
-# ---------------------------------------------------------------------------
-
-def _load_library() -> list[dict]:
-    """
-    Load DB.nomics indicator definitions from macro_library_dbnomics.csv.
-    Returns a list of dicts, one per series.
-    """
-    df = pd.read_csv(_LIBRARY_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    df = df.sort_values("sort_key")
-    result = []
-    for _, row in df.iterrows():
-        result.append({
-            "series_id":  row["series_id"].strip(),
-            "col":        row["col"].strip(),
-            "name":       row["name"].strip(),
-            "category":   row["category"].strip(),
-            "subcategory": row["subcategory"].strip(),
-            "units":      row["units"].strip(),
-            "frequency":  row["frequency"].strip(),
-            "region":     row["region"].strip(),
-            "notes":      row["notes"].strip(),
-        })
-    return result
-
-
-INDICATORS = _load_library()
-
-
-# ---------------------------------------------------------------------------
-# DB.NOMICS API — FETCH WITH BACKOFF
-# ---------------------------------------------------------------------------
-
-def _dbnomics_fetch(series_id: str) -> dict | None:
-    """
-    Fetch a single series from DB.nomics with observations.
-    series_id format: "PROVIDER/DATASET/SERIES_CODE"
-    Returns the series document dict or None on failure.
-    """
-    url = f"{DBNOMICS_BASE}/series"
-    params = {
-        "observations": "1",
-        "series_ids": series_id,
-        "limit": 1,
-    }
-
-    for attempt in range(BACKOFF_MAX_RETRIES):
-        try:
-            resp = requests.get(url, params=params, timeout=30)
-
-            if resp.status_code == 200:
-                data = resp.json()
-                docs = data.get("series", {}).get("docs", [])
-                if docs:
-                    return docs[0]
-                return None
-
-            elif resp.status_code == 429:
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(f"    [Rate limit] {series_id} — backing off {wait}s "
-                      f"(attempt {attempt + 1}/{BACKOFF_MAX_RETRIES})")
-                time.sleep(wait)
-
-            elif resp.status_code >= 500:
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(f"    [Server error {resp.status_code}] {series_id} — backing off {wait}s")
-                time.sleep(wait)
-
-            else:
-                print(f"    [HTTP {resp.status_code}] {series_id} — skipping")
-                return None
-
-        except requests.exceptions.Timeout:
-            wait = BACKOFF_BASE ** (attempt + 1)
-            print(f"    [Timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
-
-        except requests.exceptions.RequestException as e:
-            print(f"    [Request error] {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [FAIL] All {BACKOFF_MAX_RETRIES} attempts failed for {series_id}")
-    return None
-
-
-def _parse_observations(doc: dict) -> list[tuple[str, float]]:
-    """
-    Extract (period_str, value) pairs from a DB.nomics series document.
-    Filters out nulls/NAs. Returns sorted ascending by period.
-    """
-    periods = doc.get("period", [])
-    values = doc.get("value", [])
-    pairs = []
-    for p, v in zip(periods, values):
-        if v is None or str(v).lower() in ("na", "nan", ""):
-            continue
-        try:
-            pairs.append((str(p), float(v)))
-        except (ValueError, TypeError):
-            continue
-    pairs.sort(key=lambda x: x[0])
-    return pairs
+INDICATORS = dbn_src.load_library()
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +107,7 @@ def fetch_snapshot() -> pd.DataFrame:
         sid = indic["series_id"]
         print(f"  [{i}/{total}] {sid} ({indic['name']})...")
 
-        doc = _dbnomics_fetch(sid)
+        doc = dbn_src.fetch_series(sid, retries=BACKOFF_MAX_RETRIES, backoff_base=BACKOFF_BASE)
         if not doc:
             print(f"    → No data returned")
             rows.append(_snapshot_row(indic, None, None, None, ""))
@@ -222,7 +115,7 @@ def fetch_snapshot() -> pd.DataFrame:
                 time.sleep(REQUEST_DELAY)
             continue
 
-        obs = _parse_observations(doc)
+        obs = dbn_src.parse_observations(doc)
         if not obs:
             print(f"    → No valid observations")
             rows.append(_snapshot_row(indic, None, None, None, ""))
@@ -271,57 +164,6 @@ def _snapshot_row(indic: dict, latest, prior, change, last_period: str) -> dict:
 # HISTORY BUILDER
 # ---------------------------------------------------------------------------
 
-def _obs_to_series(obs: list[tuple[str, float]], col_name: str) -> pd.Series:
-    """
-    Convert observation pairs to a pandas Series indexed by end-of-month/quarter dates.
-    Handles YYYY-MM, YYYY-MM-DD, and YYYY-QN period formats.
-    """
-    dates, vals = [], []
-    for period, val in obs:
-        try:
-            dt = _parse_period_to_date(period)
-            if dt:
-                dates.append(dt)
-                vals.append(val)
-        except (ValueError, TypeError):
-            continue
-
-    if not dates:
-        return pd.Series(dtype=float)
-    return pd.Series(vals, index=pd.DatetimeIndex(dates), name=col_name)
-
-
-def _parse_period_to_date(period: str) -> datetime | None:
-    """Parse a DB.nomics period string to a datetime (end of period)."""
-    p = str(period).strip()
-
-    # YYYY-MM-DD
-    if len(p) == 10 and p[4] == "-" and p[7] == "-":
-        return datetime.strptime(p, "%Y-%m-%d")
-
-    # YYYY-QN (quarterly) — check before YYYY-MM since both are length 7
-    if len(p) == 7 and p[4] == "-" and p[5] == "Q":
-        year = int(p[:4])
-        q = int(p[6])
-        month = q * 3
-        if month == 12:
-            return datetime(year, 12, 31)
-        return datetime(year, month + 1, 1) - timedelta(days=1)
-
-    # YYYY-MM
-    if len(p) == 7 and p[4] == "-":
-        dt = datetime.strptime(p + "-01", "%Y-%m-%d")
-        if dt.month == 12:
-            return dt.replace(day=31)
-        return dt.replace(month=dt.month + 1, day=1) - timedelta(days=1)
-
-    # YYYY (annual)
-    if len(p) == 4 and p.isdigit():
-        return datetime(int(p), 12, 31)
-
-    return None
-
-
 def fetch_history() -> dict[str, list[tuple[str, float]]]:
     """
     Fetch full history for all indicators.
@@ -336,9 +178,9 @@ def fetch_history() -> dict[str, list[tuple[str, float]]]:
         col = indic["col"]
         print(f"  [{i}/{total}] {sid} ...")
 
-        doc = _dbnomics_fetch(sid)
+        doc = dbn_src.fetch_series(sid, retries=BACKOFF_MAX_RETRIES, backoff_base=BACKOFF_BASE)
         if doc:
-            obs = _parse_observations(doc)
+            obs = dbn_src.parse_observations(doc)
             result[col] = obs
             print(f"    → {len(obs)} observations")
         else:
@@ -366,7 +208,7 @@ def build_history(hist_data: dict[str, list]) -> pd.DataFrame:
         obs = hist_data.get(col, [])
         if not obs:
             continue
-        raw = _obs_to_series(obs, col)
+        raw = dbn_src.obs_to_series(obs, col)
         if raw.empty:
             continue
         combined = raw.reindex(spine.union(raw.index)).sort_index()
