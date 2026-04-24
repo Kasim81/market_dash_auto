@@ -32,13 +32,6 @@ MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
 MKT_COMP        = DATA / "market_data_comp_hist.csv"
 IND_LIB         = DATA / "macro_indicator_library.csv"
 
-# Legacy paths kept for any ad-hoc readers that still expect them; the
-# three payload builders below now derive everything from MACRO_ECONOMIC.
-MACRO_US    = DATA / "macro_us_hist.csv"
-MACRO_INTL  = DATA / "macro_intl_hist.csv"
-MACRO_DBN   = DATA / "macro_dbnomics_hist.csv"
-MACRO_IFO   = DATA / "macro_ifo_hist.csv"
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _clean(val):

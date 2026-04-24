@@ -59,37 +59,9 @@ FRED_API_KEY            = os.environ.get("FRED_API_KEY", "")
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 SHEET_ID                = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
-MACRO_HIST_TAB          = "macro_us_hist"
-MACRO_HIST_CSV          = "data/macro_us_hist.csv"
-
-# Historical start floors
-MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this far
-
 # Rate limit delays
 YFINANCE_DELAY          = 0.3            # seconds between yfinance per-ticker calls
-FRED_DELAY              = 0.6            # seconds between FRED calls
-
-# ---------------------------------------------------------------------------
-# FRED MACRO SERIES — imported from fetch_macro_us_fred.py (single source of truth)
-# ---------------------------------------------------------------------------
-
-from fetch_macro_us_fred import FRED_MACRO_US as _FRED_MACRO_US_FULL
-from fetch_macro_us_fred import FRED_MACRO_US_FREQ as _FRED_MACRO_US_FREQ
-
-# Derive lookup dicts used in metadata prefix rows
-FRED_MACRO_US_NAMES   = {k: v[0] for k, v in _FRED_MACRO_US_FULL.items()}
-FRED_MACRO_US_CATS    = {k: v[1] for k, v in _FRED_MACRO_US_FULL.items()}
-FRED_MACRO_US_SUBCATS = {k: v[2] for k, v in _FRED_MACRO_US_FULL.items()}
-FRED_MACRO_US_UNITS   = {k: v[3] for k, v in _FRED_MACRO_US_FULL.items()}
-FRED_MACRO_US_FREQ    = _FRED_MACRO_US_FREQ
-
-# Map native FRED frequency → display string for hist tab (forward-filled to weekly)
-_FREQ_TO_HIST_LABEL = {
-    "Daily":     "Weekly (daily → ffill)",
-    "Weekly":    "Weekly",
-    "Monthly":   "Weekly (monthly → ffill)",
-    "Quarterly": "Weekly (quarterly → ffill)",
-}
+FRED_DELAY              = 0.6            # seconds between FRED calls (comp_hist FRED rates)
 
 # ---------------------------------------------------------------------------
 # HELPERS: FRIDAY SPINE
@@ -138,104 +110,6 @@ def fred_fetch_series_full(series_id: str, start: str) -> pd.Series | None:
     """Fetch full FRED series history from `start` via sources.fred."""
     return fred_src.fetch_series_as_pandas(series_id, FRED_API_KEY, start=start)
 
-
-# ---------------------------------------------------------------------------
-# BUILD: macro_us_hist DataFrame
-# ---------------------------------------------------------------------------
-
-def build_macro_hist_df(spine: pd.DatetimeIndex) -> pd.DataFrame:
-    """
-    Build the full macro_us_hist DataFrame.
-    Schema:
-        Date | <series_id>_<short_name> × 25
-    Monthly/quarterly series are forward-filled to weekly frequency.
-    """
-    print("\nBuilding macro_us_hist...")
-
-    if not FRED_API_KEY:
-        print("  FRED_API_KEY not set — skipping macro_us_hist")
-        return pd.DataFrame()
-
-    series_data = {}
-    total = len(_FRED_MACRO_US_FULL)
-
-    for i, (series_id, meta) in enumerate(_FRED_MACRO_US_FULL.items(), 1):
-        name = meta[0]
-        print(f"  [{i}/{total}] {series_id} ({name})...")
-
-        s = fred_fetch_series_full(series_id, MACRO_HIST_START)
-
-        if s is None or s.empty:
-            print(f"    → No data")
-            series_data[series_id] = pd.Series(np.nan, index=spine, name=series_id)
-        else:
-            aligned = align_to_friday_spine(s, spine)
-            series_data[series_id] = aligned
-            print(f"    → {len(s)} obs, first: {s.index[0].date()}, "
-                  f"last: {s.index[-1].date()}")
-
-        if i < total:
-            time.sleep(FRED_DELAY)
-
-    # Build DataFrame — keep FRED series IDs as column headers;
-    # human-readable names appear in the metadata prefix rows (row 1 = Name, row 2 = Category)
-    df = pd.DataFrame(series_data, index=spine)
-    df.index.name = "Date"
-
-    df = df.reset_index()
-    df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
-
-    print(f"  macro_us_hist: {len(df)} rows × {len(df.columns)} columns")
-    return df
-
-
-# ---------------------------------------------------------------------------
-# SAVE CSV
-# ---------------------------------------------------------------------------
-
-def build_macro_meta_prefix(df: pd.DataFrame) -> list:
-    """
-    Build metadata rows for macro_us_hist.  Row order (label in col A):
-      1. Series ID   — FRED series identifier (= column name)
-      2. Source      — "FRED" for all
-      3. Name        — full indicator name
-      4. Category    — Growth / Inflation / Monetary Policy / Financial Conditions / Survey
-      5. Subcategory — finer grouping within category
-      6. Units       — units string from FRED_MACRO_US
-      7. Frequency   — "Weekly (daily → ffill)", "Weekly (monthly → ffill)", etc.
-      8. Last Updated — UTC timestamp of this run
-    """
-    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-    series_id_row  = ["Series ID"]
-    source_row     = ["Source"]
-    name_row       = ["Name"]
-    category_row   = ["Category"]
-    subcat_row     = ["Subcategory"]
-    units_row      = ["Units"]
-    frequency_row  = ["Frequency"]
-    updated_row    = ["Last Updated"]
-
-    for col in df.columns:
-        if col == "Date":
-            continue
-        native_freq = FRED_MACRO_US_FREQ.get(col, "")
-        hist_freq   = _FREQ_TO_HIST_LABEL.get(native_freq, native_freq)
-
-        series_id_row.append(col)
-        source_row.append("FRED")
-        name_row.append(FRED_MACRO_US_NAMES.get(col, col))
-        category_row.append(FRED_MACRO_US_CATS.get(col, ""))
-        subcat_row.append(FRED_MACRO_US_SUBCATS.get(col, ""))
-        units_row.append(FRED_MACRO_US_UNITS.get(col, ""))
-        frequency_row.append(hist_freq)
-        updated_row.append(run_ts)
-
-    return [
-        series_id_row, source_row,
-        name_row, category_row, subcat_row,
-        units_row, frequency_row, updated_row,
-    ]
 
 
 def save_csv(df: pd.DataFrame, path: str, label: str,
@@ -287,48 +161,6 @@ def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
         print(f"  [{label}] GOOGLE_CREDENTIALS JSON error: {e} — skipping")
     except Exception as e:
         print(f"  [{label}] Sheets push failed: {e} — skipping")
-
-
-# ---------------------------------------------------------------------------
-# MAIN ENTRY POINT
-# ---------------------------------------------------------------------------
-
-def run_hist() -> None:
-    """
-    Full historical fetch run.
-    Produces macro_us_hist.
-    Safe to call from fetch_data.py; all errors caught internally.
-    """
-    print("\n" + "="*60)
-    print("Historical Time Series Build")
-    print("="*60)
-
-    start_ts = time.time()
-
-    try:
-        # --- Build Friday spine -------------------------------------------
-        macro_spine  = get_friday_spine(MACRO_HIST_START)
-
-        print(f"Macro spine:   {len(macro_spine):,} Fridays "
-              f"({macro_spine[0].date()} → {macro_spine[-1].date()})")
-
-        # --- macro_us_hist ------------------------------------------------
-        macro_df = build_macro_hist_df(macro_spine)
-        macro_meta = build_macro_meta_prefix(macro_df)
-        macro_df.insert(0, "row_id", range(1, len(macro_df) + 1))
-        macro_meta = [[""] + row for row in macro_meta]
-        save_csv(macro_df, MACRO_HIST_CSV, "macro_us_hist",
-                 prefix_rows=macro_meta)
-        push_df_to_sheets(macro_df, MACRO_HIST_TAB, "macro_us_hist",
-                          prefix_rows=macro_meta)
-
-        elapsed = round(time.time() - start_ts, 1)
-        print(f"\nHistorical build completed in {elapsed}s")
-
-    except Exception as e:
-        elapsed = round(time.time() - start_ts, 1)
-        print(f"\n[Hist] Unexpected error after {elapsed}s: {e}")
-        print("[Hist] Existing pipeline outputs are unaffected")
 
 
 # ---------------------------------------------------------------------------
@@ -924,4 +756,4 @@ def run_comp_hist() -> None:
 
 
 if __name__ == "__main__":
-    run_hist()
+    run_comp_hist()
