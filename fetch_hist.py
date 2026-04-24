@@ -49,6 +49,7 @@ from sources.base import (
     get_sheets_service,
     push_df_to_sheets as _base_push,
 )
+from sources import fred as fred_src
 
 # ---------------------------------------------------------------------------
 # CONFIG
@@ -67,8 +68,6 @@ MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this f
 # Rate limit delays
 YFINANCE_DELAY          = 0.3            # seconds between yfinance per-ticker calls
 FRED_DELAY              = 0.6            # seconds between FRED calls
-FRED_BACKOFF_BASE       = 2             # seconds; doubles on each retry
-FRED_MAX_RETRIES        = 5
 
 # ---------------------------------------------------------------------------
 # FRED MACRO SERIES — imported from fetch_macro_us_fred.py (single source of truth)
@@ -136,68 +135,8 @@ def align_to_friday_spine(series: pd.Series, spine: pd.DatetimeIndex) -> pd.Seri
 # ---------------------------------------------------------------------------
 
 def fred_fetch_series_full(series_id: str, start: str) -> pd.Series | None:
-    """
-    Fetch the complete history of a FRED series from start date.
-    Returns a pd.Series indexed by date, or None on failure.
-    Includes exponential backoff on rate limit / server errors.
-    """
-    if not FRED_API_KEY:
-        return None
-
-    url = "https://api.stlouisfed.org/fred/series/observations"
-    params = {
-        "series_id":          series_id,
-        "api_key":            FRED_API_KEY,
-        "file_type":          "json",
-        "sort_order":         "asc",
-        "observation_start":  start,
-        "limit":              100000,
-    }
-
-    for attempt in range(FRED_MAX_RETRIES):
-        try:
-            resp = requests.get(url, params=params, timeout=20)
-
-            if resp.status_code == 200:
-                data = resp.json()
-                obs = [
-                    o for o in data.get("observations", [])
-                    if o.get("value") not in (".", "", None)
-                ]
-                if not obs:
-                    return None
-                s = pd.Series(
-                    {o["date"]: float(o["value"]) for o in obs},
-                    name=series_id
-                )
-                s.index = pd.to_datetime(s.index)
-                return s
-
-            elif resp.status_code == 429:
-                wait = FRED_BACKOFF_BASE ** (attempt + 1)
-                print(f"    [FRED] 429 on {series_id} — backoff {wait}s "
-                      f"(attempt {attempt+1}/{FRED_MAX_RETRIES})")
-                time.sleep(wait)
-
-            elif resp.status_code >= 500:
-                wait = FRED_BACKOFF_BASE ** (attempt + 1)
-                print(f"    [FRED] {resp.status_code} on {series_id} — backoff {wait}s")
-                time.sleep(wait)
-
-            else:
-                print(f"    [FRED] HTTP {resp.status_code} on {series_id} — skipping")
-                return None
-
-        except requests.exceptions.Timeout:
-            wait = FRED_BACKOFF_BASE ** (attempt + 1)
-            print(f"    [FRED] Timeout on {series_id} — backoff {wait}s")
-            time.sleep(wait)
-        except Exception as e:
-            print(f"    [FRED] Error on {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [FRED] All retries exhausted for {series_id}")
-    return None
+    """Fetch full FRED series history from `start` via sources.fred."""
+    return fred_src.fetch_series_as_pandas(series_id, FRED_API_KEY, start=start)
 
 
 # ---------------------------------------------------------------------------

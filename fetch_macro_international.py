@@ -79,6 +79,7 @@ from sources.base import (
     last_friday_on_or_before,
     push_df_to_sheets,
 )
+from sources import fred as fred_src
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +88,6 @@ from sources.base import (
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
-FRED_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 SHEET_ID     = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
 SNAPSHOT_TAB = "macro_intl"
@@ -184,7 +184,6 @@ import pathlib as _pl
 _OECD_CSV = _pl.Path(__file__).parent / "data" / "macro_library_oecd.csv"
 _WB_CSV   = _pl.Path(__file__).parent / "data" / "macro_library_worldbank.csv"
 _IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
-_FRED_CSV = _pl.Path(__file__).parent / "data" / "macro_library_fred.csv"
 
 
 def _load_oecd_indicators() -> list:
@@ -250,45 +249,17 @@ def _load_imf_indicators() -> list:
     return result
 
 
-def _load_fred_intl_indicators() -> list:
-    """
-    Load international FRED indicators from macro_library_fred.csv.
-    Only rows with a non-blank country column are included.
-    """
-    df = pd.read_csv(_FRED_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    intl = df[df["country"].str.strip() != ""].sort_values("sort_key")
-    result = []
-    for _, row in intl.iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "source":    "FRED",
-            "country":   row["country"].strip(),
-            "fred_id":   row["series_id"],
-        })
-    return result
-
-
 # Module-level globals — populated from CSVs at import time.
 # All existing code that references these lists works unchanged.
 OECD_INDICATORS      = _load_oecd_indicators()
 WB_INDICATORS        = _load_wb_indicators()
 IMF_INDICATORS       = _load_imf_indicators()
-FRED_INTL_INDICATORS = _load_fred_intl_indicators()
+FRED_INTL_INDICATORS = fred_src.load_intl_library()
 
 
 # ---------------------------------------------------------------------------
 # LIBRARY VALIDATION
 # ---------------------------------------------------------------------------
-
-_FRED_SERIES_META_URL = "https://api.stlouisfed.org/fred/series"
-
 
 def _validate_wb_library() -> list:
     """
@@ -364,48 +335,12 @@ def _validate_imf_library() -> list:
 
 
 def _validate_fred_intl_library() -> list:
-    """
-    Validate FRED international indicator IDs against the FRED API.
-    Prints CSV name vs official FRED title for spot-checking.
-    Returns a list of warning strings (empty = all series found).
-    Skipped silently if FRED_API_KEY is not set.
-    """
-    if not FRED_API_KEY or not FRED_INTL_INDICATORS:
-        return []
-    warnings = []
-    total = len(FRED_INTL_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_fred.csv (International)...")
-    for indic in FRED_INTL_INDICATORS:
-        sid = indic["fred_id"]
-        try:
-            resp = requests.get(
-                _FRED_SERIES_META_URL,
-                params={"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json"},
-                timeout=10,
-            )
-            time.sleep(0.3)
-            if resp.status_code == 200:
-                seriess = resp.json().get("seriess", [])
-                if seriess:
-                    official = seriess[0]["title"]
-                    print(f"  [OK] FRED {sid}")
-                    print(f"    csv : {indic['name']}")
-                    print(f"    fred: {official}")
-                else:
-                    warnings.append(
-                        f"FRED '{sid}' returned no metadata — verify series_id "
-                        f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
-                    )
-            elif resp.status_code == 400:
-                warnings.append(
-                    f"FRED '{sid}' not found (HTTP 400) — check series_id "
-                    f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
-                )
-            else:
-                print(f"  [SKIP] {sid}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] {sid}: validation error — {e}")
-    return warnings
+    """Validate FRED international indicator IDs via the shared FRED helper."""
+    indicators = [
+        {"series_id": indic["fred_id"], "name": indic["name"]}
+        for indic in FRED_INTL_INDICATORS
+    ]
+    return fred_src.validate_series(indicators, FRED_API_KEY, label_prefix="FRED International")
 
 
 # ---------------------------------------------------------------------------
@@ -570,56 +505,22 @@ def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
 
 
 # ---------------------------------------------------------------------------
-# FRED INTERNATIONAL DATA FETCHERS
+# FRED INTERNATIONAL DATA FETCHERS (thin wrappers over sources.fred)
 # ---------------------------------------------------------------------------
 
-def _parse_fred_monthly(data: dict, country_code: str) -> dict:
-    """
-    Parse FRED JSON response (asc order) into {country_code: [(period_str, val), ...]}
-    where period_str is "YYYY-MM" (consistent with OECD monthly format).
-    Returns {} on failure or empty data.
-    """
-    if not data or "observations" not in data:
-        return {}
-    obs = [o for o in data["observations"] if o.get("value") not in (".", "", None)]
-    if not obs:
-        return {}
-    pairs = []
-    for o in obs:
-        try:
-            period = o["date"][:7]   # "YYYY-MM-DD" → "YYYY-MM"
-            pairs.append((period, float(o["value"])))
-        except (ValueError, TypeError, KeyError):
-            continue
-    return {country_code: pairs} if pairs else {}
-
-
 def fetch_fred_intl_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 3 monthly observations for a FRED international indicator.
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    if not FRED_API_KEY:
-        return {}
+    """Last 3 monthly observations → {country_code: [(YYYY-MM, val), ...]}."""
     label = f"FRED/{indic['col']}"
     print(f"  Fetching {label} ({indic['fred_id']})...")
-    data = _fetch_with_backoff(
-        FRED_BASE_URL,
-        params={
-            "series_id":   indic["fred_id"],
-            "api_key":     FRED_API_KEY,
-            "file_type":   "json",
-            "sort_order":  "desc",
-            "limit":       3,
-        },
-        label=label,
+    data = fred_src.fetch_observations(
+        indic["fred_id"], FRED_API_KEY,
+        limit=3, sort_order="desc", label=label,
     )
     if data is None:
         return {}
-    # _fetch_with_backoff returns dict (JSON); observations in desc order — reverse for asc
-    obs_asc = list(reversed(data.get("observations", [])))
-    data_asc = {"observations": obs_asc}
-    result = _parse_fred_monthly(data_asc, indic["country"])
+    # Snapshot wants ascending order to match the history shape.
+    data = {"observations": list(reversed(data.get("observations", [])))}
+    result = fred_src.parse_monthly_by_country(data, indic["country"])
     if result:
         vals = result[indic["country"]]
         print(f"    → {len(vals)} obs; latest: {vals[-1] if vals else 'none'}")
@@ -629,29 +530,16 @@ def fetch_fred_intl_snapshot(indic: dict) -> dict:
 
 
 def fetch_fred_intl_history(indic: dict, start: str) -> dict:
-    """
-    Fetch full history for a FRED international indicator from start date.
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    if not FRED_API_KEY:
-        return {}
+    """Full history from `start` → {country_code: [(YYYY-MM, val), ...]}."""
     label = f"FRED/{indic['col']}/hist"
     print(f"  Fetching {label} ({indic['fred_id']})...")
-    data = _fetch_with_backoff(
-        FRED_BASE_URL,
-        params={
-            "series_id":          indic["fred_id"],
-            "api_key":            FRED_API_KEY,
-            "file_type":          "json",
-            "sort_order":         "asc",
-            "observation_start":  start,
-            "limit":              100000,
-        },
-        label=label,
+    data = fred_src.fetch_observations(
+        indic["fred_id"], FRED_API_KEY,
+        start=start, limit=100_000, sort_order="asc", label=label,
     )
     if data is None:
         return {}
-    result = _parse_fred_monthly(data, indic["country"])
+    result = fred_src.parse_monthly_by_country(data, indic["country"])
     if result:
         vals = result[indic["country"]]
         print(f"    → {len(vals)} obs "
