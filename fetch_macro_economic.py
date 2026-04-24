@@ -21,9 +21,10 @@ added in S2.C7, S2.C8, and S2.C10 respectively.
 
 from __future__ import annotations
 
+import csv as _csv
 import os
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -34,6 +35,7 @@ from sources import ifo as ifo_src
 from sources import imf as imf_src
 from sources import oecd as oecd_src
 from sources import worldbank as worldbank_src
+from sources.base import build_friday_spine
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +371,283 @@ def save_snapshot_csv(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# HISTORY BUILDERS
+# ---------------------------------------------------------------------------
+# Each _fetch_*_history returns a dict {column_name: pd.Series} where the
+# series is indexed by a DatetimeIndex.  Empty dict on failure.
+# Column names are the canonical `col` value (single-country) or
+# f"{country}_{col}" (multi-country fan-out).
+
+def _obs_list_to_series(obs: list[tuple[str, float]], col_name: str) -> pd.Series:
+    """Convert [(period_str, val), ...] to a DatetimeIndex pd.Series."""
+    if not obs:
+        return pd.Series(dtype=float, name=col_name)
+    dates = []
+    values = []
+    for period, val in obs:
+        dt = dbn_src.parse_period_to_date(period)
+        if dt is None:
+            continue
+        dates.append(dt)
+        values.append(val)
+    if not dates:
+        return pd.Series(dtype=float, name=col_name)
+    return pd.Series(values, index=pd.DatetimeIndex(dates), name=col_name)
+
+
+# -- FRED US --
+
+def _fetch_fred_us_history(indic: dict) -> dict[str, pd.Series]:
+    s = fred_src.fetch_series_as_pandas(indic["source_id"], FRED_API_KEY, HIST_START)
+    time.sleep(FRED_DELAY)
+    if s is None:
+        return {}
+    s.name = indic["col"]
+    return {indic["col"]: s}
+
+
+# -- FRED intl --
+
+def _fetch_fred_intl_history(indic: dict) -> dict[str, pd.Series]:
+    s = fred_src.fetch_series_as_pandas(indic["source_id"], FRED_API_KEY, HIST_START)
+    time.sleep(FRED_DELAY)
+    if s is None:
+        return {}
+    s.name = indic["col"]
+    return {indic["col"]: s}
+
+
+# -- Multi-country fan-out helper --
+
+def _fan_out_history(
+    indic: dict,
+    country_data: dict[str, list[tuple[str, float]]],
+) -> dict[str, pd.Series]:
+    out = {}
+    for country, obs in country_data.items():
+        col_name = f"{country}_{indic['col']}"
+        s = _obs_list_to_series(obs, col_name)
+        if not s.empty:
+            out[col_name] = s
+    return out
+
+
+def _fetch_oecd_history(indic: dict) -> dict[str, pd.Series]:
+    country_data = oecd_src.fetch_history(indic, HIST_START)
+    time.sleep(OECD_DELAY)
+    return _fan_out_history(indic, country_data)
+
+
+def _fetch_wb_history(indic: dict) -> dict[str, pd.Series]:
+    # HIST_START = 1947-01-01; WB data mostly starts 1960, so use 1960 floor.
+    country_data = worldbank_src.fetch_history(
+        indic, start_year=int(HIST_START[:4]), end_year=date.today().year,
+    )
+    time.sleep(WB_DELAY)
+    return _fan_out_history(indic, country_data)
+
+
+def _fetch_imf_history(indic: dict) -> dict[str, pd.Series]:
+    country_data = imf_src.fetch_indicator(indic)
+    time.sleep(IMF_DELAY)
+    return _fan_out_history(indic, country_data)
+
+
+# -- DB.nomics --
+
+def _fetch_dbnomics_history(indic: dict) -> dict[str, pd.Series]:
+    doc = dbn_src.fetch_series(indic["source_id"])
+    time.sleep(DBN_DELAY)
+    if doc is None:
+        return {}
+    obs = dbn_src.parse_observations(doc)
+    s = dbn_src.obs_to_series(obs, indic["col"])
+    if s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ifo (shares the workbook download with snapshot via module cache) --
+
+_IFO_MONTHLY_DF: pd.DataFrame | None = None
+
+
+def _get_ifo_monthly_df(ifo_indicators: list[dict]) -> pd.DataFrame | None:
+    """Fetch + parse the ifo workbook once per run; cache the monthly DF."""
+    global _IFO_MONTHLY_DF
+    if _IFO_MONTHLY_DF is not None:
+        return _IFO_MONTHLY_DF
+    try:
+        url = ifo_src.resolve_workbook_url()
+        print(f"  [ifo] Resolved workbook: {url}")
+        xlsx = ifo_src.download_workbook(url)
+        _IFO_MONTHLY_DF = ifo_src.parse_workbook(xlsx, ifo_indicators)
+    except Exception as e:
+        print(f"  [ifo] Workbook fetch/parse failed: {e}")
+        _IFO_MONTHLY_DF = pd.DataFrame()
+    return _IFO_MONTHLY_DF
+
+
+def _fetch_ifo_history(
+    indic: dict,
+    ifo_indicators: list[dict],
+) -> dict[str, pd.Series]:
+    monthly = _get_ifo_monthly_df(ifo_indicators)
+    if monthly is None or monthly.empty or indic["col"] not in monthly.columns:
+        return {}
+    s = monthly[indic["col"]].dropna()
+    if s.empty:
+        return {}
+    s.name = indic["col"]
+    return {indic["col"]: s}
+
+
+# -- Top-level history builder --
+
+def _history_for_indicator(
+    indic: dict,
+    ifo_indicators: list[dict],
+) -> dict[str, pd.Series]:
+    src = indic["source"]
+    if src == "FRED" and indic["country"] == "USA":
+        return _fetch_fred_us_history(indic)
+    if src == "FRED":
+        return _fetch_fred_intl_history(indic)
+    if src == "OECD":
+        return _fetch_oecd_history(indic)
+    if src == "World Bank":
+        return _fetch_wb_history(indic)
+    if src == "IMF":
+        return _fetch_imf_history(indic)
+    if src == "DB.nomics":
+        return _fetch_dbnomics_history(indic)
+    if src == "ifo":
+        return _fetch_ifo_history(indic, ifo_indicators)
+    print(f"  [WARN] Unknown source '{src}' in history fetch")
+    return {}
+
+
+def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
+    """Build the wide-form Friday-spine history DataFrame."""
+    today = date.today()
+    spine = build_friday_spine(HIST_START, today)
+    hist = pd.DataFrame(index=spine)
+    hist.index.name = "Date"
+
+    ifo_indicators = [i for i in indicators if i["source"] == "ifo"]
+
+    for indic in indicators:
+        label = f"{indic['source']}/{indic['col']}/hist"
+        print(f"  [{label}]")
+        try:
+            series_dict = _history_for_indicator(indic, ifo_indicators)
+        except Exception as e:
+            print(f"  [{label}] history failed: {e}")
+            continue
+        for col_name, s in series_dict.items():
+            combined = (
+                s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
+            )
+            hist[col_name] = combined
+
+    print(f"  macro_economic_hist: {len(hist)} rows × {len(hist.columns)} data columns")
+    return hist
+
+
+# -- Metadata prefix rows (one per metadata field × per column) --
+
+HIST_METADATA_ROWS = [
+    "Column ID", "Series ID", "Source", "Indicator",
+    "Country", "Country Name", "Region",
+    "Category", "Subcategory", "Concept", "cycle_timing",
+    "Units", "Frequency", "Last Updated",
+]
+
+
+def _build_hist_metadata_rows(
+    columns: list[str], indicators: list[dict],
+) -> list[list]:
+    """
+    Build the 14 metadata rows that prefix macro_economic_hist.csv.
+
+    Each column in `columns` maps to an indicator via either:
+      - single-country source: col_name == indic["col"]
+      - multi-country source:  col_name == f"{country}_{indic['col']}"
+    """
+    # Build a lookup: col_name → (indicator_dict, country_or_empty)
+    lookup: dict[str, tuple[dict, str]] = {}
+    country_meta = countries_src.country_meta()
+
+    for indic in indicators:
+        if indic["country"]:
+            lookup[indic["col"]] = (indic, indic["country"])
+        else:
+            # Multi-country: col_name is f"{country}_{indic['col']}".
+            # Register every possible (country, col_name) based on the
+            # canonical registry; callers may fan out to fewer.
+            for code in country_meta.keys():
+                lookup[f"{code}_{indic['col']}"] = (indic, code)
+
+    ts = _utc_ts()
+
+    rows: list[list] = [[label] for label in HIST_METADATA_ROWS]
+
+    for col_name in columns:
+        entry = lookup.get(col_name)
+        if entry is None:
+            # Unknown column: blank metadata.
+            for r in rows:
+                r.append("")
+            continue
+        indic, country = entry
+        cname, region = country_meta.get(country, (country, ""))
+        vals = {
+            "Column ID":    col_name,
+            "Series ID":    indic["source_id"],
+            "Source":       indic["source"],
+            "Indicator":    indic["name"],
+            "Country":      country,
+            "Country Name": cname,
+            "Region":       region,
+            "Category":     indic["category"],
+            "Subcategory":  indic["subcategory"],
+            "Concept":      indic["concept"],
+            "cycle_timing": indic["cycle_timing"],
+            "Units":        indic["units"],
+            "Frequency":    indic["frequency"],
+            "Last Updated": ts,
+        }
+        for r, label in zip(rows, HIST_METADATA_ROWS):
+            r.append(vals[label])
+
+    return rows
+
+
+def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
+    """
+    Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
+    then a header row (Date + column names), then one row per Friday.
+    """
+    os.makedirs("data", exist_ok=True)
+
+    columns = list(df.columns)
+    meta_rows = _build_hist_metadata_rows(columns, indicators)
+    header    = ["Date"] + columns
+
+    with open(HIST_CSV, "w", newline="") as f:
+        writer = _csv.writer(f)
+        writer.writerows(meta_rows)
+
+    df_out = df.reset_index()
+    df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
+    df_out.to_csv(
+        HIST_CSV, mode="a", header=True, index=False,
+        float_format="%.4f", na_rep="",
+    )
+    print(f"  Written {len(df)} rows + {len(meta_rows)} metadata rows to {HIST_CSV}")
+
+
+# ---------------------------------------------------------------------------
 # ENTRY POINT
 # ---------------------------------------------------------------------------
 
@@ -395,7 +674,10 @@ def run_phase_macro_economic() -> None:
     snap_df = build_snapshot_df(indicators)
     save_snapshot_csv(snap_df)
 
-    # History deferred to S2.C8.
+    # History (Friday-spine wide DataFrame, 1947-present)
+    print("\n[History] Fetching full history ...")
+    hist_df = build_hist_df(indicators)
+    save_hist_csv(hist_df, indicators)
 
     print(f"\n  macro_economic run completed in {time.time() - t0:.1f}s")
 
