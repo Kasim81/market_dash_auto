@@ -64,7 +64,6 @@ Called from fetch_data.py (add at the very end, after existing Phase blocks):
 """
 
 import csv as csv_module
-import io
 import os
 import time
 import json
@@ -80,6 +79,7 @@ from sources.base import (
     push_df_to_sheets,
 )
 from sources import fred as fred_src
+from sources import oecd as oecd_src
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +98,6 @@ HIST_CSV     = "data/macro_intl_hist.csv"
 HIST_START   = "1960-01-01"   # history floor — OECD CLI/rates back to ~1960s; maximise range
 
 # API base URLs
-OECD_BASE = "https://sdmx.oecd.org/public/rest/data"   # new OECD API
 WB_BASE   = "https://api.worldbank.org/v2/country"
 IMF_BASE  = "https://www.imf.org/external/datamapper/api/v1"
 
@@ -181,34 +180,10 @@ WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
 
 import pathlib as _pl
 
-_OECD_CSV = _pl.Path(__file__).parent / "data" / "macro_library_oecd.csv"
 _WB_CSV   = _pl.Path(__file__).parent / "data" / "macro_library_worldbank.csv"
 _IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
 
 
-def _load_oecd_indicators() -> list:
-    """
-    Load OECD indicators from macro_library_oecd.csv.
-    Returns a list of dicts with keys: col, name, category, units, frequency,
-    notes, dataflow, key.  The 'key' is built by substituting {countries}
-    in oecd_key_template with the oecd_countries value.
-    """
-    df = pd.read_csv(_OECD_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        key = row["oecd_key_template"].replace("{countries}", row["oecd_countries"])
-        result.append({
-            "col":       row["series_id"],
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "dataflow":  row["oecd_dataflow"],
-            "key":       key,
-        })
-    return result
 
 
 def _load_wb_indicators() -> list:
@@ -251,7 +226,7 @@ def _load_imf_indicators() -> list:
 
 # Module-level globals — populated from CSVs at import time.
 # All existing code that references these lists works unchanged.
-OECD_INDICATORS      = _load_oecd_indicators()
+OECD_INDICATORS      = oecd_src.load_library()
 WB_INDICATORS        = _load_wb_indicators()
 IMF_INDICATORS       = _load_imf_indicators()
 FRED_INTL_INDICATORS = fred_src.load_intl_library()
@@ -362,79 +337,6 @@ def _fetch_with_backoff(
         retries=BACKOFF_RETRIES,
         backoff_base=BACKOFF_BASE,
     )
-
-
-# ---------------------------------------------------------------------------
-# OECD CSV PARSER  (new sdmx.oecd.org, format=csv)
-# ---------------------------------------------------------------------------
-
-def _parse_oecd_csv(text: str, label: str = "") -> dict:
-    """
-    Parse OECD REST API CSV response (format=csv).
-
-    The new OECD API prepends 2 metadata rows (STRUCTURE, STRUCTURE_ID rows)
-    before the actual CSV header. This parser finds the header line dynamically
-    by looking for the REF_AREA column, then uses pandas to read the data.
-
-    Returns:
-        {country_code: [(period_str, float_value), ...]} sorted ascending.
-    """
-    if not text or not text.strip():
-        print(f"  [{label}] Empty CSV response")
-        return {}
-
-    try:
-        lines = text.strip().splitlines()
-
-        # Find the actual CSV header row (contains REF_AREA)
-        header_idx = None
-        for i, line in enumerate(lines):
-            if "REF_AREA" in line.upper():
-                header_idx = i
-                break
-
-        if header_idx is None:
-            print(f"  [{label}] REF_AREA column not found in CSV. First line: {lines[0][:120]}")
-            return {}
-
-        csv_text = "\n".join(lines[header_idx:])
-        df = pd.read_csv(io.StringIO(csv_text), dtype=str)
-
-        # Find required columns (case-insensitive, handles extra whitespace)
-        col_upper = {c.strip().upper(): c for c in df.columns}
-        ref_col  = col_upper.get("REF_AREA")
-        time_col = col_upper.get("TIME_PERIOD")
-        val_col  = col_upper.get("OBS_VALUE")
-
-        if not all([ref_col, time_col, val_col]):
-            print(
-                f"  [{label}] Missing required CSV columns. "
-                f"Found: {list(df.columns)[:10]}"
-            )
-            return {}
-
-        results = {}
-        for _, row in df.iterrows():
-            country = str(row[ref_col]).strip()
-            period  = str(row[time_col]).strip()
-            raw_val = str(row[val_col]).strip()
-            if not raw_val or raw_val.upper() in ("NAN", "NA", "N/A", ""):
-                continue
-            try:
-                val = float(raw_val)
-            except ValueError:
-                continue
-            results.setdefault(country, []).append((period, val))
-
-        for k in results:
-            results[k].sort(key=lambda x: x[0])
-
-        print(f"    → {len(results)} countries parsed from CSV")
-        return results
-
-    except Exception as e:
-        print(f"  [{label}] CSV parse error: {e}")
-        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -550,49 +452,21 @@ def fetch_fred_intl_history(indic: dict, start: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# OECD DATA FETCHERS
+# OECD DATA FETCHERS (thin wrappers over sources.oecd)
 # ---------------------------------------------------------------------------
 
 def fetch_oecd_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 3 observations for one OECD indicator (format=csv).
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
-    label = f"OECD/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    text  = _fetch_with_backoff(
-        url,
-        params={"format": "csv", "lastNObservations": 3},
-        label=label,
-        accept_csv=True,
+    """Last 3 observations per country for one OECD indicator."""
+    return oecd_src.fetch_snapshot(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if text is None:
-        print(f"    → No response for {label}")
-        return {}
-    return _parse_oecd_csv(text, label=label)
 
 
 def fetch_oecd_history(indic: dict) -> dict:
-    """
-    Fetch full history (from HIST_START) for one OECD indicator (format=csv).
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
-    label = f"OECD/{indic['col']}/hist"
-    print(f"  Fetching {label}...")
-
-    text  = _fetch_with_backoff(
-        url,
-        params={"format": "csv", "startPeriod": HIST_START[:7]},  # "2000-01"
-        label=label,
-        accept_csv=True,
+    """Full history from HIST_START for one OECD indicator."""
+    return oecd_src.fetch_history(
+        indic, HIST_START, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if text is None:
-        print(f"    → No response for {label}")
-        return {}
-    return _parse_oecd_csv(text, label=label)
 
 
 # ---------------------------------------------------------------------------
