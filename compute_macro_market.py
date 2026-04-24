@@ -66,8 +66,6 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 
-from library_utils import SHEETS_PROTECTED_TABS
-
 # ---------------------------------------------------------------------------
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
@@ -2089,76 +2087,16 @@ def push_macro_to_google_sheets(df_snapshot: pd.DataFrame, df_hist: pd.DataFrame
     Credentials from GOOGLE_CREDENTIALS env var (service account JSON string).
     Tabs 'macro_market' and 'macro_market_hist' are created if absent; no other
     tabs are touched.
-
-    Mirrors the push_to_google_sheets() pattern in fetch_data.py exactly.
     """
-    import json
-    from google.oauth2.service_account import Credentials
-    from googleapiclient.discovery import build
+    from sources.base import get_sheets_service, push_df_to_sheets
 
-    creds_json = os.environ.get("GOOGLE_CREDENTIALS", "")
-    if not creds_json:
+    service = get_sheets_service(os.environ.get("GOOGLE_CREDENTIALS", ""))
+    if service is None:
         print("  WARNING: GOOGLE_CREDENTIALS not set — skipping Sheets export.")
         return
 
-    creds_dict = json.loads(creds_json)
-    creds = Credentials.from_service_account_info(
-        creds_dict,
-        scopes=["https://www.googleapis.com/auth/spreadsheets"],
-    )
-    service = build("sheets", "v4", credentials=creds)
-    sheets  = service.spreadsheets()
-
-    def _sv(v):
-        """Serialise one cell value for the Sheets API."""
-        if v is None:
-            return ""
-        try:
-            if pd.isna(v):
-                return ""
-        except (TypeError, ValueError):
-            pass
-        if isinstance(v, (int, float, np.integer, np.floating)):
-            return float(v)
-        return str(v)
-
-    def df_to_values(df: pd.DataFrame) -> list:
-        """Convert DataFrame to list-of-lists (header + rows) for the API."""
-        header = df.columns.tolist()
-        rows   = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-        return [header] + rows
-
-    def ensure_tab_exists(tab_name: str):
-        meta     = sheets.get(spreadsheetId=SHEET_ID).execute()
-        existing = {s["properties"]["title"] for s in meta.get("sheets", [])}
-        if tab_name not in existing:
-            sheets.batchUpdate(
-                spreadsheetId=SHEET_ID,
-                body={"requests": [{"addSheet": {"properties": {"title": tab_name}}}]},
-            ).execute()
-            print(f"  Created new tab '{tab_name}'")
-
-    def write_sheet(tab_name: str, df: pd.DataFrame):
-        """Ensure tab exists, clear it, then write the DataFrame."""
-        if tab_name in SHEETS_PROTECTED_TABS:
-            print(f"  [sheets] REFUSED: '{tab_name}' is a protected tab")
-            return
-        ensure_tab_exists(tab_name)
-        sheets.values().clear(
-            spreadsheetId=SHEET_ID,
-            range=f"{tab_name}!A1:ZZ10000",
-        ).execute()
-        values = df_to_values(df)
-        sheets.values().update(
-            spreadsheetId=SHEET_ID,
-            range=f"{tab_name}!A1",
-            valueInputOption="USER_ENTERED",
-            body={"values": values},
-        ).execute()
-        print(f"  [sheets] Written {len(values)-1} rows to '{tab_name}'")
-
-    write_sheet(SNAPSHOT_TAB, df_snapshot)
-    write_sheet(HIST_TAB,     df_hist.reset_index())  # include Date column
+    push_df_to_sheets(service, SHEET_ID, SNAPSHOT_TAB, df_snapshot, label="sheets")
+    push_df_to_sheets(service, SHEET_ID, HIST_TAB, df_hist.reset_index(), label="sheets")
 
 
 # ===========================================================================

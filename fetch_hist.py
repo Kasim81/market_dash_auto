@@ -39,15 +39,17 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from datetime import date, datetime, timedelta, timezone
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 
 from library_utils import (
     COMP_FX_TICKERS,
     COMP_FCY_PER_USD,
-    SHEETS_PROTECTED_TABS,
     lib_sort_key as _comp_inst_sort_key,
 )
+from sources.base import (
+    get_sheets_service,
+    push_df_to_sheets as _base_push,
+)
+from sources import fred as fred_src
 
 # ---------------------------------------------------------------------------
 # CONFIG
@@ -66,8 +68,6 @@ MACRO_HIST_START        = "1947-01-01"   # FRED data; some series go back this f
 # Rate limit delays
 YFINANCE_DELAY          = 0.3            # seconds between yfinance per-ticker calls
 FRED_DELAY              = 0.6            # seconds between FRED calls
-FRED_BACKOFF_BASE       = 2             # seconds; doubles on each retry
-FRED_MAX_RETRIES        = 5
 
 # ---------------------------------------------------------------------------
 # FRED MACRO SERIES — imported from fetch_macro_us_fred.py (single source of truth)
@@ -135,68 +135,8 @@ def align_to_friday_spine(series: pd.Series, spine: pd.DatetimeIndex) -> pd.Seri
 # ---------------------------------------------------------------------------
 
 def fred_fetch_series_full(series_id: str, start: str) -> pd.Series | None:
-    """
-    Fetch the complete history of a FRED series from start date.
-    Returns a pd.Series indexed by date, or None on failure.
-    Includes exponential backoff on rate limit / server errors.
-    """
-    if not FRED_API_KEY:
-        return None
-
-    url = "https://api.stlouisfed.org/fred/series/observations"
-    params = {
-        "series_id":          series_id,
-        "api_key":            FRED_API_KEY,
-        "file_type":          "json",
-        "sort_order":         "asc",
-        "observation_start":  start,
-        "limit":              100000,
-    }
-
-    for attempt in range(FRED_MAX_RETRIES):
-        try:
-            resp = requests.get(url, params=params, timeout=20)
-
-            if resp.status_code == 200:
-                data = resp.json()
-                obs = [
-                    o for o in data.get("observations", [])
-                    if o.get("value") not in (".", "", None)
-                ]
-                if not obs:
-                    return None
-                s = pd.Series(
-                    {o["date"]: float(o["value"]) for o in obs},
-                    name=series_id
-                )
-                s.index = pd.to_datetime(s.index)
-                return s
-
-            elif resp.status_code == 429:
-                wait = FRED_BACKOFF_BASE ** (attempt + 1)
-                print(f"    [FRED] 429 on {series_id} — backoff {wait}s "
-                      f"(attempt {attempt+1}/{FRED_MAX_RETRIES})")
-                time.sleep(wait)
-
-            elif resp.status_code >= 500:
-                wait = FRED_BACKOFF_BASE ** (attempt + 1)
-                print(f"    [FRED] {resp.status_code} on {series_id} — backoff {wait}s")
-                time.sleep(wait)
-
-            else:
-                print(f"    [FRED] HTTP {resp.status_code} on {series_id} — skipping")
-                return None
-
-        except requests.exceptions.Timeout:
-            wait = FRED_BACKOFF_BASE ** (attempt + 1)
-            print(f"    [FRED] Timeout on {series_id} — backoff {wait}s")
-            time.sleep(wait)
-        except Exception as e:
-            print(f"    [FRED] Error on {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [FRED] All retries exhausted for {series_id}")
-    return None
+    """Fetch full FRED series history from `start` via sources.fred."""
+    return fred_src.fetch_series_as_pandas(series_id, FRED_API_KEY, start=start)
 
 
 # ---------------------------------------------------------------------------
@@ -333,91 +273,16 @@ def save_csv(df: pd.DataFrame, path: str, label: str,
 
 def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
                       prefix_rows: list = None) -> None:
-    """
-    Push a DataFrame to a named Google Sheets tab.
-    Creates tab if it doesn't exist; overwrites existing content.
-    Converts NaN to empty string for clean display.
-    Never touches market_data or sentiment_data tabs.
-
-    If prefix_rows is provided, those rows are prepended before the header+data
-    so metadata (Name, Region, etc.) appears at the top of the sheet.
-    """
-    if not GOOGLE_CREDENTIALS_JSON:
-        print(f"  [{label}] GOOGLE_CREDENTIALS not set — skipping Sheets push")
-        return
-    if df.empty:
-        print(f"  [{label}] Empty DataFrame — skipping Sheets push")
-        return
-
-    # Safety guard — never overwrite existing tabs
-    if tab_name in SHEETS_PROTECTED_TABS:
-        print(f"  [{label}] REFUSED: '{tab_name}' is a protected tab")
-        return
-
+    """Thin wrapper around sources.base.push_df_to_sheets with this module's creds/SHEET_ID."""
     try:
-        creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-        creds = Credentials.from_service_account_info(
-            creds_dict,
-            scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        _base_push(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            tab_name,
+            df,
+            label=label,
+            prefix_rows=prefix_rows,
         )
-        service = build("sheets", "v4", credentials=creds)
-        sheets  = service.spreadsheets()
-
-        # Ensure tab exists
-        meta = sheets.get(spreadsheetId=SHEET_ID).execute()
-        existing_tabs = [s["properties"]["title"] for s in meta.get("sheets", [])]
-
-        if tab_name not in existing_tabs:
-            print(f"  [{label}] Creating tab '{tab_name}'...")
-            sheets.batchUpdate(
-                spreadsheetId=SHEET_ID,
-                body={"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-            ).execute()
-
-        # Clear existing content
-        sheets.values().clear(
-            spreadsheetId=SHEET_ID,
-            range=f"{tab_name}!A:ZZZ"
-        ).execute()
-
-        # Prepare values: keep numeric types as float, dates/strings as str, NaN as ""
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float, np.integer, np.floating)):
-                return float(v)
-            return str(v)
-
-        header = list(df.columns)
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-
-        values = (prefix_rows if prefix_rows else []) + [header] + data_rows
-
-        # Write in batches of 10,000 rows to avoid Sheets API payload limits
-        BATCH_SIZE = 10_000
-        for batch_start in range(0, len(values), BATCH_SIZE):
-            batch = values[batch_start:batch_start + BATCH_SIZE]
-            # First batch starts at A1; subsequent batches continue below
-            start_row = batch_start + 1
-            range_notation = f"{tab_name}!A{start_row}"
-            sheets.values().update(
-                spreadsheetId=SHEET_ID,
-                range=range_notation,
-                valueInputOption="USER_ENTERED",
-                body={"values": batch}
-            ).execute()
-            if len(values) > BATCH_SIZE:
-                print(f"  [{label}] Batch {batch_start//BATCH_SIZE + 1}: "
-                      f"rows {start_row}–{start_row + len(batch) - 1}")
-            time.sleep(0.5)  # brief pause between batch writes
-
-        print(f"  [{label}] Written {len(df):,} rows to '{tab_name}' tab")
-
     except json.JSONDecodeError as e:
         print(f"  [{label}] GOOGLE_CREDENTIALS JSON error: {e} — skipping")
     except Exception as e:

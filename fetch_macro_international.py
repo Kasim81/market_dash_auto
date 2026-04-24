@@ -64,19 +64,24 @@ Called from fetch_data.py (add at the very end, after existing Phase blocks):
 """
 
 import csv as csv_module
-import io
 import os
 import time
 import json
 import requests
-import numpy as np
 import pandas as pd
 from datetime import date, datetime, timedelta, timezone
 
-from library_utils import SHEETS_PROTECTED_TABS
-
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+from sources.base import (
+    build_friday_spine,
+    fetch_with_backoff,
+    get_sheets_service,
+    last_friday_on_or_before,
+    push_df_to_sheets,
+)
+from sources import fred as fred_src
+from sources import oecd as oecd_src
+from sources import imf as imf_src
+from sources import worldbank as worldbank_src
 
 
 # ---------------------------------------------------------------------------
@@ -85,7 +90,6 @@ from googleapiclient.discovery import build
 
 GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS", "")
 FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
-FRED_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 SHEET_ID     = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
 
 SNAPSHOT_TAB = "macro_intl"
@@ -95,10 +99,6 @@ HIST_CSV     = "data/macro_intl_hist.csv"
 
 HIST_START   = "1960-01-01"   # history floor — OECD CLI/rates back to ~1960s; maximise range
 
-# API base URLs
-OECD_BASE = "https://sdmx.oecd.org/public/rest/data"   # new OECD API
-WB_BASE   = "https://api.worldbank.org/v2/country"
-IMF_BASE  = "https://www.imf.org/external/datamapper/api/v1"
 
 # Rate limits / delays
 OECD_DELAY      = 4.0   # seconds between OECD calls (max 20/hour = 1 per 3min; 4s is safe)
@@ -127,283 +127,46 @@ COUNTRY_META = {
     "USA":  ("United States",   "North America"),
 }
 
-# IMF DataMapper country codes → our OECD-aligned codes
-# IMF uses 3-letter ISO codes for countries; "EURO" for Euro Area (entity code
-# visible at https://www.imf.org/external/datamapper/profile/EURO). The legacy
-# "XM" code returns no data from the v1 DataMapper API.
-IMF_CODE_MAP = {
-    "AUS":  "AUS",
-    "CAN":  "CAN",
-    "CHE":  "CHE",
-    "CHN":  "CHN",
-    "DEU":  "DEU",
-    "EURO": "EA19",   # IMF DataMapper uses "EURO" for Euro Area
-    "FRA":  "FRA",
-    "GBR":  "GBR",
-    "ITA":  "ITA",
-    "JPN":  "JPN",
-    "USA":  "USA",
-}
-
-# World Bank country codes → our codes
-# World Bank uses ISO Alpha-3; EMU for Euro Area
-WB_CODE_MAP = {
-    "AUS": "AUS",
-    "CAN": "CAN",
-    "CHE": "CHE",
-    "CHN": "CHN",
-    "DEU": "DEU",
-    "EMU": "EA19",   # World Bank EMU = Euro Area
-    "FRA": "FRA",
-    "GBR": "GBR",
-    "ITA": "ITA",
-    "JPN": "JPN",
-    "USA": "USA",
-}
-# Semicolon-separated for World Bank URL
-WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
-
-
 # ---------------------------------------------------------------------------
 # LIBRARY LOADERS
 # ---------------------------------------------------------------------------
-# Indicator definitions are in four CSV files:
-#   macro_library_oecd.csv       → OECD_INDICATORS
-#   macro_library_worldbank.csv  → WB_INDICATORS
-#   macro_library_imf.csv        → IMF_INDICATORS
-#   macro_library_fred.csv       → FRED_INTL_INDICATORS (rows where country != "")
-#
-# Add new indicators by editing the relevant CSV — no Python changes required.
-# Adding a new data source: create a new macro_library_<source>.csv file,
-# write a loader function, and add fetch/validation logic below.
+# Indicator metadata is driven by four CSV files loaded through source
+# modules in sources/:
+#   sources.oecd.load_library()      → OECD_INDICATORS
+#   sources.worldbank.load_library() → WB_INDICATORS
+#   sources.imf.load_library()       → IMF_INDICATORS
+#   sources.fred.load_intl_library() → FRED_INTL_INDICATORS
+# Add new indicators by editing the relevant macro_library_*.csv file.
 
-import pathlib as _pl
-
-_OECD_CSV = _pl.Path(__file__).parent / "data" / "macro_library_oecd.csv"
-_WB_CSV   = _pl.Path(__file__).parent / "data" / "macro_library_worldbank.csv"
-_IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
-_FRED_CSV = _pl.Path(__file__).parent / "data" / "macro_library_fred.csv"
-
-
-def _load_oecd_indicators() -> list:
-    """
-    Load OECD indicators from macro_library_oecd.csv.
-    Returns a list of dicts with keys: col, name, category, units, frequency,
-    notes, dataflow, key.  The 'key' is built by substituting {countries}
-    in oecd_key_template with the oecd_countries value.
-    """
-    df = pd.read_csv(_OECD_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        key = row["oecd_key_template"].replace("{countries}", row["oecd_countries"])
-        result.append({
-            "col":       row["series_id"],
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "dataflow":  row["oecd_dataflow"],
-            "key":       key,
-        })
-    return result
-
-
-def _load_wb_indicators() -> list:
-    """Load World Bank indicators from macro_library_worldbank.csv."""
-    df = pd.read_csv(_WB_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "wb_id":     row["series_id"],
-        })
-    return result
-
-
-def _load_imf_indicators() -> list:
-    """Load IMF indicators from macro_library_imf.csv."""
-    df = pd.read_csv(_IMF_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "series":    row["series_id"],   # IMF fetch uses "series" key
-        })
-    return result
-
-
-def _load_fred_intl_indicators() -> list:
-    """
-    Load international FRED indicators from macro_library_fred.csv.
-    Only rows with a non-blank country column are included.
-    """
-    df = pd.read_csv(_FRED_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    intl = df[df["country"].str.strip() != ""].sort_values("sort_key")
-    result = []
-    for _, row in intl.iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "source":    "FRED",
-            "country":   row["country"].strip(),
-            "fred_id":   row["series_id"],
-        })
-    return result
 
 
 # Module-level globals — populated from CSVs at import time.
 # All existing code that references these lists works unchanged.
-OECD_INDICATORS      = _load_oecd_indicators()
-WB_INDICATORS        = _load_wb_indicators()
-IMF_INDICATORS       = _load_imf_indicators()
-FRED_INTL_INDICATORS = _load_fred_intl_indicators()
+OECD_INDICATORS      = oecd_src.load_library()
+WB_INDICATORS        = worldbank_src.load_library()
+IMF_INDICATORS       = imf_src.load_library()
+FRED_INTL_INDICATORS = fred_src.load_intl_library()
 
 
 # ---------------------------------------------------------------------------
 # LIBRARY VALIDATION
 # ---------------------------------------------------------------------------
 
-_FRED_SERIES_META_URL = "https://api.stlouisfed.org/fred/series"
-
-
 def _validate_wb_library() -> list:
-    """
-    Validate World Bank indicator IDs against the WB API.
-    Prints CSV name vs official WB indicator name for spot-checking.
-    Returns a list of warning strings (empty = all indicators found).
-    """
-    warnings = []
-    total = len(WB_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_worldbank.csv...")
-    for indic in WB_INDICATORS:
-        wb_id = indic["wb_id"]
-        try:
-            resp = requests.get(
-                f"https://api.worldbank.org/v2/indicator/{wb_id}",
-                params={"format": "json"},
-                timeout=15,
-            )
-            time.sleep(WB_DELAY)
-            if resp.status_code == 200:
-                data = resp.json()
-                if data and len(data) > 1 and data[1]:
-                    official = data[1][0].get("name", "")
-                    print(f"  [OK] WB {wb_id}")
-                    print(f"    csv: {indic['name']}")
-                    print(f"    wb : {official}")
-                else:
-                    warnings.append(
-                        f"WB '{wb_id}' not found — verify series_id "
-                        f"in macro_library_worldbank.csv  (csv name: '{indic['name']}')"
-                    )
-            else:
-                print(f"  [SKIP] WB {wb_id}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] WB {wb_id}: validation error — {e}")
-    return warnings
+    return worldbank_src.validate_library(WB_INDICATORS, delay=WB_DELAY)
 
 
 def _validate_imf_library() -> list:
-    """
-    Validate IMF DataMapper indicator IDs.
-    Prints CSV name vs official IMF label for spot-checking.
-    Returns a list of warning strings (empty = all indicators found).
-    """
-    warnings = []
-    total = len(IMF_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_imf.csv...")
-    for indic in IMF_INDICATORS:
-        imf_id = indic["series"]
-        try:
-            resp = requests.get(
-                f"{IMF_BASE}/indicator/{imf_id}",
-                timeout=15,
-            )
-            time.sleep(IMF_DELAY)
-            if resp.status_code == 200:
-                data = resp.json()
-                label = data.get("indicator", {}).get(imf_id, {}).get("label", "")
-                if label:
-                    print(f"  [OK] IMF {imf_id}")
-                    print(f"    csv: {indic['name']}")
-                    print(f"    imf: {label}")
-                else:
-                    warnings.append(
-                        f"IMF '{imf_id}' not found in API response — verify series_id "
-                        f"in macro_library_imf.csv  (csv name: '{indic['name']}')"
-                    )
-            else:
-                print(f"  [SKIP] IMF {imf_id}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] IMF {imf_id}: validation error — {e}")
-    return warnings
+    return imf_src.validate_library(IMF_INDICATORS, delay=IMF_DELAY)
 
 
 def _validate_fred_intl_library() -> list:
-    """
-    Validate FRED international indicator IDs against the FRED API.
-    Prints CSV name vs official FRED title for spot-checking.
-    Returns a list of warning strings (empty = all series found).
-    Skipped silently if FRED_API_KEY is not set.
-    """
-    if not FRED_API_KEY or not FRED_INTL_INDICATORS:
-        return []
-    warnings = []
-    total = len(FRED_INTL_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_fred.csv (International)...")
-    for indic in FRED_INTL_INDICATORS:
-        sid = indic["fred_id"]
-        try:
-            resp = requests.get(
-                _FRED_SERIES_META_URL,
-                params={"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json"},
-                timeout=10,
-            )
-            time.sleep(0.3)
-            if resp.status_code == 200:
-                seriess = resp.json().get("seriess", [])
-                if seriess:
-                    official = seriess[0]["title"]
-                    print(f"  [OK] FRED {sid}")
-                    print(f"    csv : {indic['name']}")
-                    print(f"    fred: {official}")
-                else:
-                    warnings.append(
-                        f"FRED '{sid}' returned no metadata — verify series_id "
-                        f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
-                    )
-            elif resp.status_code == 400:
-                warnings.append(
-                    f"FRED '{sid}' not found (HTTP 400) — check series_id "
-                    f"in macro_library_fred.csv  (csv name: '{indic['name']}')"
-                )
-            else:
-                print(f"  [SKIP] {sid}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] {sid}: validation error — {e}")
-    return warnings
+    """Validate FRED international indicator IDs via the shared FRED helper."""
+    indicators = [
+        {"series_id": indic["fred_id"], "name": indic["name"]}
+        for indic in FRED_INTL_INDICATORS
+    ]
+    return fred_src.validate_series(indicators, FRED_API_KEY, label_prefix="FRED International")
 
 
 # ---------------------------------------------------------------------------
@@ -416,241 +179,38 @@ def _fetch_with_backoff(
     label: str = "",
     accept_csv: bool = False,
 ) -> dict | str | None:
-    """
-    Generic HTTP GET with exponential backoff on 429 / 5xx.
-    Returns parsed JSON dict (or raw text if accept_csv=True), or None on failure.
-    """
-    for attempt in range(BACKOFF_RETRIES):
-        try:
-            resp = requests.get(url, params=params, timeout=30)
-
-            if resp.status_code == 200:
-                return resp.text if accept_csv else resp.json()
-
-            elif resp.status_code in (429, 503):
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(
-                    f"  [{label}] Rate limited (HTTP {resp.status_code}). "
-                    f"Backing off {wait}s (attempt {attempt + 1}/{BACKOFF_RETRIES})"
-                )
-                time.sleep(wait)
-
-            elif resp.status_code >= 500:
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(
-                    f"  [{label}] Server error {resp.status_code}. "
-                    f"Backing off {wait}s (attempt {attempt + 1}/{BACKOFF_RETRIES})"
-                )
-                time.sleep(wait)
-
-            else:
-                print(f"  [{label}] HTTP {resp.status_code} — skipping")
-                return None
-
-        except requests.exceptions.Timeout:
-            wait = BACKOFF_BASE ** (attempt + 1)
-            print(f"  [{label}] Timeout. Backing off {wait}s")
-            time.sleep(wait)
-
-        except requests.exceptions.RequestException as e:
-            print(f"  [{label}] Request error: {e} — skipping")
-            return None
-
-    print(f"  [{label}] All {BACKOFF_RETRIES} attempts failed — skipping")
-    return None
-
-
-# ---------------------------------------------------------------------------
-# OECD CSV PARSER  (new sdmx.oecd.org, format=csv)
-# ---------------------------------------------------------------------------
-
-def _parse_oecd_csv(text: str, label: str = "") -> dict:
-    """
-    Parse OECD REST API CSV response (format=csv).
-
-    The new OECD API prepends 2 metadata rows (STRUCTURE, STRUCTURE_ID rows)
-    before the actual CSV header. This parser finds the header line dynamically
-    by looking for the REF_AREA column, then uses pandas to read the data.
-
-    Returns:
-        {country_code: [(period_str, float_value), ...]} sorted ascending.
-    """
-    if not text or not text.strip():
-        print(f"  [{label}] Empty CSV response")
-        return {}
-
-    try:
-        lines = text.strip().splitlines()
-
-        # Find the actual CSV header row (contains REF_AREA)
-        header_idx = None
-        for i, line in enumerate(lines):
-            if "REF_AREA" in line.upper():
-                header_idx = i
-                break
-
-        if header_idx is None:
-            print(f"  [{label}] REF_AREA column not found in CSV. First line: {lines[0][:120]}")
-            return {}
-
-        csv_text = "\n".join(lines[header_idx:])
-        df = pd.read_csv(io.StringIO(csv_text), dtype=str)
-
-        # Find required columns (case-insensitive, handles extra whitespace)
-        col_upper = {c.strip().upper(): c for c in df.columns}
-        ref_col  = col_upper.get("REF_AREA")
-        time_col = col_upper.get("TIME_PERIOD")
-        val_col  = col_upper.get("OBS_VALUE")
-
-        if not all([ref_col, time_col, val_col]):
-            print(
-                f"  [{label}] Missing required CSV columns. "
-                f"Found: {list(df.columns)[:10]}"
-            )
-            return {}
-
-        results = {}
-        for _, row in df.iterrows():
-            country = str(row[ref_col]).strip()
-            period  = str(row[time_col]).strip()
-            raw_val = str(row[val_col]).strip()
-            if not raw_val or raw_val.upper() in ("NAN", "NA", "N/A", ""):
-                continue
-            try:
-                val = float(raw_val)
-            except ValueError:
-                continue
-            results.setdefault(country, []).append((period, val))
-
-        for k in results:
-            results[k].sort(key=lambda x: x[0])
-
-        print(f"    → {len(results)} countries parsed from CSV")
-        return results
-
-    except Exception as e:
-        print(f"  [{label}] CSV parse error: {e}")
-        return {}
+    """Local wrapper so callers don't need to pass module-level retry config."""
+    return fetch_with_backoff(
+        url,
+        params=params,
+        label=label,
+        accept_csv=accept_csv,
+        retries=BACKOFF_RETRIES,
+        backoff_base=BACKOFF_BASE,
+    )
 
 
 # ---------------------------------------------------------------------------
 # WORLD BANK JSON PARSER
 # ---------------------------------------------------------------------------
 
-def _parse_worldbank(data: list, label: str = "") -> dict:
-    """
-    Parse World Bank API response [pagination_metadata, [observations]].
-
-    Returns:
-        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
-    """
-    if not data or len(data) < 2 or not data[1]:
-        print(f"  [{label}] Empty or unexpected World Bank response")
-        return {}
-
-    results = {}
-    for obs in data[1]:
-        val = obs.get("value")
-        if val is None:
-            continue
-        # World Bank uses ISO 3-letter codes in countryiso3code
-        iso3 = obs.get("countryiso3code", "")
-        our_code = WB_CODE_MAP.get(iso3)
-        if not our_code:
-            continue
-        yr  = str(obs.get("date", ""))
-        results.setdefault(our_code, []).append((yr, float(val)))
-
-    for k in results:
-        results[k].sort(key=lambda x: x[0])
-
-    print(f"    → {len(results)} countries parsed from World Bank")
-    return results
-
-
 # ---------------------------------------------------------------------------
-# IMF DATAMAPPER PARSER
+# FRED INTERNATIONAL DATA FETCHERS (thin wrappers over sources.fred)
 # ---------------------------------------------------------------------------
-
-def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
-    """
-    Parse IMF DataMapper response.
-    IMF uses 3-letter ISO codes for countries and "EURO" for Euro Area.
-
-    Returns:
-        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
-    """
-    results = {}
-    values  = data.get("values", {}).get(indicator, {})
-
-    for imf_code, year_data in values.items():
-        our_code = IMF_CODE_MAP.get(imf_code)
-        if not our_code or not year_data:
-            continue
-        obs_list = []
-        for yr, val in year_data.items():
-            try:
-                obs_list.append((str(yr), float(val)))
-            except (TypeError, ValueError):
-                pass
-        obs_list.sort(key=lambda x: x[0])
-        results[our_code] = obs_list
-
-    print(f"    → {len(results)} countries parsed from IMF")
-    return results
-
-
-# ---------------------------------------------------------------------------
-# FRED INTERNATIONAL DATA FETCHERS
-# ---------------------------------------------------------------------------
-
-def _parse_fred_monthly(data: dict, country_code: str) -> dict:
-    """
-    Parse FRED JSON response (asc order) into {country_code: [(period_str, val), ...]}
-    where period_str is "YYYY-MM" (consistent with OECD monthly format).
-    Returns {} on failure or empty data.
-    """
-    if not data or "observations" not in data:
-        return {}
-    obs = [o for o in data["observations"] if o.get("value") not in (".", "", None)]
-    if not obs:
-        return {}
-    pairs = []
-    for o in obs:
-        try:
-            period = o["date"][:7]   # "YYYY-MM-DD" → "YYYY-MM"
-            pairs.append((period, float(o["value"])))
-        except (ValueError, TypeError, KeyError):
-            continue
-    return {country_code: pairs} if pairs else {}
-
 
 def fetch_fred_intl_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 3 monthly observations for a FRED international indicator.
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    if not FRED_API_KEY:
-        return {}
+    """Last 3 monthly observations → {country_code: [(YYYY-MM, val), ...]}."""
     label = f"FRED/{indic['col']}"
     print(f"  Fetching {label} ({indic['fred_id']})...")
-    data = _fetch_with_backoff(
-        FRED_BASE_URL,
-        params={
-            "series_id":   indic["fred_id"],
-            "api_key":     FRED_API_KEY,
-            "file_type":   "json",
-            "sort_order":  "desc",
-            "limit":       3,
-        },
-        label=label,
+    data = fred_src.fetch_observations(
+        indic["fred_id"], FRED_API_KEY,
+        limit=3, sort_order="desc", label=label,
     )
     if data is None:
         return {}
-    # _fetch_with_backoff returns dict (JSON); observations in desc order — reverse for asc
-    obs_asc = list(reversed(data.get("observations", [])))
-    data_asc = {"observations": obs_asc}
-    result = _parse_fred_monthly(data_asc, indic["country"])
+    # Snapshot wants ascending order to match the history shape.
+    data = {"observations": list(reversed(data.get("observations", [])))}
+    result = fred_src.parse_monthly_by_country(data, indic["country"])
     if result:
         vals = result[indic["country"]]
         print(f"    → {len(vals)} obs; latest: {vals[-1] if vals else 'none'}")
@@ -660,29 +220,16 @@ def fetch_fred_intl_snapshot(indic: dict) -> dict:
 
 
 def fetch_fred_intl_history(indic: dict, start: str) -> dict:
-    """
-    Fetch full history for a FRED international indicator from start date.
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    if not FRED_API_KEY:
-        return {}
+    """Full history from `start` → {country_code: [(YYYY-MM, val), ...]}."""
     label = f"FRED/{indic['col']}/hist"
     print(f"  Fetching {label} ({indic['fred_id']})...")
-    data = _fetch_with_backoff(
-        FRED_BASE_URL,
-        params={
-            "series_id":          indic["fred_id"],
-            "api_key":            FRED_API_KEY,
-            "file_type":          "json",
-            "sort_order":         "asc",
-            "observation_start":  start,
-            "limit":              100000,
-        },
-        label=label,
+    data = fred_src.fetch_observations(
+        indic["fred_id"], FRED_API_KEY,
+        start=start, limit=100_000, sort_order="asc", label=label,
     )
     if data is None:
         return {}
-    result = _parse_fred_monthly(data, indic["country"])
+    result = fred_src.parse_monthly_by_country(data, indic["country"])
     if result:
         vals = result[indic["country"]]
         print(f"    → {len(vals)} obs "
@@ -693,49 +240,21 @@ def fetch_fred_intl_history(indic: dict, start: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# OECD DATA FETCHERS
+# OECD DATA FETCHERS (thin wrappers over sources.oecd)
 # ---------------------------------------------------------------------------
 
 def fetch_oecd_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 3 observations for one OECD indicator (format=csv).
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
-    label = f"OECD/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    text  = _fetch_with_backoff(
-        url,
-        params={"format": "csv", "lastNObservations": 3},
-        label=label,
-        accept_csv=True,
+    """Last 3 observations per country for one OECD indicator."""
+    return oecd_src.fetch_snapshot(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if text is None:
-        print(f"    → No response for {label}")
-        return {}
-    return _parse_oecd_csv(text, label=label)
 
 
 def fetch_oecd_history(indic: dict) -> dict:
-    """
-    Fetch full history (from HIST_START) for one OECD indicator (format=csv).
-    Returns {country_code: [(period, val), ...]} or {} on failure.
-    """
-    url   = f"{OECD_BASE}/{indic['dataflow']}/{indic['key']}"
-    label = f"OECD/{indic['col']}/hist"
-    print(f"  Fetching {label}...")
-
-    text  = _fetch_with_backoff(
-        url,
-        params={"format": "csv", "startPeriod": HIST_START[:7]},  # "2000-01"
-        label=label,
-        accept_csv=True,
+    """Full history from HIST_START for one OECD indicator."""
+    return oecd_src.fetch_history(
+        indic, HIST_START, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if text is None:
-        print(f"    → No response for {label}")
-        return {}
-    return _parse_oecd_csv(text, label=label)
 
 
 # ---------------------------------------------------------------------------
@@ -743,41 +262,15 @@ def fetch_oecd_history(indic: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def fetch_wb_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 5 annual observations from World Bank for one indicator.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
-    label = f"WB/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(
-        url,
-        params={"format": "json", "mrv": 5, "per_page": 200},
-        label=label,
+    return worldbank_src.fetch_snapshot(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if data is None:
-        return {}
-    return _parse_worldbank(data, label=label)
 
 
 def fetch_wb_history(indic: dict) -> dict:
-    """
-    Fetch full history from 2000 from World Bank for one indicator.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
-    label = f"WB/{indic['col']}/hist"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(
-        url,
-        params={"format": "json", "date": "2000:2025", "per_page": 1000},
-        label=label,
+    return worldbank_src.fetch_history(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if data is None:
-        return {}
-    return _parse_worldbank(data, label=label)
 
 
 # ---------------------------------------------------------------------------
@@ -785,19 +278,9 @@ def fetch_wb_history(indic: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def fetch_imf_indicator(indic: dict) -> dict:
-    """
-    Fetch full history for one IMF DataMapper indicator (all years, all countries).
-    One API call returns everything — snapshot and history come from the same response.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{IMF_BASE}/{indic['series']}"
-    label = f"IMF/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(url, label=label)
-    if data is None:
-        return {}
-    return _parse_imf_datamapper(data, indic["series"], label=label)
+    return imf_src.fetch_indicator(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -907,20 +390,6 @@ def build_snapshot(
 # BUILD HISTORY DATAFRAME
 # ---------------------------------------------------------------------------
 
-def _last_friday_on_or_before(d: date) -> date:
-    """Return the most recent Friday on or before date d."""
-    offset = (d.weekday() - 4) % 7   # days since last Friday (0 if d IS Friday)
-    return d - timedelta(days=offset)
-
-
-def _build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
-    """DatetimeIndex of every Friday from start to end (inclusive)."""
-    first_friday = _last_friday_on_or_before(
-        datetime.strptime(start, "%Y-%m-%d").date()
-    )
-    return pd.date_range(start=first_friday, end=end, freq="W-FRI")
-
-
 def _monthly_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
     """
     Convert OECD monthly series {country: [("YYYY-MM", val), ...]} to a DataFrame.
@@ -987,7 +456,7 @@ def build_history(
     Monthly OECD data and annual WB/IMF data are forward-filled onto the spine.
     """
     today = date.today()
-    spine = _build_friday_spine(HIST_START, today)
+    spine = build_friday_spine(HIST_START, today)
     hist  = pd.DataFrame(index=spine)
     hist.index.name = "Date"
 
@@ -1168,68 +637,15 @@ def save_hist_csv(df: pd.DataFrame) -> None:
 # GOOGLE SHEETS
 # ---------------------------------------------------------------------------
 
-def _get_sheets_service():
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-    creds = Credentials.from_service_account_info(
-        creds_dict,
-        scopes=["https://www.googleapis.com/auth/spreadsheets"]
-    )
-    return build("sheets", "v4", credentials=creds)
-
-
-def _ensure_tab(sheets, tab_name: str) -> None:
-    meta     = sheets.get(spreadsheetId=SHEET_ID).execute()
-    existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
-    if tab_name not in existing:
-        body = {"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-        sheets.batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
-        print(f"[Phase C] Created tab '{tab_name}'")
-    else:
-        print(f"[Phase C] Tab '{tab_name}' exists — will overwrite")
-
-
-def _write_tab(sheets, tab_name: str, values: list) -> None:
-    if tab_name in SHEETS_PROTECTED_TABS:
-        print(f"[Phase C] REFUSED: '{tab_name}' is a protected tab")
-        return
-    sheets.values().clear(
-        spreadsheetId=SHEET_ID, range=f"{tab_name}!A:ZZ"
-    ).execute()
-    sheets.values().update(
-        spreadsheetId=SHEET_ID,
-        range=f"{tab_name}!A1",
-        valueInputOption="USER_ENTERED",
-        body={"values": values}
-    ).execute()
-    print(f"[Phase C] Written {len(values)} rows to '{tab_name}' tab")
-
-
 def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase C] GOOGLE_CREDENTIALS not set — skipping snapshot Sheets push")
-        return
-    if df.empty:
-        return
     try:
-        service   = _get_sheets_service()
-        sheets    = service.spreadsheets()
-        _ensure_tab(sheets, SNAPSHOT_TAB)
-        header    = list(df.columns)
-
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float)):
-                return float(v)
-            return str(v)
-
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-        _write_tab(sheets, SNAPSHOT_TAB, [header] + data_rows)
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            SNAPSHOT_TAB,
+            df,
+            label="Phase C",
+        )
     except json.JSONDecodeError as e:
         print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:
@@ -1237,40 +653,27 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
 
 
 def push_hist_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase C] GOOGLE_CREDENTIALS not set — skipping hist Sheets push")
-        return
     if df.empty:
         return
     try:
-        service  = _get_sheets_service()
-        sheets   = service.spreadsheets()
-        _ensure_tab(sheets, HIST_TAB)
-
         columns   = list(df.columns)
         meta_rows = _build_hist_metadata(columns)
+        # One leading empty cell aligns metadata rows with the row_id column.
         meta_rows = [[""] + row for row in meta_rows]
-        header    = ["row_id", "Date"] + columns
 
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float, np.integer, np.floating)):
-                return float(v)
-            return str(v)
+        df_out = df.reset_index()
+        df_out.rename(columns={df_out.columns[0]: "Date"}, inplace=True)
+        df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
+        df_out.insert(0, "row_id", range(1, len(df_out) + 1))
 
-        data_rows = [
-            [i + 1, idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row.values]
-            for i, (idx, row) in enumerate(df.iterrows())
-        ]
-
-        _write_tab(sheets, HIST_TAB, meta_rows + [header] + data_rows)
-
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            HIST_TAB,
+            df_out,
+            label="Phase C",
+            prefix_rows=meta_rows,
+        )
     except json.JSONDecodeError as e:
         print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:

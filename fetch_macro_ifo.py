@@ -47,19 +47,17 @@ Called from fetch_data.py:
         print(f"[Phase D ifo] Non-fatal error: {e}")
 """
 
-import io
-import json
 import os
-import re
 from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
-import requests
 
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
-
-from library_utils import SHEETS_PROTECTED_TABS
+from sources.base import (
+    build_friday_spine,
+    get_sheets_service,
+    push_df_to_sheets,
+)
+from sources import ifo as ifo_src
 
 
 # ---------------------------------------------------------------------------
@@ -76,105 +74,21 @@ HIST_CSV     = "data/macro_ifo_hist.csv"
 
 HIST_START = "2000-01-01"
 
-IFO_BASE = "https://www.ifo.de"
-IFO_LANDING = f"{IFO_BASE}/en/ifo-time-series"
-
-USER_AGENT = (
-    "Mozilla/5.0 (compatible; market_dash_auto/1.0; "
-    "+https://github.com/Kasim81/market_dash_auto)"
-)
-
-# ifo English workbook column layout (row 9 is the data header, rows 1-8 are
-# metadata). Column A = yearmonth string 'MM/YYYY'. Columns B–I as below.
+# ifo English workbook column layout.  The 4-tuple is
+# (output_column, excel_column, display_name, units).  Audit item H1 will
+# migrate this to data/macro_library_ifo.csv in Stage 2; sources/ifo.py's
+# parse_workbook already takes a columns spec so the migration will not
+# touch the source module.
 COLUMNS = [
-    ("DE_IFO",      "climate_index",     "ifo Business Climate (Germany, 2015=100, SA)",           "Index (2015 = 100)"),
-    ("DE_IFO_SIT",  "situation_index",   "ifo Business Situation sub-index",                       "Index (2015 = 100)"),
-    ("DE_IFO_EXP",  "expectation_index", "ifo Business Expectations sub-index",                    "Index (2015 = 100)"),
+    ("DE_IFO",      "climate_index",     "ifo Business Climate (Germany, 2015=100, SA)", "Index (2015 = 100)"),
+    ("DE_IFO_SIT",  "situation_index",   "ifo Business Situation sub-index",             "Index (2015 = 100)"),
+    ("DE_IFO_EXP",  "expectation_index", "ifo Business Expectations sub-index",          "Index (2015 = 100)"),
 ]
-EXCEL_COL_NAMES = [
-    "yearmonth",
-    "climate_index",
-    "situation_index",
-    "expectation_index",
-    "climate_balance",
-    "situation_balance",
-    "expectation_balance",
-    "uncertainty",
-    "economic_expansion",
-]
-
-
-# ---------------------------------------------------------------------------
-# DOWNLOAD — scrape landing page for current workbook URL
-# ---------------------------------------------------------------------------
-
-_HREF_RE = re.compile(r'href=[\'"]([^\'"]*gsk-[ed]-\d{6}\.xlsx)[\'"]', re.IGNORECASE)
-
-
-def _resolve_workbook_url() -> str:
-    """Scrape the ifo landing page for the current gsk-*.xlsx URL.
-    The file is renamed monthly so hardcoding is fragile. English (gsk-e)
-    is preferred; falls back to German (gsk-d) if only that exists."""
-    resp = requests.get(IFO_LANDING, headers={"User-Agent": USER_AGENT}, timeout=30)
-    resp.raise_for_status()
-    matches = _HREF_RE.findall(resp.text)
-    if not matches:
-        raise RuntimeError(
-            f"No gsk-*.xlsx link found on {IFO_LANDING}; ifo page layout may have changed"
-        )
-    # Prefer the English filename; otherwise take the first match.
-    href = next((m for m in matches if "gsk-e-" in m.lower()), matches[0])
-    return href if href.startswith("http") else IFO_BASE + href
-
-
-def _download_workbook(url: str) -> bytes:
-    resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=60)
-    resp.raise_for_status()
-    return resp.content
-
-
-def _parse_workbook(xlsx_bytes: bytes) -> pd.DataFrame:
-    """Parse the ifo English workbook. Returns DataFrame indexed by
-    month-end datetime with DE_IFO, DE_IFO_SIT, DE_IFO_EXP columns."""
-    df = pd.read_excel(
-        io.BytesIO(xlsx_bytes),
-        sheet_name=0,
-        skiprows=8,
-        header=None,
-        names=EXCEL_COL_NAMES,
-    )
-    # Parse MM/YYYY → month-end date. Drop rows where yearmonth is blank.
-    df = df[df["yearmonth"].notna()].copy()
-    df["date"] = pd.to_datetime(df["yearmonth"].astype(str), format="%m/%Y", errors="coerce")
-    df = df[df["date"].notna()].set_index("date").sort_index()
-    # Shift first-of-month → last-of-month for consistency with period-end
-    # convention used elsewhere in the project.
-    df.index = df.index + pd.offsets.MonthEnd(0)
-
-    out = pd.DataFrame(index=df.index)
-    for out_col, xl_col, _, _ in COLUMNS:
-        out[out_col] = pd.to_numeric(df[xl_col], errors="coerce")
-    # Drop rows where ALL three values are NaN (end-of-series padding).
-    out = out.dropna(how="all")
-    return out
 
 
 # ---------------------------------------------------------------------------
 # OUTPUT BUILDERS
 # ---------------------------------------------------------------------------
-
-def _last_friday_on_or_before(d: date) -> date:
-    weekday = d.weekday()
-    days_since_friday = (weekday - 4) % 7
-    return d - timedelta(days=days_since_friday)
-
-
-def _build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
-    first_friday = _last_friday_on_or_before(
-        datetime.strptime(start, "%Y-%m-%d").date()
-    )
-    return pd.date_range(start=first_friday, end=end, freq="W-FRI")
-
 
 def build_snapshot(monthly_df: pd.DataFrame, source_url: str) -> pd.DataFrame:
     """One row per output column. Matches the column headings used by
@@ -216,7 +130,7 @@ def build_history(monthly_df: pd.DataFrame) -> pd.DataFrame:
     """Forward-fill monthly observations onto a weekly Friday spine from
     HIST_START. Mirrors the structure produced by fetch_macro_dbnomics."""
     today = date.today()
-    spine = _build_friday_spine(HIST_START, today)
+    spine = build_friday_spine(HIST_START, today)
     hist = pd.DataFrame(index=spine)
     hist.index.name = "Date"
     for col, _, _, _ in COLUMNS:
@@ -286,56 +200,22 @@ def write_hist_csv(hist: pd.DataFrame, source_url: str) -> None:
 # SHEETS PUSH (only if credentials present)
 # ---------------------------------------------------------------------------
 
-def _sheets_service():
-    if not GOOGLE_CREDENTIALS_JSON:
-        return None
-    creds = Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS_JSON),
-        scopes=["https://www.googleapis.com/auth/spreadsheets"],
-    )
-    return build("sheets", "v4", credentials=creds, cache_discovery=False)
-
-
 def push_to_sheets(snapshot: pd.DataFrame, hist: pd.DataFrame, source_url: str) -> None:
-    svc = _sheets_service()
-    if svc is None:
+    service = get_sheets_service(GOOGLE_CREDENTIALS_JSON)
+    if service is None:
         print("[ifo] Skipping Sheets push (no GOOGLE_CREDENTIALS)")
         return
-    for tab in (SNAPSHOT_TAB, HIST_TAB):
-        if tab not in SHEETS_PROTECTED_TABS:
-            raise RuntimeError(
-                f"[ifo] Tab '{tab}' missing from SHEETS_PROTECTED_TABS — "
-                f"refusing to push. Update library_utils.py first."
-            )
-    # Snapshot
-    snap_values = [list(snapshot.columns)] + snapshot.fillna("").astype(object).values.tolist()
-    svc.spreadsheets().values().clear(spreadsheetId=SHEET_ID, range=f"{SNAPSHOT_TAB}!A1:ZZ").execute()
-    svc.spreadsheets().values().update(
-        spreadsheetId=SHEET_ID,
-        range=f"{SNAPSHOT_TAB}!A1",
-        valueInputOption="RAW",
-        body={"values": snap_values},
-    ).execute()
-    print(f"[ifo] Pushed snapshot → tab {SNAPSHOT_TAB}")
 
-    # History (with metadata prefix)
+    push_df_to_sheets(service, SHEET_ID, SNAPSHOT_TAB, snapshot, label="ifo")
+
     meta_rows = _build_hist_metadata(list(hist.columns), source_url)
-    data_header = ["Date"] + list(hist.columns)
-    hist_rows = [
-        [d.strftime("%Y-%m-%d")] + [
-            ("" if pd.isna(v) else float(v)) for v in row
-        ]
-        for d, row in zip(hist.index, hist.itertuples(index=False, name=None))
-    ]
-    hist_values = meta_rows + [data_header] + hist_rows
-    svc.spreadsheets().values().clear(spreadsheetId=SHEET_ID, range=f"{HIST_TAB}!A1:ZZ").execute()
-    svc.spreadsheets().values().update(
-        spreadsheetId=SHEET_ID,
-        range=f"{HIST_TAB}!A1",
-        valueInputOption="RAW",
-        body={"values": hist_values},
-    ).execute()
-    print(f"[ifo] Pushed history → tab {HIST_TAB}")
+    hist_out = hist.reset_index()
+    hist_out.rename(columns={hist_out.columns[0]: "Date"}, inplace=True)
+    hist_out["Date"] = hist_out["Date"].dt.strftime("%Y-%m-%d")
+    push_df_to_sheets(
+        service, SHEET_ID, HIST_TAB, hist_out,
+        label="ifo", prefix_rows=meta_rows,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -346,10 +226,10 @@ def run_phase_d_ifo() -> None:
     print("\n" + "=" * 60)
     print("Phase D — ifo Business Climate (Germany)")
     print("=" * 60)
-    url = _resolve_workbook_url()
+    url = ifo_src.resolve_workbook_url()
     print(f"[ifo] Resolved workbook: {url}")
-    xlsx_bytes = _download_workbook(url)
-    monthly_df = _parse_workbook(xlsx_bytes)
+    xlsx_bytes = ifo_src.download_workbook(url)
+    monthly_df = ifo_src.parse_workbook(xlsx_bytes, COLUMNS)
     print(f"[ifo] Parsed {len(monthly_df)} monthly observations "
           f"({monthly_df.index.min().date()} → {monthly_df.index.max().date()})")
     snapshot = build_snapshot(monthly_df, url)

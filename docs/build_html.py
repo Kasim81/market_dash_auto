@@ -256,9 +256,16 @@ def build_macro_survey() -> dict:
         df = pd.read_csv(path, skiprows=8, low_memory=False)
         if "row_id" in df.columns:
             df = df.drop(columns=["row_id"])
-        meta_labels = meta_raw.iloc[:, 1].tolist()
-        for ci in range(len(df.columns) - 1):
-            raw_vals = meta_raw.iloc[:, ci + 2].tolist()
+        # Some survey CSVs carry a leading row_id/blank column; others don't.
+        # Derive the metadata-prefix width from the raw column count so the
+        # data-column indices line up in both layouts.
+        n_data = len(df.columns) - 1
+        meta_offset = meta_raw.shape[1] - n_data
+        if meta_offset < 1:
+            continue
+        meta_labels = meta_raw.iloc[:, meta_offset - 1].tolist()
+        for ci in range(n_data):
+            raw_vals = meta_raw.iloc[:, ci + meta_offset].tolist()
             m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
             col_id = m.get(label_key, df.columns[ci + 1])
             all_meta[col_id] = m
