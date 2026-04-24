@@ -931,6 +931,23 @@ except Exception as _phase_d_ifo_err:
     print("[Phase D ifo] Existing pipeline outputs are unaffected")
 
 # ============================================================
+# UNIFIED MACRO ECONOMIC — all source data in one long-form snapshot
+# and one wide-form Friday-spine history.  Runs alongside the per-source
+# coordinators above during the Stage 2 dual-write transition; the old
+# per-source tabs will be retired in a follow-up once the unified tab
+# has proven itself.
+# Outputs: data/macro_economic.csv, data/macro_economic_hist.csv
+#          (Sheets push enabled in a later commit)
+# ============================================================
+
+try:
+    from fetch_macro_economic import run_phase_macro_economic
+    run_phase_macro_economic()
+except Exception as _me_err:
+    print(f"[macro_economic] Non-fatal error: {_me_err}")
+    print("[macro_economic] Existing pipeline outputs are unaffected")
+
+# ============================================================
 # PHASE E — MACRO-MARKET INDICATORS
 # Computes 50 composite macro-market indicators as weekly
 # time series with rolling z-scores and regime classifications.
