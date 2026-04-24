@@ -5,7 +5,7 @@ Indicator,EC Economic Sentiment Indicator (EA),EC Industry Confidence (EA),EC Se
 Region,EA19,EA19,EA19,USA,USA,EA19
 Units,Index (long-run avg = 100),Balance (% points),Balance (% points),Diffusion Index (50 = neutral),Diffusion Index (50 = neutral),Thousands of Persons (SCA)
 Frequency,Weekly (from Monthly ffill),Weekly (from Monthly ffill),Weekly (from Monthly ffill),Weekly (from Monthly ffill),Weekly (from Monthly ffill),Weekly (from Quarterly ffill)
-Last Updated,2026-04-24 11:37 UTC,2026-04-24 11:37 UTC,2026-04-24 11:37 UTC,2026-04-24 11:37 UTC,2026-04-24 11:37 UTC,2026-04-24 11:37 UTC
+Last Updated,2026-04-24 12:43 UTC,2026-04-24 12:43 UTC,2026-04-24 12:43 UTC,2026-04-24 12:43 UTC,2026-04-24 12:43 UTC,2026-04-24 12:43 UTC
 Date,EU_ESI,EU_IND_CONF,EU_SVC_CONF,ISM_MFG_PMI,ISM_SVC_PMI,EZ_EMPLOYMENT
 1999-12-31,114.8000,2.3000,32.0000,,,140709.1100
 2000-01-07,114.8000,2.3000,32.0000,,,140709.1100
