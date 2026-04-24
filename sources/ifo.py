@@ -89,8 +89,8 @@ def load_library() -> list[dict]:
     for _, row in df.iterrows():
         result.append({
             "source":       "ifo",
-            "source_id":    row["series_id"].strip(),  # Excel column name
-            "col":          row["col"].strip(),        # our canonical output column
+            "source_id":    row["series_id"].strip(),
+            "col":          row["col"].strip(),
             "name":         row["name"].strip(),
             "country":      row["country"].strip(),
             "category":     row["category"].strip(),
@@ -101,7 +101,11 @@ def load_library() -> list[dict]:
             "frequency":    row["frequency"].strip(),
             "notes":        row["notes"].strip(),
             "sort_key":     float(row["sort_key"]),
-            # Legacy alias for existing fetch_macro_ifo callers:
+            # Workbook layout (new in Stage 2 follow-up): which sheet to
+            # read from, and which 1-indexed column holds this series.
+            "sheet":        row["sheet"].strip(),
+            "excel_col":    int(row["excel_col"]),
+            # Legacy alias for any lingering caller:
             "series_id":    row["series_id"].strip(),
         })
     return result
@@ -212,33 +216,71 @@ def download_workbook(url: str) -> bytes:
 
 def parse_workbook(xlsx_bytes: bytes, indicators: list[dict]) -> pd.DataFrame:
     """
-    Parse the ifo English workbook into a DataFrame indexed by month-end
-    datetime.  Only the columns described in `indicators` are emitted.
+    Parse the ifo workbook.  Each indicator dict specifies a `sheet` name
+    and a 1-indexed `excel_col` position; the parser reads strictly by
+    position so it doesn't depend on the workbook's German/English
+    header strings.
 
-    Args:
-        xlsx_bytes: the workbook bytes.
-        indicators: list of dicts (as returned by load_library()).  Each
-            row must carry `series_id` (Excel column name) and `col`
-            (output column name).
+    Workbook layout assumptions (as of the 2026-04 release, confirmed
+    against gsk-e-202604.xlsx):
+      - Row 1-8: title + merged headers.
+      - Row 9:   blank spacer row.
+      - Row 10+: data rows.  Column A (1-indexed) is the month label
+                 " MM/YYYY" (with a leading space — this is ifo's
+                 formatting choice; we strip it before parsing).
+
+    Each sheet is read once, even if multiple indicators pull columns
+    from it.  Series that live in different sheets are outer-joined on
+    the month-end date index.
     """
-    df = pd.read_excel(
-        io.BytesIO(xlsx_bytes),
-        sheet_name=0,
-        skiprows=8,
-        header=None,
-        names=EXCEL_COL_NAMES,
-    )
-    df = df[df["yearmonth"].notna()].copy()
-    df["date"] = pd.to_datetime(
-        df["yearmonth"].astype(str), format="%m/%Y", errors="coerce"
-    )
-    df = df[df["date"].notna()].set_index("date").sort_index()
-    # Shift first-of-month → last-of-month to match the period-end convention
-    # used by the other sources.
-    df.index = df.index + pd.offsets.MonthEnd(0)
+    from collections import defaultdict
 
-    out = pd.DataFrame(index=df.index)
+    xf = pd.ExcelFile(io.BytesIO(xlsx_bytes))
+    by_sheet: dict[str, list[dict]] = defaultdict(list)
     for indic in indicators:
-        out[indic["col"]] = pd.to_numeric(df[indic["series_id"]], errors="coerce")
-    # Drop rows where every tracked series is NaN (end-of-file padding).
-    return out.dropna(how="all")
+        by_sheet[indic["sheet"]].append(indic)
+
+    frames: list[pd.DataFrame] = []
+    for sheet_name, sheet_indicators in by_sheet.items():
+        if sheet_name not in xf.sheet_names:
+            print(f"  [ifo] WARNING: sheet {sheet_name!r} not in workbook; skipping")
+            continue
+
+        # skiprows=9 drops the 8 title/header rows plus the blank spacer
+        # on row 9.  Row 10 (01/1991 for "Sectors", 01/2005 for "ifo
+        # Business Climate") becomes the first row of the DataFrame.
+        df = pd.read_excel(xf, sheet_name=sheet_name, skiprows=9, header=None)
+
+        if df.empty or df.shape[1] < 2:
+            print(f"  [ifo] WARNING: sheet {sheet_name!r} returned no usable data")
+            continue
+
+        # Column A (1-indexed) → 0-indexed first column.  Strings have a
+        # leading space (" 01/2005") so .str.strip() before parsing.
+        date_raw = df.iloc[:, 0].astype(str).str.strip()
+        dates = pd.to_datetime(date_raw, format="%m/%Y", errors="coerce")
+        valid = dates.notna()
+        df = df.loc[valid].copy()
+        df.index = dates.loc[valid] + pd.offsets.MonthEnd(0)
+
+        sheet_out = pd.DataFrame(index=df.index)
+        for indic in sheet_indicators:
+            col_idx = indic["excel_col"] - 1  # 1-indexed → 0-indexed
+            if col_idx >= df.shape[1]:
+                print(
+                    f"  [ifo] WARNING: column {indic['excel_col']} out of range "
+                    f"({df.shape[1]} cols) on sheet {sheet_name!r} for {indic['col']}"
+                )
+                sheet_out[indic["col"]] = pd.NA
+                continue
+            sheet_out[indic["col"]] = pd.to_numeric(df.iloc[:, col_idx], errors="coerce")
+        frames.append(sheet_out)
+
+    if not frames:
+        return pd.DataFrame()
+
+    merged = pd.concat(frames, axis=1).sort_index()
+    # A month might appear in more than one sheet (same Industry+Trade
+    # headline lives in both sheets); collapse to the first non-null.
+    merged = merged.groupby(level=0).first()
+    return merged.dropna(how="all")
