@@ -48,10 +48,8 @@ import json
 import requests
 import pandas as pd
 from datetime import datetime, date, timezone
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 
-from library_utils import SHEETS_PROTECTED_TABS
+from sources.base import get_sheets_service, push_df_to_sheets
 
 # ---------------------------------------------------------------------------
 # CONFIG
@@ -389,79 +387,14 @@ def push_macro_us_to_sheets(df: pd.DataFrame) -> None:
     Creates the tab if it doesn't exist.
     Does NOT touch 'market_data' or 'sentiment_data' tabs.
     """
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase A] GOOGLE_CREDENTIALS not set — skipping Sheets push")
-        return
-
-    if df.empty:
-        print("[Phase A] Empty DataFrame — skipping Sheets push")
-        return
-
-    if TAB_NAME in SHEETS_PROTECTED_TABS:
-        print(f"[Phase A] REFUSED: '{TAB_NAME}' is a protected tab")
-        return
-
     try:
-        creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-        creds = Credentials.from_service_account_info(
-            creds_dict,
-            scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            TAB_NAME,
+            df,
+            label="Phase A",
         )
-        service = build("sheets", "v4", credentials=creds)
-        sheets = service.spreadsheets()
-
-        # --- Ensure tab exists -------------------------------------------
-        meta = sheets.get(spreadsheetId=SHEET_ID).execute()
-        existing_tabs = [s["properties"]["title"] for s in meta.get("sheets", [])]
-
-        if TAB_NAME not in existing_tabs:
-            print(f"[Phase A] Creating new tab '{TAB_NAME}'...")
-            body = {
-                "requests": [{
-                    "addSheet": {
-                        "properties": {"title": TAB_NAME}
-                    }
-                }]
-            }
-            sheets.batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
-            print(f"[Phase A] Tab '{TAB_NAME}' created")
-        else:
-            print(f"[Phase A] Tab '{TAB_NAME}' already exists — will overwrite")
-
-        # --- Write data ---------------------------------------------------
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float)):
-                return float(v)
-            return str(v)
-
-        header = list(df.columns)
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-        values = [header] + data_rows
-
-        range_notation = f"{TAB_NAME}!A1"
-
-        # Clear existing content first
-        sheets.values().clear(
-            spreadsheetId=SHEET_ID,
-            range=f"{TAB_NAME}!A:ZZ"
-        ).execute()
-
-        # Write new content
-        sheets.values().update(
-            spreadsheetId=SHEET_ID,
-            range=range_notation,
-            valueInputOption="USER_ENTERED",
-            body={"values": values}
-        ).execute()
-
-        print(f"[Phase A] Written {len(df)} rows to '{TAB_NAME}' tab in Google Sheets")
 
     except json.JSONDecodeError as e:
         print(f"[Phase A] GOOGLE_CREDENTIALS JSON parse error: {e} — skipping Sheets push")

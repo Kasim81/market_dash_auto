@@ -69,14 +69,16 @@ import os
 import time
 import json
 import requests
-import numpy as np
 import pandas as pd
 from datetime import date, datetime, timedelta, timezone
 
-from library_utils import SHEETS_PROTECTED_TABS
-
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+from sources.base import (
+    build_friday_spine,
+    fetch_with_backoff,
+    get_sheets_service,
+    last_friday_on_or_before,
+    push_df_to_sheets,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -416,48 +418,15 @@ def _fetch_with_backoff(
     label: str = "",
     accept_csv: bool = False,
 ) -> dict | str | None:
-    """
-    Generic HTTP GET with exponential backoff on 429 / 5xx.
-    Returns parsed JSON dict (or raw text if accept_csv=True), or None on failure.
-    """
-    for attempt in range(BACKOFF_RETRIES):
-        try:
-            resp = requests.get(url, params=params, timeout=30)
-
-            if resp.status_code == 200:
-                return resp.text if accept_csv else resp.json()
-
-            elif resp.status_code in (429, 503):
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(
-                    f"  [{label}] Rate limited (HTTP {resp.status_code}). "
-                    f"Backing off {wait}s (attempt {attempt + 1}/{BACKOFF_RETRIES})"
-                )
-                time.sleep(wait)
-
-            elif resp.status_code >= 500:
-                wait = BACKOFF_BASE ** (attempt + 1)
-                print(
-                    f"  [{label}] Server error {resp.status_code}. "
-                    f"Backing off {wait}s (attempt {attempt + 1}/{BACKOFF_RETRIES})"
-                )
-                time.sleep(wait)
-
-            else:
-                print(f"  [{label}] HTTP {resp.status_code} — skipping")
-                return None
-
-        except requests.exceptions.Timeout:
-            wait = BACKOFF_BASE ** (attempt + 1)
-            print(f"  [{label}] Timeout. Backing off {wait}s")
-            time.sleep(wait)
-
-        except requests.exceptions.RequestException as e:
-            print(f"  [{label}] Request error: {e} — skipping")
-            return None
-
-    print(f"  [{label}] All {BACKOFF_RETRIES} attempts failed — skipping")
-    return None
+    """Local wrapper so callers don't need to pass module-level retry config."""
+    return fetch_with_backoff(
+        url,
+        params=params,
+        label=label,
+        accept_csv=accept_csv,
+        retries=BACKOFF_RETRIES,
+        backoff_base=BACKOFF_BASE,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -907,20 +876,6 @@ def build_snapshot(
 # BUILD HISTORY DATAFRAME
 # ---------------------------------------------------------------------------
 
-def _last_friday_on_or_before(d: date) -> date:
-    """Return the most recent Friday on or before date d."""
-    offset = (d.weekday() - 4) % 7   # days since last Friday (0 if d IS Friday)
-    return d - timedelta(days=offset)
-
-
-def _build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
-    """DatetimeIndex of every Friday from start to end (inclusive)."""
-    first_friday = _last_friday_on_or_before(
-        datetime.strptime(start, "%Y-%m-%d").date()
-    )
-    return pd.date_range(start=first_friday, end=end, freq="W-FRI")
-
-
 def _monthly_to_frame(series_dict: dict, col_prefix: str) -> pd.DataFrame:
     """
     Convert OECD monthly series {country: [("YYYY-MM", val), ...]} to a DataFrame.
@@ -987,7 +942,7 @@ def build_history(
     Monthly OECD data and annual WB/IMF data are forward-filled onto the spine.
     """
     today = date.today()
-    spine = _build_friday_spine(HIST_START, today)
+    spine = build_friday_spine(HIST_START, today)
     hist  = pd.DataFrame(index=spine)
     hist.index.name = "Date"
 
@@ -1168,68 +1123,15 @@ def save_hist_csv(df: pd.DataFrame) -> None:
 # GOOGLE SHEETS
 # ---------------------------------------------------------------------------
 
-def _get_sheets_service():
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-    creds = Credentials.from_service_account_info(
-        creds_dict,
-        scopes=["https://www.googleapis.com/auth/spreadsheets"]
-    )
-    return build("sheets", "v4", credentials=creds)
-
-
-def _ensure_tab(sheets, tab_name: str) -> None:
-    meta     = sheets.get(spreadsheetId=SHEET_ID).execute()
-    existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
-    if tab_name not in existing:
-        body = {"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-        sheets.batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
-        print(f"[Phase C] Created tab '{tab_name}'")
-    else:
-        print(f"[Phase C] Tab '{tab_name}' exists — will overwrite")
-
-
-def _write_tab(sheets, tab_name: str, values: list) -> None:
-    if tab_name in SHEETS_PROTECTED_TABS:
-        print(f"[Phase C] REFUSED: '{tab_name}' is a protected tab")
-        return
-    sheets.values().clear(
-        spreadsheetId=SHEET_ID, range=f"{tab_name}!A:ZZ"
-    ).execute()
-    sheets.values().update(
-        spreadsheetId=SHEET_ID,
-        range=f"{tab_name}!A1",
-        valueInputOption="USER_ENTERED",
-        body={"values": values}
-    ).execute()
-    print(f"[Phase C] Written {len(values)} rows to '{tab_name}' tab")
-
-
 def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase C] GOOGLE_CREDENTIALS not set — skipping snapshot Sheets push")
-        return
-    if df.empty:
-        return
     try:
-        service   = _get_sheets_service()
-        sheets    = service.spreadsheets()
-        _ensure_tab(sheets, SNAPSHOT_TAB)
-        header    = list(df.columns)
-
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float)):
-                return float(v)
-            return str(v)
-
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-        _write_tab(sheets, SNAPSHOT_TAB, [header] + data_rows)
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            SNAPSHOT_TAB,
+            df,
+            label="Phase C",
+        )
     except json.JSONDecodeError as e:
         print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:
@@ -1237,40 +1139,27 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
 
 
 def push_hist_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase C] GOOGLE_CREDENTIALS not set — skipping hist Sheets push")
-        return
     if df.empty:
         return
     try:
-        service  = _get_sheets_service()
-        sheets   = service.spreadsheets()
-        _ensure_tab(sheets, HIST_TAB)
-
         columns   = list(df.columns)
         meta_rows = _build_hist_metadata(columns)
+        # One leading empty cell aligns metadata rows with the row_id column.
         meta_rows = [[""] + row for row in meta_rows]
-        header    = ["row_id", "Date"] + columns
 
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float, np.integer, np.floating)):
-                return float(v)
-            return str(v)
+        df_out = df.reset_index()
+        df_out.rename(columns={df_out.columns[0]: "Date"}, inplace=True)
+        df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
+        df_out.insert(0, "row_id", range(1, len(df_out) + 1))
 
-        data_rows = [
-            [i + 1, idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row.values]
-            for i, (idx, row) in enumerate(df.iterrows())
-        ]
-
-        _write_tab(sheets, HIST_TAB, meta_rows + [header] + data_rows)
-
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            HIST_TAB,
+            df_out,
+            label="Phase C",
+            prefix_rows=meta_rows,
+        )
     except json.JSONDecodeError as e:
         print(f"[Phase C] Credentials parse error: {e}")
     except Exception as e:

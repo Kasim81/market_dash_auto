@@ -52,20 +52,19 @@ Called from fetch_data.py:
 """
 
 import csv as csv_module
-import io
 import json
 import os
 import pathlib
 import time
 import requests
-import numpy as np
 import pandas as pd
 from datetime import date, datetime, timedelta, timezone
 
-from library_utils import SHEETS_PROTECTED_TABS
-
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+from sources.base import (
+    build_friday_spine,
+    get_sheets_service,
+    push_df_to_sheets,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -272,20 +271,6 @@ def _snapshot_row(indic: dict, latest, prior, change, last_period: str) -> dict:
 # HISTORY BUILDER
 # ---------------------------------------------------------------------------
 
-def _last_friday_on_or_before(d: date) -> date:
-    """Return the most recent Friday on or before d."""
-    weekday = d.weekday()  # Mon=0 … Fri=4
-    days_since_friday = (weekday - 4) % 7
-    return d - timedelta(days=days_since_friday)
-
-
-def _build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
-    first_friday = _last_friday_on_or_before(
-        datetime.strptime(start, "%Y-%m-%d").date()
-    )
-    return pd.date_range(start=first_friday, end=end, freq="W-FRI")
-
-
 def _obs_to_series(obs: list[tuple[str, float]], col_name: str) -> pd.Series:
     """
     Convert observation pairs to a pandas Series indexed by end-of-month/quarter dates.
@@ -372,7 +357,7 @@ def build_history(hist_data: dict[str, list]) -> pd.DataFrame:
     Monthly/quarterly data is forward-filled onto the weekly spine.
     """
     today = date.today()
-    spine = _build_friday_spine(HIST_START, today)
+    spine = build_friday_spine(HIST_START, today)
     hist = pd.DataFrame(index=spine)
     hist.index.name = "Date"
 
@@ -465,103 +450,36 @@ def save_hist_csv(df: pd.DataFrame) -> None:
 # GOOGLE SHEETS
 # ---------------------------------------------------------------------------
 
-def _get_sheets_service():
-    if not GOOGLE_CREDENTIALS_JSON:
-        return None
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-    creds = Credentials.from_service_account_info(
-        creds_dict,
-        scopes=["https://www.googleapis.com/auth/spreadsheets"],
-    )
-    return build("sheets", "v4", credentials=creds)
-
-
-def _ensure_tab(service, tab_name: str) -> None:
-    meta = service.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
-    existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
-    if tab_name not in existing:
-        body = {"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-        service.spreadsheets().batchUpdate(spreadsheetId=SHEET_ID, body=body).execute()
-        print(f"[Phase D] Created tab '{tab_name}'")
-
-
-def _sv(v):
-    if v is None:
-        return ""
-    try:
-        if pd.isna(v):
-            return ""
-    except (TypeError, ValueError):
-        pass
-    if isinstance(v, (int, float)):
-        return float(v)
-    return str(v)
-
-
 def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase D] GOOGLE_CREDENTIALS not set — skipping Sheets push")
-        return
-    if df.empty:
-        return
-    if SNAPSHOT_TAB in SHEETS_PROTECTED_TABS:
-        print(f"[Phase D] REFUSED: '{SNAPSHOT_TAB}' is a protected tab")
-        return
-
     try:
-        service = _get_sheets_service()
-        _ensure_tab(service, SNAPSHOT_TAB)
-        sheets = service.spreadsheets()
-
-        header = list(df.columns)
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-        values = [header] + data_rows
-
-        sheets.values().clear(spreadsheetId=SHEET_ID, range=f"{SNAPSHOT_TAB}!A:ZZ").execute()
-        sheets.values().update(
-            spreadsheetId=SHEET_ID,
-            range=f"{SNAPSHOT_TAB}!A1",
-            valueInputOption="USER_ENTERED",
-            body={"values": values},
-        ).execute()
-        print(f"[Phase D] Written {len(df)} rows to '{SNAPSHOT_TAB}' tab")
-
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            SNAPSHOT_TAB,
+            df,
+            label="Phase D",
+        )
     except Exception as e:
         print(f"[Phase D] Sheets push error (snapshot): {e}")
 
 
 def push_hist_to_sheets(df: pd.DataFrame) -> None:
-    if not GOOGLE_CREDENTIALS_JSON:
-        print("[Phase D] GOOGLE_CREDENTIALS not set — skipping Sheets push")
-        return
     if df.empty:
         return
-    if HIST_TAB in SHEETS_PROTECTED_TABS:
-        print(f"[Phase D] REFUSED: '{HIST_TAB}' is a protected tab")
-        return
-
     try:
-        service = _get_sheets_service()
-        _ensure_tab(service, HIST_TAB)
-        sheets = service.spreadsheets()
-
         meta_rows = _build_hist_metadata(list(df.columns))
-        header = ["Date"] + list(df.columns)
-        data_rows = []
-        for idx, row in df.iterrows():
-            data_rows.append([idx.strftime("%Y-%m-%d")] + [_sv(v) for v in row])
+        df_out = df.reset_index()
+        df_out.rename(columns={df_out.columns[0]: "Date"}, inplace=True)
+        df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
 
-        values = meta_rows + [header] + data_rows
-
-        sheets.values().clear(spreadsheetId=SHEET_ID, range=f"{HIST_TAB}!A:ZZ").execute()
-        sheets.values().update(
-            spreadsheetId=SHEET_ID,
-            range=f"{HIST_TAB}!A1",
-            valueInputOption="USER_ENTERED",
-            body={"values": values},
-        ).execute()
-        print(f"[Phase D] Written {len(df)} data rows + metadata to '{HIST_TAB}' tab")
-
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            HIST_TAB,
+            df_out,
+            label="Phase D",
+            prefix_rows=meta_rows,
+        )
     except Exception as e:
         print(f"[Phase D] Sheets push error (history): {e}")
 

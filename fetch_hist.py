@@ -39,14 +39,15 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from datetime import date, datetime, timedelta, timezone
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 
 from library_utils import (
     COMP_FX_TICKERS,
     COMP_FCY_PER_USD,
-    SHEETS_PROTECTED_TABS,
     lib_sort_key as _comp_inst_sort_key,
+)
+from sources.base import (
+    get_sheets_service,
+    push_df_to_sheets as _base_push,
 )
 
 # ---------------------------------------------------------------------------
@@ -333,91 +334,16 @@ def save_csv(df: pd.DataFrame, path: str, label: str,
 
 def push_df_to_sheets(df: pd.DataFrame, tab_name: str, label: str,
                       prefix_rows: list = None) -> None:
-    """
-    Push a DataFrame to a named Google Sheets tab.
-    Creates tab if it doesn't exist; overwrites existing content.
-    Converts NaN to empty string for clean display.
-    Never touches market_data or sentiment_data tabs.
-
-    If prefix_rows is provided, those rows are prepended before the header+data
-    so metadata (Name, Region, etc.) appears at the top of the sheet.
-    """
-    if not GOOGLE_CREDENTIALS_JSON:
-        print(f"  [{label}] GOOGLE_CREDENTIALS not set — skipping Sheets push")
-        return
-    if df.empty:
-        print(f"  [{label}] Empty DataFrame — skipping Sheets push")
-        return
-
-    # Safety guard — never overwrite existing tabs
-    if tab_name in SHEETS_PROTECTED_TABS:
-        print(f"  [{label}] REFUSED: '{tab_name}' is a protected tab")
-        return
-
+    """Thin wrapper around sources.base.push_df_to_sheets with this module's creds/SHEET_ID."""
     try:
-        creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
-        creds = Credentials.from_service_account_info(
-            creds_dict,
-            scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        _base_push(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            tab_name,
+            df,
+            label=label,
+            prefix_rows=prefix_rows,
         )
-        service = build("sheets", "v4", credentials=creds)
-        sheets  = service.spreadsheets()
-
-        # Ensure tab exists
-        meta = sheets.get(spreadsheetId=SHEET_ID).execute()
-        existing_tabs = [s["properties"]["title"] for s in meta.get("sheets", [])]
-
-        if tab_name not in existing_tabs:
-            print(f"  [{label}] Creating tab '{tab_name}'...")
-            sheets.batchUpdate(
-                spreadsheetId=SHEET_ID,
-                body={"requests": [{"addSheet": {"properties": {"title": tab_name}}}]}
-            ).execute()
-
-        # Clear existing content
-        sheets.values().clear(
-            spreadsheetId=SHEET_ID,
-            range=f"{tab_name}!A:ZZZ"
-        ).execute()
-
-        # Prepare values: keep numeric types as float, dates/strings as str, NaN as ""
-        def _sv(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except (TypeError, ValueError):
-                pass
-            if isinstance(v, (int, float, np.integer, np.floating)):
-                return float(v)
-            return str(v)
-
-        header = list(df.columns)
-        data_rows = [[_sv(v) for v in row] for row in df.itertuples(index=False)]
-
-        values = (prefix_rows if prefix_rows else []) + [header] + data_rows
-
-        # Write in batches of 10,000 rows to avoid Sheets API payload limits
-        BATCH_SIZE = 10_000
-        for batch_start in range(0, len(values), BATCH_SIZE):
-            batch = values[batch_start:batch_start + BATCH_SIZE]
-            # First batch starts at A1; subsequent batches continue below
-            start_row = batch_start + 1
-            range_notation = f"{tab_name}!A{start_row}"
-            sheets.values().update(
-                spreadsheetId=SHEET_ID,
-                range=range_notation,
-                valueInputOption="USER_ENTERED",
-                body={"values": batch}
-            ).execute()
-            if len(values) > BATCH_SIZE:
-                print(f"  [{label}] Batch {batch_start//BATCH_SIZE + 1}: "
-                      f"rows {start_row}–{start_row + len(batch) - 1}")
-            time.sleep(0.5)  # brief pause between batch writes
-
-        print(f"  [{label}] Written {len(df):,} rows to '{tab_name}' tab")
-
     except json.JSONDecodeError as e:
         print(f"  [{label}] GOOGLE_CREDENTIALS JSON error: {e} — skipping")
     except Exception as e:
