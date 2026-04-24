@@ -842,55 +842,10 @@ if __name__ == "__main__":
 #
 # PASTE THIS BLOCK at the bottom of fetch_data.py:
 
-try:
-    from fetch_macro_us_fred import run_phase_a
-    run_phase_a()
-except Exception as _phase_a_err:
-    print(f"[Phase A] Non-fatal import/run error: {_phase_a_err}")
-    print("[Phase A] Existing pipeline outputs are unaffected")
-
 # ============================================================
-# HISTORICAL SERIES INTEGRATION
-# Add these lines at the very end of fetch_data.py, after the
-# existing Phase A block (or after push_to_google_sheets() if
-# Phase A hasn't been deployed yet).
-#
-# The historical build runs AFTER the existing daily snapshot
-# is already committed and pushed, so any failure here cannot
-# affect market_data.csv, sentiment_data.csv, or their tabs.
-# ============================================================
-
-try:
-    from fetch_hist import run_hist
-    run_hist()
-except Exception as _hist_err:
-    print(f"[Hist] Non-fatal import/run error: {_hist_err}")
-    print("[Hist] Existing pipeline outputs are unaffected")
-
-# ============================================================
-# PHASE C — INTERNATIONAL MACRO INDICATORS
-# Fetches OECD + IMF macro data for 11 major economies.
-# Outputs: data/macro_intl.csv, data/macro_intl_hist.csv
-#          Google Sheets tabs: macro_intl, macro_intl_hist
-# ============================================================
-
-try:
-    from fetch_macro_international import run_phase_c
-    run_phase_c()
-except Exception as _phase_c_err:
-    print(f"[Phase C] Non-fatal import/run error: {_phase_c_err}")
-    print("[Phase C] Existing pipeline outputs are unaffected")
-
-# Phase B (fetch_macro_surveys.py) has been consolidated into macro_us.
-# All survey + credit condition indicators now live in fetch_macro_us_fred.py
-# and are written to the macro_us / macro_us_hist tabs.
-
-# ============================================================
-# COMPREHENSIVE HISTORICAL SERIES
+# COMPREHENSIVE HISTORICAL SERIES (market_data_comp_hist)
 # Builds market_data_comp_hist tab + CSV using all instruments
 # from index_library.csv.  Start date: 1950-01-01.
-# Runs after run_hist() so any failure cannot affect earlier
-# pipeline outputs.
 # ============================================================
 
 try:
@@ -901,43 +856,12 @@ except Exception as _comp_hist_err:
     print("[CompHist] Existing pipeline outputs are unaffected")
 
 # ============================================================
-# PHASE D (TIER 2) — BUSINESS SURVEY DATA (DB.NOMICS)
-# Fetches ISM, ECB BLS, Eurostat ESI, BOJ Tankan from DB.nomics.
-# Outputs: data/macro_dbnomics.csv, data/macro_dbnomics_hist.csv
-#          Google Sheets tabs: macro_dbnomics, macro_dbnomics_hist
-# Runs before Phase E so indicators can consume the history.
-# ============================================================
-
-try:
-    from fetch_macro_dbnomics import run_phase_d
-    run_phase_d()
-except Exception as _phase_d_err:
-    print(f"[Phase D] Non-fatal import/run error: {_phase_d_err}")
-    print("[Phase D] Existing pipeline outputs are unaffected")
-
-# ============================================================
-# PHASE D (ifo) — GERMAN BUSINESS CLIMATE
-# Downloads monthly ifo Excel and extracts DE_IFO / DE_IFO_SIT / DE_IFO_EXP.
-# Outputs: data/macro_ifo.csv, data/macro_ifo_hist.csv
-#          Google Sheets tabs: macro_ifo, macro_ifo_hist
-# Compute layer merges macro_ifo_hist into the same `dbn` survey DataFrame.
-# ============================================================
-
-try:
-    from fetch_macro_ifo import run_phase_d_ifo
-    run_phase_d_ifo()
-except Exception as _phase_d_ifo_err:
-    print(f"[Phase D ifo] Non-fatal error: {_phase_d_ifo_err}")
-    print("[Phase D ifo] Existing pipeline outputs are unaffected")
-
-# ============================================================
-# UNIFIED MACRO ECONOMIC — all source data in one long-form snapshot
-# and one wide-form Friday-spine history.  Runs alongside the per-source
-# coordinators above during the Stage 2 dual-write transition; the old
-# per-source tabs will be retired in a follow-up once the unified tab
-# has proven itself.
-# Outputs: data/macro_economic.csv, data/macro_economic_hist.csv
-#          (Sheets push enabled in a later commit)
+# UNIFIED MACRO ECONOMIC — one long-form snapshot
+# (data/macro_economic.csv) and one wide-form Friday-spine history
+# (data/macro_economic_hist.csv) consolidating every raw economic
+# series (FRED + OECD + World Bank + IMF + DB.nomics + ifo) via
+# fetch_macro_economic.py.  Replaces the per-source Phase A / C / D /
+# D-ifo blocks that were retired in Stage 2 commit 13.
 # ============================================================
 
 try:

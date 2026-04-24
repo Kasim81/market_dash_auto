@@ -81,10 +81,6 @@ HIST_CSV     = "data/macro_market_hist.csv"
 
 # Input CSV paths (produced by earlier phases)
 COMP_HIST_CSV       = "data/market_data_comp_hist.csv"
-MACRO_US_HIST_CSV   = "data/macro_us_hist.csv"
-MACRO_INTL_HIST_CSV = "data/macro_intl_hist.csv"
-MACRO_DBN_HIST_CSV  = "data/macro_dbnomics_hist.csv"
-MACRO_IFO_HIST_CSV  = "data/macro_ifo_hist.csv"
 MACRO_ECONOMIC_HIST_CSV = "data/macro_economic_hist.csv"
 # FRED API settings — mirrors fetch_macro_us_fred.py
 FRED_BASE_URL      = "https://api.stlouisfed.org/fred/series/observations"
@@ -843,113 +839,19 @@ def load_macro_economic_hist() -> pd.DataFrame:
     return df
 
 
-def load_macro_us_hist() -> pd.DataFrame:
-    """
-    Load macro_us_hist.csv into a wide DataFrame of weekly FRED series.
-
-    File structure (written by fetch_hist.py run_hist):
-      Rows 0–7  : 8 metadata rows (Series ID, Source, Name, Category, etc.)
-      Row  8    : flat column header — 'row_id', 'Date', 'T10Y2Y', ...
-      Row  9+   : weekly data (monthly/quarterly series forward-filled)
-
-    Returns DataFrame with DatetimeIndex (weekly Fridays) and FRED ID columns.
-    """
-    if not os.path.exists(MACRO_US_HIST_CSV):
-        raise FileNotFoundError(
-            f"Missing {MACRO_US_HIST_CSV} — run fetch_hist.py (run_hist) first."
-        )
-    df = pd.read_csv(MACRO_US_HIST_CSV, skiprows=8, index_col="Date", low_memory=False)
-    df.index = pd.to_datetime(df.index, errors="coerce")
-    df = df[df.index.notna()].sort_index()
-    if "row_id" in df.columns:
-        df = df.drop(columns=["row_id"])
-    df = df.apply(pd.to_numeric, errors="coerce")
-    df = df[df.index >= HIST_START]
-    print(f"  [load] macro_us_hist: {df.shape[0]} rows × {df.shape[1]} cols "
-          f"({df.index[0].date()} → {df.index[-1].date()})")
-    return df
-
-
-def load_macro_intl_hist() -> pd.DataFrame:
-    """
-    Load macro_intl_hist.csv into a wide DataFrame of weekly international series.
-
-    File structure (written by fetch_macro_international.py):
-      Rows 0–7  : 8 metadata rows (Column ID, Source Code, Source, Indicator, etc.)
-      Row  8    : flat column header — 'row_id', 'Date', 'FRA_CLI', ...
-      Row  9+   : weekly data (monthly data forward-filled)
-
-    CLI columns available: AUS, CAN, CHN, DEU, FRA, GBR, ITA, JPN, USA.
-    Note: EA19_CLI is NOT present in the current OECD pull; DEU+FRA avg is
-    used as a Eurozone proxy where EA19 is specified in the indicator formula.
-
-    Returns DataFrame with DatetimeIndex (weekly Fridays) and column ID columns.
-    """
-    if not os.path.exists(MACRO_INTL_HIST_CSV):
-        raise FileNotFoundError(
-            f"Missing {MACRO_INTL_HIST_CSV} — run fetch_macro_international.py first."
-        )
-    df = pd.read_csv(MACRO_INTL_HIST_CSV, skiprows=8, index_col="Date", low_memory=False)
-    df.index = pd.to_datetime(df.index, errors="coerce")
-    df = df[df.index.notna()].sort_index()
-    if "row_id" in df.columns:
-        df = df.drop(columns=["row_id"])
-    df = df.apply(pd.to_numeric, errors="coerce")
-    df = df[df.index >= HIST_START]
-    print(f"  [load] macro_intl_hist: {df.shape[0]} rows × {df.shape[1]} cols "
-          f"({df.index[0].date()} → {df.index[-1].date()})")
-    return df
-
-
-def _load_survey_hist_csv(path: str, label: str) -> pd.DataFrame:
-    """Load one survey-source history CSV (8-row metadata prefix, then Date +
-    numeric columns). Returns empty DataFrame if the file is absent."""
-    if not os.path.exists(path):
-        print(f"  [load] {path} not found — {label} indicators will be empty")
-        return pd.DataFrame()
-    df = pd.read_csv(path, skiprows=8, index_col="Date", low_memory=False)
-    df.index = pd.to_datetime(df.index, errors="coerce")
-    df = df[df.index.notna()].sort_index()
-    if "row_id" in df.columns:
-        df = df.drop(columns=["row_id"])
-    df = df.apply(pd.to_numeric, errors="coerce")
-    df = df[df.index >= HIST_START]
-    print(f"  [load] {label}: {df.shape[0]} rows × {df.shape[1]} cols")
-    return df
-
-
-def load_macro_dbnomics_hist() -> pd.DataFrame:
-    """
-    Load and merge all Phase D survey-source histories into a single DataFrame:
-      · macro_dbnomics_hist.csv (DB.nomics API — ISM, Eurostat)
-      · macro_ifo_hist.csv      (ifo Institute Excel — German business climate)
-
-    Future survey sources (e.g. BoJ Tankan) should append additional load calls
-    below and merge via outer-join. Column names must be unique across sources
-    (enforced by this function).
-    """
-    dbn = _load_survey_hist_csv(MACRO_DBN_HIST_CSV, "macro_dbnomics_hist")
-    ifo = _load_survey_hist_csv(MACRO_IFO_HIST_CSV, "macro_ifo_hist")
-
-    frames = [f for f in (dbn, ifo) if not f.empty]
-    if not frames:
-        return pd.DataFrame()
-    merged = pd.concat(frames, axis=1, join="outer").sort_index()
-    dupes = merged.columns[merged.columns.duplicated()].tolist()
-    if dupes:
-        raise RuntimeError(f"Duplicate survey-source columns: {dupes}")
-    return merged
-
-
 # ===========================================================================
 # INDICATOR CALCULATORS — US & NEIGHBOURS  (27 indicators)
 #
 # Each function signature: _calc_XXX(cp, mu, mi, supp, dbn) → pd.Series
-#   cp   = load_comp_hist()            wide DataFrame of market prices
-#   mu   = load_macro_us_hist()        wide DataFrame of US FRED series
-#   mi   = load_macro_intl_hist()      wide DataFrame of international CLI series
-#   dbn  = load_macro_dbnomics_hist()  wide DataFrame of DB.nomics survey series
-#   supp = fetch_supplemental_fred() dict of extra FRED Series
+#   cp   = load_comp_hist()               wide DataFrame of market prices
+#   mu   = mi = dbn = load_macro_economic_hist()
+#                                         single wide DataFrame of every raw
+#                                         economic series keyed by canonical
+#                                         column name (FRED / OECD / WB / IMF
+#                                         / DB.nomics / ifo).  The three
+#                                         aliases mu/mi/dbn are kept so the
+#                                         calculator signatures don't change.
+#   supp = fetch_supplemental_fred()      dict of extra FRED Series
 # Only the args actually needed are used; **_ absorbs the rest.
 # ===========================================================================
 

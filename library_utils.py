@@ -290,14 +290,6 @@ SHEETS_ACTIVE_TABS = frozenset({
     "market_data",           # fetch_data.py (simple pipeline)
     "market_data_comp",      # fetch_data.py (comp pipeline snapshot)
     "market_data_comp_hist", # fetch_hist.py (weekly comp history)
-    "macro_us",              # fetch_macro_us_fred.py
-    "macro_us_hist",         # fetch_hist.py (weekly FRED history)
-    "macro_intl",            # fetch_macro_international.py
-    "macro_intl_hist",       # fetch_macro_international.py
-    "macro_dbnomics",        # fetch_macro_dbnomics.py
-    "macro_dbnomics_hist",   # fetch_macro_dbnomics.py
-    "macro_ifo",             # fetch_macro_ifo.py
-    "macro_ifo_hist",        # fetch_macro_ifo.py
     "macro_market",          # compute_macro_market.py
     "macro_market_hist",     # compute_macro_market.py
     "macro_economic",        # fetch_macro_economic.py (unified snapshot)
@@ -313,4 +305,14 @@ SHEETS_LEGACY_TABS_TO_DELETE = frozenset({
     "macro_surveys",       # consolidated into macro_us
     "macro_surveys_hist",  # consolidated into macro_us_hist
     "market_data_hist",    # replaced by market_data_comp_hist
+    # Stage 2 retirement (S2.C13) — replaced by macro_economic /
+    # macro_economic_hist:
+    "macro_us",
+    "macro_us_hist",
+    "macro_intl",
+    "macro_intl_hist",
+    "macro_dbnomics",
+    "macro_dbnomics_hist",
+    "macro_ifo",
+    "macro_ifo_hist",
 })

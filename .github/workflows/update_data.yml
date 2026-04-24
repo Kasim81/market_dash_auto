@@ -15,9 +15,9 @@ jobs:
     timeout-minutes: 120
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
     - name: Install dependencies
@@ -41,20 +41,21 @@ jobs:
         git config --global user.name 'GitHub Actions Bot'
         git config --global user.email 'actions@github.com'
         git add -f data/market_data.csv
-        [ -f data/macro_us.csv ] && git add -f data/macro_us.csv || true
-        [ -f data/macro_us_hist.csv ] && git add -f data/macro_us_hist.csv || true
-        [ -f data/macro_intl.csv ] && git add -f data/macro_intl.csv || true
-        [ -f data/macro_intl_hist.csv ] && git add -f data/macro_intl_hist.csv || true
         [ -f data/market_data_comp.csv ] && git add -f data/market_data_comp.csv || true
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true
         [ -f data/macro_market.csv ] && git add -f data/macro_market.csv || true
         [ -f data/macro_market_hist.csv ] && git add -f data/macro_market_hist.csv || true
-        [ -f data/macro_dbnomics.csv ] && git add -f data/macro_dbnomics.csv || true
-        [ -f data/macro_dbnomics_hist.csv ] && git add -f data/macro_dbnomics_hist.csv || true
-        [ -f data/macro_ifo.csv ] && git add -f data/macro_ifo.csv || true
-        [ -f data/macro_ifo_hist.csv ] && git add -f data/macro_ifo_hist.csv || true
         [ -f data/macro_economic.csv ] && git add -f data/macro_economic.csv || true
         [ -f data/macro_economic_hist.csv ] && git add -f data/macro_economic_hist.csv || true
+        # Retired in Stage 2 commit 13 — removals get committed on next run:
+        [ -f data/macro_us.csv ] && git rm -f data/macro_us.csv || true
+        [ -f data/macro_us_hist.csv ] && git rm -f data/macro_us_hist.csv || true
+        [ -f data/macro_intl.csv ] && git rm -f data/macro_intl.csv || true
+        [ -f data/macro_intl_hist.csv ] && git rm -f data/macro_intl_hist.csv || true
+        [ -f data/macro_dbnomics.csv ] && git rm -f data/macro_dbnomics.csv || true
+        [ -f data/macro_dbnomics_hist.csv ] && git rm -f data/macro_dbnomics_hist.csv || true
+        [ -f data/macro_ifo.csv ] && git rm -f data/macro_ifo.csv || true
+        [ -f data/macro_ifo_hist.csv ] && git rm -f data/macro_ifo_hist.csv || true
         [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
         [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
         git diff --staged --quiet || (
