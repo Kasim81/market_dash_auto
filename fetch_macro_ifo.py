@@ -74,16 +74,9 @@ HIST_CSV     = "data/macro_ifo_hist.csv"
 
 HIST_START = "2000-01-01"
 
-# ifo English workbook column layout.  The 4-tuple is
-# (output_column, excel_column, display_name, units).  Audit item H1 will
-# migrate this to data/macro_library_ifo.csv in Stage 2; sources/ifo.py's
-# parse_workbook already takes a columns spec so the migration will not
-# touch the source module.
-COLUMNS = [
-    ("DE_IFO",      "climate_index",     "ifo Business Climate (Germany, 2015=100, SA)", "Index (2015 = 100)"),
-    ("DE_IFO_SIT",  "situation_index",   "ifo Business Situation sub-index",             "Index (2015 = 100)"),
-    ("DE_IFO_EXP",  "expectation_index", "ifo Business Expectations sub-index",          "Index (2015 = 100)"),
-]
+# Indicator metadata is now CSV-driven (data/macro_library_ifo.csv) and loaded
+# via sources.ifo.load_library() at import time.
+INDICATORS = ifo_src.load_library()
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +88,8 @@ def build_snapshot(monthly_df: pd.DataFrame, source_url: str) -> pd.DataFrame:
     macro_dbnomics.csv so the two snapshots look consistent."""
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rows = []
-    for i, (col, _, name, units) in enumerate(COLUMNS, 1):
+    for i, indic in enumerate(INDICATORS, 1):
+        col = indic["col"]
         s = monthly_df[col].dropna()
         if s.empty:
             latest = prior = change = None
@@ -109,12 +103,12 @@ def build_snapshot(monthly_df: pd.DataFrame, source_url: str) -> pd.DataFrame:
             "row_id":       i,
             "Series ID":    col,
             "Col":          col,
-            "Indicator":    name,
-            "Region":       "DE",
-            "Category":     "Survey",
-            "Subcategory":  "Business Sentiment",
-            "Units":        units,
-            "Frequency":    "Monthly",
+            "Indicator":    indic["name"],
+            "Region":       indic["country"],
+            "Category":     indic["category"],
+            "Subcategory":  indic["subcategory"],
+            "Units":        indic["units"],
+            "Frequency":    indic["frequency"],
             "Latest Value": latest,
             "Prior Value":  prior,
             "Change":       change,
@@ -133,7 +127,8 @@ def build_history(monthly_df: pd.DataFrame) -> pd.DataFrame:
     spine = build_friday_spine(HIST_START, today)
     hist = pd.DataFrame(index=spine)
     hist.index.name = "Date"
-    for col, _, _, _ in COLUMNS:
+    for indic in INDICATORS:
+        col = indic["col"]
         if col not in monthly_df.columns:
             continue
         raw = monthly_df[col].dropna()
@@ -159,16 +154,16 @@ def _build_hist_metadata(columns: list, source_url: str) -> list[list]:
         "Frequency":    ["Frequency"],
         "Last Updated": ["Last Updated"],
     }
-    lookup = {c[0]: c for c in COLUMNS}
+    lookup = {indic["col"]: indic for indic in INDICATORS}
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     for col in columns:
-        info = lookup.get(col)
+        info = lookup.get(col, {})
         rows["Column ID"].append(col)
         rows["Source Code"].append(source_url)
         rows["Source"].append("ifo Institute")
-        rows["Indicator"].append(info[2] if info else col)
-        rows["Region"].append("DE")
-        rows["Units"].append(info[3] if info else "")
+        rows["Indicator"].append(info.get("name", col))
+        rows["Region"].append(info.get("country", "DEU"))
+        rows["Units"].append(info.get("units", ""))
         rows["Frequency"].append("Weekly (from Monthly ffill)")
         rows["Last Updated"].append(ts)
     return list(rows.values())
@@ -229,7 +224,7 @@ def run_phase_d_ifo() -> None:
     url = ifo_src.resolve_workbook_url()
     print(f"[ifo] Resolved workbook: {url}")
     xlsx_bytes = ifo_src.download_workbook(url)
-    monthly_df = ifo_src.parse_workbook(xlsx_bytes, COLUMNS)
+    monthly_df = ifo_src.parse_workbook(xlsx_bytes, INDICATORS)
     print(f"[ifo] Parsed {len(monthly_df)} monthly observations "
           f"({monthly_df.index.min().date()} → {monthly_df.index.max().date()})")
     snapshot = build_snapshot(monthly_df, url)

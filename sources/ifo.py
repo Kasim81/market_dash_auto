@@ -8,19 +8,20 @@ name rotates monthly (gsk-e-YYMMDD.xlsx), so we scrape the landing page to
 discover the current URL, download the workbook, and parse the English
 sheet into a month-end-indexed DataFrame.
 
-Indicator metadata currently lives in the coordinator's COLUMNS tuple.
-The audit's H1 item will migrate it to data/macro_library_ifo.csv in
-Stage 2; the parse_workbook() function already takes the column spec as
-a parameter so that migration won't change this file.
+Indicator definitions live in data/macro_library_ifo.csv (series_id is
+the Excel column name, `col` is our canonical output column).
 """
 
 from __future__ import annotations
 
 import io
+import pathlib
 import re
 
 import pandas as pd
 import requests
+
+_LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_ifo.csv"
 
 IFO_BASE    = "https://www.ifo.de"
 IFO_LANDING = f"{IFO_BASE}/en/ifo-time-series"
@@ -50,6 +51,37 @@ EXCEL_COL_NAMES = [
     "uncertainty",
     "economic_expansion",
 ]
+
+
+# ---------------------------------------------------------------------------
+# LIBRARY LOADER
+# ---------------------------------------------------------------------------
+
+def load_library() -> list[dict]:
+    """Load ifo indicator definitions from macro_library_ifo.csv."""
+    df = pd.read_csv(_LIBRARY_CSV, dtype=str, keep_default_na=False)
+    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
+    df = df.sort_values("sort_key")
+    result = []
+    for _, row in df.iterrows():
+        result.append({
+            "source":       "ifo",
+            "source_id":    row["series_id"].strip(),  # Excel column name
+            "col":          row["col"].strip(),        # our canonical output column
+            "name":         row["name"].strip(),
+            "country":      row["country"].strip(),
+            "category":     row["category"].strip(),
+            "subcategory":  row["subcategory"].strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+            # Legacy alias for existing fetch_macro_ifo callers:
+            "series_id":    row["series_id"].strip(),
+        })
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -86,16 +118,16 @@ def download_workbook(url: str) -> bytes:
 # WORKBOOK PARSER
 # ---------------------------------------------------------------------------
 
-def parse_workbook(xlsx_bytes: bytes, columns_spec: list) -> pd.DataFrame:
+def parse_workbook(xlsx_bytes: bytes, indicators: list[dict]) -> pd.DataFrame:
     """
     Parse the ifo English workbook into a DataFrame indexed by month-end
-    datetime.  Only columns listed in `columns_spec` are emitted.
+    datetime.  Only the columns described in `indicators` are emitted.
 
     Args:
         xlsx_bytes: the workbook bytes.
-        columns_spec: list of (output_column, excel_column, *_rest).
-            Only the first two tuple entries are read here; the rest are
-            metadata consumed elsewhere (display name, units, etc.).
+        indicators: list of dicts (as returned by load_library()).  Each
+            row must carry `series_id` (Excel column name) and `col`
+            (output column name).
     """
     df = pd.read_excel(
         io.BytesIO(xlsx_bytes),
@@ -114,8 +146,7 @@ def parse_workbook(xlsx_bytes: bytes, columns_spec: list) -> pd.DataFrame:
     df.index = df.index + pd.offsets.MonthEnd(0)
 
     out = pd.DataFrame(index=df.index)
-    for spec in columns_spec:
-        out_col, xl_col = spec[0], spec[1]
-        out[out_col] = pd.to_numeric(df[xl_col], errors="coerce")
+    for indic in indicators:
+        out[indic["col"]] = pd.to_numeric(df[indic["series_id"]], errors="coerce")
     # Drop rows where every tracked series is NaN (end-of-file padding).
     return out.dropna(how="all")

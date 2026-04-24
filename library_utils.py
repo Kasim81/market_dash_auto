@@ -300,6 +300,8 @@ SHEETS_ACTIVE_TABS = frozenset({
     "macro_ifo_hist",        # fetch_macro_ifo.py
     "macro_market",          # compute_macro_market.py
     "macro_market_hist",     # compute_macro_market.py
+    "macro_economic",        # fetch_macro_economic.py (unified snapshot)
+    "macro_economic_hist",   # fetch_macro_economic.py (unified history)
 })
 
 # Legacy tabs to delete on every run. These were outputs of older phases that

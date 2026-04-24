@@ -53,7 +53,7 @@ def _load_raw() -> pd.DataFrame:
 
 def load_us_library() -> tuple[dict, dict]:
     """
-    US FRED library: rows where `country` column is blank.
+    US FRED library: rows where `country` == "USA".
 
     Returns:
         (FRED_MACRO_US, FRED_MACRO_US_FREQ)
@@ -64,7 +64,7 @@ def load_us_library() -> tuple[dict, dict]:
     Row order in the CSV controls display order in the macro_us output.
     """
     df = _load_raw()
-    us = df[df["country"].str.strip() == ""].sort_values("sort_key")
+    us = df[df["country"].str.strip() == "USA"].sort_values("sort_key")
     macro_us = {
         row["series_id"]: (
             row["name"],
@@ -79,28 +79,65 @@ def load_us_library() -> tuple[dict, dict]:
     return macro_us, freq_map
 
 
-def load_intl_library() -> list[dict]:
+def load_us_library_as_list() -> list[dict]:
     """
-    International FRED library: rows where `country` column is non-blank.
-    Each row becomes a dict with the keys expected by
-    fetch_macro_international.py: col, name, category, units, frequency,
-    notes, source, country, fred_id.
+    US FRED library as a list of dicts (not the legacy tuple shape).
+    Used by the unified fetch_macro_economic coordinator.  Every dict has
+    the unified indicator schema: source_id, col, name, country, category,
+    subcategory, concept, cycle_timing, units, frequency, notes, sort_key.
     """
     df = _load_raw()
-    intl = df[df["country"].str.strip() != ""].sort_values("sort_key")
+    us = df[df["country"].str.strip() == "USA"].sort_values("sort_key")
+    return [
+        {
+            "source":       "FRED",
+            "source_id":    row["series_id"].strip(),
+            "col":          row["series_id"].strip(),
+            "name":         row["name"].strip(),
+            "country":      row["country"].strip(),
+            "category":     row["category"].strip(),
+            "subcategory":  row["subcategory"].strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+        }
+        for _, row in us.iterrows()
+    ]
+
+
+def load_intl_library() -> list[dict]:
+    """
+    International FRED library: rows where `country` != "USA".
+    Each row becomes a dict with the keys expected by
+    fetch_macro_international.py: col, name, category, units, frequency,
+    notes, source, country, fred_id, plus concept + cycle_timing (added
+    in Stage 2).
+    """
+    df = _load_raw()
+    intl = df[df["country"].str.strip() != "USA"].sort_values("sort_key")
     result = []
     for _, row in intl.iterrows():
         col = row["col"].strip() if row["col"].strip() else row["series_id"]
         result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "source":    "FRED",
-            "country":   row["country"].strip(),
-            "fred_id":   row["series_id"],
+            "source":       "FRED",
+            "source_id":    row["series_id"].strip(),
+            "col":          col,
+            "name":         row["name"].strip(),
+            "country":      row["country"].strip(),
+            "category":     row["category"].strip(),
+            "subcategory": row.get("subcategory", "").strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":         row["units"].strip(),
+            "frequency":     row["frequency"].strip(),
+            "notes":         row["notes"].strip(),
+            "sort_key":      float(row["sort_key"]),
+            # Legacy aliases retained for existing callers in
+            # fetch_macro_international.py (fred_id, source).
+            "fred_id":       row["series_id"].strip(),
         })
     return result
 

@@ -1,2 +1,2 @@
-series_id,col,name,category,subcategory,units,frequency,notes,sort_key
-NGDP_RPCH,GDP_GROWTH,Real GDP Growth (Annual %),Growth,GDP,% change year-on-year constant prices,Annual,"IMF World Economic Outlook; includes forward projections for current and next year. Negative = recession-year contraction",10
+series_id,col,name,category,subcategory,units,frequency,notes,sort_key,concept,cycle_timing
+NGDP_RPCH,GDP_GROWTH,Real GDP Growth (Annual %),Growth,GDP,% change year-on-year constant prices,Annual,IMF World Economic Outlook; includes forward projections for current and next year. Negative = recession-year contraction,10,Growth,C

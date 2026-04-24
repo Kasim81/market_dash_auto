@@ -5,10 +5,8 @@ World Bank (api.worldbank.org) source module.  Provides library loading,
 JSON response parsing, and annual snapshot / history fetchers.
 
 Indicator definitions live in data/macro_library_worldbank.csv.
-
-TODO (Stage 2): WB_CODE_MAP and WB_COUNTRIES belong in a shared country
-metadata CSV — see the audit's H2 item.  For Stage 1 they live here so
-they are co-located with the WB-specific logic that uses them.
+Country mappings (WB source code → canonical code) live in
+data/macro_library_countries.csv and are loaded via sources.countries.
 """
 
 from __future__ import annotations
@@ -20,29 +18,12 @@ import pandas as pd
 import requests
 
 from sources.base import fetch_with_backoff
+from sources import countries as countries_src
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_worldbank.csv"
 
 WB_BASE = "https://api.worldbank.org/v2/country"
 WB_VALIDATION_URL = "https://api.worldbank.org/v2/indicator/{wb_id}"
-
-# World Bank uses ISO Alpha-3; EMU = Euro Area.  Map WB codes → our codes.
-WB_CODE_MAP = {
-    "AUS": "AUS",
-    "CAN": "CAN",
-    "CHE": "CHE",
-    "CHN": "CHN",
-    "DEU": "DEU",
-    "EMU": "EA19",
-    "FRA": "FRA",
-    "GBR": "GBR",
-    "ITA": "ITA",
-    "JPN": "JPN",
-    "USA": "USA",
-}
-
-# Semicolon-joined for WB URL composition.
-WB_COUNTRIES = ";".join(WB_CODE_MAP.keys())
 
 
 # ---------------------------------------------------------------------------
@@ -57,13 +38,21 @@ def load_library() -> list[dict]:
     for _, row in df.sort_values("sort_key").iterrows():
         col = row["col"].strip() if row["col"].strip() else row["series_id"]
         result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "wb_id":     row["series_id"],
+            "source":       "World Bank",
+            "source_id":    row["series_id"].strip(),
+            "col":          col,
+            "name":         row["name"].strip(),
+            "country":      "",   # multi-country; fans out per WB response
+            "category":     row["category"].strip(),
+            "subcategory":  row.get("subcategory", "").strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+            # WB fetch plumbing:
+            "wb_id":        row["series_id"].strip(),
         })
     return result
 
@@ -129,12 +118,13 @@ def parse_response(data: list, label: str = "") -> dict:
         return {}
 
     results: dict[str, list[tuple[str, float]]] = {}
+    code_map = countries_src.wb_code_map()
     for obs in data[1]:
         val = obs.get("value")
         if val is None:
             continue
         iso3 = obs.get("countryiso3code", "")
-        our_code = WB_CODE_MAP.get(iso3)
+        our_code = code_map.get(iso3)
         if not our_code:
             continue
         yr = str(obs.get("date", ""))
@@ -158,7 +148,7 @@ def _fetch(
     retries: int = 5,
     backoff_base: int = 2,
 ) -> dict:
-    url = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
+    url = f"{WB_BASE}/{countries_src.wb_countries_query_string()}/indicator/{indic['wb_id']}"
     print(f"  Fetching {label}...")
     data = fetch_with_backoff(
         url, params=params, label=label,
