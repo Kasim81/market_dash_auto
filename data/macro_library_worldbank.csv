@@ -1,2 +1,2 @@
-series_id,col,name,category,subcategory,units,frequency,notes,sort_key,concept
-FP.CPI.TOTL.ZG,CPI,CPI Headline YoY %,Inflation,CPI,% change year-on-year (annual average),Annual,World Bank / ILO annual average CPI inflation. >2% = above DM central bank targets; >5% = high-inflation regime,10,Inflation
+series_id,col,name,category,subcategory,units,frequency,notes,sort_key,concept,cycle_timing
+FP.CPI.TOTL.ZG,CPI,CPI Headline YoY %,Inflation,CPI,% change year-on-year (annual average),Annual,World Bank / ILO annual average CPI inflation. >2% = above DM central bank targets; >5% = high-inflation regime,10,Inflation,G
