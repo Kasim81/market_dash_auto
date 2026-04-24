@@ -1,0 +1,4 @@
+series_id,col,name,category,subcategory,units,frequency,region,notes,sort_key
+climate_index,DE_IFO,ifo Business Climate (Germany 2015=100 SA),Survey,Business Sentiment,Index (2015 = 100),Monthly,DE,Composite of situation + expectations; leading indicator for German business cycle,10
+situation_index,DE_IFO_SIT,ifo Business Situation sub-index,Survey,Business Sentiment,Index (2015 = 100),Monthly,DE,Current-assessment component of the climate composite,20
+expectation_index,DE_IFO_EXP,ifo Business Expectations sub-index,Survey,Business Sentiment,Index (2015 = 100),Monthly,DE,Forward-looking component; leads climate composite,30
