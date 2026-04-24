@@ -80,6 +80,7 @@ from sources.base import (
 )
 from sources import fred as fred_src
 from sources import oecd as oecd_src
+from sources import worldbank as worldbank_src
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +99,6 @@ HIST_CSV     = "data/macro_intl_hist.csv"
 HIST_START   = "1960-01-01"   # history floor — OECD CLI/rates back to ~1960s; maximise range
 
 # API base URLs
-WB_BASE   = "https://api.worldbank.org/v2/country"
 IMF_BASE  = "https://www.imf.org/external/datamapper/api/v1"
 
 # Rate limits / delays
@@ -146,25 +146,6 @@ IMF_CODE_MAP = {
     "USA":  "USA",
 }
 
-# World Bank country codes → our codes
-# World Bank uses ISO Alpha-3; EMU for Euro Area
-WB_CODE_MAP = {
-    "AUS": "AUS",
-    "CAN": "CAN",
-    "CHE": "CHE",
-    "CHN": "CHN",
-    "DEU": "DEU",
-    "EMU": "EA19",   # World Bank EMU = Euro Area
-    "FRA": "FRA",
-    "GBR": "GBR",
-    "ITA": "ITA",
-    "JPN": "JPN",
-    "USA": "USA",
-}
-# Semicolon-separated for World Bank URL
-WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
-
-
 # ---------------------------------------------------------------------------
 # LIBRARY LOADERS
 # ---------------------------------------------------------------------------
@@ -180,29 +161,9 @@ WB_COUNTRIES = "AUS;CAN;CHE;CHN;DEU;EMU;FRA;GBR;ITA;JPN;USA"
 
 import pathlib as _pl
 
-_WB_CSV   = _pl.Path(__file__).parent / "data" / "macro_library_worldbank.csv"
 _IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
 
 
-
-
-def _load_wb_indicators() -> list:
-    """Load World Bank indicators from macro_library_worldbank.csv."""
-    df = pd.read_csv(_WB_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "wb_id":     row["series_id"],
-        })
-    return result
 
 
 def _load_imf_indicators() -> list:
@@ -227,7 +188,7 @@ def _load_imf_indicators() -> list:
 # Module-level globals — populated from CSVs at import time.
 # All existing code that references these lists works unchanged.
 OECD_INDICATORS      = oecd_src.load_library()
-WB_INDICATORS        = _load_wb_indicators()
+WB_INDICATORS        = worldbank_src.load_library()
 IMF_INDICATORS       = _load_imf_indicators()
 FRED_INTL_INDICATORS = fred_src.load_intl_library()
 
@@ -237,40 +198,7 @@ FRED_INTL_INDICATORS = fred_src.load_intl_library()
 # ---------------------------------------------------------------------------
 
 def _validate_wb_library() -> list:
-    """
-    Validate World Bank indicator IDs against the WB API.
-    Prints CSV name vs official WB indicator name for spot-checking.
-    Returns a list of warning strings (empty = all indicators found).
-    """
-    warnings = []
-    total = len(WB_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_worldbank.csv...")
-    for indic in WB_INDICATORS:
-        wb_id = indic["wb_id"]
-        try:
-            resp = requests.get(
-                f"https://api.worldbank.org/v2/indicator/{wb_id}",
-                params={"format": "json"},
-                timeout=15,
-            )
-            time.sleep(WB_DELAY)
-            if resp.status_code == 200:
-                data = resp.json()
-                if data and len(data) > 1 and data[1]:
-                    official = data[1][0].get("name", "")
-                    print(f"  [OK] WB {wb_id}")
-                    print(f"    csv: {indic['name']}")
-                    print(f"    wb : {official}")
-                else:
-                    warnings.append(
-                        f"WB '{wb_id}' not found — verify series_id "
-                        f"in macro_library_worldbank.csv  (csv name: '{indic['name']}')"
-                    )
-            else:
-                print(f"  [SKIP] WB {wb_id}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] WB {wb_id}: validation error — {e}")
-    return warnings
+    return worldbank_src.validate_library(WB_INDICATORS, delay=WB_DELAY)
 
 
 def _validate_imf_library() -> list:
@@ -342,37 +270,6 @@ def _fetch_with_backoff(
 # ---------------------------------------------------------------------------
 # WORLD BANK JSON PARSER
 # ---------------------------------------------------------------------------
-
-def _parse_worldbank(data: list, label: str = "") -> dict:
-    """
-    Parse World Bank API response [pagination_metadata, [observations]].
-
-    Returns:
-        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
-    """
-    if not data or len(data) < 2 or not data[1]:
-        print(f"  [{label}] Empty or unexpected World Bank response")
-        return {}
-
-    results = {}
-    for obs in data[1]:
-        val = obs.get("value")
-        if val is None:
-            continue
-        # World Bank uses ISO 3-letter codes in countryiso3code
-        iso3 = obs.get("countryiso3code", "")
-        our_code = WB_CODE_MAP.get(iso3)
-        if not our_code:
-            continue
-        yr  = str(obs.get("date", ""))
-        results.setdefault(our_code, []).append((yr, float(val)))
-
-    for k in results:
-        results[k].sort(key=lambda x: x[0])
-
-    print(f"    → {len(results)} countries parsed from World Bank")
-    return results
-
 
 # ---------------------------------------------------------------------------
 # IMF DATAMAPPER PARSER
@@ -474,41 +371,15 @@ def fetch_oecd_history(indic: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def fetch_wb_snapshot(indic: dict) -> dict:
-    """
-    Fetch last 5 annual observations from World Bank for one indicator.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
-    label = f"WB/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(
-        url,
-        params={"format": "json", "mrv": 5, "per_page": 200},
-        label=label,
+    return worldbank_src.fetch_snapshot(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if data is None:
-        return {}
-    return _parse_worldbank(data, label=label)
 
 
 def fetch_wb_history(indic: dict) -> dict:
-    """
-    Fetch full history from 2000 from World Bank for one indicator.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{WB_BASE}/{WB_COUNTRIES}/indicator/{indic['wb_id']}"
-    label = f"WB/{indic['col']}/hist"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(
-        url,
-        params={"format": "json", "date": "2000:2025", "per_page": 1000},
-        label=label,
+    return worldbank_src.fetch_history(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
     )
-    if data is None:
-        return {}
-    return _parse_worldbank(data, label=label)
 
 
 # ---------------------------------------------------------------------------
