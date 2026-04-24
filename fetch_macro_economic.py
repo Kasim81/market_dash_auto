@@ -35,7 +35,7 @@ from sources import ifo as ifo_src
 from sources import imf as imf_src
 from sources import oecd as oecd_src
 from sources import worldbank as worldbank_src
-from sources.base import build_friday_spine
+from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 
 # ---------------------------------------------------------------------------
@@ -623,6 +623,45 @@ def _build_hist_metadata_rows(
     return rows
 
 
+# ---------------------------------------------------------------------------
+# SHEETS PUSH
+# ---------------------------------------------------------------------------
+
+def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
+    try:
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            SNAPSHOT_TAB,
+            df,
+            label="macro_economic",
+        )
+    except Exception as e:
+        print(f"  [macro_economic] snapshot Sheets push failed: {e}")
+
+
+def push_hist_to_sheets(df: pd.DataFrame, indicators: list[dict]) -> None:
+    if df.empty:
+        return
+    try:
+        columns = list(df.columns)
+        meta_rows = _build_hist_metadata_rows(columns, indicators)
+
+        df_out = df.reset_index()
+        df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
+
+        push_df_to_sheets(
+            get_sheets_service(GOOGLE_CREDENTIALS_JSON),
+            SHEET_ID,
+            HIST_TAB,
+            df_out,
+            label="macro_economic_hist",
+            prefix_rows=meta_rows,
+        )
+    except Exception as e:
+        print(f"  [macro_economic] hist Sheets push failed: {e}")
+
+
 def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
     """
     Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
@@ -673,11 +712,13 @@ def run_phase_macro_economic() -> None:
     print("\n[Snapshot] Fetching latest observations ...")
     snap_df = build_snapshot_df(indicators)
     save_snapshot_csv(snap_df)
+    push_snapshot_to_sheets(snap_df)
 
     # History (Friday-spine wide DataFrame, 1947-present)
     print("\n[History] Fetching full history ...")
     hist_df = build_hist_df(indicators)
     save_hist_csv(hist_df, indicators)
+    push_hist_to_sheets(hist_df, indicators)
 
     print(f"\n  macro_economic run completed in {time.time() - t0:.1f}s")
 
