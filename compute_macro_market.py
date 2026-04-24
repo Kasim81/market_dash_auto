@@ -85,6 +85,7 @@ MACRO_US_HIST_CSV   = "data/macro_us_hist.csv"
 MACRO_INTL_HIST_CSV = "data/macro_intl_hist.csv"
 MACRO_DBN_HIST_CSV  = "data/macro_dbnomics_hist.csv"
 MACRO_IFO_HIST_CSV  = "data/macro_ifo_hist.csv"
+MACRO_ECONOMIC_HIST_CSV = "data/macro_economic_hist.csv"
 # FRED API settings — mirrors fetch_macro_us_fred.py
 FRED_BASE_URL      = "https://api.stlouisfed.org/fred/series/observations"
 FRED_REQUEST_DELAY = 0.6    # seconds between calls — ~100 req/min, under 120 limit
@@ -798,6 +799,47 @@ def load_comp_hist() -> pd.DataFrame:
     df = df[df.index >= HIST_START]
     print(f"  [load] comp_hist: {df.shape[0]} rows × {df.shape[1]} cols "
           f"({df.index[0].date()} → {df.index[-1].date()})")
+    return df
+
+
+def load_macro_economic_hist() -> pd.DataFrame:
+    """
+    Load the unified macro_economic_hist.csv into a single wide DataFrame
+    holding every raw economic data series (FRED + OECD + WB + IMF +
+    DB.nomics + ifo) under their canonical column names.
+
+    Written by fetch_macro_economic.py.  File layout:
+      Rows 0–13 : 14 metadata rows (Column ID, Series ID, Source,
+                  Indicator, Country, Country Name, Region, Category,
+                  Subcategory, Concept, cycle_timing, Units, Frequency,
+                  Last Updated)
+      Row 14    : flat header — 'Date', <col_1>, <col_2>, ...
+      Row 15+   : weekly Friday data (1947-01-03 onwards)
+
+    Replaces the three separate load_macro_us_hist / load_macro_intl_hist
+    / load_macro_dbnomics_hist calls.  The indicator calculators still
+    use `mu` / `mi` / `dbn` handles — run_phase_e aliases all three to
+    this single DataFrame so _get_col(...) lookups work unchanged.
+    """
+    if not os.path.exists(MACRO_ECONOMIC_HIST_CSV):
+        raise FileNotFoundError(
+            f"Missing {MACRO_ECONOMIC_HIST_CSV} — "
+            "run fetch_macro_economic.py first."
+        )
+    df = pd.read_csv(
+        MACRO_ECONOMIC_HIST_CSV,
+        skiprows=14,
+        index_col="Date",
+        low_memory=False,
+    )
+    df.index = pd.to_datetime(df.index, errors="coerce")
+    df = df[df.index.notna()].sort_index()
+    df = df.apply(pd.to_numeric, errors="coerce")
+    df = df[df.index >= HIST_START]
+    print(
+        f"  [load] macro_economic_hist: {df.shape[0]} rows × "
+        f"{df.shape[1]} cols ({df.index[0].date()} → {df.index[-1].date()})"
+    )
     return df
 
 
@@ -2122,9 +2164,16 @@ def run_phase_e():
     # ------------------------------------------------------------------
     print("  Loading input CSVs …")
     cp = load_comp_hist()
-    mu = load_macro_us_hist()
-    mi = load_macro_intl_hist()
-    dbn = load_macro_dbnomics_hist()
+    # Stage 2 unified loader: one CSV holds every raw economic series
+    # (FRED / OECD / WB / IMF / DB.nomics / ifo) keyed by canonical
+    # column name.  mu / mi / dbn are the same DataFrame — calculators
+    # look up columns by name via _get_col, so which handle they use is
+    # irrelevant.  Missing columns return NaN-filled Series so a failed
+    # fetch silently degrades instead of raising KeyError.
+    me = load_macro_economic_hist()
+    mu = me
+    mi = me
+    dbn = me
 
     # ------------------------------------------------------------------
     # 2. Fetch supplemental data
