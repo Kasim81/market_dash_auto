@@ -80,6 +80,7 @@ from sources.base import (
 )
 from sources import fred as fred_src
 from sources import oecd as oecd_src
+from sources import imf as imf_src
 from sources import worldbank as worldbank_src
 
 
@@ -98,8 +99,6 @@ HIST_CSV     = "data/macro_intl_hist.csv"
 
 HIST_START   = "1960-01-01"   # history floor — OECD CLI/rates back to ~1960s; maximise range
 
-# API base URLs
-IMF_BASE  = "https://www.imf.org/external/datamapper/api/v1"
 
 # Rate limits / delays
 OECD_DELAY      = 4.0   # seconds between OECD calls (max 20/hour = 1 per 3min; 4s is safe)
@@ -128,68 +127,24 @@ COUNTRY_META = {
     "USA":  ("United States",   "North America"),
 }
 
-# IMF DataMapper country codes → our OECD-aligned codes
-# IMF uses 3-letter ISO codes for countries; "EURO" for Euro Area (entity code
-# visible at https://www.imf.org/external/datamapper/profile/EURO). The legacy
-# "XM" code returns no data from the v1 DataMapper API.
-IMF_CODE_MAP = {
-    "AUS":  "AUS",
-    "CAN":  "CAN",
-    "CHE":  "CHE",
-    "CHN":  "CHN",
-    "DEU":  "DEU",
-    "EURO": "EA19",   # IMF DataMapper uses "EURO" for Euro Area
-    "FRA":  "FRA",
-    "GBR":  "GBR",
-    "ITA":  "ITA",
-    "JPN":  "JPN",
-    "USA":  "USA",
-}
-
 # ---------------------------------------------------------------------------
 # LIBRARY LOADERS
 # ---------------------------------------------------------------------------
-# Indicator definitions are in four CSV files:
-#   macro_library_oecd.csv       → OECD_INDICATORS
-#   macro_library_worldbank.csv  → WB_INDICATORS
-#   macro_library_imf.csv        → IMF_INDICATORS
-#   macro_library_fred.csv       → FRED_INTL_INDICATORS (rows where country != "")
-#
-# Add new indicators by editing the relevant CSV — no Python changes required.
-# Adding a new data source: create a new macro_library_<source>.csv file,
-# write a loader function, and add fetch/validation logic below.
+# Indicator metadata is driven by four CSV files loaded through source
+# modules in sources/:
+#   sources.oecd.load_library()      → OECD_INDICATORS
+#   sources.worldbank.load_library() → WB_INDICATORS
+#   sources.imf.load_library()       → IMF_INDICATORS
+#   sources.fred.load_intl_library() → FRED_INTL_INDICATORS
+# Add new indicators by editing the relevant macro_library_*.csv file.
 
-import pathlib as _pl
-
-_IMF_CSV  = _pl.Path(__file__).parent / "data" / "macro_library_imf.csv"
-
-
-
-
-def _load_imf_indicators() -> list:
-    """Load IMF indicators from macro_library_imf.csv."""
-    df = pd.read_csv(_IMF_CSV, dtype=str, keep_default_na=False)
-    df["sort_key"] = pd.to_numeric(df["sort_key"], errors="coerce").fillna(0)
-    result = []
-    for _, row in df.sort_values("sort_key").iterrows():
-        col = row["col"].strip() if row["col"].strip() else row["series_id"]
-        result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "series":    row["series_id"],   # IMF fetch uses "series" key
-        })
-    return result
 
 
 # Module-level globals — populated from CSVs at import time.
 # All existing code that references these lists works unchanged.
 OECD_INDICATORS      = oecd_src.load_library()
 WB_INDICATORS        = worldbank_src.load_library()
-IMF_INDICATORS       = _load_imf_indicators()
+IMF_INDICATORS       = imf_src.load_library()
 FRED_INTL_INDICATORS = fred_src.load_intl_library()
 
 
@@ -202,39 +157,7 @@ def _validate_wb_library() -> list:
 
 
 def _validate_imf_library() -> list:
-    """
-    Validate IMF DataMapper indicator IDs.
-    Prints CSV name vs official IMF label for spot-checking.
-    Returns a list of warning strings (empty = all indicators found).
-    """
-    warnings = []
-    total = len(IMF_INDICATORS)
-    print(f"\nValidating {total} indicator(s) in macro_library_imf.csv...")
-    for indic in IMF_INDICATORS:
-        imf_id = indic["series"]
-        try:
-            resp = requests.get(
-                f"{IMF_BASE}/indicator/{imf_id}",
-                timeout=15,
-            )
-            time.sleep(IMF_DELAY)
-            if resp.status_code == 200:
-                data = resp.json()
-                label = data.get("indicator", {}).get(imf_id, {}).get("label", "")
-                if label:
-                    print(f"  [OK] IMF {imf_id}")
-                    print(f"    csv: {indic['name']}")
-                    print(f"    imf: {label}")
-                else:
-                    warnings.append(
-                        f"IMF '{imf_id}' not found in API response — verify series_id "
-                        f"in macro_library_imf.csv  (csv name: '{indic['name']}')"
-                    )
-            else:
-                print(f"  [SKIP] IMF {imf_id}: HTTP {resp.status_code} — cannot validate")
-        except Exception as e:
-            print(f"  [SKIP] IMF {imf_id}: validation error — {e}")
-    return warnings
+    return imf_src.validate_library(IMF_INDICATORS, delay=IMF_DELAY)
 
 
 def _validate_fred_intl_library() -> list:
@@ -270,38 +193,6 @@ def _fetch_with_backoff(
 # ---------------------------------------------------------------------------
 # WORLD BANK JSON PARSER
 # ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# IMF DATAMAPPER PARSER
-# ---------------------------------------------------------------------------
-
-def _parse_imf_datamapper(data: dict, indicator: str, label: str = "") -> dict:
-    """
-    Parse IMF DataMapper response.
-    IMF uses 3-letter ISO codes for countries and "EURO" for Euro Area.
-
-    Returns:
-        {our_country_code: [(year_str, float_value), ...]} sorted ascending.
-    """
-    results = {}
-    values  = data.get("values", {}).get(indicator, {})
-
-    for imf_code, year_data in values.items():
-        our_code = IMF_CODE_MAP.get(imf_code)
-        if not our_code or not year_data:
-            continue
-        obs_list = []
-        for yr, val in year_data.items():
-            try:
-                obs_list.append((str(yr), float(val)))
-            except (TypeError, ValueError):
-                pass
-        obs_list.sort(key=lambda x: x[0])
-        results[our_code] = obs_list
-
-    print(f"    → {len(results)} countries parsed from IMF")
-    return results
-
 
 # ---------------------------------------------------------------------------
 # FRED INTERNATIONAL DATA FETCHERS (thin wrappers over sources.fred)
@@ -387,19 +278,9 @@ def fetch_wb_history(indic: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def fetch_imf_indicator(indic: dict) -> dict:
-    """
-    Fetch full history for one IMF DataMapper indicator (all years, all countries).
-    One API call returns everything — snapshot and history come from the same response.
-    Returns {our_country_code: [(year_str, val), ...]} or {} on failure.
-    """
-    url   = f"{IMF_BASE}/{indic['series']}"
-    label = f"IMF/{indic['col']}"
-    print(f"  Fetching {label}...")
-
-    data  = _fetch_with_backoff(url, label=label)
-    if data is None:
-        return {}
-    return _parse_imf_datamapper(data, indic["series"], label=label)
+    return imf_src.fetch_indicator(
+        indic, retries=BACKOFF_RETRIES, backoff_base=BACKOFF_BASE,
+    )
 
 
 # ---------------------------------------------------------------------------
