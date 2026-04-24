@@ -72,7 +72,7 @@ def load_library() -> list[dict]:
             "subcategory": row["subcategory"].strip(),
             "units":       row["units"].strip(),
             "frequency":   row["frequency"].strip(),
-            "region":      row["region"].strip(),
+            "country":     row["country"].strip(),
             "notes":       row["notes"].strip(),
             "concept":     row.get("concept", "").strip(),
         })

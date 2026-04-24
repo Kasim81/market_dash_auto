@@ -104,7 +104,7 @@ def build_snapshot(monthly_df: pd.DataFrame, source_url: str) -> pd.DataFrame:
             "Series ID":    col,
             "Col":          col,
             "Indicator":    indic["name"],
-            "Region":       indic["region"],
+            "Region":       indic["country"],
             "Category":     indic["category"],
             "Subcategory":  indic["subcategory"],
             "Units":        indic["units"],
@@ -162,7 +162,7 @@ def _build_hist_metadata(columns: list, source_url: str) -> list[list]:
         rows["Source Code"].append(source_url)
         rows["Source"].append("ifo Institute")
         rows["Indicator"].append(info.get("name", col))
-        rows["Region"].append(info.get("region", "DE"))
+        rows["Region"].append(info.get("country", "DEU"))
         rows["Units"].append(info.get("units", ""))
         rows["Frequency"].append("Weekly (from Monthly ffill)")
         rows["Last Updated"].append(ts)

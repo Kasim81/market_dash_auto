@@ -145,7 +145,7 @@ def _snapshot_row(indic: dict, latest, prior, change, last_period: str) -> dict:
         "Series ID":    indic["series_id"],
         "Col":          indic["col"],
         "Indicator":    indic["name"],
-        "Region":       indic["region"],
+        "Region":       indic["country"],
         "Category":     indic["category"],
         "Subcategory":  indic["subcategory"],
         "Units":        indic["units"],
@@ -246,7 +246,7 @@ def _build_hist_metadata(columns: list) -> list[list]:
         row_source.append(indic.get("series_id", ""))
         row_src.append("DB.nomics")
         row_name.append(indic.get("name", col))
-        row_region.append(indic.get("region", ""))
+        row_region.append(indic.get("country", ""))
         row_units.append(indic.get("units", ""))
         row_freq.append(f"Weekly (from {indic.get('frequency', 'Unknown')} ffill)")
         row_updated.append(ts)
