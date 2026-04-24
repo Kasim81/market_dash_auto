@@ -4,9 +4,22 @@ sources/ifo.py
 ifo Business Climate (Germany) source module.
 
 The ifo Institute publishes a monthly Excel workbook at ifo.de.  The file
-name rotates monthly (gsk-e-YYMMDD.xlsx), so we scrape the landing page to
-discover the current URL, download the workbook, and parse the English
-sheet into a month-end-indexed DataFrame.
+name encodes the release year-month as `gsk-<e|d>-YYYYMM.xlsx` (`e` =
+English, `d` = German).
+
+Discovery strategy, in order:
+  1. Scrape https://www.ifo.de/en/ifo-time-series with browser-like
+     headers; grep for gsk-*.xlsx links.
+  2. If the landing page 403s (anti-bot) or returns no matches, fall
+     back to direct URL construction: try the canonical `secure/
+     timeseries/gsk-d-YYYYMM.xlsx` path and the older `YYYY-MM/gsk-
+     e-YYYYMM.xlsx` archive path for the current month and the prior
+     three months.
+
+The English workbook stopped being regularly published at some point;
+this module now accepts either language and treats German as the
+default.  `parse_workbook` reads by positional column so the German
+workbook's column order must still match EXCEL_COL_NAMES.
 
 Indicator definitions live in data/macro_library_ifo.csv (series_id is
 the Excel column name, `col` is our canonical output column).
@@ -17,6 +30,7 @@ from __future__ import annotations
 import io
 import pathlib
 import re
+from datetime import date
 
 import pandas as pd
 import requests
@@ -27,12 +41,21 @@ IFO_BASE    = "https://www.ifo.de"
 IFO_LANDING = f"{IFO_BASE}/en/ifo-time-series"
 
 USER_AGENT = (
-    "Mozilla/5.0 (compatible; market_dash_auto/1.0; "
-    "+https://github.com/Kasim81/market_dash_auto)"
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 
-# The ifo landing page links to a file named gsk-<e|d>-YYMMDD.xlsx; the
-# prefix flips between English ("e") and German ("d") variants.
+# Browser-like headers: the ifo landing page has an anti-bot layer that
+# 403s a bare UA; a realistic Accept / Accept-Language pair is enough
+# to pass the simple checks.
+_HTTP_HEADERS = {
+    "User-Agent":      USER_AGENT,
+    "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+}
+
+# Match gsk-<e|d>-YYYYMM.xlsx (6 digits).  The `\d{6}` pattern accepts
+# both the legacy YYMMDD filenames and the current YYYYMM form.
 _HREF_RE = re.compile(
     r'href=[\'"]([^\'"]*gsk-[ed]-\d{6}\.xlsx)[\'"]',
     re.IGNORECASE,
@@ -88,28 +111,97 @@ def load_library() -> list[dict]:
 # WORKBOOK DISCOVERY + DOWNLOAD
 # ---------------------------------------------------------------------------
 
-def resolve_workbook_url() -> str:
-    """Scrape ifo.de for the current gsk-*.xlsx URL.
+def _iter_recent_yyyymm(months_back: int = 3):
+    """Yield (YYYY, MM, 'YYYYMM') tuples for the current month and the
+    `months_back` preceding months."""
+    today = date.today()
+    y, m = today.year, today.month
+    for _ in range(months_back + 1):
+        yield y, m, f"{y:04d}{m:02d}"
+        m -= 1
+        if m < 1:
+            m = 12
+            y -= 1
 
-    English (gsk-e-*) is preferred; falls back to the German (gsk-d-*)
-    variant if no English link exists.  Raises RuntimeError if neither is
-    found — the landing-page layout probably changed.
+
+def _try_head(url: str) -> bool:
+    """Return True if a HEAD request on `url` returns <400 (or 405 falls
+    back to a streamed GET)."""
+    try:
+        r = requests.head(url, headers=_HTTP_HEADERS, timeout=15, allow_redirects=True)
+        if r.status_code < 400:
+            return True
+        if r.status_code == 405:  # method not allowed; some servers block HEAD
+            g = requests.get(url, headers=_HTTP_HEADERS, timeout=15, stream=True)
+            g.close()
+            return g.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+    return False
+
+
+def _candidate_urls():
+    """Generate direct workbook URLs for the current + prior 3 months.
+    Try the canonical `secure/timeseries/` path first (German, current
+    format), then the older `YYYY-MM/` archive path (English, historical)."""
+    for y, m, yyyymm in _iter_recent_yyyymm(months_back=3):
+        yield f"{IFO_BASE}/sites/default/files/secure/timeseries/gsk-d-{yyyymm}.xlsx"
+        yield f"{IFO_BASE}/sites/default/files/{y:04d}-{m:02d}/gsk-e-{yyyymm}.xlsx"
+
+
+def resolve_workbook_url() -> str:
     """
-    resp = requests.get(IFO_LANDING, headers={"User-Agent": USER_AGENT}, timeout=30)
-    resp.raise_for_status()
-    matches = _HREF_RE.findall(resp.text)
-    if not matches:
-        raise RuntimeError(
-            f"No gsk-*.xlsx link found on {IFO_LANDING}; "
-            "ifo page layout may have changed"
-        )
-    href = next((m for m in matches if "gsk-e-" in m.lower()), matches[0])
-    return href if href.startswith("http") else IFO_BASE + href
+    Resolve the current ifo Business Climate workbook URL.
+
+    First attempts landing-page scraping (may 403 under anti-bot); on
+    failure falls back to direct URL construction using the known path
+    conventions and a recent-months window.
+
+    Raises RuntimeError if neither strategy finds a live workbook.
+    """
+    # Strategy 1: scrape the landing page.
+    try:
+        resp = requests.get(IFO_LANDING, headers=_HTTP_HEADERS, timeout=30)
+        if resp.status_code == 200:
+            matches = _HREF_RE.findall(resp.text)
+            if matches:
+                # Prefer English if still present, otherwise first match.
+                href = next(
+                    (m for m in matches if "gsk-e-" in m.lower()),
+                    matches[0],
+                )
+                url = href if href.startswith("http") else IFO_BASE + href
+                print(f"  [ifo] Landing-page scrape resolved: {url}")
+                return url
+            print(
+                "  [ifo] Landing page returned HTML but no gsk-*.xlsx link; "
+                "trying direct URL fallback."
+            )
+        else:
+            print(
+                f"  [ifo] Landing page HTTP {resp.status_code}; "
+                "trying direct URL fallback."
+            )
+    except requests.exceptions.RequestException as e:
+        print(f"  [ifo] Landing-page scrape raised {type(e).__name__}: {e}")
+
+    # Strategy 2: guess direct URLs for recent months.
+    tried = []
+    for candidate in _candidate_urls():
+        tried.append(candidate)
+        if _try_head(candidate):
+            print(f"  [ifo] Direct-URL resolve succeeded: {candidate}")
+            return candidate
+
+    raise RuntimeError(
+        f"Could not resolve ifo workbook URL. Landing page and {len(tried)} "
+        f"direct candidates all failed. Last tried: {tried[-1] if tried else '(none)'}"
+    )
 
 
 def download_workbook(url: str) -> bytes:
     """Download the workbook; raises on HTTP error."""
-    resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=60)
+    resp = requests.get(url, headers=_HTTP_HEADERS, timeout=60)
     resp.raise_for_status()
     return resp.content
 
