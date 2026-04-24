@@ -78,6 +78,7 @@ from sources.base import (
     last_friday_on_or_before,
     push_df_to_sheets,
 )
+from sources import countries as countries_src
 from sources import fred as fred_src
 from sources import oecd as oecd_src
 from sources import imf as imf_src
@@ -111,21 +112,9 @@ BACKOFF_RETRIES = 5
 # ---------------------------------------------------------------------------
 # COUNTRY DEFINITIONS
 # ---------------------------------------------------------------------------
-
-# OECD statistics country codes → (display name, region)
-COUNTRY_META = {
-    "AUS":  ("Australia",       "Asia-Pacific"),
-    "CAN":  ("Canada",          "North America"),
-    "CHE":  ("Switzerland",     "Europe"),
-    "CHN":  ("China",           "Asia"),
-    "DEU":  ("Germany",         "Europe"),
-    "EA19": ("Eurozone",        "Europe"),
-    "FRA":  ("France",          "Europe"),
-    "GBR":  ("United Kingdom",  "Europe"),
-    "ITA":  ("Italy",           "Europe"),
-    "JPN":  ("Japan",           "Asia"),
-    "USA":  ("United States",   "North America"),
-}
+# Canonical country codes → (display name, region) — driven by
+# data/macro_library_countries.csv via sources.countries.
+COUNTRY_META = countries_src.country_meta()
 
 # ---------------------------------------------------------------------------
 # LIBRARY LOADERS

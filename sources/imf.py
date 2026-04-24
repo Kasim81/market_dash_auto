@@ -6,9 +6,8 @@ indicator returns the full multi-country history; snapshot and history both
 come from the same response.
 
 Indicator definitions live in data/macro_library_imf.csv.
-
-TODO (Stage 2): IMF_CODE_MAP belongs in the shared country metadata CSV
-(audit item H2).  For Stage 1 it stays co-located with IMF logic.
+Country mappings (IMF source code → canonical code) live in
+data/macro_library_countries.csv and are loaded via sources.countries.
 """
 
 from __future__ import annotations
@@ -20,26 +19,11 @@ import pandas as pd
 import requests
 
 from sources.base import fetch_with_backoff
+from sources import countries as countries_src
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_imf.csv"
 
 IMF_BASE = "https://www.imf.org/external/datamapper/api/v1"
-
-# IMF DataMapper country codes → our OECD-aligned codes.
-# IMF uses ISO3 for countries; "EURO" for the Euro Area.
-IMF_CODE_MAP = {
-    "AUS":  "AUS",
-    "CAN":  "CAN",
-    "CHE":  "CHE",
-    "CHN":  "CHN",
-    "DEU":  "DEU",
-    "EURO": "EA19",
-    "FRA":  "FRA",
-    "GBR":  "GBR",
-    "ITA":  "ITA",
-    "JPN":  "JPN",
-    "USA":  "USA",
-}
 
 
 # ---------------------------------------------------------------------------
@@ -117,8 +101,9 @@ def parse_response(data: dict, indicator: str, label: str = "") -> dict:
     results: dict[str, list[tuple[str, float]]] = {}
     values = data.get("values", {}).get(indicator, {})
 
+    code_map = countries_src.imf_code_map()
     for imf_code, year_data in values.items():
-        our_code = IMF_CODE_MAP.get(imf_code)
+        our_code = code_map.get(imf_code)
         if not our_code or not year_data:
             continue
         obs_list: list[tuple[str, float]] = []
