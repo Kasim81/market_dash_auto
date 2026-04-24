@@ -33,15 +33,21 @@ def load_library() -> list[dict]:
     result = []
     for _, row in df.iterrows():
         result.append({
-            "series_id":   row["series_id"].strip(),
-            "col":         row["col"].strip(),
-            "name":        row["name"].strip(),
-            "category":    row["category"].strip(),
-            "subcategory": row["subcategory"].strip(),
-            "units":       row["units"].strip(),
-            "frequency":   row["frequency"].strip(),
-            "country":     row["country"].strip(),
-            "notes":       row["notes"].strip(),
+            "source":       "DB.nomics",
+            "source_id":    row["series_id"].strip(),
+            "col":          row["col"].strip(),
+            "name":         row["name"].strip(),
+            "country":      row["country"].strip(),
+            "category":     row["category"].strip(),
+            "subcategory":  row["subcategory"].strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+            # Legacy alias for existing fetch_macro_dbnomics callers:
+            "series_id":    row["series_id"].strip(),
         })
     return result
 

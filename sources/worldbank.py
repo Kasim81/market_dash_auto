@@ -38,13 +38,21 @@ def load_library() -> list[dict]:
     for _, row in df.sort_values("sort_key").iterrows():
         col = row["col"].strip() if row["col"].strip() else row["series_id"]
         result.append({
-            "col":       col,
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "wb_id":     row["series_id"],
+            "source":       "World Bank",
+            "source_id":    row["series_id"].strip(),
+            "col":          col,
+            "name":         row["name"].strip(),
+            "country":      "",   # multi-country; fans out per WB response
+            "category":     row["category"].strip(),
+            "subcategory":  row.get("subcategory", "").strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+            # WB fetch plumbing:
+            "wb_id":        row["series_id"].strip(),
         })
     return result
 

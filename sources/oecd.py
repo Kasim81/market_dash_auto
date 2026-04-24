@@ -41,14 +41,22 @@ def load_library() -> list[dict]:
     for _, row in df.sort_values("sort_key").iterrows():
         key = row["oecd_key_template"].replace("{countries}", row["oecd_countries"])
         result.append({
-            "col":       row["series_id"],
-            "name":      row["name"],
-            "category":  row["category"],
-            "units":     row["units"],
-            "frequency": row["frequency"],
-            "notes":     row["notes"],
-            "dataflow":  row["oecd_dataflow"],
-            "key":       key,
+            "source":       "OECD",
+            "source_id":    row["series_id"].strip(),
+            "col":          row["series_id"].strip(),
+            "name":         row["name"].strip(),
+            "country":      "",   # multi-country; fans out per OECD response
+            "category":     row["category"].strip(),
+            "subcategory":  row.get("subcategory", "").strip(),
+            "concept":      row.get("concept", "").strip(),
+            "cycle_timing": row.get("cycle_timing", "").strip(),
+            "units":        row["units"].strip(),
+            "frequency":    row["frequency"].strip(),
+            "notes":        row["notes"].strip(),
+            "sort_key":     float(row["sort_key"]),
+            # OECD fetch plumbing:
+            "dataflow":     row["oecd_dataflow"],
+            "key":          key,
         })
     return result
 
