@@ -53,7 +53,7 @@ def _load_raw() -> pd.DataFrame:
 
 def load_us_library() -> tuple[dict, dict]:
     """
-    US FRED library: rows where `country` column is blank.
+    US FRED library: rows where `country` == "USA".
 
     Returns:
         (FRED_MACRO_US, FRED_MACRO_US_FREQ)
@@ -64,7 +64,7 @@ def load_us_library() -> tuple[dict, dict]:
     Row order in the CSV controls display order in the macro_us output.
     """
     df = _load_raw()
-    us = df[df["country"].str.strip() == ""].sort_values("sort_key")
+    us = df[df["country"].str.strip() == "USA"].sort_values("sort_key")
     macro_us = {
         row["series_id"]: (
             row["name"],
@@ -85,17 +85,16 @@ def load_us_library_as_list() -> list[dict]:
     Used by the unified fetch_macro_economic coordinator.  Every dict has
     the unified indicator schema: source_id, col, name, country, category,
     subcategory, concept, cycle_timing, units, frequency, notes, sort_key.
-    For US series `country` is forced to "USA" and `col` = series_id.
     """
     df = _load_raw()
-    us = df[df["country"].str.strip() == ""].sort_values("sort_key")
+    us = df[df["country"].str.strip() == "USA"].sort_values("sort_key")
     return [
         {
             "source":       "FRED",
             "source_id":    row["series_id"].strip(),
             "col":          row["series_id"].strip(),
             "name":         row["name"].strip(),
-            "country":      "USA",
+            "country":      row["country"].strip(),
             "category":     row["category"].strip(),
             "subcategory":  row["subcategory"].strip(),
             "concept":      row.get("concept", "").strip(),
@@ -111,14 +110,14 @@ def load_us_library_as_list() -> list[dict]:
 
 def load_intl_library() -> list[dict]:
     """
-    International FRED library: rows where `country` column is non-blank.
+    International FRED library: rows where `country` != "USA".
     Each row becomes a dict with the keys expected by
     fetch_macro_international.py: col, name, category, units, frequency,
     notes, source, country, fred_id, plus concept + cycle_timing (added
     in Stage 2).
     """
     df = _load_raw()
-    intl = df[df["country"].str.strip() != ""].sort_values("sort_key")
+    intl = df[df["country"].str.strip() != "USA"].sort_values("sort_key")
     result = []
     for _, row in intl.iterrows():
         col = row["col"].strip() if row["col"].strip() else row["series_id"]
