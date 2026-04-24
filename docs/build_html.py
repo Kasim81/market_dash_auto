@@ -27,11 +27,15 @@ DOCS   = ROOT / "docs"
 sys.path.insert(0, str(ROOT))
 from library_utils import INDICATOR_GROUP_ORDER, INDICATOR_SUB_GROUP_ORDER
 
-MACRO_MKT   = DATA / "macro_market_hist.csv"
+MACRO_MKT       = DATA / "macro_market_hist.csv"
+MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
+MKT_COMP        = DATA / "market_data_comp_hist.csv"
+IND_LIB         = DATA / "macro_indicator_library.csv"
+
+# Legacy paths kept for any ad-hoc readers that still expect them; the
+# three payload builders below now derive everything from MACRO_ECONOMIC.
 MACRO_US    = DATA / "macro_us_hist.csv"
 MACRO_INTL  = DATA / "macro_intl_hist.csv"
-MKT_COMP    = DATA / "market_data_comp_hist.csv"
-IND_LIB     = DATA / "macro_indicator_library.csv"
 MACRO_DBN   = DATA / "macro_dbnomics_hist.csv"
 MACRO_IFO   = DATA / "macro_ifo_hist.csv"
 
@@ -168,131 +172,100 @@ def build_macro_market(ind_meta: dict) -> dict:
     return {"dates": dates, "indicators": indicators, "groups": groups}
 
 
-# ── 3. macro_us_hist ──────────────────────────────────────────────────────────
+# ── 3-5. unified macro_economic_hist → macro_us / macro_intl / macro_survey ──
+#
+# The unified macro_economic_hist.csv holds every raw economic series keyed by
+# canonical column name.  The three explorer payloads (macro_us / macro_intl /
+# macro_survey) are now filtered slices of that single file rather than reads
+# from three separate files.
+#
+# File layout written by fetch_macro_economic.py:
+#   Rows 0–13 : 14 metadata rows (label in col 0, per-column values in col 1+)
+#               labels: Column ID, Series ID, Source, Indicator, Country,
+#                       Country Name, Region, Category, Subcategory, Concept,
+#                       cycle_timing, Units, Frequency, Last Updated
+#   Row 14    : flat header — 'Date', <col_1>, <col_2>, ...
+#   Row 15+   : weekly data (1947-01-03 onwards)
+
+_UNIFIED_DF = None
+_UNIFIED_META: dict[str, dict[str, str]] | None = None
+
+
+def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]]:
+    """Read macro_economic_hist.csv once per run; cache the parsed result."""
+    global _UNIFIED_DF, _UNIFIED_META
+    if _UNIFIED_DF is not None:
+        return _UNIFIED_DF, _UNIFIED_META
+
+    meta_raw = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=14, low_memory=False)
+    df       = pd.read_csv(MACRO_ECONOMIC, skiprows=14, low_memory=False)
+
+    labels      = meta_raw.iloc[:, 0].tolist()        # ['Column ID', 'Series ID', ...]
+    col_headers = df.columns.tolist()                  # ['Date', col_1, col_2, ...]
+
+    meta: dict[str, dict[str, str]] = {}
+    for ci in range(len(col_headers) - 1):             # skip Date
+        raw_vals = meta_raw.iloc[:, ci + 1].tolist()   # +1 to skip the label column
+        m = {label: str(v).strip() for label, v in zip(labels, raw_vals)}
+        meta[col_headers[ci + 1]] = m
+
+    _UNIFIED_DF = df
+    _UNIFIED_META = meta
+    return df, meta
+
+
+def _build_payload(keep_column) -> dict:
+    """
+    Build {dates, series} from macro_economic_hist for the columns where
+    keep_column(meta_dict) returns truthy.
+    """
+    df, meta = _load_unified_hist_once()
+    keep = [c for c in df.columns if c != "Date" and keep_column(meta.get(c, {}))]
+    slim = df[["Date"] + keep].copy()
+
+    dates, slim = _parse_date_col(slim)
+
+    series = {}
+    for col in slim.columns:
+        col_s       = str(col).strip()
+        vals        = _series_to_list(slim[col])
+        first, last = _date_range(dates, vals)
+        series[col_s] = {
+            "meta":       meta.get(col_s, {"Column ID": col_s}),
+            "values":     vals,
+            "first_date": first,
+            "last_date":  last,
+        }
+
+    return {"dates": dates, "series": series}
+
 
 def build_macro_us() -> dict:
-    # rows 0-7 = metadata, row 8 = header, row 9+ = data
-    meta_raw = pd.read_csv(MACRO_US, header=None, nrows=8, low_memory=False)
-    df       = pd.read_csv(MACRO_US, skiprows=8, low_memory=False)
-    if "row_id" in df.columns:
-        df = df.drop(columns=["row_id"])
+    """Slice of the unified hist: FRED US single-country rows."""
+    return _build_payload(
+        lambda m: m.get("Source") == "FRED" and m.get("Country") == "USA"
+    )
 
-    # build per-column metadata from meta_raw
-    # col 0 = row label, col 1 = label name, col 2+ = values per series
-    meta_labels = meta_raw.iloc[:, 1].tolist()   # ['Series ID','Source','Name',...]
-    col_headers = df.columns.tolist()             # includes Date
-
-    series_meta = {}
-    n_data_cols = len(col_headers) - 1           # minus Date
-    for ci in range(n_data_cols):
-        raw_vals = meta_raw.iloc[:, ci + 2].tolist()   # +2: skip col0 (NaN) and col1 (label)
-        m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
-        series_id = m.get("Series ID", col_headers[ci + 1])
-        series_meta[series_id] = m
-
-    dates, df = _parse_date_col(df)
-
-    series = {}
-    for col in df.columns:
-        col_s  = str(col).strip()
-        vals   = _series_to_list(df[col])
-        first, last = _date_range(dates, vals)
-        series[col_s] = {
-            "meta":       series_meta.get(col_s, {"Series ID": col_s}),
-            "values":     vals,
-            "first_date": first,
-            "last_date":  last,
-        }
-
-    return {"dates": dates, "series": series}
-
-
-# ── 4. macro_intl_hist ────────────────────────────────────────────────────────
 
 def build_macro_intl() -> dict:
-    meta_raw = pd.read_csv(MACRO_INTL, header=None, nrows=8, low_memory=False)
-    df       = pd.read_csv(MACRO_INTL, skiprows=8, low_memory=False)
-    if "row_id" in df.columns:
-        df = df.drop(columns=["row_id"])
+    """
+    Slice of the unified hist: international macro (OECD / World Bank / IMF
+    multi-country fan-outs plus FRED rows for non-USA countries).
+    """
+    intl_multi = {"OECD", "World Bank", "IMF"}
+    return _build_payload(
+        lambda m: (
+            m.get("Source") in intl_multi
+            or (m.get("Source") == "FRED" and m.get("Country") not in ("USA", ""))
+        )
+    )
 
-    meta_labels = meta_raw.iloc[:, 1].tolist()
-    col_headers = df.columns.tolist()
-
-    series_meta = {}
-    n_data_cols = len(col_headers) - 1
-    for ci in range(n_data_cols):
-        raw_vals = meta_raw.iloc[:, ci + 2].tolist()
-        m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
-        col_id = m.get("Column ID", col_headers[ci + 1])
-        series_meta[col_id] = m
-
-    dates, df = _parse_date_col(df)
-
-    series = {}
-    for col in df.columns:
-        col_s  = str(col).strip()
-        vals   = _series_to_list(df[col])
-        first, last = _date_range(dates, vals)
-        series[col_s] = {
-            "meta":       series_meta.get(col_s, {"Column ID": col_s}),
-            "values":     vals,
-            "first_date": first,
-            "last_date":  last,
-        }
-
-    return {"dates": dates, "series": series}
-
-
-# ── 5. survey data (DB.nomics + ifo) ─────────────────────────────────────────
 
 def build_macro_survey() -> dict:
-    """Merge all survey-source history CSVs (DB.nomics, ifo) into one payload."""
-    frames = []
-    all_meta = {}
-    for path, label_key in [(MACRO_DBN, "Column ID"), (MACRO_IFO, "Column ID")]:
-        if not path.exists():
-            continue
-        meta_raw = pd.read_csv(path, header=None, nrows=8, low_memory=False)
-        df = pd.read_csv(path, skiprows=8, low_memory=False)
-        if "row_id" in df.columns:
-            df = df.drop(columns=["row_id"])
-        # Some survey CSVs carry a leading row_id/blank column; others don't.
-        # Derive the metadata-prefix width from the raw column count so the
-        # data-column indices line up in both layouts.
-        n_data = len(df.columns) - 1
-        meta_offset = meta_raw.shape[1] - n_data
-        if meta_offset < 1:
-            continue
-        meta_labels = meta_raw.iloc[:, meta_offset - 1].tolist()
-        for ci in range(n_data):
-            raw_vals = meta_raw.iloc[:, ci + meta_offset].tolist()
-            m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
-            col_id = m.get(label_key, df.columns[ci + 1])
-            all_meta[col_id] = m
-        frames.append(df)
-
-    if not frames:
-        return {"dates": [], "series": {}}
-
-    merged = frames[0]
-    for f in frames[1:]:
-        merged = merged.merge(f, on="Date", how="outer", suffixes=("", "_dup"))
-        merged = merged[[c for c in merged.columns if not c.endswith("_dup")]]
-    merged = merged.sort_values("Date").reset_index(drop=True)
-
-    dates, merged = _parse_date_col(merged)
-    series = {}
-    for col in merged.columns:
-        col_s = str(col).strip()
-        vals = _series_to_list(merged[col])
-        first, last = _date_range(dates, vals)
-        series[col_s] = {
-            "meta": all_meta.get(col_s, {"Column ID": col_s}),
-            "values": vals,
-            "first_date": first,
-            "last_date": last,
-        }
-    return {"dates": dates, "series": series}
+    """Slice of the unified hist: DB.nomics + ifo survey sources."""
+    return _build_payload(
+        lambda m: m.get("Source") in {"DB.nomics", "ifo"}
+    )
 
 
 # ── 6. market_data_comp_hist ──────────────────────────────────────────────────
