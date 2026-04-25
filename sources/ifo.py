@@ -119,9 +119,9 @@ def load_library() -> list[dict]:
             "frequency":    row["frequency"].strip(),
             "notes":        row["notes"].strip(),
             "sort_key":     float(row["sort_key"]),
-            # Workbook layout (new in Stage 2 follow-up): which sheet to
-            # read from, and which 1-indexed column holds this series.
-            "sheet":        row["sheet"].strip(),
+            # Workbook layout: sheet_index is 0-indexed (so 0 = first
+            # sheet regardless of language), excel_col is 1-indexed.
+            "sheet_index":  int(row["sheet_index"]),
             "excel_col":    int(row["excel_col"]),
             # Legacy alias for any lingering caller:
             "series_id":    row["series_id"].strip(),
@@ -267,43 +267,50 @@ def download_workbook(url: str) -> bytes:
 
 def parse_workbook(xlsx_bytes: bytes, indicators: list[dict]) -> pd.DataFrame:
     """
-    Parse the ifo workbook.  Each indicator dict specifies a `sheet` name
-    and a 1-indexed `excel_col` position; the parser reads strictly by
-    position so it doesn't depend on the workbook's German/English
-    header strings.
+    Parse the ifo workbook.  Each indicator dict specifies a 0-indexed
+    `sheet_index` and a 1-indexed `excel_col`; the parser reads strictly
+    by position so it works on both English and German workbooks (whose
+    sheet names differ but whose sheet order and column layout match).
 
-    Workbook layout assumptions (as of the 2026-04 release, confirmed
-    against gsk-e-202604.xlsx):
-      - Row 1-8: title + merged headers.
-      - Row 9:   blank spacer row.
-      - Row 10+: data rows.  Column A (1-indexed) is the month label
-                 " MM/YYYY" (with a leading space — this is ifo's
-                 formatting choice; we strip it before parsing).
+    Workbook layout assumptions (verified against gsk-e-202604.xlsx
+    English and gsk-d-* German variants):
+      - Sheet 0 ("ifo Business Climate" / "ifo Geschäftsklima") holds
+        the headline composite plus Uncertainty + Cycle Tracer.
+      - Sheet 1 ("Sectors" / "Branchen") holds Industry+Trade and the
+        per-sector Climate / Situation / Expectations balances.
+      - Both sheets: rows 1-8 are titles + merged headers, row 9 is a
+        blank spacer, rows 10+ are data, column A is " MM/YYYY" (note
+        the leading space — we strip it before parsing).
 
     Each sheet is read once, even if multiple indicators pull columns
-    from it.  Series that live in different sheets are outer-joined on
-    the month-end date index.
+    from it.  Series across different sheets are outer-joined on the
+    month-end date index.
     """
     from collections import defaultdict
 
     xf = pd.ExcelFile(io.BytesIO(xlsx_bytes), engine="openpyxl")
-    by_sheet: dict[str, list[dict]] = defaultdict(list)
+    by_sheet: dict[int, list[dict]] = defaultdict(list)
     for indic in indicators:
-        by_sheet[indic["sheet"]].append(indic)
+        by_sheet[indic["sheet_index"]].append(indic)
 
     frames: list[pd.DataFrame] = []
-    for sheet_name, sheet_indicators in by_sheet.items():
-        if sheet_name not in xf.sheet_names:
-            print(f"  [ifo] WARNING: sheet {sheet_name!r} not in workbook; skipping")
+    for sheet_idx, sheet_indicators in by_sheet.items():
+        if sheet_idx >= len(xf.sheet_names):
+            print(
+                f"  [ifo] WARNING: sheet_index {sheet_idx} out of range "
+                f"(workbook has {len(xf.sheet_names)} sheets); skipping"
+            )
             continue
+        sheet_name = xf.sheet_names[sheet_idx]
+        print(f"  [ifo] Reading sheet {sheet_idx}: {sheet_name!r}")
 
         # skiprows=9 drops the 8 title/header rows plus the blank spacer
-        # on row 9.  Row 10 (01/1991 for "Sectors", 01/2005 for "ifo
-        # Business Climate") becomes the first row of the DataFrame.
+        # on row 9.  Row 10 (01/1991 for sheet 1, 01/2005 for sheet 0)
+        # becomes the first row of the DataFrame.
         df = pd.read_excel(xf, sheet_name=sheet_name, skiprows=9, header=None, engine="openpyxl")
 
         if df.empty or df.shape[1] < 2:
-            print(f"  [ifo] WARNING: sheet {sheet_name!r} returned no usable data")
+            print(f"  [ifo] WARNING: sheet {sheet_idx}/{sheet_name!r} returned no usable data")
             continue
 
         # Column A (1-indexed) → 0-indexed first column.  Strings have a
