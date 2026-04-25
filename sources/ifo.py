@@ -45,17 +45,35 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
 
-# Browser-like headers: the ifo landing page has an anti-bot layer that
-# 403s a bare UA; a realistic Accept / Accept-Language pair is enough
-# to pass the simple checks.
+# Browser-like headers for the landing-page scrape.  The ifo anti-bot
+# layer serves stripped-down HTML (or challenge pages) to bare UAs.
 _HTTP_HEADERS = {
     "User-Agent":      USER_AGENT,
     "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT":             "1",
+    "Upgrade-Insecure-Requests": "1",
 }
 
-# Match gsk-<e|d>-YYYYMM.xlsx (6 digits).  The `\d{6}` pattern accepts
-# both the legacy YYMMDD filenames and the current YYYYMM form.
+# Separate headers for the workbook download — declare we want the xlsx
+# MIME type and set a Referer so the request looks like it came from the
+# landing page.  Some anti-bot layers check Referer.
+_XLSX_HEADERS = {
+    "User-Agent":      USER_AGENT,
+    "Accept":          (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
+        "application/vnd.ms-excel,application/octet-stream,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Referer":         IFO_LANDING,
+}
+
+# First bytes of a valid .xlsx (ZIP archive) file.
+_XLSX_MAGIC = b"PK\x03\x04"
+
+# Match gsk-<e|d>-YYYYMM.xlsx (6 digits).
 _HREF_RE = re.compile(
     r'href=[\'"]([^\'"]*gsk-[ed]-\d{6}\.xlsx)[\'"]',
     re.IGNORECASE,
@@ -128,22 +146,6 @@ def _iter_recent_yyyymm(months_back: int = 3):
             y -= 1
 
 
-def _try_head(url: str) -> bool:
-    """Return True if a HEAD request on `url` returns <400 (or 405 falls
-    back to a streamed GET)."""
-    try:
-        r = requests.head(url, headers=_HTTP_HEADERS, timeout=15, allow_redirects=True)
-        if r.status_code < 400:
-            return True
-        if r.status_code == 405:  # method not allowed; some servers block HEAD
-            g = requests.get(url, headers=_HTTP_HEADERS, timeout=15, stream=True)
-            g.close()
-            return g.status_code == 200
-    except requests.exceptions.RequestException:
-        return False
-    return False
-
-
 def _candidate_urls():
     """Generate direct workbook URLs for the current + prior 3 months.
     Try the canonical `secure/timeseries/` path first (German, current
@@ -153,34 +155,68 @@ def _candidate_urls():
         yield f"{IFO_BASE}/sites/default/files/{y:04d}-{m:02d}/gsk-e-{yyyymm}.xlsx"
 
 
-def resolve_workbook_url() -> str:
+def _try_download_xlsx(session: requests.Session, url: str) -> bytes | None:
     """
-    Resolve the current ifo Business Climate workbook URL.
-
-    First attempts landing-page scraping (may 403 under anti-bot); on
-    failure falls back to direct URL construction using the known path
-    conventions and a recent-months window.
-
-    Raises RuntimeError if neither strategy finds a live workbook.
+    GET `url` through `session` and return the body only if it looks like
+    a real xlsx (starts with PK\\x03\\x04).  Returns None otherwise —
+    anti-bot challenges and HTML error pages both fail this check.
     """
-    # Strategy 1: scrape the landing page.
     try:
-        resp = requests.get(IFO_LANDING, headers=_HTTP_HEADERS, timeout=30)
+        r = session.get(url, headers=_XLSX_HEADERS, timeout=60)
+    except requests.exceptions.RequestException as e:
+        print(f"  [ifo] GET {url} raised {type(e).__name__}: {e}")
+        return None
+    if r.status_code != 200:
+        print(f"  [ifo] GET {url} HTTP {r.status_code}; skipping")
+        return None
+    if not r.content.startswith(_XLSX_MAGIC):
+        ct = r.headers.get("Content-Type", "")
+        head = r.content[:120].replace(b"\n", b" ")
+        print(
+            f"  [ifo] GET {url} returned {len(r.content)} bytes with "
+            f"Content-Type={ct!r} but body doesn't start with xlsx magic. "
+            f"First 120 bytes: {head!r}"
+        )
+        return None
+    return r.content
+
+
+def resolve_workbook() -> tuple[str, bytes]:
+    """
+    Find AND download the ifo workbook in a single pass through a shared
+    requests.Session.  Returns (url, xlsx_bytes) on success.
+
+    Discovery order:
+      1. Scrape the landing page (sets session cookies).  For every
+         gsk-*.xlsx link returned, try to download; keep the first one
+         whose body is a real xlsx.
+      2. Direct URL construction for the current + prior 3 months.
+
+    Raises RuntimeError if nothing succeeds.
+    """
+    session = requests.Session()
+    session.headers.update(_HTTP_HEADERS)
+    tried: list[str] = []
+
+    # Strategy 1: hit landing page (sets cookies) and scrape link(s).
+    try:
+        resp = session.get(IFO_LANDING, timeout=30)
         if resp.status_code == 200:
             matches = _HREF_RE.findall(resp.text)
-            if matches:
-                # Prefer English if still present, otherwise first match.
-                href = next(
-                    (m for m in matches if "gsk-e-" in m.lower()),
-                    matches[0],
-                )
+            # Prefer English when it's present, else keep the encounter order.
+            ordered = sorted(set(matches), key=lambda m: "gsk-e-" not in m.lower())
+            for href in ordered:
                 url = href if href.startswith("http") else IFO_BASE + href
-                print(f"  [ifo] Landing-page scrape resolved: {url}")
-                return url
-            print(
-                "  [ifo] Landing page returned HTML but no gsk-*.xlsx link; "
-                "trying direct URL fallback."
-            )
+                tried.append(url)
+                content = _try_download_xlsx(session, url)
+                if content is not None:
+                    print(f"  [ifo] Landing-page scrape resolved + validated: {url}")
+                    return url, content
+            if not matches:
+                print(
+                    "  [ifo] Landing page returned HTML but no gsk-*.xlsx link; "
+                    "trying direct URL fallback."
+                )
         else:
             print(
                 f"  [ifo] Landing page HTTP {resp.status_code}; "
@@ -189,25 +225,40 @@ def resolve_workbook_url() -> str:
     except requests.exceptions.RequestException as e:
         print(f"  [ifo] Landing-page scrape raised {type(e).__name__}: {e}")
 
-    # Strategy 2: guess direct URLs for recent months.
-    tried = []
+    # Strategy 2: direct URL construction, validated per candidate.
     for candidate in _candidate_urls():
         tried.append(candidate)
-        if _try_head(candidate):
-            print(f"  [ifo] Direct-URL resolve succeeded: {candidate}")
-            return candidate
+        content = _try_download_xlsx(session, candidate)
+        if content is not None:
+            print(f"  [ifo] Direct-URL resolve + validated: {candidate}")
+            return candidate, content
 
     raise RuntimeError(
-        f"Could not resolve ifo workbook URL. Landing page and {len(tried)} "
-        f"direct candidates all failed. Last tried: {tried[-1] if tried else '(none)'}"
+        f"Could not resolve a valid ifo workbook.  Tried {len(tried)} URL(s); "
+        f"landing-page scrape either returned no link or served an anti-bot "
+        f"challenge page for every candidate.  Last tried: "
+        f"{tried[-1] if tried else '(none)'}"
     )
 
 
+def resolve_workbook_url() -> str:
+    """Backward-compatible shim — callers that don't need the bytes."""
+    url, _ = resolve_workbook()
+    return url
+
+
 def download_workbook(url: str) -> bytes:
-    """Download the workbook; raises on HTTP error."""
-    resp = requests.get(url, headers=_HTTP_HEADERS, timeout=60)
-    resp.raise_for_status()
-    return resp.content
+    """
+    Download the workbook from `url` and verify it's a real xlsx.
+    Kept for callers that already have a URL in hand; new code should
+    prefer `resolve_workbook()` which combines both steps.
+    """
+    session = requests.Session()
+    session.headers.update(_HTTP_HEADERS)
+    content = _try_download_xlsx(session, url)
+    if content is None:
+        raise RuntimeError(f"Download of {url} did not return a valid xlsx")
+    return content
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +286,7 @@ def parse_workbook(xlsx_bytes: bytes, indicators: list[dict]) -> pd.DataFrame:
     """
     from collections import defaultdict
 
-    xf = pd.ExcelFile(io.BytesIO(xlsx_bytes))
+    xf = pd.ExcelFile(io.BytesIO(xlsx_bytes), engine="openpyxl")
     by_sheet: dict[str, list[dict]] = defaultdict(list)
     for indic in indicators:
         by_sheet[indic["sheet"]].append(indic)
@@ -249,7 +300,7 @@ def parse_workbook(xlsx_bytes: bytes, indicators: list[dict]) -> pd.DataFrame:
         # skiprows=9 drops the 8 title/header rows plus the blank spacer
         # on row 9.  Row 10 (01/1991 for "Sectors", 01/2005 for "ifo
         # Business Climate") becomes the first row of the DataFrame.
-        df = pd.read_excel(xf, sheet_name=sheet_name, skiprows=9, header=None)
+        df = pd.read_excel(xf, sheet_name=sheet_name, skiprows=9, header=None, engine="openpyxl")
 
         if df.empty or df.shape[1] < 2:
             print(f"  [ifo] WARNING: sheet {sheet_name!r} returned no usable data")

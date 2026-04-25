@@ -290,11 +290,10 @@ def _fetch_ifo_snapshot_batch(
     ifo_indicators: list[dict],
     fetched_at: str,
 ) -> list[dict]:
-    """Single workbook download → 3 rows."""
+    """Single workbook download → one row per ifo indicator."""
     try:
-        url = ifo_src.resolve_workbook_url()
-        print(f"  [ifo] Resolved workbook: {url}")
-        xlsx = ifo_src.download_workbook(url)
+        url, xlsx = ifo_src.resolve_workbook()
+        print(f"  [ifo] Resolved workbook: {url}  ({len(xlsx):,} bytes)")
         monthly = ifo_src.parse_workbook(xlsx, ifo_indicators)
     except Exception as e:
         print(f"  [ifo] Workbook fetch/parse failed: {e}")
@@ -478,9 +477,8 @@ def _get_ifo_monthly_df(ifo_indicators: list[dict]) -> pd.DataFrame | None:
     if _IFO_MONTHLY_DF is not None:
         return _IFO_MONTHLY_DF
     try:
-        url = ifo_src.resolve_workbook_url()
-        print(f"  [ifo] Resolved workbook: {url}")
-        xlsx = ifo_src.download_workbook(url)
+        url, xlsx = ifo_src.resolve_workbook()
+        print(f"  [ifo] Resolved workbook: {url}  ({len(xlsx):,} bytes)")
         _IFO_MONTHLY_DF = ifo_src.parse_workbook(xlsx, ifo_indicators)
     except Exception as e:
         print(f"  [ifo] Workbook fetch/parse failed: {e}")
