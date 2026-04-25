@@ -28,10 +28,12 @@ INPUT FILES (must exist — produced by earlier pipeline phases)
 
 SUPPLEMENTAL DATA FETCHED HERE (not in the hist files above)
 ------------------------------------------------------------
-  FRED : PIORECRUSDM, BAMLHE00EHYIOAS, IRLTLT01CNM156N, IRLTLT01INM156N,
-         IRLTLT01GBM156N, IRLTLT01DEM156N, DGS10
+  FRED : PIORECRUSDM, BAMLHE00EHYIOAS, INDIRLTLT01STM,
+         IRLTLT01GBM156N, IRLTLT01DEM156N, IRLTLT01ITM156N, DGS10,
+         MORTGAGE30US, JTSJOL, UNEMPLOY
   ECB  : Euro area AAA govt yield + Euro IG corporate yield → EU_I1 spread
-         (falls back to FRED BAMLHE00EHYIOAS if ECB unavailable)
+         (data-api.ecb.europa.eu YC dataset; falls back to FRED
+         BAMLHE00EHYIOAS if ECB unavailable)
   yfinance: FXI (iShares China Large-Cap ETF) for AS_G1 denominator
 
 DESIGN PRINCIPLES
@@ -88,8 +90,9 @@ FRED_REQUEST_DELAY = 0.6    # seconds between calls — ~100 req/min, under 120 
 FRED_BACKOFF_BASE  = 2      # exponential backoff base (seconds)
 FRED_MAX_RETRIES   = 5
 
-# ECB Statistical Data Warehouse REST API
-ECB_BASE_URL       = "https://sdw-wsrest.ecb.europa.eu/service/data"
+# ECB Data Portal REST API (replaced sdw-wsrest after Sept 2023 retirement).
+# Path prefix /service/data/<dataflow>/<key> and format=csvdata are unchanged.
+ECB_BASE_URL       = "https://data-api.ecb.europa.eu/service/data"
 ECB_REQUEST_DELAY  = 2.0    # seconds between ECB calls
 
 # yfinance delay between calls (matches existing pipeline)
@@ -213,29 +216,35 @@ def fetch_supplemental_fred() -> dict:
     Series fetched:
       PIORECRUSDM      — Iron Ore price (World Bank monthly, via FRED) [AS_C1, AS_C2]
       BAMLHE00EHYIOAS  — ICE BofA Euro HY OAS (EU_I1 primary / fallback)
-      IRLTLT01CNM156N  — China 10Y govt bond yield (OECD via FRED) [AS_I1]
-      IRLTLT01INM156N  — India 10Y govt bond yield (OECD via FRED) [AS_I2]
+      INDIRLTLT01STM   — India 10Y govt bond yield (OECD via FRED) [AS_I2]
       IRLTLT01GBM156N  — UK 10Y Gilt yield (OECD via FRED) [EU_I3]
       IRLTLT01DEM156N  — Germany 10Y Bund yield (OECD via FRED) [EU_I3]
       IRLTLT01ITM156N  — Italy 10Y govt bond yield (OECD via FRED) [EU_I4]
       DGS10            — US 10Y Treasury yield (daily, FRED) [AS_I1, AS_I2, US_I11]
-      NAPMOI           — ISM Manufacturing New Orders Index (monthly) [US_ISM1]
       MORTGAGE30US     — 30Y Fixed Mortgage Rate, % (weekly) [US_I11]
       JTSJOL           — JOLTS Job Openings, thousands (monthly) [US_LAB2]
       UNEMPLOY         — Unemployed Persons, thousands (monthly) [US_LAB2]
+
+    Notes on retired entries:
+      IRLTLT01CNM156N (China 10Y) — FRED does not host an OECD CN long-term
+        rate (only the short-term IR3TTS01CNM156N).  AS_CN_R1 will return
+        NaN until we route China rates through DB.nomics or another provider.
+      IRLTLT01INM156N (India)     — FRED uses an inverted naming convention
+        for India: the correct ID is INDIRLTLT01STM.  Swapped above.
+      NAPMOI (ISM new orders)     — series no longer published on FRED;
+        ISM_MFG_NEWORD is already pulled into macro_economic_hist via
+        DB.nomics, so US_ISM1 reads from there instead.
 
     Returns dict keyed by FRED series ID, values are pd.Series.
     """
     series_to_fetch = [
         "PIORECRUSDM",
         "BAMLHE00EHYIOAS",
-        "IRLTLT01CNM156N",
-        "IRLTLT01INM156N",
+        "INDIRLTLT01STM",
         "IRLTLT01GBM156N",
         "IRLTLT01DEM156N",
         "IRLTLT01ITM156N",
         "DGS10",
-        "NAPMOI",
         "MORTGAGE30US",
         "JTSJOL",
         "UNEMPLOY",
@@ -1141,13 +1150,17 @@ def _calc_US_G4(cp, **_):
     return _log_ratio(_p(cp, "RSP"), _p(cp, "SPY"))
 
 
-def _calc_US_ISM1(supp, **_):
+def _calc_US_ISM1(dbn, **_):
     """
-    ISM Manufacturing New Orders Index (NAPMOI, monthly FRED, forward-filled).
-    Level > 52 = expansion, < 48 = contraction.  Naturally leads activity by ~6 weeks.
+    ISM Manufacturing New Orders Index — level form, forward-filled to
+    weekly.  Level > 52 = expansion, < 48 = contraction.  Naturally
+    leads activity by ~6 weeks.
+
+    Source: DB.nomics ISM/neword (column ISM_MFG_NEWORD on the unified
+    macro_economic_hist).  Replaces the retired FRED series NAPMOI
+    that returned HTTP 400 from late April 2026 onward.
     """
-    s = supp.get("NAPMOI", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
 
 
 def _calc_US_R6(supp, **_):
@@ -1431,10 +1444,16 @@ def _calc_AS_IN_G1(cp, **_):
 
 def _calc_AS_CN_R1(supp, **_):
     """
-    China 10Y yield spread vs US 10Y: IRLTLT01CNM156N − DGS10.
-    Both monthly/daily FRED series, forward-filled to weekly.
+    China 10Y yield spread vs US 10Y: <CN_10Y> − DGS10.
     Positive spread → Chinese bonds offer premium over US Treasuries;
     rising spread → capital-flow support for CNY and EM risk appetite.
+
+    Currently returns NaN.  FRED does not host an OECD-compiled CN
+    long-term rate (only the short-term IR3TTS01CNM156N), and the OECD
+    MEI long-term-rate dataset doesn't carry a China series.  To
+    restore this indicator, route a CN 10Y series through DB.nomics
+    (PBoC / ChinaBond / Investing.com mirror) into the unified
+    macro_economic_hist as e.g. CHN_GOVT_10Y, then read it from `dbn`.
     """
     chn = _to_weekly_friday(supp.get("IRLTLT01CNM156N", pd.Series(dtype=float)))
     us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
@@ -1443,12 +1462,16 @@ def _calc_AS_CN_R1(supp, **_):
 
 def _calc_AS_IN_R1(supp, **_):
     """
-    India 10Y yield spread vs US 10Y: IRLTLT01INM156N − DGS10.
+    India 10Y yield spread vs US 10Y: INDIRLTLT01STM − DGS10.
     Both monthly/daily FRED series, forward-filled to weekly.
     Positive spread → Indian bonds offer carry over US Treasuries;
     rising spread widens EM carry opportunity (but also flags INR risk).
+
+    Note: FRED uses an inverted naming convention for India
+    (INDIRLTLT01STM, not IRLTLT01INM156N), so this is *not* the same
+    OECD pattern used for UK/DE/IT/JP rates.
     """
-    ind = _to_weekly_friday(supp.get("IRLTLT01INM156N", pd.Series(dtype=float)))
+    ind = _to_weekly_friday(supp.get("INDIRLTLT01STM", pd.Series(dtype=float)))
     us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
     return _arith_diff(ind, us)
 
