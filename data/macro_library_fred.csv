@@ -73,7 +73,6 @@ IRSTCB01JPM156N,JPN_POLICY_RATE,BoJ Policy Rate,Monetary Policy,Policy Rate,Perc
 MYAGM2CNM189N,CHN_M2,China M2 Money Supply YoY,Growth,Money Supply,Percent Change YoY,Monthly,M1-M2 spread watched as liquidity / animal-spirits gauge. OECD-sourced.,470,CHN,Money / Liquidity,L
 IRSTCB01CNM156N,CHN_POLICY_RATE,China PBoC Policy Rate,Monetary Policy,Policy Rate,Percent,Monthly,PBoC 7-day reverse repo rate proxy. OECD central bank rate.,472,CHN,Rates / Yields,G
 CHNCPIALLMINMEI,CHN_CPI,China CPI (All Items),Inflation,CPI,Index 2015=100,Monthly,China headline CPI. Replaces annual World Bank CPI proxy. Food-weighted.,474,CHN,Inflation,G
-CHNPPIALLMINMEI,CHN_PPI,China PPI (All Commodities),Inflation,PPI,Index 2015=100,Monthly,Commodity-sensitive; leads CPI for goods. NBS-sourced via OECD.,476,CHN,Inflation,C
 CHNPRINTO01IXPYM,CHN_IND_PROD,China Industrial Production,Growth,Real Activity,Index 2015=100 (SA),Monthly,Total industry excl. construction. OECD-sourced; 1990+.,478,CHN,Growth,C
 XTIMVA01CNM667S,CHN_IMPORTS,China Imports (Merchandise),Growth,Trade,USD Growth Rate YoY,Monthly,Domestic demand barometer given commodity intensity. OECD-sourced.,480,CHN,External / Trade,C
 XTEXVA01CNM667S,CHN_EXPORTS,China Exports (Merchandise),Growth,Trade,USD Growth Rate YoY,Monthly,External demand gauge; tracks global trade cycle. OECD-sourced.,482,CHN,External / Trade,C

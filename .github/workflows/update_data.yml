@@ -30,17 +30,29 @@ jobs:
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: |
+        set -o pipefail
         git pull --rebase
-        python fetch_data.py
+        # Pipefail-protected tee so a python crash isn't masked by tee's
+        # exit status.  Stdout + stderr both go into pipeline.log so the
+        # log is the sole source of truth for what happened in the run.
+        python fetch_data.py 2>&1 | tee pipeline.log
     - name: Rebuild indicator explorer
       run: |
+        set -o pipefail
         cd docs
-        python build_html.py
+        python build_html.py 2>&1 | tee -a ../pipeline.log
     - name: Commit and push if changed
+      # `if: always()` so even a crashed run still commits the
+      # pipeline.log so we can diagnose without re-opening the GitHub
+      # Actions UI.
+      if: always()
       run: |
         git config --global user.name 'GitHub Actions Bot'
         git config --global user.email 'actions@github.com'
-        git add -f data/market_data.csv
+        # Pipeline log first — this is the diagnostic record of every
+        # run.  Always commit it, even on failure.
+        [ -f pipeline.log ] && git add -f pipeline.log || true
+        [ -f data/market_data.csv ] && git add -f data/market_data.csv || true
         [ -f data/market_data_comp.csv ] && git add -f data/market_data_comp.csv || true
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true
         [ -f data/macro_market.csv ] && git add -f data/macro_market.csv || true
