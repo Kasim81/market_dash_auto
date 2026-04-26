@@ -17,7 +17,7 @@ $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 ============================================================
-Market Dashboard Data Fetch — 2026-04-25 14:01 UTC
+Market Dashboard Data Fetch — 2026-04-26 05:46 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5824 rows)
@@ -237,66 +237,66 @@ $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-20 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-25)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-21 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-26)
 $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
@@ -494,29 +494,29 @@ $SENSEXBEES.NS: possibly delisted; no timezone found
 
 1 Failed download:
 ['^TSXV']: possibly delisted; no timezone found
-$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$ISFA.L: possibly delisted; no timezone found
 $^TX60: possibly delisted; no timezone found
-$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$ISFA.L: possibly delisted; no timezone found
 
 11 Failed downloads:
-['^SXKP', '^SX6P', '^SX4P', '^SX8P', '^SXNP', '^SXDP', '^SXEP', '^SX7E', '^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-['ISFA.L', '^TX60']: possibly delisted; no timezone found
+['^TX60', 'ISFA.L']: possibly delisted; no timezone found
+['^SX6P', '^SX7E', '^SX3P', '^SX8P', '^SX4P', '^SXDP', '^SXKP', '^SXEP', '^SXNP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 /home/runner/work/market_dash_auto/market_dash_auto/fetch_hist.py:441: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
   close_df[ticker] = s
+$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 $SENSEXBEES.NS: possibly delisted; no timezone found
-$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
 
 2 Failed downloads:
+['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 ['SENSEXBEES.NS']: possibly delisted; no timezone found
-['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
 /home/runner/work/market_dash_auto/market_dash_auto/fetch_hist.py:441: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
   close_df[ticker] = s
 /home/runner/work/market_dash_auto/market_dash_auto/fetch_hist.py:441: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
@@ -533,46 +533,46 @@ $ISFA.L: possibly delisted; no timezone found
 
 1 Failed download:
 ['ISFA.L']: possibly delisted; no timezone found
-$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SXDP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SXDP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SX6P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SX6P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SXNP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SXNP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SX8P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SX8P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SX4P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SX4P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SX7E']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SX7E']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^SXKP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
-$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^SXKP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
+$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 
 1 Failed download:
-['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-25)
+['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-26)
 $SENSEXBEES.NS: possibly delisted; no timezone found
 
 1 Failed download:
@@ -722,7 +722,7 @@ Pushing data to Google Sheets...
   ✓ Written 359 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-25 14:06 UTC
+✓ Completed at 2026-04-26 05:50 UTC
 
 --- market_data asset class breakdown ---
 
@@ -780,11 +780,129 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 714 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 73.8s
+Comp historical build completed in 76.5s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
-============================================================
+============================================================/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  hist[col_name] = combined
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:678: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  df_out = df.reset_index()
+/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:648: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  df_out = df.reset_index()
+
 
 ── macro_economic indicator index ─────────────────────────────────
   total indicators: 117
@@ -921,15 +1039,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EZ_RETAIL_VOL]
   [DB.nomics/EZ_EMPLOYMENT]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   Written 160 rows to data/macro_economic.csv
   [macro_economic] Written 161 rows to 'macro_economic'
 
@@ -1006,73 +1119,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/JPN_CPI/hist]
   [FRED/JPN_POLICY_RATE/hist]
   [FRED/CHN_M2/hist]
-  [FRED/CHN_POLICY_RATE/hist]/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:549: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  hist[col_name] = combined
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:678: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  df_out = df.reset_index()
-/home/runner/work/market_dash_auto/market_dash_auto/fetch_macro_economic.py:648: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  df_out = df.reset_index()
-
+  [FRED/CHN_POLICY_RATE/hist]
   [FRED/CHN_CPI/hist]
   [FRED/CHN_IND_PROD/hist]
   [FRED/CHN_IMPORTS/hist]
@@ -1103,15 +1150,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EZ_EMPLOYMENT/hist]
   [ifo/DE_IFO/hist]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   [ifo/DE_IFO_SIT/hist]
   [ifo/DE_IFO_EXP/hist]
   [ifo/DE_IFO_BAL/hist]
@@ -1137,16 +1179,16 @@ macro_economic — Unified Economic Data Coordinator
   [ifo/DE_IFO_CON_EXP/hist]
   [ifo/DE_IFO_UNC/hist]
   [ifo/DE_IFO_CYC/hist]
-  macro_economic_hist: 4140 rows × 131 data columns
+  macro_economic_hist: 4140 rows × 157 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 243.2s
+  macro_economic run completed in 203.7s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
   [load] comp_hist: 1373 rows × 712 cols (2000-01-07 → 2026-04-24)
-  [load] macro_economic_hist: 1373 rows × 131 cols (2000-01-07 → 2026-04-24)
+  [load] macro_economic_hist: 1373 rows × 157 cols (2000-01-07 → 2026-04-24)
   Fetching supplemental FRED series …
 
 Fetching 12 supplemental FRED series...
@@ -1194,7 +1236,7 @@ Fetching 12 supplemental FRED series...
   [compute] US_V1: raw=2.59  z=0.45  regime='normal'  fwd='stable'  (2026-04-24)
   [compute] US_V2: raw=1.2752  z=-1.59  regime='calm'  fwd='stable'  (2026-04-24)
   [compute] FX_CMD2: raw=-0.4353  z=2.31  regime='weak-USD'  fwd='stable'  (2026-04-24)
-  [compute] FX_CMD1: raw=-6.6644  z=-1.27  regime='recession-watch'  fwd='stable'  (2026-04-24)
+  [compute] FX_CMD1: raw=-6.6677  z=-1.29  regime='recession-watch'  fwd='stable'  (2026-04-24)
   [compute] M1: raw=0.0677  z=-0.05  regime='risk-on'  fwd='stable'  (2026-04-24)
   [compute] M2: raw=1.0  z=0.89  regime='risk-on'  fwd='stable'  (2026-04-24)
   [compute] M3: raw=0.2771  z=1.4  regime='equity-regime'  fwd='improving'  (2026-04-24)
@@ -1203,11 +1245,7 @@ Fetching 12 supplemental FRED series...
   [compute] EU_G3: raw=0.6671  z=0.93  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] UK_G1: raw=0.7774  z=-2.13  regime='global-preferred'  fwd='stable'  (2026-04-24)
   [compute] EU_G2: raw=-2.3807  z=-0.28  regime='neutral'  fwd='stable'  (2026-04-24)
-  [compute] EU_Cr1: raw=2.84  z=-0.99  regime='neutral'  fwd='stable'  (2026-04-24)/home/runner/work/market_dash_auto/market_dash_auto/compute_macro_market.py:2116: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  df_hist.reset_index().to_csv(HIST_CSV, index=False)
-/home/runner/work/market_dash_auto/market_dash_auto/compute_macro_market.py:2043: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
-  push_df_to_sheets(service, SHEET_ID, HIST_TAB, df_hist.reset_index(), label="sheets")
-
+  [compute] EU_Cr1: raw=2.84  z=-0.99  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] UK_R2: raw=0.1482  z=-0.8  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] UK_Cr1: raw=-2.0949  z=1.43  regime='credit-appetite'  fwd='stable'  (2026-04-24)
   [compute] EU_G4: raw=0.0044  z=-0.99  regime='neutral'  fwd='stable'  (2026-04-24)
@@ -1225,7 +1263,7 @@ Fetching 12 supplemental FRED series...
   [compute] US_R4: raw=2.42  z=1.46  regime='high-inflation-exp'  fwd='improving'  (2026-04-24)
   [compute] UK_R1: raw=1.7955  z=-0.2  regime='neutral'  fwd='stable'  (2026-03-06)
   [compute] FX_CMD5: raw=107.5773  z=-0.27  regime='neutral'  fwd='stable'  (2026-03-06)
-  [compute] FX_CMD4: raw=-6.6644  z=-1.27  regime='global-commodity-lead'  fwd='stable'  (2026-04-24)
+  [compute] FX_CMD4: raw=-6.6677  z=-1.29  regime='global-commodity-lead'  fwd='stable'  (2026-04-24)
   [compute] US_JOBS1: raw=-4.638  z=-1.14  regime='overheating'  fwd='stable'  (2026-04-24)
   [compute] US_JOBS3: raw=-0.3687  z=0.5  regime='mid-cycle'  fwd='stable'  (2026-04-24)
   [compute] US_G6: raw=0.8346  z=1.18  regime='strong-growth'  fwd='stable'  (2026-04-24)
@@ -1263,8 +1301,12 @@ Fetching 12 supplemental FRED series...
   [compute] AS_CN_G1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
   [compute] GL_G2: raw=1.881  z=1.84  regime='risk-on'  fwd='stable'  (2026-04-24)
   [compute] GL_G1: raw=-1.1196  z=2.11  regime='em-outperform'  fwd='stable'  (2026-04-24)
-  [compute] FX_CMD6: raw=0.3686  z=3.37  regime='commodity-bull'  fwd='improving'  (2026-04-24)
-  [compute] FX_CMD3: raw=-3.9125  z=-0.71  regime='neutral'  fwd='improving'  (2026-04-24)
+  [compute] FX_CMD6: raw=0.3686  z=3.37  regime='commodity-bull'  fwd='improving'  (2026-04-24)/home/runner/work/market_dash_auto/market_dash_auto/compute_macro_market.py:2116: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  df_hist.reset_index().to_csv(HIST_CSV, index=False)
+/home/runner/work/market_dash_auto/market_dash_auto/compute_macro_market.py:2043: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  push_df_to_sheets(service, SHEET_ID, HIST_TAB, df_hist.reset_index(), label="sheets")
+
+  [compute] FX_CMD3: raw=-3.9164  z=-0.72  regime='neutral'  fwd='improving'  (2026-04-24)
   [compute] FX_EM1: raw=-0.0064  z=-0.05  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] US_PMI1: raw=10.3  z=-2.04  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] US_PMI2: raw=47.7  z=-0.12  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
@@ -1273,7 +1315,7 @@ Fetching 12 supplemental FRED series...
   [compute] EU_PMI2: raw=5.6  z=0.1  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] EU_ESI1: raw=96.7  z=0.93  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
   [compute] DE_ZEW1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
-  [compute] DE_IFO1: raw=nan  z=nan  regime='n/a'  fwd='n/a [leading]'  (2026-04-24)
+  [compute] DE_IFO1: raw=86.6  z=0.02  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
   [compute] UK_PMI1: raw=-8.0636  z=0.62  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] JP_PMI1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
   [compute] CN_PMI1: raw=0.8  z=1.48  regime='contraction'  fwd='improving [leading]'  (2026-04-24)
@@ -1297,15 +1339,15 @@ Building macro_survey payload...
 Building market_comp payload...
 
 Writing output files...
-  indicator_explorer.html  : 7.64 MB
+  indicator_explorer.html  : 8.23 MB
   indicator_explorer_mkt.js: 15.91 MB
 
 ── Summary ──────────────────────────────────────────────────────
 macro_market : 84 indicators across 7 groups
 macro_us     : 50 FRED series
 macro_intl   : 72 intl series
-macro_survey : 9 survey series
+macro_survey : 35 survey series
 market_comp  : 712 series across 6 asset classes
   asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators']
 
-Total output: 23.56 MB  (7.64 MB HTML + 15.91 MB companion JS)
+Total output: 24.14 MB  (8.23 MB HTML + 15.91 MB companion JS)
