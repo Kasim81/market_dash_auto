@@ -1,12 +1,67 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-26
 > Based on: [`manuals/technical_manual.md`](technical_manual.md), [`manuals/multifreq_plan.md`](multifreq_plan.md), `archive/indicator_groups_review_UPDATED.xlsx`, and the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history — content consolidated into `technical_manual.md` and this file).
+
+---
+
+## 0. Architecture Preferences — Claude must always follow
+
+> **Status:** Permanent. These are non-negotiable rules adopted on 2026-04-26 after two avoidable refactors caused by hardcoding identifiers in Python instead of in CSVs. Every Claude session must read this section before touching any data-layer code.
+
+### 0.1 The single rule
+
+**Every identifier the pipeline fetches lives in a CSV under `data/`. Never in Python.**
+
+If the change you're about to make adds, removes, renames, or substitutes a fetched identifier — the only file you should be editing is a `data/macro_library_*.csv`. If you are reaching for a string literal in a `.py` file that looks like `"INDIRLTLT01STM"`, `"BSCICP02DEM460S"`, `"ISM/pmi/pm"`, `"BAMLHE00EHYIOAS"`, etc., **stop and put it in a CSV instead.**
+
+### 0.2 What counts as an "identifier"
+
+In scope (must be CSV):
+
+- FRED series IDs (e.g. `DGS10`, `MORTGAGE30US`)
+- DB.nomics series paths (e.g. `ISM/pmi/pm`, `Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20`)
+- OECD SDMX dataflow + dimension keys
+- World Bank / IMF indicator codes
+- ifo Excel sheet/column locations (already in `macro_library_ifo.csv`)
+- yfinance tickers (already in `index_library.csv`)
+- Any URL fragment that selects a specific dataset / series
+
+Out of scope (may stay in Python):
+
+- **Calculator wiring** — which calculator consumes which series. `supp.get("INDIRLTLT01STM")` inside `_calc_AS_IN_R1` is *logic*, not registry. The series being available is registry; the calculator's choice to consume it is logic. Keep the literal name in the calculator only because the calculator needs to look it up by name in the data dict it received.
+- API base URLs and provider constants (`FRED_API_BASE`, `ECB_BASE_URL`)
+- Computation parameters (z-score windows, regime thresholds)
+- Column-name conventions and shared schema
+
+### 0.3 Pre-commit checklist (Claude runs this before every commit that touches `.py` files)
+
+1. **Grep for new string literals that look like data IDs.** Run `git diff --cached -U0 | grep -E '"[A-Z][A-Z0-9_]{3,}"'` on staged Python files. For each hit ask: *is this a fetched identifier?* If yes, the change belongs in a CSV.
+2. **Grep for any new list literals named `*_to_fetch`, `*_series`, `*_indicators`, etc.** in staged `.py` files. Any such list is a registry and must be CSV-driven, not a Python literal.
+3. **If a CSV row is being added/removed/changed, confirm there is no parallel Python literal that needs the same edit.** A CSV-driven loader is the only acceptable consumer of the registry.
+4. **If a calculator consumes a new series, confirm the series is provisioned by the unified coordinator** (`fetch_macro_economic.py` → `macro_economic_hist.csv`), not by an ad-hoc fetcher in `compute_macro_market.py`. Calculators read from the unified data dict; they do not initiate fetches.
+
+### 0.4 If a refactor is needed mid-task
+
+If you discover the right place to add the identifier doesn't yet have CSV plumbing (e.g. a Python literal you'd otherwise extend), **stop and document the structural fix in this `forward_plan.md`** rather than perpetuating the drift. Adding one more line to a Python list is a 30-second debt that costs hours later. The decision-tree is:
+
+- *Identifier already CSV-routed?* → edit the CSV. Done.
+- *Identifier currently in a Python literal?* → either (a) refactor the literal into a CSV in the same PR, or (b) add a "Required refactor" entry under §2 and surface it to the user before merging the workaround. Never silently extend the literal.
+
+### 0.5 Why this matters
+
+Two refactors have already had to chase hardcoded identifiers out of the code:
+
+- Stage 1 (2026-04-22): `INDICATOR_META` dict in `compute_macro_market.py` → `macro_indicator_library.csv`.
+- Stage 2 (2026-04-23): per-source coordinators (FRED / OECD / WB / IMF / DB.nomics / ifo) → unified `macro_economic` snapshot driven by 6 CSVs.
+
+PR2 (2026-04-26) added `INDIRLTLT01STM` directly to the `series_to_fetch` literal in `compute_macro_market.py::fetch_supplemental_fred()` instead of routing the new India 10Y series through the FRED library CSV. That is precisely the drift this section now prohibits. The supplemental list itself is the next refactor target — see §2.4.
 
 ---
 
 ## Table of Contents
 
+0. [Architecture Preferences — Claude must always follow](#0-architecture-preferences--claude-must-always-follow)
 1. [Project Phase Summary (A-G)](#1-project-phase-summary-a-g)
 2. [Resume Here — Priority Tasks](#2-resume-here--priority-tasks)
 3. [New Feature Development](#3-new-feature-development)
@@ -174,6 +229,77 @@ Key updates applied:
 
 - **BoJ Tankan fetcher** — quarterly Large Manufacturing DI via `stat-search.boj.or.jp`. Would give JP_PMI1 a quarterly proxy. Similar architecture to `fetch_macro_ifo.py`.
 - **First CI verification** — next nightly run at 03:17 UTC validates the full pipeline with all new sources.
+
+### 2.4 Eliminate `fetch_supplemental_fred()` — CSV-ify the last hardcoded series list
+
+**Priority:** High — this is the architecture-drift hotspot called out in §0. PR2 (commit `d183e9f`, 2026-04-26) extended the Python list literal `series_to_fetch` to add India 10Y instead of CSV-routing it. That violates §0.1 and is the immediate motivation for this refactor.
+**Status:** Not started. Plan below; no code changes yet.
+
+#### Where the drift lives
+
+`compute_macro_market.py::fetch_supplemental_fred()` (~line 211–290) declares its own Python list:
+
+```python
+series_to_fetch = [
+    "PIORECRUSDM", "BAMLHE00EHYIOAS",
+    "INDIRLTLT01STM",                                    # added in PR2
+    "IRLTLT01GBM156N", "IRLTLT01DEM156N", "IRLTLT01ITM156N",
+    "DGS10", "MORTGAGE30US", "JTSJOL", "UNEMPLOY",
+]
+```
+
+This list:
+
+1. **Bypasses the unified coordinator** — it makes its own FRED API calls instead of reading from `data/macro_economic_hist.csv`, even though Phase E has already finished by the time `fetch_supplemental_fred()` runs.
+2. **Duplicates 4 series** that the unified coordinator already fetches: `DGS10`, `PIORECRUSDM`, `IRLTLT01GBM156N` (col `GBR_GILT_10Y`), `IRLTLT01DEM156N` (col `DEU_BUND_10Y`). Verified 2026-04-26 against `data/macro_library_fred.csv` lines 23, 40, 42, 43 and the column headers in `macro_economic_hist.csv`.
+3. **Hardcodes 6 series that aren't yet in the FRED library** — `BAMLHE00EHYIOAS`, `INDIRLTLT01STM`, `IRLTLT01ITM156N`, `MORTGAGE30US`, `JTSJOL`, `UNEMPLOY`. These are the actual leak: any future change to this set has to be made in Python, not CSV.
+
+#### Refactor plan
+
+**Step 1 — Add the 6 missing series to `data/macro_library_fred.csv`** (zero new Python). Suggested rows (use existing schema; pick `col` aliases that match what the calculators already look up by ID):
+
+| `series_id` | `col` | `name` | `country` | `concept` | `cycle_timing` | Consumer |
+|---|---|---|---|---|---|---|
+| `BAMLHE00EHYIOAS` | (blank) | ICE BofA Euro HY Index OAS | EZ | Credit / Spreads | L | EU_I4 |
+| `INDIRLTLT01STM` | `IND_GOVT_10Y` | India 10-Year Government Bond Yield (OECD) | IND | Rates / Yields | C | AS_IN_R1 |
+| `IRLTLT01ITM156N` | `ITA_BTP_10Y` | Italy 10-Year BTP Yield (OECD) | ITA | Rates / Yields | C | EU_I4_BTP_BUND |
+| `MORTGAGE30US` | (blank) | 30-Year Fixed Mortgage Rate | USA | Rates / Yields | L | US_I11 |
+| `JTSJOL` | (blank) | JOLTS Job Openings | USA | Labour | L | US_LAB2 |
+| `UNEMPLOY` | (blank) | Unemployed Persons (level) | USA | Labour | C | US_LAB2 |
+
+After this step, every supplemental ID lives in `macro_library_fred.csv`. The next nightly run will populate them in `macro_economic_hist.csv` automatically — no Python change is needed to *fetch* them.
+
+**Step 2 — Switch the calculators to read from the unified hist instead of `supp`**.
+
+For each `_calc_*` that currently calls `supp.get("XYZ", …)`, change it to read the same column from the unified `macro_economic_hist` DataFrame already passed into the calculator stack. Specifically:
+
+- `_calc_US_I11` (`MORTGAGE30US − DGS10`)
+- `_calc_US_LAB2` (`JTSJOL / UNEMPLOY`)
+- `_calc_EU_I3` (`IRLTLT01GBM156N − IRLTLT01DEM156N`)
+- `_calc_EU_I4_BTP_BUND` (`IRLTLT01ITM156N − IRLTLT01DEM156N`)
+- `_calc_AS_IN_R1` (`INDIRLTLT01STM − DGS10`)
+- `_calc_AS_C1` / `_calc_AS_C2` (PIORECRUSDM)
+- `_calc_EU_I4` (Euro HY OAS via BAMLHE00EHYIOAS)
+
+The calculator-level literal (e.g. `me_hist["IND_GOVT_10Y"]`) remains in Python — that's *logic*, not registry, per §0.2.
+
+**Step 3 — Delete `fetch_supplemental_fred()` entirely** and the `supp = fetch_supplemental_fred()` call in `main()` (currently around line 2107). Phase E becomes a pure consumer of `macro_economic_hist.csv`, with no FRED API contact in `compute_macro_market.py`.
+
+**Step 4 — Audit for any remaining series-ID literals in `compute_macro_market.py`.** Run `grep -nE '"[A-Z][A-Z0-9_]{4,}"' compute_macro_market.py` and confirm every remaining hit is a calculator-side column lookup (i.e. matches the `col` value of a row that exists in some `data/macro_library_*.csv`). Any that don't match → either add the row, or document the gap.
+
+**Step 5 — Confirm cycle-timing & metadata fields.** When adding the 6 rows in Step 1, fill `concept` and `cycle_timing` properly. These flow through to `macro_indicator_library.csv` consumers and the explorer UI.
+
+#### Acceptance criteria
+
+- `fetch_supplemental_fred()` no longer exists.
+- No Python list literal of FRED IDs anywhere in `compute_macro_market.py`.
+- `grep "fred.*api" compute_macro_market.py` returns nothing — all FRED contact happens in `sources/fred.py` via `fetch_macro_economic.py`.
+- The 7 affected calculators produce values that match the pre-refactor branch on the same input date (regression-test against a snapshot from `macro_market_hist.csv`).
+- Daily run wall-clock time decreases (~10 fewer FRED calls per run; the 4 duplicate ones in particular).
+
+#### Sequencing
+
+This refactor should land **before** any future PR that would otherwise add a new series to `series_to_fetch`. PR2 itself can be merged as-is (the India 10Y data is correct; only its routing is non-canonical), with this refactor immediately following as a same-week cleanup. If a PR needs another supplemental before this refactor lands, that PR must add a row to `macro_library_fred.csv` *and* extend the literal — never just the literal.
 
 
 ---
