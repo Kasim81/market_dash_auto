@@ -415,12 +415,9 @@ Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run 
 
 This would reduce daily historical data runtime from ~10 minutes to seconds.
 
-### 3.7 Expand Macro Data Library from Additional Sources
+### 3.7 Macro Library Expansion — Source Evaluation Retrospective
 
-**Priority:** Medium-high — business survey data is the biggest structural gap in the indicator suite for a global asset allocator.
-**Status:** Source evaluation completed 2026-04-21. **Three-tier strategy:** Tier 1 FRED additions (zero new code); Tier 2 DB.nomics primary module (ISM, ECB BLS, Tankan, Eurostat ESI); Tier 3 FMP backup for proprietary S&P Global PMIs (EZ/UK/JP/CN) that DB.nomics cannot redistribute.
-
-The FRED API does not carry the S&P Global-licensed PMIs (ISM and all country-level S&P Global PMIs), and OECD SDMX covers only the OECD-harmonised business/consumer confidence composites. A global asset allocator needs a wider survey suite: ISM (US), S&P Global PMI (EZ/UK/JP/CN), ZEW and IFO (Germany), ECB Bank Lending Survey (Eurozone), Tankan (Japan), and EC Economic Sentiment Indicator (EU). A systematic evaluation of 8 candidate sources was conducted on 2026-04-21 focusing on breadth of global coverage.
+**Status:** The original three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail moved to §1 Phase ME, the per-indicator wiring lives in `manuals/pipeline_review.md`, and the still-actionable forward-looking expansion work is in §3.8 below.
 
 #### Global Gap Map — What's Missing by Region
 
