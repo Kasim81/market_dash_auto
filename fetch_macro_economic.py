@@ -529,10 +529,15 @@ def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
     """Build the wide-form Friday-spine history DataFrame."""
     today = date.today()
     spine = build_friday_spine(HIST_START, today)
-    hist = pd.DataFrame(index=spine)
-    hist.index.name = "Date"
 
     ifo_indicators = [i for i in indicators if i["source"] == "ifo"]
+
+    # Collect every (col_name -> spine-aligned Series) into a dict and
+    # build the wide DataFrame in a single pd.DataFrame() call at the end.
+    # Per-column assignment (`hist[col] = ...`) into a growing DataFrame
+    # fragments the block manager and triggers ~57 PerformanceWarnings on
+    # a full run.  pandas docs explicitly recommend this pattern.
+    columns: dict[str, pd.Series] = {}
 
     for indic in indicators:
         label = f"{indic['source']}/{indic['col']}/hist"
@@ -546,7 +551,10 @@ def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
             combined = (
                 s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
             )
-            hist[col_name] = combined
+            columns[col_name] = combined
+
+    hist = pd.DataFrame(columns, index=spine)
+    hist.index.name = "Date"
 
     print(f"  macro_economic_hist: {len(hist)} rows × {len(hist.columns)} data columns")
     return hist
