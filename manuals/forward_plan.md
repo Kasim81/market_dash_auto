@@ -233,7 +233,7 @@ Key updates applied:
 ### 2.4 Eliminate `fetch_supplemental_fred()` — CSV-ify the last hardcoded series list
 
 **Priority:** High — this is the architecture-drift hotspot called out in §0. PR2 (commit `d183e9f`, 2026-04-26) extended the Python list literal `series_to_fetch` to add India 10Y instead of CSV-routing it. That violates §0.1 and is the immediate motivation for this refactor.
-**Status:** Not started. Plan below; no code changes yet.
+**Status:** **Done 2026-04-26.** All 5 steps below landed in the same PR. `fetch_supplemental_fred()` deleted; `_fred_fetch_full()` deleted (no callers left); 7 affected calculators rewired to `_get_col(mu, ...)`; 7 new rows in `data/macro_library_fred.csv` (the original 6 + `BAMLEC0A0RMEY` which closed the last leak inside `fetch_ecb_euro_ig_spread`); `IND` added to `data/macro_library_countries.csv` (with empty `wb_code`/`imf_code` so it does not fan out into WB/IMF queries). Phase E now contains zero direct FRED API contact — every FRED ID used by the calculators reaches them through the unified `macro_economic_hist`.
 
 #### Where the drift lives
 

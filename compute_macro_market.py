@@ -72,7 +72,6 @@ from datetime import datetime, timezone
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
 
-FRED_API_KEY             = os.environ.get("FRED_API_KEY", "")
 GOOGLE_CREDENTIALS_JSON  = os.environ.get("GOOGLE_CREDENTIALS", "")
 
 SHEET_ID     = "12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac"
@@ -84,11 +83,6 @@ HIST_CSV     = "data/macro_market_hist.csv"
 # Input CSV paths (produced by earlier phases)
 COMP_HIST_CSV       = "data/market_data_comp_hist.csv"
 MACRO_ECONOMIC_HIST_CSV = "data/macro_economic_hist.csv"
-# FRED API settings — mirrors fetch_macro_us_fred.py
-FRED_BASE_URL      = "https://api.stlouisfed.org/fred/series/observations"
-FRED_REQUEST_DELAY = 0.6    # seconds between calls — ~100 req/min, under 120 limit
-FRED_BACKOFF_BASE  = 2      # exponential backoff base (seconds)
-FRED_MAX_RETRIES   = 5
 
 # ECB Data Portal REST API (replaced sdw-wsrest after Sept 2023 retirement).
 # Path prefix /service/data/<dataflow>/<key> and format=csvdata are unchanged.
@@ -157,123 +151,29 @@ INDICATOR_META, ALL_INDICATOR_IDS, NATURALLY_LEADING = _load_indicator_library()
 
 # ===========================================================================
 # SUPPLEMENTAL DATA FETCHERS
+#
+# Phase E no longer fetches FRED series directly — every FRED ID lives in
+# data/macro_library_fred.csv and reaches the calculators via `mu` (the
+# unified macro_economic_hist).  Only ECB SDW (deeply nested SDMX key) and
+# yfinance FXI remain here as supplementals, both keyed in `supp`.
 # ===========================================================================
 
-def _fred_fetch_full(series_id: str, obs_start: str = "2000-01-01") -> pd.Series:
+
+def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
     """
-    Fetch full history of a single FRED series from obs_start to present.
-    Returns a pd.Series with DatetimeIndex, or an empty Series on failure.
-    Applies exponential backoff on HTTP 429 / 5xx — mirrors fetch_hist.py.
-    """
-    if not FRED_API_KEY:
-        print(f"  [FRED] WARNING: FRED_API_KEY not set — skipping {series_id}")
-        return pd.Series(dtype=float, name=series_id)
-
-    params = {
-        "series_id":         series_id,
-        "api_key":           FRED_API_KEY,
-        "file_type":         "json",
-        "sort_order":        "asc",
-        "observation_start": obs_start,
-    }
-    for attempt in range(FRED_MAX_RETRIES):
-        try:
-            resp = requests.get(FRED_BASE_URL, params=params, timeout=20)
-            if resp.status_code == 200:
-                obs = resp.json().get("observations", [])
-                dates, vals = [], []
-                for o in obs:
-                    if o.get("value") not in (".", "", None):
-                        try:
-                            dates.append(pd.to_datetime(o["date"]))
-                            vals.append(float(o["value"]))
-                        except (ValueError, KeyError):
-                            continue
-                if not dates:
-                    return pd.Series(dtype=float, name=series_id)
-                s = pd.Series(vals, index=dates, name=series_id)
-                return s[~s.index.duplicated(keep="first")].sort_index()
-            elif resp.status_code in (429, 500, 502, 503):
-                wait = FRED_BACKOFF_BASE ** (attempt + 1)
-                print(f"  [FRED] {resp.status_code} on {series_id} — "
-                      f"backing off {wait}s (attempt {attempt+1}/{FRED_MAX_RETRIES})")
-                time.sleep(wait)
-            else:
-                print(f"  [FRED] HTTP {resp.status_code} on {series_id} — skipping")
-                return pd.Series(dtype=float, name=series_id)
-        except Exception as exc:
-            print(f"  [FRED] Error on {series_id}: {exc} — skipping")
-            return pd.Series(dtype=float, name=series_id)
-    print(f"  [FRED] All {FRED_MAX_RETRIES} retries exhausted for {series_id}")
-    return pd.Series(dtype=float, name=series_id)
-
-
-def fetch_supplemental_fred() -> dict:
-    """
-    Fetch FRED series required for macro_market indicators that are NOT
-    already present in macro_us_hist.csv.
-
-    Series fetched:
-      PIORECRUSDM      — Iron Ore price (World Bank monthly, via FRED) [AS_C1, AS_C2]
-      BAMLHE00EHYIOAS  — ICE BofA Euro HY OAS (EU_I1 primary / fallback)
-      INDIRLTLT01STM   — India 10Y govt bond yield (OECD via FRED) [AS_I2]
-      IRLTLT01GBM156N  — UK 10Y Gilt yield (OECD via FRED) [EU_I3]
-      IRLTLT01DEM156N  — Germany 10Y Bund yield (OECD via FRED) [EU_I3]
-      IRLTLT01ITM156N  — Italy 10Y govt bond yield (OECD via FRED) [EU_I4]
-      DGS10            — US 10Y Treasury yield (daily, FRED) [AS_I1, AS_I2, US_I11]
-      MORTGAGE30US     — 30Y Fixed Mortgage Rate, % (weekly) [US_I11]
-      JTSJOL           — JOLTS Job Openings, thousands (monthly) [US_LAB2]
-      UNEMPLOY         — Unemployed Persons, thousands (monthly) [US_LAB2]
-
-    Notes on retired entries:
-      IRLTLT01CNM156N (China 10Y) — FRED does not host an OECD CN long-term
-        rate (only the short-term IR3TTS01CNM156N).  AS_CN_R1 will return
-        NaN until we route China rates through DB.nomics or another provider.
-      IRLTLT01INM156N (India)     — FRED uses an inverted naming convention
-        for India: the correct ID is INDIRLTLT01STM.  Swapped above.
-      NAPMOI (ISM new orders)     — series no longer published on FRED;
-        ISM_MFG_NEWORD is already pulled into macro_economic_hist via
-        DB.nomics, so US_ISM1 reads from there instead.
-
-    Returns dict keyed by FRED series ID, values are pd.Series.
-    """
-    series_to_fetch = [
-        "PIORECRUSDM",
-        "BAMLHE00EHYIOAS",
-        "INDIRLTLT01STM",
-        "IRLTLT01GBM156N",
-        "IRLTLT01DEM156N",
-        "IRLTLT01ITM156N",
-        "DGS10",
-        "MORTGAGE30US",
-        "JTSJOL",
-        "UNEMPLOY",
-    ]
-    result = {}
-    print(f"\nFetching {len(series_to_fetch)} supplemental FRED series...")
-    for sid in series_to_fetch:
-        print(f"  {sid}...")
-        s = _fred_fetch_full(sid)
-        if not s.empty:
-            print(f"    → {len(s)} obs  {s.index[0].date()} → {s.index[-1].date()}")
-        else:
-            print(f"    → no data")
-        result[sid] = s
-        time.sleep(FRED_REQUEST_DELAY)
-    return result
-
-
-def fetch_ecb_euro_ig_spread() -> pd.Series:
-    """
-    Attempt to fetch Euro IG corporate bond spread from the ECB SDW REST API.
+    Compute the Euro IG corporate bond spread.
 
     Strategy (in order):
       1. Fetch ECB AAA euro-area govt 10Y yield (YC dataset — well-documented).
-      2. Fetch Euro IG corporate yield from FRED series BAMLEC0A0RMEY if it exists.
-         (ICE BofA Euro Corporate Index Effective Yield — may or may not be on FRED.)
+         This series is too deeply nested to live in macro_library_fred.csv as
+         a single ID; the SDMX call happens here.
+      2. Read the Euro IG corporate yield (FRED BAMLEC0A0RMEY) from the unified
+         macro_economic_hist via `mu` — the row lives in macro_library_fred.csv
+         per §0 of forward_plan.md, so no direct FRED fetch is needed.
       3. Compute spread = corp_yield - govt_yield.
-      4. Fallback: return BAMLHE00EHYIOAS (Euro HY OAS) fetched fresh from FRED
-         as a directional credit-stress proxy — noted in INDICATOR_META for EU_I1.
+
+    On failure return empty — _calc_EU_Cr1 falls back to the unified
+    BAMLHE00EHYIOAS column.
 
     Returns pd.Series with monthly DatetimeIndex; caller resamples to weekly.
     """
@@ -309,14 +209,13 @@ def fetch_ecb_euro_ig_spread() -> pd.Series:
         print(f"  [ECB] YC fetch error: {exc}")
         time.sleep(ECB_REQUEST_DELAY)
 
-    # --- Step 2: FRED Euro IG corporate effective yield ---
+    # --- Step 2: Euro IG corporate effective yield via the unified hist ---
     corp_yield = pd.Series(dtype=float)
     if not govt_yield.empty:
-        print("  [ECB→FRED] Trying BAMLEC0A0RMEY for Euro IG corp yield...")
-        time.sleep(FRED_REQUEST_DELAY)
-        corp_yield = _fred_fetch_full("BAMLEC0A0RMEY")
+        corp_yield = _get_col(mu, "BAMLEC0A0RMEY").dropna()
         if not corp_yield.empty:
-            print(f"    → {len(corp_yield)} obs (Euro IG effective yield)")
+            print(f"  [ECB] Euro IG yield (BAMLEC0A0RMEY) from unified hist: "
+                  f"{len(corp_yield)} obs")
 
     # --- Step 3: Compute spread if both are available ---
     if not govt_yield.empty and not corp_yield.empty:
@@ -327,12 +226,10 @@ def fetch_ecb_euro_ig_spread() -> pd.Series:
         print(f"  [ECB] EU_I1 IG spread computed: {len(spread)} monthly obs")
         return spread
 
-    # --- Step 4: Fallback to Euro HY OAS (BAMLHE00EHYIOAS) ---
-    print("  [ECB] Falling back to BAMLHE00EHYIOAS (Euro HY OAS) for EU_I1")
-    time.sleep(FRED_REQUEST_DELAY)
-    fallback = _fred_fetch_full("BAMLHE00EHYIOAS")
-    fallback.name = "EU_I1_spread"
-    return fallback
+    # On failure return empty — _calc_EU_Cr1 falls back to the unified
+    # macro_economic_hist column BAMLHE00EHYIOAS (Euro HY OAS) via _get_col.
+    print("  [ECB] EU_I1 spread unavailable — calculator will fall back to BAMLHE00EHYIOAS")
+    return pd.Series(dtype=float, name="EU_I1_spread")
 
 
 def fetch_fxi_prices() -> pd.Series:
@@ -860,7 +757,11 @@ def load_macro_economic_hist() -> pd.DataFrame:
 #                                         / DB.nomics / ifo).  The three
 #                                         aliases mu/mi/dbn are kept so the
 #                                         calculator signatures don't change.
-#   supp = fetch_supplemental_fred()      dict of extra FRED Series
+#   supp = {"euro_ig_spread": ..., "fxi": ...}
+#                                         small dict of supplementals that are
+#                                         NOT in macro_economic_hist (ECB SDW
+#                                         spread + yfinance FXI).  Every FRED
+#                                         series is reached via `mu` instead.
 # Only the args actually needed are used; **_ absorbs the rest.
 # ===========================================================================
 
@@ -1163,23 +1064,23 @@ def _calc_US_ISM1(dbn, **_):
     return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
 
 
-def _calc_US_R6(supp, **_):
+def _calc_US_R6(mu, **_):
     """
     Mortgage affordability / credit stress: MORTGAGE30US − DGS10.
     Wider spread = lender risk aversion / tight housing credit; leads housing activity.
     """
-    mort = _to_weekly_friday(supp.get("MORTGAGE30US", pd.Series(dtype=float)))
-    us10 = _to_weekly_friday(supp.get("DGS10",        pd.Series(dtype=float)))
+    mort = _to_weekly_friday(_get_col(mu, "MORTGAGE30US"))
+    us10 = _to_weekly_friday(_get_col(mu, "DGS10"))
     return _arith_diff(mort, us10)
 
 
-def _calc_US_JOBS2(supp, **_):
+def _calc_US_JOBS2(mu, **_):
     """
     JOLTS labour market tightness: JTSJOL / UNEMPLOY (openings per unemployed person).
     Ratio > 1 = more openings than unemployed → wage pressure; leads CPI by ~2 months.
     """
-    openings   = _to_weekly_friday(supp.get("JTSJOL",   pd.Series(dtype=float)))
-    unemployed = _to_weekly_friday(supp.get("UNEMPLOY", pd.Series(dtype=float)))
+    openings   = _to_weekly_friday(_get_col(mu, "JTSJOL"))
+    unemployed = _to_weekly_friday(_get_col(mu, "UNEMPLOY"))
     ratio = openings / unemployed.replace(0, np.nan)
     return ratio
 
@@ -1274,16 +1175,18 @@ def _calc_EU_G2(cp, **_):
 # EU FINANCIAL CONDITIONS  (EU_I1–I3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_Cr1(supp, **_):
+def _calc_EU_Cr1(supp, mu, **_):
     """
     Euro IG spread: Euro IG corporate yield minus ECB AAA govt yield.
-    Fetched via fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread'].
-    Falls back to FRED BAMLHE00EHYIOAS if ECB unavailable.
+    Fetched via fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread']
+    (the only legitimate `supp` consumer left after the §2.4 refactor —
+    ECB SDW is not part of the unified macro_economic_hist).
+    Falls back to FRED BAMLHE00EHYIOAS (Euro HY OAS) sourced from the
+    unified hist if the ECB call returns empty.
     """
     s = supp.get("euro_ig_spread")
     if s is None or s.empty:
-        # Fallback: use BAMLHE00EHYIOAS (Euro HY) as rough proxy
-        s = supp.get("BAMLHE00EHYIOAS", pd.Series(dtype=float))
+        s = _get_col(mu, "BAMLHE00EHYIOAS")
     return _to_weekly_friday(s)
 
 
@@ -1296,14 +1199,15 @@ def _calc_UK_R2(cp, **_):
     return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
 
 
-def _calc_UK_R1(supp, **_):
+def _calc_UK_R1(mu, **_):
     """
-    UK–Germany gilt-bund yield spread: IRLTLT01GBM156N − IRLTLT01DEM156N.
-    Both monthly OECD series via FRED, forward-filled to weekly.
+    UK–Germany gilt-bund yield spread: GBR_GILT_10Y − DEU_BUND_10Y
+    (FRED IRLTLT01GBM156N / IRLTLT01DEM156N, monthly OECD series,
+    forward-filled to weekly via the unified macro_economic_hist).
     Rising spread → UK-specific risk premium rising (fiscal/political/inflation premium).
     """
-    uk = _to_weekly_friday(supp.get("IRLTLT01GBM156N", pd.Series(dtype=float)))
-    de = _to_weekly_friday(supp.get("IRLTLT01DEM156N", pd.Series(dtype=float)))
+    uk = _to_weekly_friday(_get_col(mu, "GBR_GILT_10Y"))
+    de = _to_weekly_friday(_get_col(mu, "DEU_BUND_10Y"))
     return _arith_diff(uk, de)
 
 
@@ -1342,14 +1246,16 @@ def _calc_EU_G4(cp, **_):
     return composite
 
 
-def _calc_EU_R1(supp, **_):
+def _calc_EU_R1(mu, **_):
     """
-    BTP-Bund peripheral sovereign stress: IRLTLT01ITM156N − IRLTLT01DEM156N.
-    Spread > 2.5% = peripheral stress; z > +1.5 = historically elevated risk premium.
-    Key gauge of ECB credibility and Eurozone fiscal tail risk.
+    BTP-Bund peripheral sovereign stress: ITA_BTP_10Y − DEU_BUND_10Y
+    (FRED IRLTLT01ITM156N / IRLTLT01DEM156N via the unified
+    macro_economic_hist).  Spread > 2.5% = peripheral stress; z > +1.5
+    = historically elevated risk premium.  Key gauge of ECB credibility
+    and Eurozone fiscal tail risk.
     """
-    ita = _to_weekly_friday(supp.get("IRLTLT01ITM156N", pd.Series(dtype=float)))
-    deu = _to_weekly_friday(supp.get("IRLTLT01DEM156N", pd.Series(dtype=float)))
+    ita = _to_weekly_friday(_get_col(mu, "ITA_BTP_10Y"))
+    deu = _to_weekly_friday(_get_col(mu, "DEU_BUND_10Y"))
     return _arith_diff(ita, deu)
 
 
@@ -1442,37 +1348,38 @@ def _calc_AS_IN_G1(cp, **_):
 # ASIA FINANCIAL CONDITIONS  (AS_I1–I2)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_CN_R1(supp, **_):
+def _calc_AS_CN_R1(mu, **_):
     """
-    China 10Y yield spread vs US 10Y: <CN_10Y> − DGS10.
+    China 10Y yield spread vs US 10Y: CHN_GOVT_10Y − DGS10.
     Positive spread → Chinese bonds offer premium over US Treasuries;
     rising spread → capital-flow support for CNY and EM risk appetite.
 
     Currently returns NaN.  FRED does not host an OECD-compiled CN
     long-term rate (only the short-term IR3TTS01CNM156N), and the OECD
     MEI long-term-rate dataset doesn't carry a China series.  To
-    restore this indicator, route a CN 10Y series through DB.nomics
-    (PBoC / ChinaBond / Investing.com mirror) into the unified
-    macro_economic_hist as e.g. CHN_GOVT_10Y, then read it from `dbn`.
+    restore this indicator, add a CHN_GOVT_10Y row to one of the
+    macro_library_*.csv files (likely DB.nomics — PBoC / ChinaBond /
+    Investing.com mirror) so it flows through the unified
+    macro_economic_hist; this calculator then picks it up automatically.
     """
-    chn = _to_weekly_friday(supp.get("IRLTLT01CNM156N", pd.Series(dtype=float)))
-    us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
+    chn = _to_weekly_friday(_get_col(mu, "CHN_GOVT_10Y"))
+    us  = _to_weekly_friday(_get_col(mu, "DGS10"))
     return _arith_diff(chn, us)
 
 
-def _calc_AS_IN_R1(supp, **_):
+def _calc_AS_IN_R1(mu, **_):
     """
-    India 10Y yield spread vs US 10Y: INDIRLTLT01STM − DGS10.
-    Both monthly/daily FRED series, forward-filled to weekly.
+    India 10Y yield spread vs US 10Y: IND_GOVT_10Y − DGS10
+    (FRED INDIRLTLT01STM / DGS10 via the unified macro_economic_hist).
     Positive spread → Indian bonds offer carry over US Treasuries;
     rising spread widens EM carry opportunity (but also flags INR risk).
 
     Note: FRED uses an inverted naming convention for India
-    (INDIRLTLT01STM, not IRLTLT01INM156N), so this is *not* the same
-    OECD pattern used for UK/DE/IT/JP rates.
+    (INDIRLTLT01STM, not IRLTLT01INM156N), so the macro_library_fred.csv
+    row uses the canonical INDIRLTLT01STM series_id with col=IND_GOVT_10Y.
     """
-    ind = _to_weekly_friday(supp.get("INDIRLTLT01STM", pd.Series(dtype=float)))
-    us  = _to_weekly_friday(supp.get("DGS10",           pd.Series(dtype=float)))
+    ind = _to_weekly_friday(_get_col(mu, "IND_GOVT_10Y"))
+    us  = _to_weekly_friday(_get_col(mu, "DGS10"))
     return _arith_diff(ind, us)
 
 
@@ -1530,13 +1437,13 @@ def _calc_FX_EM1(cp, **_):
 # ASIA COMMODITIES  (AS_C1–C2)
 # ---------------------------------------------------------------------------
 
-def _calc_FX_CMD5(supp, **_):
+def _calc_FX_CMD5(mu, **_):
     """
-    Iron ore price (USD/tonne): FRED PIORECRUSDM (monthly, forward-filled).
-    Raw = price level; z-score reflects steel demand cycle.
+    Iron ore price (USD/tonne): FRED PIORECRUSDM (monthly, forward-filled
+    to weekly via the unified macro_economic_hist).  Raw = price level;
+    z-score reflects steel demand cycle.
     """
-    s = supp.get("PIORECRUSDM", pd.Series(dtype=float))
-    return _to_weekly_friday(s)
+    return _to_weekly_friday(_get_col(mu, "PIORECRUSDM"))
 
 
 def _calc_FX_CMD4(cp, **_):
@@ -2102,12 +2009,17 @@ def run_phase_e():
 
     # ------------------------------------------------------------------
     # 2. Fetch supplemental data
+    #
+    # `supp` carries only series that are NOT in the unified macro_economic_hist
+    # (ECB SDW euro IG spread + yfinance FXI prices).  Every FRED series the
+    # calculators need now lives in data/macro_library_fred.csv and reaches the
+    # calculators via `mu` — see §0 of manuals/forward_plan.md and the §2.4
+    # refactor that retired fetch_supplemental_fred() (2026-04-26).
     # ------------------------------------------------------------------
-    print("  Fetching supplemental FRED series …")
-    supp = fetch_supplemental_fred()
+    supp: dict = {}
 
-    print("  Fetching Euro IG spread (ECB / FRED fallback) …")
-    supp["euro_ig_spread"] = fetch_ecb_euro_ig_spread()
+    print("  Fetching Euro IG spread (ECB SDW + unified hist) …")
+    supp["euro_ig_spread"] = fetch_ecb_euro_ig_spread(mu)
 
     print("  Fetching FXI prices (yfinance) …")
     supp["fxi"] = fetch_fxi_prices()
