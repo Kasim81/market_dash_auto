@@ -419,18 +419,33 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 **Status:** The original three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail moved to §1 Phase ME, the per-indicator wiring lives in `manuals/pipeline_review.md`, and the still-actionable forward-looking expansion work is in §3.8 below.
 
-#### Non-API Fallbacks (only if PoC fails)
+#### Source Evaluation Verdicts (still binding)
 
-If FMP's calendar turns out to have shallow history (<3 years) for key European/Asian surveys, the fallback options (in descending preference) are:
+| Source | Verdict | Rationale |
+|---|---|---|
+| **FRED** | Primary US + OECD-mirror series | Adding rows to `data/macro_library_fred.csv` is zero-code. |
+| **DB.nomics** | Primary for open-licensed series | Free REST, no key, no rate limit. Carries Eurostat survey + ISM + (some) BoJ. |
+| **OECD SDMX** | Primary for OECD harmonised series | Multi-country fan-out; CLI / unemployment / 3-month rate. |
+| **World Bank WDI** | Primary for cross-country annual macro | CPI YoY, etc. |
+| **IMF DataMapper** | Primary for cross-country GDP growth | Annual real GDP growth. |
+| **ifo Institute Excel** | Primary for German business surveys | Direct workbook scrape via `sources/ifo.py`; 26 series, 1991+. |
+| **ECB Data Portal** (`data-api.ecb.europa.eu`) | Backup — used inline for Euro IG yield-curve point | SDMX 2.1 REST. Migrated from old `sdw-wsrest` host (PR2, 2026-04-26). |
+| **Bank of Japan** (`stat-search.boj.or.jp`) | Future — see §2.6 | DB.nomics mirror is empty for Tankan; need direct fetch. |
+| **UMich portal** | Defer | No official API; headline `UMCSENT` already on FRED; sub-indices high-correlated. |
+| **FMP economic calendar** | Rejected (paywalled Aug 2025) | All endpoints behind paid tier. Module deleted. |
+| **Trading Economics** | Skip | Paid only. Same data via DB.nomics + FRED. |
+| **Investing.com** | Skip | `investpy` broken since 2023 (Cloudflare); scraping violates ToS. |
+| **S&P Global / ISM direct** | Skip | No programmatic API; paid institutional subscription for sub-indices. ISM redistributed by DB.nomics. |
 
-1. **DB.nomics alternative providers** — check if S&P Global PMIs are indirectly hosted (e.g. via the `Eurostat` provider's industry confidence as a composite proxy, or via country central bank providers).
-2. **ZEW direct press-release scrape** — monthly release on `zew.de` has a consistent table structure. Parse once a month. Fragile but bounded risk (one small parser).
-3. **IFO direct press-release scrape** — same pattern on `ifo.de`.
-4. **Manual CSV update** — user downloads headline values once a month into `data/macro_manual_surveys.csv`. Last-resort option; only for 1-2 series where no free programmatic source exists.
+#### Open-Licence Sources Successfully Wired (2026-04-21 → 2026-04-23)
 
-Skip UMich portal, Trading Economics, Investing.com, and S&P Global direct entirely (see source evaluation table above).
+All resulting series already live in `macro_economic_hist`:
 
-**Dependencies:** `dbnomics` package must be added to `requirements.txt` for Tier 2. No new dependency for Tier 3 (FMP uses standard `requests`).
+- **FRED Tier 1** (~27 rows added in Stage 2): OECD business / consumer confidence composites for DE / UK / FR / IT / JP / CN, Dallas Fed manufacturing (`BACTUAMFRBDAL`), country yields, plus the 7 supplementals from the §2.4 refactor.
+- **DB.nomics**: 3 Eurostat survey series (`EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`), 3 ISM series (`ISM_MFG_PMI`, `ISM_MFG_NEWORD`, `ISM_SVC_PMI`), 3 Eurostat real-economy series (`EZ_IND_PROD`, `EZ_RETAIL_VOL`, `EZ_EMPLOYMENT`).
+- **ifo**: 26 series across the Industry+Trade composite, six sub-sector groups, plus uncertainty + cycle tracer.
+
+**Forward-looking expansion** (additional FRED rows + new source modules — ONS, e-Stat, BoE, ECB SDW direct, etc.) lives in §3.8 alongside the cycle-timing gap analysis.
 
 ### 3.8 Cycle Timing Framework (L/C/G) & Indicator Coverage Expansion
 
