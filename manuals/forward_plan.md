@@ -341,32 +341,13 @@ Filter to significant changes (feature additions, bug fixes, schema changes, new
 
 ## 3. New Feature Development
 
-### 3.1 Phase D — PMI / Survey Data
+### 3.1 Phase D — PMI / Survey Data — Retrospective (consolidated into Phase ME)
 
-**Priority:** Medium-high — business survey data is the largest structural gap in the indicator suite for a global asset allocator.
-**Status:** Three-tier plan finalised 2026-04-21. `FMP_API_KEY` registered. See section 3.7 for full implementation plan, target series lists, and 13 indicators.
+**Status:** Phase D was retired into Phase ME on 2026-04-23 (see §1 Phase ME). The "Tier 3 FMP calendar" track that this section originally described was paywalled and rejected on the same date; the FMP module is deleted.
 
-**The gap:** ISM PMI (US), S&P Global country PMIs (EZ/UK/JP/CN), ECB Bank Lending Survey, BoJ Tankan, ZEW, IFO, EC Economic Sentiment — none currently in the pipeline. FRED removed all 22 ISM series in June 2016 (S&P Global licence pulled). S&P Global country PMIs are proprietary and only available free via calendar redistribution. ZEW, IFO, NBS have no free APIs.
+**Result:** 10 of the original 13 Phase D indicators are live and read from `macro_economic_hist`. The 3 proprietary holdouts (`DE_ZEW1`, `JP_PMI1`, `CN_PMI2` — see §1 Known Data Gaps) return `Insufficient Data`. `JP_PMI1` will be partially addressed by §2.6 (BoJ Tankan, quarterly DI).
 
-**Revised approach (post-FMP death, 2026-04-23):**
-
-| Tier | Source | Coverage | Status |
-|---|---|---|---|
-| 1 | FRED (rows in `macro_library_fred.csv`) | 80 series: OECD confidence, policy rates, CPI, IP, trade, labour, credit across US/UK/EZ/JP/CN | **Production — expanded 2026-04-23 (Stage 2: +27 rows)** |
-| 2a | DB.nomics Eurostat | EU_ESI, EU_IND_CONF, EU_SVC_CONF, EZ_IND_PROD, EZ_RETAIL_VOL, EZ_EMPLOYMENT | **Production — expanded 2026-04-23 (Stage 2: +3 rows)** |
-| 2b | DB.nomics ISM | US ISM Mfg, ISM New Orders, ISM Services (may lag 4-8m) | **Production 2026-04-23** |
-| 3a | ifo Institute Excel (`fetch_macro_ifo.py`) | DE_IFO1 (1991+ monthly) | **Production 2026-04-23** |
-| 3b | EC Industry/Services Confidence (DB.nomics Eurostat, already in T2a) | EU_PMI1 → EU_IND_CONF, EU_PMI2 → EU_SVC_CONF | **Production 2026-04-23** — proxy using same PMI methodology |
-| 3c | OECD BCI for UK (FRED `BSCICP02GBM460S`) | UK_PMI1 → GBR_BUS_CONF (monthly, CBI-derived) | **Production 2026-04-23** — upgraded from quarterly to monthly |
-| 3d | OECD BCI for China (FRED `CHNBSCICP02STSAM`) | CN_PMI1 → CHN_BUS_CONF (monthly, NBS-derived) | **Production 2026-04-23** — new FRED library row |
-| 3e | Z-score composite (computed from T1-3d) | GL_PMI1 = avg(ISM, EU_IND_CONF, GBR_BUS_CONF, CHN_BUS_CONF) | **Production 2026-04-23** |
-| ~~3f~~ | ~~Investing.com scrape~~ | ~~7 indicators~~ | **Rejected** 2026-04-23 — fragile anti-bot protections; free proxies found instead |
-| ~~3g~~ | ~~ECB RTD API~~ | ~~DE_ZEW1~~ | **Rejected** 2026-04-23 — ZEW proprietary |
-| ~~3h~~ | ~~FMP calendar~~ | ~~S&P Global PMIs + ZEW + IFO~~ | **Deleted** 2026-04-23 — endpoints paywalled Aug 2025 |
-
-**Total output:** 13 Phase D composite indicators. 10 now live. 3 proprietary (DE_ZEW1, JP_PMI1, CN_PMI2) — no free monthly source exists; these return `Insufficient Data`. Future BoJ Tankan fetcher (quarterly) could partially address JP_PMI1.
-
-**Full indicator-to-source mapping:** see `manuals/pipeline_review.md` §1 and §5.
+**Source-per-indicator detail:** see `manuals/pipeline_review.md` §1 and §5 for the historical record. The current source-of-truth for survey data is the unified `macro_economic_hist`, populated by `sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py` per `data/macro_library_*.csv`.
 
 ### 3.2 Instrument Expansion
 
