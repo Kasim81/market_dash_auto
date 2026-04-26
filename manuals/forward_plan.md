@@ -419,32 +419,6 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 **Status:** The original three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail moved to §1 Phase ME, the per-indicator wiring lives in `manuals/pipeline_review.md`, and the still-actionable forward-looking expansion work is in §3.8 below.
 
-#### Global Gap Map — What's Missing by Region
-
-**Already on FRED (in our library):** US SLOOS (5 series), UMich Consumer Sentiment, Conference Board Consumer Confidence, OECD US Business Confidence, OECD Eurozone Consumer Confidence, 4 Regional Fed surveys (Philly, Empire, Richmond, KC), UMich 1Y inflation expectations.
-
-**Already on FRED (not yet in library — Tier 1 instant wins):** OECD business/consumer confidence composites for DE, UK, JP, FR, IT, CN (`BSCICP02*` / `CSCICP02*` series), Dallas Fed Mfg General Business Activity (`BACTUAMFRBDAL`).
-
-**Missing — requires new source:**
-
-| Region | Survey | Frequency | Best Source |
-|---|---|---|---|
-| US | ISM Manufacturing PMI composite + sub-indices (New Orders, Employment, Prices, Production) | Monthly | DB.nomics `ISM/*` |
-| US | ISM Services PMI composite + Business Activity sub-index | Monthly | DB.nomics `ISM/nm-*` |
-| Eurozone | S&P Global / HCOB Manufacturing PMI | Monthly | **FMP calendar** (S&P Global proprietary — not on DB.nomics) |
-| Eurozone | S&P Global / HCOB Services PMI | Monthly | **FMP calendar** |
-| Eurozone | ECB Bank Lending Survey (credit standards enterprises / households) | Quarterly | DB.nomics `ECB/BLS` |
-| Eurozone | EC Economic Sentiment Indicator (ESI) + sector confidence | Monthly | DB.nomics `Eurostat/teibs020` |
-| Germany | ZEW Economic Sentiment | Monthly | **FMP calendar** (ZEW has no free API) |
-| Germany | IFO Business Climate | Monthly | **FMP calendar** (IFO has no free API) |
-| UK | S&P Global UK Manufacturing / Services PMI | Monthly | **FMP calendar** |
-| Japan | BoJ Tankan Large Manufacturers / Non-Mfr DI + forecasts | Quarterly | DB.nomics `BOJ/CO` |
-| Japan | au Jibun Bank Japan Manufacturing / Services PMI (S&P Global) | Monthly | **FMP calendar** |
-| China | NBS Manufacturing / Non-Manufacturing PMI | Monthly | **FMP calendar** (NBS has no free API) |
-| China | Caixin Manufacturing / Services PMI (S&P Global) | Monthly | **FMP calendar** |
-
-This split drives the three-tier strategy: DB.nomics covers everything that is open-licensed (ISM, ECB, BoJ, Eurostat); FMP's calendar fills the S&P Global proprietary gap (EZ/UK/JP/CN PMIs) and the institute-published surveys (ZEW/IFO) that lack free APIs.
-
 #### Source Evaluation (completed 2026-04-21)
 
 | Source | Verdict | Rationale |
