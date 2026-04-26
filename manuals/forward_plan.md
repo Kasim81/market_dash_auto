@@ -158,6 +158,43 @@ Outstanding (low value): record Sheets GIDs for each active tab in `manuals/tech
 
 Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the largest tab (`market_data_comp_hist`, ~9,000 rows) sits within the Sheets API's single-call payload limit at current column count, so no other writer has hit a batching need yet. Revisit if column count grows significantly.
 
+### Data-Layer Registry (single source of truth — per §0)
+
+These 10 CSVs in `data/` are the single source of truth for everything the pipeline fetches or computes. Adding / removing / renaming a series = edit the relevant CSV. Never a Python literal (per §0.1).
+
+| File | Rows | Owner | Used by |
+|---|---|---|---|
+| `index_library.csv` | ~390 | Comp pipeline | `fetch_data.py`, `fetch_hist.py` |
+| `macro_library_countries.csv` | 12 | Phase ME | `sources/countries.py` (canonical / WB / IMF code mappings) |
+| `macro_library_fred.csv` | ~85 | Phase ME | `sources/fred.py` |
+| `macro_library_oecd.csv` | varies | Phase ME | `sources/oecd.py` |
+| `macro_library_worldbank.csv` | varies | Phase ME | `sources/worldbank.py` |
+| `macro_library_imf.csv` | varies | Phase ME | `sources/imf.py` |
+| `macro_library_dbnomics.csv` | 9 | Phase ME | `sources/dbnomics.py` |
+| `macro_library_ifo.csv` | 26 | Phase ME | `sources/ifo.py` |
+| `macro_indicator_library.csv` | 91 | Phase E | `compute_macro_market.py` (composite indicator registry) |
+| `reference_indicators.csv` | 206 | Reference (gap audit) | §3.7 cross-reference; not consumed by the runtime pipeline |
+
+**Read order in `fetch_macro_economic.py`:** `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`).
+
+**Library Manager (planned, §2.5):** a standalone `library_manager.py` will validate every CSV — verify FRED IDs against the FRED API, probe OECD dataflows + DB.nomics paths, sanity-check ifo sheet positions, and lint `index_library.csv` tickers against yfinance.
+
+### Known Data Gaps (consolidated, 2026-04-26)
+
+These are cases where a planned series is unavailable from any free source we accept. Documented here so they aren't re-investigated repeatedly.
+
+| Gap | Impact | Resolution |
+|---|---|---|
+| **China 10-Year government bond yield** | `AS_CN_R1` (China–US 10Y spread) returns NaN. FRED only carries the short-term `IR3TTS01CNM156N`; the OECD MEI long-term-rate dataset has no CN series. | Future: route a CN 10Y series via DB.nomics (PBoC / ChinaBond mirror) into the unified hist as `CHN_GOVT_10Y` — calculator already reads that column name. |
+| **`BSCICP02JPM460S` / `BSCICP02CNM460S`** (OECD Business Confidence — Japan / China on FRED) | Don't exist on FRED. | Japan covered by `JP_PMI1` (proprietary, returns Insufficient Data); China covered by `CHNBSCICP02STSAM` (different ID). |
+| **`DE_ZEW1`** (ZEW Economic Sentiment) | Returns Insufficient Data. ZEW Mannheim licences the archive; no free API. | Substitute: German sentiment is covered by `DE_IFO1` + `DEU_BUS_CONF`. |
+| **`JP_PMI1`** (au Jibun Bank Japan Manufacturing PMI) | Returns Insufficient Data. S&P Global proprietary, no monthly free source. | Future partial fix: BoJ Tankan quarterly DI via direct fetcher — see §2.6. |
+| **`CN_PMI2`** (Caixin China Manufacturing PMI) | Returns Insufficient Data. S&P Global proprietary. | Substitute: Chinese manufacturing is covered by `CN_PMI1` (OECD BCI for China). |
+| **OECD CLI for EA19 / CHE** | Not published by OECD. | `compute_macro_market.py` uses DEU+FRA equal-weight as the Eurozone CLI proxy. |
+| **`NAPMOI`** (FRED ISM new orders) | Retired by FRED in April 2026 (HTTP 400 from late April onwards). | `US_ISM1` reads `ISM_MFG_NEWORD` from DB.nomics via the unified hist (PR2, 2026-04-26). |
+| **`CHN_PPI`** (FRED `CHNPPIALLMINMEI`) | Retired by FRED. | Removed from `macro_library_fred.csv` (PR1, 2026-04-25); no Phase E indicator currently depends on it. |
+| **Investing.com / Trading Economics / S&P Global direct / FMP economic calendar** | Evaluated and rejected: scraping fragility (Cloudflare), paid-only APIs, FMP endpoints paywalled August 2025. | Do not revisit. |
+
 
 ---
 
