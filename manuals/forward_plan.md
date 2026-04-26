@@ -62,7 +62,7 @@ PR2 (2026-04-26) added `INDIRLTLT01STM` directly to the `series_to_fetch` litera
 ## Table of Contents
 
 0. [Architecture Preferences — Claude must always follow](#0-architecture-preferences--claude-must-always-follow)
-1. [Project Phase Summary (A-G)](#1-project-phase-summary-a-g)
+1. [Project Phase Summary](#1-project-phase-summary)
 2. [Resume Here — Priority Tasks](#2-resume-here--priority-tasks)
 3. [New Feature Development](#3-new-feature-development)
 4. [Multi-Frequency Pipeline (Phase 2)](#4-multi-frequency-pipeline-phase-2)
