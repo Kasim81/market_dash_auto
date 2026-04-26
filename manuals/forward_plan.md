@@ -568,16 +568,9 @@ These 20 indicators can be captured immediately by adding rows to the existing F
 - **CBI, Lloyds, Sentix, Reuters Tankan** (5) — UK/EU business surveys with no free API
 - **Other** (24) — various proprietary feeds across regions
 
-#### HTML Charting Tool Integration (Pending)
+#### HTML Charting Tool Integration — folded into §2.4
 
-**TODO:** Ensure the `cycle_timing` (L/C/G) classification feeds through to `docs/indicator_explorer.html`. Specifically:
-
-1. **`build_html.py`** — read `cycle_timing` from `macro_indicator_library.csv` and pass it to the JavaScript data layer.
-2. **`indicator_explorer.html` / `indicator_explorer_mkt.js`** — display L/C/G badge or colour code next to each indicator in the sidebar and detail panel. Colour convention: blue for Leading, amber/beige for Coincident, pink/red for Lagging.
-3. **Optional filter** — allow sidebar filtering by cycle timing (show only Leading, only Coincident, etc.).
-4. **Legend** — add a small legend explaining L/C/G terminology.
-
-This is a display-only change — no new data computation needed. The `cycle_timing` column already exists in the CSV.
+The cycle-timing badge / filter / legend work that was originally listed here has been merged into the broader **§2.4 — Mirror the unified macro library structure in `docs/indicator_explorer.html`** task in the §2 priority queue. That section's "Plan" item 2 ("Cycle-timing badge + filter") and item 4 ("Legend") cover this scope. The `cycle_timing` column already exists in `macro_indicator_library.csv` and is plumbed through `build_html.py` — the remaining work is JS-side rendering only.
 
 ### 3.9 PE Ratio Integration
 
