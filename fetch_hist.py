@@ -418,7 +418,11 @@ def fetch_comp_yfinance_history(
     """
     tickers     = [inst["ticker"] for inst in instruments]
     ticker_meta = {inst["ticker"]: inst for inst in instruments}
-    close_df    = pd.DataFrame()
+
+    # Collect per-ticker close series in a dict, then assemble the wide
+    # DataFrame in one pd.concat at the end.  Avoids ~390 single-column
+    # inserts that fragment the block manager and trigger PerformanceWarnings.
+    close_series: dict[str, pd.Series] = {}
 
     CHUNK = 100
     chunks = [tickers[i:i + CHUNK] for i in range(0, len(tickers), CHUNK)]
@@ -438,12 +442,12 @@ def fetch_comp_yfinance_history(
                 if ticker in close_raw.columns:
                     s = close_raw[ticker].dropna()
                     if not s.empty:
-                        close_df[ticker] = s
+                        close_series[ticker] = s
         except Exception as e:
             print(f"    Chunk {ci} failed ({e})")
         time.sleep(YFINANCE_DELAY)
 
-    failed = [t for t in tickers if t not in close_df.columns]
+    failed = [t for t in tickers if t not in close_series]
     if failed:
         print(f"  Per-ticker fallback for {len(failed)} instruments...")
         for i, ticker in enumerate(failed, 1):
@@ -455,13 +459,15 @@ def fetch_comp_yfinance_history(
                 if isinstance(s, pd.DataFrame):
                     s = s.iloc[:, 0]
                 if not s.empty:
-                    close_df[ticker] = s
+                    close_series[ticker] = s
                     print(f"    [{i}] {ticker}: OK ({len(s)} rows)")
                 else:
                     print(f"    [{i}] {ticker}: empty")
             except Exception as e:
                 print(f"    [{i}] {ticker}: failed ({e})")
             time.sleep(YFINANCE_DELAY)
+
+    close_df = pd.concat(close_series, axis=1) if close_series else pd.DataFrame()
 
     print("  Processing prices and computing USD series...")
     local_prices = {}
@@ -566,8 +572,10 @@ def build_comp_market_hist_df(
     yf_post_rates = [t for t in yf_tickers if inst_meta[t]["asset_class"] not in _pre_fx_classes]
     all_ordered  = yf_pre_fx + fred_ids + yf_post_rates
 
-    df = pd.DataFrame(index=spine)
-    df.index.name = "Date"
+    # Collect every column into a dict keyed by final column name, then
+    # build the wide DataFrame in a single pd.DataFrame() call.  Per-column
+    # assignment in a 780-iteration loop fragments the block manager.
+    columns: dict[str, pd.Series] = {}
 
     for ticker in all_ordered:
         if ticker in local_yf:
@@ -576,7 +584,7 @@ def build_comp_market_hist_df(
             s = local_fr[ticker]
         else:
             s = pd.Series(np.nan, index=spine)
-        df[f"{ticker}_Local"] = s
+        columns[f"{ticker}_Local"] = s
 
     for ticker in all_ordered:
         if ticker in usd_yf:
@@ -585,8 +593,10 @@ def build_comp_market_hist_df(
             s = usd_fr[ticker]
         else:
             s = pd.Series(np.nan, index=spine)
-        df[f"{ticker}_USD"] = s
+        columns[f"{ticker}_USD"] = s
 
+    df = pd.DataFrame(columns, index=spine)
+    df.index.name = "Date"
     df = df.reset_index()
     df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
 
