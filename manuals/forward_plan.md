@@ -200,139 +200,86 @@ These are cases where a planned series is unavailable from any free source we ac
 
 ## 2. Resume Here — Priority Tasks
 
-### 2.1 Generate Dated Chronology from Git History
+This is the priority queue distilled from the 2026-04-22 → 2026-04-26 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup). Items are listed in execution order; each is self-contained with its own acceptance criteria.
 
-**Priority:** For review — provides project history context without cluttering the forward plan with completed work.
+Completed work that previously lived in this section:
+
+- ~~§2.4 (old) — Eliminate `fetch_supplemental_fred()`~~ — done 2026-04-26 (commit `48c8c1c`); see §1 Phase E description.
+- ~~§2.2 (old) — Update technical manual~~ — was marked complete 2026-04-23 but has since gone stale; relisted as **§2.2 below** with a full review-and-update scope.
+- ~~§2.3 (old) — Phase D Rebuild — FMP Replacement Plan~~ — done 2026-04-23 (Phase D consolidated into Phase ME, FMP rejected); the BoJ Tankan follow-up is now **§2.6 below**.
+- ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.8 below** at low priority.
+
+### 2.1 Verify the merged stack on the next nightly CI run
+
+**Priority:** Immediate (no work needed; just read tomorrow's `pipeline.log`).
+**Status:** Pending the 2026-04-27 03:17 UTC run.
+
+Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the next run is the first time they all execute together:
+
+| PR | Commit | Verifies |
+|---|---|---|
+| PR1 (pipeline.log capture + remove CHN_PPI) | `3a0957d` | The log itself is the artefact. |
+| PR2 (ECB endpoint + 3 FRED 400s) | `d183e9f` | ECB Euro IG spread fetch resolves under the new `data-api.ecb.europa.eu` host; `INDIRLTLT01STM` returns India 10Y data; old `IRLTLT01CNM156N` no longer attempted. |
+| §2.4 refactor (CSV-ify supplementals) | `48c8c1c` | The 7 new FRED columns appear in `macro_economic_hist.csv` (`JTSJOL`, `UNEMPLOY`, `MORTGAGE30US`, `BAMLHE00EHYIOAS`, `BAMLEC0A0RMEY`, `IND_GOVT_10Y`, `ITA_BTP_10Y`); the 7 rewired calculators (`US_R6`, `US_JOBS2`, `EU_Cr1`, `UK_R1`, `EU_R1`, `AS_CN_R1`, `AS_IN_R1`, `FX_CMD5`) produce sensible values. |
+| PR3 (DataFrame fragmentation refactor) | `9999e0d` | `pipeline.log` no longer contains 60+ `PerformanceWarning: DataFrame is highly fragmented` lines. |
+
+**Acceptance:** read `pipeline.log` from the 2026-04-27 run; check the 7 expected columns exist, no `PerformanceWarning`s, no fresh HTTP 4xx/5xx. If anything regressed, fix-forward in a small PR before opening anything else.
+
+### 2.2 Refresh `manuals/technical_manual.md` to current reality
+
+**Priority:** High — the technical manual is the canonical reference; significant drift since the 2026-04-23 update has accumulated.
+**Status:** Not started. Requires a section-by-section pass.
+
+Known stale spots (verified by grep on 2026-04-26 against current code):
+
+- **§1 Scope at a Glance** still lists `macro_us`, `macro_us_hist`, `macro_intl`, `macro_intl_hist` as separate tabs. Replace with `macro_economic` + `macro_economic_hist` per §1 Phase G of this plan.
+- **§2 Directory Structure** lists deleted modules: `fetch_macro_us_fred.py` (510 lines), `fetch_macro_international.py` (1,426 lines). Replace with `fetch_macro_economic.py` + the `sources/` package (`base`, `countries`, `fred`, `oecd`, `worldbank`, `imf`, `dbnomics`, `ifo`).
+- **§3 Execution Flow** references `run_phase_a()`, `run_phase_c()`, etc. Phase A/B/C/D have all been retired into Phase ME — update the call graph.
+- **§6 Google Sheets Tab Map** carries 9 rows — should be 7 (matches §1 Phase G of this plan).
+- **§7 CSV File Inventory** is missing the per-source library CSVs (`macro_library_fred.csv`, `_oecd.csv`, `_worldbank.csv`, `_imf.csv`, `_dbnomics.csv`, `_ifo.csv`, `_countries.csv`) and `reference_indicators.csv`. Add per the §1 Data-Layer Registry of this plan.
+- **§9 Module Reference** has stale entries for the 4 retired coordinators. Replace with one entry covering `fetch_macro_economic.py` + `sources/` package modules.
+- **§13 Known Issues & Status** should absorb the §1 "Known Data Gaps" subsection of this plan (CN 10Y, proprietary PMIs, NAPMOI rerouted, CHN_PPI removed, OECD CLI proxy).
+- **§14 Operational Notes** should add: `pipeline.log` is committed to the repo on every workflow run (PR1, 2026-04-25); the workflow uses `set -o pipefail` + `tee pipeline.log` + an `if: always()` commit step.
+- **Cross-reference §0 of this plan** — the architecture preferences belong in the technical manual too (or a clear pointer to §0 of `forward_plan.md`).
+
+**Acceptance:** every grep that currently hits a deleted module name in `technical_manual.md` returns zero matches; tab inventory and CSV inventory match `library_utils.py::SHEETS_ACTIVE_TABS` and the §1 registry of this plan.
+
+### 2.3 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
+
+**Priority:** High — precondition for §2.4 (the indicator-explorer mirror) and structurally aligns the composite registry with the unified raw-series taxonomy.
 **Status:** Not started.
 
-The git log preserves a dated record of every significant change made to the codebase. A curated chronology can be generated from commit history using:
+The unified raw-series libraries (`macro_library_*.csv`) already carry `concept` ("Rates / Yields", "Inflation", "Labour", "Credit / Spreads", "Sentiment / Survey", etc.) and `subcategory` ("Government Yields", "Mortgage Rates", "CPI", …). The Phase E composite library (`data/macro_indicator_library.csv`) does **not** — it only has `category` / `group` / `sub_group` (region-based) and `cycle_timing`.
 
-```bash
-git log --oneline --format="%ad  %s" --date=short
-```
+This means the indicator explorer can show "all US indicators" but cannot show "all rate / yield-curve indicators across regions" — which is the user-flagged feature in §2.4.
 
-Filter to significant changes (feature additions, bug fixes, schema changes, new modules) and exclude the daily automated `Update market data + explorer` commits. Output as a dated chronology section in `technical_manual.md` or as a standalone `manuals/chronology.md`. Update periodically as new features land.
+**Plan:**
 
-### 2.2 Update Technical Manual to Reflect Current State
+1. Add `concept` and `subcategory` columns to `data/macro_indicator_library.csv` (CSV schema change, not code).
+2. Manually populate each of the 91 rows with the appropriate concept (matching the raw-series taxonomy where the indicator is built directly on a single concept; using the dominant concept for composites).
+3. Update `compute_macro_market.py::_load_indicator_library()` to surface the two new fields in the `INDICATOR_META` dict.
+4. Plumb through the `build_html.py` reader so the explorer JS payload carries `concept` / `subcategory` per indicator.
 
-**Priority:** High — the technical manual should always reflect the full working state of all code.
-**Status:** Completed 2026-04-23.
+**Acceptance:** every row in `macro_indicator_library.csv` has a non-empty `concept` value; no Python literal contains a concept-string list (per §0).
 
-Key updates applied:
-- Indicator count corrected from 68 to 91 across all references
-- `cycle_timing` column documented in indicator library schema
-- `FMP_API_KEY` status updated from "Missing" to "Exists"
-- Resolved metadata items (`^VIX`, `^MOVE` region) marked as fixed
-- Operational/infrastructure content absorbed from forward plan
-- Excluded indicators reference table added
-- New CSV files (`reference_indicators.csv`, `macro_library_dbnomics.csv`) added to inventory
+### 2.4 Mirror the unified macro library structure in `docs/indicator_explorer.html`
 
-### 2.3 Phase D Rebuild — FMP Replacement Plan
+**Priority:** High — user-flagged. Folds in the previously-pending §3.8 "HTML Charting Tool Integration" item.
+**Status:** Not started. Depends on §2.3.
 
-**Branch:** `claude/review-project-status-5x54q` (local) — also pushed.
+**Goal:** make the indicator explorer browsable by the same taxonomy as the unified macro library, so related concepts can be viewed together regardless of region.
 
-**Status (2026-04-23):** The original 3-tier design (FRED / DB.nomics / FMP) was completed through Tier 2. Tier 3 FMP was paywalled and the entire calendar module has been **deleted** from the repo. Rebuild is **mostly complete** — 8 of 12 broken Phase E indicators restored using free proxy sources. 3 remain proprietary with no free monthly equivalent.
+Today, `build_html.py` cuts the macro payloads by source/country (`build_macro_us` = FRED-USA, `build_macro_intl` = OECD/WB/IMF + non-USA FRED, `build_macro_survey` = DB.nomics + ifo). And `macro_indicator_library.csv` groups Phase E composites by region (US / UK / Europe / Japan / Asia / Global / FX & Commodities). Neither lets you find, say, all "Sentiment / Survey" indicators side-by-side.
 
-**Replacement plan** (source-per-indicator detail in `manuals/pipeline_review.md` §1):
+**Plan:**
 
-| Indicator(s) | Replacement | Status |
-|---|---|---|
-| US_PMI1, US_PMI2, US_SVC1 | DB.nomics ISM (`ISM/pmi/pm`, `ISM/neword`, `ISM/nm-pmi/pm`) | **Wired 2026-04-23** (commit `1667276`). Mirror may lag 4-8m. |
-| DE_IFO1 | ifo Institute Excel (`ifo.de/en/ifo-time-series`, 1991+ history) | **Wired 2026-04-23** (commit `f35a0aa`). New module `fetch_macro_ifo.py`. |
-| EU_PMI1 | EC Industry Confidence (`EU_IND_CONF`, DB.nomics Eurostat) | **Wired 2026-04-23.** Same 3 PMI questions (production expectations, order books, stocks). Already in `dbn`. |
-| EU_PMI2 | EC Services Confidence (`EU_SVC_CONF`, DB.nomics Eurostat) | **Wired 2026-04-23.** Monthly, 1995+. Already in `dbn`. |
-| UK_PMI1 | OECD BCI for UK (`GBR_BUS_CONF`, FRED `BSCICP02GBM460S`) | **Wired 2026-04-23.** Upgraded from quarterly to monthly series. CBI-survey-derived, 1977+. Already in `mi`. |
-| CN_PMI1 | OECD BCI for China (`CHN_BUS_CONF`, FRED `CHNBSCICP02STSAM`) | **Wired 2026-04-23.** NBS PMI-derived, monthly, Feb 2000+. New row in `macro_library_fred.csv`. |
-| GL_PMI1 | Z-score-normalised 4-region composite (ISM + EU_IND_CONF + GBR_BUS_CONF + CHN_BUS_CONF) | **Wired 2026-04-23.** Degrades gracefully — averages whatever components are available. |
-| DE_ZEW1 | **PROPRIETARY** — ZEW Mannheim licences the archive | No free API. German sentiment covered by DE_IFO1 + DEU_BUS_CONF. |
-| JP_PMI1 | **PROPRIETARY** — S&P Global / au Jibun Bank | No monthly free source. BoJ Tankan (quarterly) is future option. |
-| CN_PMI2 | **PROPRIETARY** — S&P Global / Caixin | Chinese manufacturing covered by CN_PMI1 (OECD BCI). |
+1. **Sidebar restructure.** Add a top-level filter / view-mode toggle to `indicator_explorer.html`: **By Region** (current behaviour, default) ↔ **By Concept** (new). When "By Concept" is active, the sidebar groups by `concept` → `subcategory` → indicator, drawing from the new `concept` column.
+2. **Cycle-timing badge + filter.** Display L / C / G next to every indicator in both views. Optional "show only Leading" / "show only Coincident" / "show only Lagging" filter. Colour convention: blue (L) / amber (C) / pink (G), matching the `manuals/Macro Market Indicators Reference.docx` source-doc shading.
+3. **Country / source secondary filters.** When "By Concept" is active, allow filtering by country (12 codes) and / or source (FRED / OECD / WB / IMF / DB.nomics / ifo).
+4. **Legend.** Small inline legend explaining L/C/G + the source codes.
+5. **Build pipeline.** `build_html.py` already reads the unified `macro_economic_hist` metadata rows (incl. `Concept` and `cycle_timing`); the change is JS-side payload shape + sidebar rendering. No new fetcher needed.
 
-**Completed steps:**
-
-1. ~~Add 3 DB.nomics ISM rows~~ — **done** (commit `1667276`).
-2. ~~Build ifo Excel fetcher~~ — **done** (commit `f35a0aa`).
-3. ~~Probe ECB RTD for ZEW~~ — **done** (commit `c3e8c5a`), confirmed absent.
-4. ~~Evaluate Investing.com scraper~~ — **rejected** 2026-04-23. Fragile anti-bot protections, frequent HTML changes, and Cloudflare blocking make scraping unreliable for a nightly CI pipeline. Free proxy alternatives found instead.
-5. ~~Wire EU_PMI1/2 to EC Industry/Services Confidence~~ — **done** 2026-04-23. Data already flowed via DB.nomics; calculators rewired.
-6. ~~Wire UK_PMI1 to OECD BCI, add CHN_BUS_CONF, wire CN_PMI1~~ — **done** 2026-04-23.
-7. ~~Rebuild GL_PMI1 as z-score composite~~ — **done** 2026-04-23.
-
-**Remaining work (future, separate PRs):**
-
-- **BoJ Tankan fetcher** — quarterly Large Manufacturing DI via `stat-search.boj.or.jp`. Would give JP_PMI1 a quarterly proxy. Similar architecture to `fetch_macro_ifo.py`.
-- **First CI verification** — next nightly run at 03:17 UTC validates the full pipeline with all new sources.
-
-### 2.4 Eliminate `fetch_supplemental_fred()` — CSV-ify the last hardcoded series list
-
-**Priority:** High — this is the architecture-drift hotspot called out in §0. PR2 (commit `d183e9f`, 2026-04-26) extended the Python list literal `series_to_fetch` to add India 10Y instead of CSV-routing it. That violates §0.1 and is the immediate motivation for this refactor.
-**Status:** **Done 2026-04-26.** All 5 steps below landed in the same PR. `fetch_supplemental_fred()` deleted; `_fred_fetch_full()` deleted (no callers left); 7 affected calculators rewired to `_get_col(mu, ...)`; 7 new rows in `data/macro_library_fred.csv` (the original 6 + `BAMLEC0A0RMEY` which closed the last leak inside `fetch_ecb_euro_ig_spread`); `IND` added to `data/macro_library_countries.csv` (with empty `wb_code`/`imf_code` so it does not fan out into WB/IMF queries). Phase E now contains zero direct FRED API contact — every FRED ID used by the calculators reaches them through the unified `macro_economic_hist`.
-
-#### Where the drift lives
-
-`compute_macro_market.py::fetch_supplemental_fred()` (~line 211–290) declares its own Python list:
-
-```python
-series_to_fetch = [
-    "PIORECRUSDM", "BAMLHE00EHYIOAS",
-    "INDIRLTLT01STM",                                    # added in PR2
-    "IRLTLT01GBM156N", "IRLTLT01DEM156N", "IRLTLT01ITM156N",
-    "DGS10", "MORTGAGE30US", "JTSJOL", "UNEMPLOY",
-]
-```
-
-This list:
-
-1. **Bypasses the unified coordinator** — it makes its own FRED API calls instead of reading from `data/macro_economic_hist.csv`, even though Phase E has already finished by the time `fetch_supplemental_fred()` runs.
-2. **Duplicates 4 series** that the unified coordinator already fetches: `DGS10`, `PIORECRUSDM`, `IRLTLT01GBM156N` (col `GBR_GILT_10Y`), `IRLTLT01DEM156N` (col `DEU_BUND_10Y`). Verified 2026-04-26 against `data/macro_library_fred.csv` lines 23, 40, 42, 43 and the column headers in `macro_economic_hist.csv`.
-3. **Hardcodes 6 series that aren't yet in the FRED library** — `BAMLHE00EHYIOAS`, `INDIRLTLT01STM`, `IRLTLT01ITM156N`, `MORTGAGE30US`, `JTSJOL`, `UNEMPLOY`. These are the actual leak: any future change to this set has to be made in Python, not CSV.
-
-#### Refactor plan
-
-**Step 1 — Add the 6 missing series to `data/macro_library_fred.csv`** (zero new Python). Suggested rows (use existing schema; pick `col` aliases that match what the calculators already look up by ID):
-
-| `series_id` | `col` | `name` | `country` | `concept` | `cycle_timing` | Consumer |
-|---|---|---|---|---|---|---|
-| `BAMLHE00EHYIOAS` | (blank) | ICE BofA Euro HY Index OAS | EZ | Credit / Spreads | L | EU_I4 |
-| `INDIRLTLT01STM` | `IND_GOVT_10Y` | India 10-Year Government Bond Yield (OECD) | IND | Rates / Yields | C | AS_IN_R1 |
-| `IRLTLT01ITM156N` | `ITA_BTP_10Y` | Italy 10-Year BTP Yield (OECD) | ITA | Rates / Yields | C | EU_I4_BTP_BUND |
-| `MORTGAGE30US` | (blank) | 30-Year Fixed Mortgage Rate | USA | Rates / Yields | L | US_I11 |
-| `JTSJOL` | (blank) | JOLTS Job Openings | USA | Labour | L | US_LAB2 |
-| `UNEMPLOY` | (blank) | Unemployed Persons (level) | USA | Labour | C | US_LAB2 |
-
-After this step, every supplemental ID lives in `macro_library_fred.csv`. The next nightly run will populate them in `macro_economic_hist.csv` automatically — no Python change is needed to *fetch* them.
-
-**Step 2 — Switch the calculators to read from the unified hist instead of `supp`**.
-
-For each `_calc_*` that currently calls `supp.get("XYZ", …)`, change it to read the same column from the unified `macro_economic_hist` DataFrame already passed into the calculator stack. Specifically:
-
-- `_calc_US_I11` (`MORTGAGE30US − DGS10`)
-- `_calc_US_LAB2` (`JTSJOL / UNEMPLOY`)
-- `_calc_EU_I3` (`IRLTLT01GBM156N − IRLTLT01DEM156N`)
-- `_calc_EU_I4_BTP_BUND` (`IRLTLT01ITM156N − IRLTLT01DEM156N`)
-- `_calc_AS_IN_R1` (`INDIRLTLT01STM − DGS10`)
-- `_calc_AS_C1` / `_calc_AS_C2` (PIORECRUSDM)
-- `_calc_EU_I4` (Euro HY OAS via BAMLHE00EHYIOAS)
-
-The calculator-level literal (e.g. `me_hist["IND_GOVT_10Y"]`) remains in Python — that's *logic*, not registry, per §0.2.
-
-**Step 3 — Delete `fetch_supplemental_fred()` entirely** and the `supp = fetch_supplemental_fred()` call in `main()` (currently around line 2107). Phase E becomes a pure consumer of `macro_economic_hist.csv`, with no FRED API contact in `compute_macro_market.py`.
-
-**Step 4 — Audit for any remaining series-ID literals in `compute_macro_market.py`.** Run `grep -nE '"[A-Z][A-Z0-9_]{4,}"' compute_macro_market.py` and confirm every remaining hit is a calculator-side column lookup (i.e. matches the `col` value of a row that exists in some `data/macro_library_*.csv`). Any that don't match → either add the row, or document the gap.
-
-**Step 5 — Confirm cycle-timing & metadata fields.** When adding the 6 rows in Step 1, fill `concept` and `cycle_timing` properly. These flow through to `macro_indicator_library.csv` consumers and the explorer UI.
-
-#### Acceptance criteria
-
-- `fetch_supplemental_fred()` no longer exists.
-- No Python list literal of FRED IDs anywhere in `compute_macro_market.py`.
-- `grep "fred.*api" compute_macro_market.py` returns nothing — all FRED contact happens in `sources/fred.py` via `fetch_macro_economic.py`.
-- The 7 affected calculators produce values that match the pre-refactor branch on the same input date (regression-test against a snapshot from `macro_market_hist.csv`).
-- Daily run wall-clock time decreases (~10 fewer FRED calls per run; the 4 duplicate ones in particular).
-
-#### Sequencing
-
-This refactor should land **before** any future PR that would otherwise add a new series to `series_to_fetch`. PR2 itself can be merged as-is (the India 10Y data is correct; only its routing is non-canonical), with this refactor immediately following as a same-week cleanup. If a PR needs another supplemental before this refactor lands, that PR must add a row to `macro_library_fred.csv` *and* extend the literal — never just the literal.
+**Acceptance:** the explorer renders correctly under both view modes; switching between modes is instant (no re-fetch); the cycle-timing filter and the country / source filters work in the new view; the existing region-based view is preserved unchanged.
 
 
 ---
