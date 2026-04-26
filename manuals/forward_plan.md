@@ -281,6 +281,61 @@ Today, `build_html.py` cuts the macro payloads by source/country (`build_macro_u
 
 **Acceptance:** the explorer renders correctly under both view modes; switching between modes is instant (no re-fetch); the cycle-timing filter and the country / source filters work in the new view; the existing region-based view is preserved unchanged.
 
+### 2.5 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
+
+**Priority:** Medium — durable defence against future drift. Subsumes the old §3.5 (which scoped only `index_library.csv`).
+**Status:** Not started.
+
+The 7 source library CSVs are now the registry; a validator that runs locally (or weekly in CI) catches dead identifiers before they show up as runtime fetch failures. Per-source checks:
+
+- `index_library.csv` — yfinance ticker liveness, currency present, `validation_status` consistent (this is the one §3.5 originally specified; absorbs §2.7 below).
+- `macro_library_fred.csv` — FRED `/series?series_id=…` returns a valid record for every row; `country` is a known code in `macro_library_countries.csv`.
+- `macro_library_oecd.csv` — every row's `oecd_key_template` resolves to a non-empty SDMX response with the listed `oecd_countries`.
+- `macro_library_worldbank.csv` — WB WDI `/indicator/{wb_id}` returns a valid record.
+- `macro_library_imf.csv` — IMF DataMapper indicator + entity codes are valid.
+- `macro_library_dbnomics.csv` — DB.nomics `/series/{path}` returns ≥ 1 observation.
+- `macro_library_ifo.csv` — `sheet_index` and `excel_col` resolve in the latest cached workbook.
+- `macro_library_countries.csv` — every code referenced from a source library exists here; no orphan rows.
+- `macro_indicator_library.csv` — every `id` is unique; every `id` is registered as a calculator in `compute_macro_market.py::_*_CALCULATORS`; every series referenced via `_get_col(...)` in a calculator exists as a column in `macro_economic_hist.csv`.
+
+Output: a single `library_audit.txt` report with per-row pass/fail. Not part of the daily pipeline — run manually or via a separate weekly workflow.
+
+**Acceptance:** running `python library_manager.py` on a clean repo prints "all libraries valid" or a precise list of bad rows with the specific failure mode for each.
+
+### 2.6 Build `sources/boj.py` for BoJ Tankan (quarterly)
+
+**Priority:** Medium-low — fills the largest single Phase D gap (`JP_PMI1` returns Insufficient Data; Tankan is the only free Japan business-survey signal).
+**Status:** Not started. Carried forward from the old §2.3 "Remaining work".
+
+Tankan Large Manufacturers DI (range −100…+100) is published quarterly by the Bank of Japan via `stat-search.boj.or.jp`. The DB.nomics mirror is empty (verified during Phase D PoC). Implementation is similar to `sources/ifo.py` — workbook / flat-file scrape with magic-byte validation.
+
+**Plan:**
+
+1. Add `sources/boj.py` exposing `load_library()` returning a list of indicator dicts (one per Tankan series — at minimum Large Manufacturers DI; consider Non-Mfr DI + forecast variants).
+2. Add `data/macro_library_boj.csv` registering the series IDs / sheet positions / column locations (per §0).
+3. Wire `boj_src.load_library()` into `fetch_macro_economic.py::load_all_indicators()`.
+4. Update Phase E `JP_PMI1` calculator to fall back to Tankan DI when the proprietary monthly PMI is unavailable (i.e. the current behaviour) — z-score the quarterly DI, forward-fill to weekly Friday spine.
+
+**Acceptance:** `JP_PMI1` produces a non-empty z-score in the daily run with `Tankan` as the source label; quarterly cadence handled correctly by the existing `_to_weekly_friday` resampler.
+
+### 2.7 Audit yfinance tickers in `index_library.csv`
+
+**Priority:** Low — folded into §2.5. Listed separately here only because it was on the previous session's todo list as "PR4".
+**Status:** Not started; will land as part of §2.5's `library_manager.py` build.
+
+Validate ~390 tickers, flag dead/renamed ones, auto-mark `validation_status = "UNAVAILABLE"`, suggest replacements where obvious. No standalone PR — implementation is the `index_library.csv` arm of §2.5.
+
+### 2.8 Generate a dated chronology from git history
+
+**Priority:** Low — useful project history but doesn't move the pipeline forward.
+**Status:** Not started; carried forward from the old §2.1.
+
+```bash
+git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
+```
+
+Filter to significant changes (feature additions, bug fixes, schema changes, new modules). Output as either a dated chronology section in `manuals/technical_manual.md` (preferred — keeps the manual self-contained) or a standalone `manuals/chronology.md`. Update periodically as new features land.
+
 
 ---
 
