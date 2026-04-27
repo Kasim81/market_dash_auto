@@ -256,7 +256,44 @@ Known stale spots (verified by grep on 2026-04-26 against current code):
 
 **Acceptance:** every grep that currently hits a deleted module name in `technical_manual.md` returns zero matches; tab inventory and CSV inventory match `library_utils.py::SHEETS_ACTIVE_TABS` and the §1 registry of this plan.
 
-### 2.3 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
+### 2.3 Rewrite `forward_plan.md` to be self-contained (drop external doc dependencies)
+
+**Priority:** High — once done, the active manual set collapses to three documents (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`), eliminating the slow drift caused by overlapping content scattered across legacy planning docs.
+**Status:** Not started.
+
+**Goal — the documents Kasim and Claude need to consult, end-state:**
+
+| Document | Role |
+|---|---|
+| `manuals/technical_manual.md` | The authoritative record of the current code state — modules, data flow, schemas, operational behaviour. |
+| `manuals/forward_plan.md` | The phase / architecture summary (§1), the architecture rules (§0), the priority queue (§2), and all forward feature work (§3). Self-contained — no references to deleted handover or planning docs. |
+| `manuals/multifreq_plan.md` | Detailed Phase 2 (multi-frequency) implementation plan. Kept independent because of its size and depth. Cross-referenced from §4 only. |
+
+Everything else in `manuals/` either (a) gets folded into one of the above, or (b) is a developer-tool helper script (`build_docx.py`, `md_to_docx.py`) that is not user-consulted content.
+
+**Plan:**
+
+1. **Drop the "Based on:" attribution line** at the top of `forward_plan.md` (the one that references "the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history)"). Replace with a single self-contained intro sentence.
+2. **Rewrite §1 to be standalone.** Audit every paragraph for phrases like "the original handover planned…", "Phase B was originally going to…", "the historic `Project Plan 260327`…". For each, decide: is the historic context still useful? If yes, fold it inline into the current §1 description so the reader doesn't need the external doc. If no, delete the reference. Net result: a §1 that a new contributor can read cold without needing any other doc.
+3. **Integrate `manuals/pipeline_review.md` into §3.** `pipeline_review.md` carries per-indicator source mappings (which Phase E indicator reads which raw series, and from which source library). Move that content into a new subsection under §3 — best fit alongside §3.7 "Source Evaluation Retrospective", as **§3.7.1 Per-Indicator Source Mapping** (or wherever sits cleanly). The source-mapping table is the one durable artefact that supports future source-build work like the new BoJ Tankan task: when adding a new source, you need to know which indicators already depend on what. Once integrated, delete `manuals/pipeline_review.md` (kept in git history).
+4. **Audit `forward_plan.md` and `technical_manual.md` for cross-references.** Anything pointing to a deleted manual gets either redirected or replaced inline. Final state: the only inter-manual links are between `forward_plan.md` ↔ `technical_manual.md` and from §4 → `multifreq_plan.md`.
+5. **Confirm `manuals/` directory inventory.** Expected after this work:
+   - `forward_plan.md` (this doc)
+   - `technical_manual.md`
+   - `multifreq_plan.md`
+   - `Macro Market Indicators Reference.docx` (source doc — already external; cited from §3.8 only)
+   - `indicator_manual.md` / `.docx` + `macro_market_cheat_sheet.md` / `.docx` — user-facing reference; not part of the contributor / Claude doc set; out of scope here.
+   - Helper scripts (`build_docx.py`, `md_to_docx.py`) — out of scope.
+
+**Acceptance:**
+
+- Zero references in `forward_plan.md` to: "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", "the historic …".
+- `manuals/pipeline_review.md` deleted; its content lives under §3 in `forward_plan.md`.
+- Reading `forward_plan.md` cold makes complete sense without consulting any other manual or deleted-from-tree doc.
+- §1 still contains the phase summary + reminder of completed work — but framed as standalone descriptions, not as deltas against external planning docs.
+- The §3 per-indicator source mapping (lifted from `pipeline_review.md`) supports the new BoJ Tankan task and any other future source-build work without needing to consult an external doc.
+
+### 2.4 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
 
 **Priority:** High — precondition for §2.4 (the indicator-explorer mirror) and structurally aligns the composite registry with the unified raw-series taxonomy.
 **Status:** Not started.
