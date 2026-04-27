@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-27
 
 ---
 
@@ -39,16 +39,14 @@ The pipeline runs automatically every day at **03:17 UTC** via GitHub Actions (`
 | `market_data` | ~70 instruments (simple dashboard) | Daily snapshot | yfinance + FRED |
 | `market_data_comp` | ~390 instruments from library | Daily snapshot | yfinance + FRED |
 | `market_data_comp_hist` | ~390 instruments from library | Weekly history from 1950 | yfinance + FRED |
-| `macro_us` | ~42 US FRED macro series | Daily snapshot | FRED API |
-| `macro_us_hist` | ~53 US FRED series | Weekly history from 1947 | FRED API |
-| `macro_intl` | 5 indicators x 11 countries | Daily snapshot | OECD + World Bank + IMF + FRED |
-| `macro_intl_hist` | 5 indicators x 11 countries | Weekly history from 1960 | OECD + World Bank + IMF + FRED |
-| `macro_market` | 91 composite indicators | Weekly snapshot | Derived from above datasets |
-| `macro_market_hist` | 91 composite indicators | Weekly history from 2000 | Derived from above datasets |
+| `macro_economic` | ~150 raw macro series across 12 economies | Daily snapshot (long-form) | FRED + OECD + World Bank + IMF + DB.nomics + ifo |
+| `macro_economic_hist` | ~150 raw macro series | Weekly Friday-spine history from 1947 | FRED + OECD + World Bank + IMF + DB.nomics + ifo |
+| `macro_market` | 92 composite indicators | Daily snapshot | Derived from above datasets |
+| `macro_market_hist` | 92 composite indicators | Weekly history from 2000 | Derived from above datasets |
 
 ### Codebase Size
 
-7 Python modules totalling ~8,452 lines, plus 7 CSV configuration libraries and 7 CSV output files.
+6 top-level Python modules + 8-module `sources/` package + `docs/build_html.py`, totalling ~8,866 lines. Configuration: 9 input CSV libraries (1 instrument library + 7 raw-source libraries + 1 composite-indicator library) plus `reference_indicators.csv` for the cycle-timing cross-reference. Output: 7 CSV files (one per active Sheets tab).
 
 ---
 
@@ -56,42 +54,62 @@ The pipeline runs automatically every day at **03:17 UTC** via GitHub Actions (`
 
 ```
 market_dash_auto/
-├── fetch_data.py                  # Master orchestrator — runs all phases (920 lines)
-├── fetch_hist.py                  # Historical time series — macro_us + comp (1,062 lines)
-├── fetch_macro_us_fred.py         # US FRED macro indicators + surveys (510 lines)
-├── fetch_macro_international.py   # International macro — OECD / World Bank / IMF (1,426 lines)
-├── compute_macro_market.py        # 91 macro-market composite indicators (1,967 lines)
-├── library_utils.py               # Shared sort-order dicts, FX maps, sort key (271 lines)
+├── fetch_data.py                  # Master orchestrator — runs all phases (888 lines)
+├── fetch_hist.py                  # Comp-pipeline weekly history (769 lines)
+├── fetch_macro_economic.py        # Unified raw-macro coordinator (733 lines)
+├── compute_macro_market.py        # 92 macro-market composite indicators (2,097 lines)
+├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets (318 lines)
+├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
+│
+├── sources/                       # Per-source raw-macro fetchers (called by fetch_macro_economic.py)
+│   ├── __init__.py
+│   ├── base.py                        # Shared HTTP/Sheets/CSV plumbing (220 lines)
+│   ├── countries.py                   # 12-country code registry (54 lines)
+│   ├── fred.py                        # FRED REST API fetcher (370 lines)
+│   ├── oecd.py                        # OECD SDMX REST API fetcher (191 lines)
+│   ├── worldbank.py                   # World Bank WDI fetcher (193 lines)
+│   ├── imf.py                         # IMF DataMapper v1 fetcher (153 lines)
+│   ├── dbnomics.py                    # DB.nomics REST API fetcher (180 lines)
+│   └── ifo.py                         # ifo Institute Excel-workbook fetcher (344 lines)
 │
 ├── data/                          # CSV config libraries + pipeline output files
 │   ├── index_library.csv              # Instrument master library (~390 rows, 29 columns)
 │   ├── level_change_tickers.csv       # Vol tickers using absolute pt change (14 tickers)
-│   ├── macro_library_fred.csv         # FRED indicator definitions (80 series)
-│   ├── macro_library_oecd.csv         # OECD indicator definitions (3 indicators)
-│   ├── macro_library_imf.csv          # IMF indicator definitions (1 indicator)
-│   ├── macro_library_worldbank.csv    # World Bank indicator definitions (1 indicator)
-│   ├── macro_indicator_library.csv    # 91 macro-market indicator definitions
+│   │
+│   ├── # Raw-macro source libraries (one per provider, registry-only):
+│   ├── macro_library_countries.csv    # 12 country codes + WB/IMF code mappings
+│   ├── macro_library_fred.csv         # FRED series IDs (~85 rows)
+│   ├── macro_library_oecd.csv         # OECD SDMX dataflow + dimension keys
+│   ├── macro_library_worldbank.csv    # World Bank WDI indicator codes
+│   ├── macro_library_imf.csv          # IMF DataMapper indicator codes
+│   ├── macro_library_dbnomics.csv     # DB.nomics series paths (9 rows)
+│   ├── macro_library_ifo.csv          # ifo workbook sheet/column locations (26 rows)
+│   │
+│   ├── # Phase E composite-indicator registry:
+│   ├── macro_indicator_library.csv    # 92 macro-market indicator definitions
+│   ├── reference_indicators.csv       # 206-row L/C/G cycle-timing cross-reference
+│   │
+│   ├── # Pipeline outputs (regenerated each run, committed to git):
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
 │   ├── market_data_comp_hist.csv      # OUTPUT — comp-pipeline weekly history
-│   ├── macro_us.csv                   # OUTPUT — US FRED macro snapshot
-│   ├── macro_us_hist.csv              # OUTPUT — US FRED macro weekly history
-│   ├── macro_intl.csv                 # OUTPUT — international macro snapshot
-│   ├── macro_intl_hist.csv            # OUTPUT — international macro weekly history
+│   ├── macro_economic.csv             # OUTPUT — unified raw-macro snapshot (long-form)
+│   ├── macro_economic_hist.csv        # OUTPUT — unified raw-macro weekly history (wide-form, 14 metadata rows)
 │   ├── macro_market.csv               # OUTPUT — macro-market indicator snapshot
 │   └── macro_market_hist.csv          # OUTPUT — macro-market indicator weekly history
 │
 ├── docs/                          # Indicator Explorer generator
-│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,296 lines)
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,345 lines)
 │   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
 │   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
 │
 ├── manuals/                       # Documentation
-│   ├── technical_manual.md            # This file
-│   ├── forward_plan.md                # Forward-looking development roadmap
-│   ├── indicator_manual.md            # Indicator-by-indicator reference
+│   ├── technical_manual.md            # This file — the authoritative record of current code state
+│   ├── forward_plan.md                # Phase summary, architecture rules (§0), priority queue (§2), feature roadmap (§3)
+│   ├── multifreq_plan.md              # Detailed Phase 2 (multi-frequency / ragged-column) implementation plan
+│   ├── indicator_manual.md            # Indicator-by-indicator reference (user-facing)
 │   ├── indicator_manual.docx          # Rendered Word version (built via build_docx.py)
 │   ├── macro_market_cheat_sheet.md    # Regime/threshold quick-reference companion
 │   ├── macro_market_cheat_sheet.docx  # Rendered Word version (built via md_to_docx.py)
@@ -104,14 +122,14 @@ market_dash_auto/
 │   └── indicator_groups_review_UPDATED.xlsx  # Output of that review — drove macro_indicator_library.csv
 │
 └── .github/workflows/
-    └── update_data.yml            # GitHub Actions daily scheduler (+ builds indicator_explorer.html)
+    └── update_data.yml            # GitHub Actions daily scheduler (pipes both runs through `tee pipeline.log` and commits the log on every run)
 ```
 
 ---
 
 ## 3. Execution Flow
 
-GitHub Actions runs `python fetch_data.py` once per day. The file is structured as a sequential chain of `try/except` blocks so that **each phase is fully independent** — a failure in any later phase cannot affect earlier phases.
+GitHub Actions runs `python fetch_data.py` once per day. The file is structured as `main()` (simple + comp pipelines + Sheets push) followed by three module-level `try/except` blocks that import and run the downstream phases. Each block is fully independent — a failure anywhere downstream cannot affect tabs already written.
 
 ```
 fetch_data.py
@@ -132,22 +150,26 @@ fetch_data.py
 │   │   └─ _build_library_df()                  ← Combine into DataFrame
 │   │
 │   ├─ push_to_google_sheets(df_main, df_comp)  ← Writes market_data + market_data_comp
-│   │   └─ Deletes legacy tabs: Market Data, sentiment_data, macro_surveys, etc.
+│   │   └─ Sweeps every tab in SHEETS_LEGACY_TABS_TO_DELETE
+│   │       (8 retired macro tabs + 4 retired simple-pipeline tabs)
 │   │
 │   └─ (end of main)
 │
-├─ [try] run_phase_a()                          ← fetch_macro_us_fred → macro_us
+├─ [try] run_comp_hist()                        ← fetch_hist            → market_data_comp_hist
 │
-├─ [try] run_hist()                             ← fetch_hist → macro_us_hist
+├─ [try] run_phase_macro_economic()             ← fetch_macro_economic  → macro_economic + macro_economic_hist
+│                                                  (Phase ME — unified raw-macro layer)
+│                                                  Internally fans out to sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py
+│                                                  driven by data/macro_library_*.csv per §0 of forward_plan.md
 │
-├─ [try] run_phase_c()                          ← fetch_macro_international → macro_intl + macro_intl_hist
-│
-├─ [try] run_comp_hist()                        ← fetch_hist → market_data_comp_hist
-│
-└─ [try] run_phase_e()                          ← compute_macro_market → macro_market + macro_market_hist
+└─ [try] run_phase_e()                          ← compute_macro_market  → macro_market + macro_market_hist
+                                                   Reads macro_economic_hist + market_data_comp_hist;
+                                                   computes 92 composite indicators (z-score, regime, fwd_regime).
 ```
 
-After `fetch_data.py` finishes, the workflow runs `python docs/build_html.py` to rebuild the Indicator Explorer (`docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js`) from the freshly updated CSVs. All updated CSVs and the two explorer files are then committed back to git (on the `main` branch) with message: `Update market data + explorer - YYYY-MM-DD HH:MM UTC`.
+The retired Phase A (`fetch_macro_us_fred.py` → `macro_us[_hist]`), Phase C (`fetch_macro_international.py` → `macro_intl[_hist]`), Phase D Tier 2 (`fetch_macro_dbnomics.py` → `macro_dbnomics[_hist]`) and Phase D ifo (`fetch_macro_ifo.py` → `macro_ifo[_hist]`) coordinators were consolidated into Phase ME on 2026-04-23. All four modules and their 8 tabs have been deleted; the tab names live on in `SHEETS_LEGACY_TABS_TO_DELETE` so the daily run sweeps them on the Sheet side.
+
+After `fetch_data.py` finishes, the workflow runs `python docs/build_html.py` to rebuild the Indicator Explorer (`docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js`) from the freshly updated CSVs. Both Python steps are piped through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits all updated CSVs, the two explorer files, **and `pipeline.log`** back to git (on the `main` branch) with message: `Update market data + explorer - YYYY-MM-DD HH:MM UTC`. Logging always lands even if a phase crashes.
 
 ---
 
@@ -165,7 +187,7 @@ The project maintains two parallel instrument pipelines:
 | **Sort order** | `lib_sort_key()` from `library_utils.py` | `lib_sort_key()` from `library_utils.py` |
 | **Pence correction** | Dynamic `.endswith(".L")` + median > 50 check | Same |
 
-Both pipelines are now library-driven. The simple pipeline reads from `index_library.csv` using the `simple_dash` boolean column to select its subset. Both share the same `collect_comp_assets()` function and FX cache.
+Both pipelines are now library-driven. The simple pipeline reads from `index_library.csv` using the `simple_dash` boolean column to select its subset. Both share the same `collect_comp_assets()` function and FX cache. The simple pipeline is preserved for `trigger.py` (see below) but is slated for retirement — see `forward_plan.md` §3.10.
 
 ### Downstream Consumer
 
