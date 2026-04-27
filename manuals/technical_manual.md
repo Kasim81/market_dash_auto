@@ -465,40 +465,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `COMP_FCY_PER_USD` | `library_utils.py` | Indirect-quote currency set |
 | `TABS_TO_DELETE` | Hardcoded set | Legacy tabs cleaned up on every run |
 
-### 9.3 `fetch_macro_us_fred.py` (510 lines)
-
-**Role:** Phase A — US macro FRED indicators (snapshot).
-
-The indicator registry is loaded from `data/macro_library_fred.csv` at import time. The exported `FRED_MACRO_US` dict is imported by `fetch_hist.py` for building history.
-
-#### Key Functions
-
-| Function | Purpose |
-|---|---|
-| `_load_fred_us_library()` | Load `macro_library_fred.csv`, return US-only series as dicts |
-| `fred_fetch_with_backoff(series_id, api_key)` | Fetch single FRED series with exponential backoff |
-| `fetch_macro_us()` | Fetch all ~53 US FRED series, compute latest/prior/change |
-| `save_csv(df)` | Save to `data/macro_us.csv` (diff-check: skip if unchanged) |
-| `push_macro_us_to_sheets(df)` | Push to Google Sheets `macro_us` tab |
-| `run_phase_a()` | **Entry point** — validate, fetch, save, push |
-
-#### FRED Series Categories (42 total)
-
-| Category | Example Series |
-|---|---|
-| Growth / Yield Curve | T10Y2Y, T10Y3M |
-| Growth / Money Supply | M2SL |
-| Growth / Leading | PERMIT |
-| Growth / Labour | IC4WSA, PAYEMS, UNRATE |
-| Growth / Activity | INDPRO, RSXFS |
-| Growth / Credit | DRTSCILM (SLOOS C&I), STDSOTHCONS, SUBLPDRCSN |
-| Financial Conditions | NFCI |
-| Inflation | CPIAUCSL, CPILFESL, PCEPILFE, PPIACO, T10YIE |
-| Monetary Policy | DFEDTARU, WRESBAL |
-| Sentiment / Surveys | UMCSENT |
-| Regional Fed | GACDFSA066MSFRBPHI (Philly), MFRBSCOMP (Richmond), KCACTMFG (Kansas City) |
-
-### 9.4 `fetch_hist.py` (1,062 lines)
+### 9.3 `fetch_hist.py` (1,062 lines)
 
 **Role:** All historical time series — `macro_us_hist` and `market_data_comp_hist`.
 
@@ -537,46 +504,129 @@ The indicator registry is loaded from `data/macro_library_fred.csv` at import ti
 - **Columns** = instruments (local currency first, then USD)
 - **Metadata prefix rows** (in Sheets tabs, not in CSVs): ticker ID, variant, source, name, broad asset class, region, sub-category, currency, units, frequency — then column header row, then data
 
-### 9.5 `fetch_macro_international.py` (1,426 lines)
+### 9.4 `fetch_macro_economic.py` (733 lines)
 
-**Role:** Phase C — International macro for 11 economies.
+**Role:** Phase ME — unified raw-macro coordinator. Replaces the four retired per-source coordinators (Phase A `fetch_macro_us_fred.py`, Phase C `fetch_macro_international.py`, Phase D Tier 2 `fetch_macro_dbnomics.py`, Phase D ifo `fetch_macro_ifo.py`) and produces one snapshot tab (`macro_economic`) plus one history tab (`macro_economic_hist`).
 
-#### Countries Covered
-
-`AUS, CAN, CHE, CHN, DEU, EA19, FRA, GBR, ITA, JPN, USA`
-
-(`EA19` = Eurozone. `CHN` and `EA19` have partial coverage.)
-
-#### Indicators
-
-| Indicator | Source | Frequency | Known Issues |
-|---|---|---|---|
-| Composite Leading Indicator (CLI) | OECD | Monthly | EA19 and CHE missing |
-| Unemployment Rate | OECD | Monthly | CHN, EA19 not published |
-| Short-term Interest Rate (3M) | OECD | Monthly | **Returning no data for all countries** |
-| CPI Headline YoY % | World Bank | Annual | EA19 uses WB code `EMU` |
-| Real GDP Growth % | IMF | Annual | EA19 (`XM` code) returning no data |
+The module loads every indicator definition from the per-source CSVs at import time via `load_all_indicators()`, then dispatches snapshot and history fetches to the matching `sources/*.py` module based on each indicator's `source` field. There is **no direct API contact in this module** — every HTTP/Excel call lives in `sources/`.
 
 #### Key Functions
 
 | Function | Purpose |
 |---|---|
-| `_load_oecd_indicators()` | Load OECD indicators from `macro_library_oecd.csv` |
-| `_load_wb_indicators()` | Load World Bank indicators from `macro_library_worldbank.csv` |
-| `_load_imf_indicators()` | Load IMF indicators from `macro_library_imf.csv` |
-| `_load_fred_intl_indicators()` | Load international FRED series from `macro_library_fred.csv` |
-| `build_snapshot(...)` | Build snapshot DataFrame (one row per country x indicator) |
-| `build_history(...)` | Build history DataFrame on Friday spine |
-| `run_phase_c()` | **Entry point** — validate, fetch, build snapshot + history, save + push |
+| `load_all_indicators()` | Read every `data/macro_library_*.csv` via the `sources/*.py` loaders, return a unified `list[dict]` of indicator definitions in the canonical schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`) |
+| `summarize(indicators)` | Print a per-source / per-country breakdown for log diagnostics |
+| `_make_row(...)` / `_blank_row(...)` | Construct a single long-form snapshot row with the unified metadata schema |
+| `_fetch_fred_us_snapshot(indic, …)` / `_fetch_fred_intl_snapshot(...)` | FRED snapshot dispatchers (US-only and country-fan-out variants) |
+| `_fan_out_snapshot(...)` / `_fan_out_history(...)` | Generic country-fan-out — call the source's fetcher once per country in the indicator's country list |
+| `_fetch_oecd_snapshot(...)` / `_fetch_wb_snapshot(...)` / `_fetch_imf_snapshot(...)` / `_fetch_dbnomics_snapshot(...)` | One-line dispatchers to the corresponding `sources/*.py` |
+| `_fetch_ifo_snapshot_batch(...)` | Batch ifo fetch (one workbook download per run, then per-series column extraction) |
+| `build_snapshot_df(indicators)` | Build the long-form `macro_economic` DataFrame (one row per series with full metadata) |
+| `save_snapshot_csv(df)` | Write `data/macro_economic.csv` (diff-check skip) |
+| `_obs_list_to_series(obs, col)` | Convert raw `(date, value)` observations into a named pandas Series |
+| `_fetch_*_history(indic)` family | History fetchers per source — return `dict[col_name, pd.Series]` |
+| `_get_ifo_monthly_df(...)` / `_fetch_ifo_history(...)` | Cached ifo workbook + per-series history extraction |
+| `_history_for_indicator(...)` | Generic per-indicator history dispatch (handles fan-out vs single-country) |
+| `build_hist_df(indicators)` | Build the wide-form `macro_economic_hist` DataFrame on the weekly Friday spine from 1947 |
+| `_build_hist_metadata_rows(...)` | Construct the 14 metadata prefix rows above the data (Column ID / Series ID / Source / Indicator / Country / Country Name / Region / Category / Subcategory / Concept / cycle_timing / Units / Frequency / Last Updated) |
+| `push_snapshot_to_sheets(df)` / `push_hist_to_sheets(df, indicators)` | Sheets writers — both check `library_utils.SHEETS_PROTECTED_TABS` before writing |
+| `run_phase_macro_economic()` | **Entry point** — load every library, fetch snapshot + history for all sources, save CSVs, push to Sheets |
 
-#### Rate Limiting
+#### Read order
 
-| Source | Delay | Notes |
-|---|---|---|
-| OECD | 4s | Max ~20 calls/hour; module makes ~6 calls per run |
-| World Bank | 1s | Generous limits |
-| IMF | 1s | Full history in single call |
-| FRED (intl) | 0.6s | Same as US FRED |
+Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema.
+
+### 9.5 `sources/` package (8 modules, ~1,705 lines total)
+
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`.
+
+#### 9.5.1 `sources/base.py` (220 lines)
+
+Shared plumbing used by every fetcher and coordinator.
+
+| Function | Purpose |
+|---|---|
+| `last_friday_on_or_before(d)` | Snap a date to the most recent Friday |
+| `build_friday_spine(start, end)` | Weekly Friday DatetimeIndex from `start` to the last Friday on/before `end` |
+| `fetch_with_backoff(url, …)` | Generic HTTP GET with exponential backoff (2s, 4s, 8s, 16s, 32s — max 5 retries) on 429/5xx |
+| `get_sheets_service(credentials_json)` | Build a Google Sheets API v4 service from a service-account JSON string |
+| `sv(v)` | Sheets-safe value coercion (NaN → empty string, ints stay ints, etc.) |
+| `push_df_to_sheets(service, sheet_id, tab, df, label)` | DataFrame → Sheets writer with `SHEETS_PROTECTED_TABS` guard, automatic clear-range, batched writes |
+| `ensure_tab(service, sheet_id, tab_name, label)` | Create the tab if it doesn't exist |
+
+#### 9.5.2 `sources/countries.py` (54 lines)
+
+Single source of truth for the 12 country codes and their per-source mappings, driven by `data/macro_library_countries.csv`.
+
+| Function | Purpose |
+|---|---|
+| `load_countries()` | Return tuples of country dicts (canonical / WB / IMF / OECD code metadata) |
+| `country_meta()` | `dict[code, (country_name, region)]` for snapshot row enrichment |
+| `wb_code_map()` / `imf_code_map()` | Per-source code mapping (e.g. `EA19 → EMU` for World Bank, `EA19 → EURO` for IMF) |
+| `wb_countries_query_string()` | Pre-built WB API country list (`USA;GBR;DEU;…`) for fan-out |
+
+#### 9.5.3 `sources/fred.py` (370 lines)
+
+| Function | Purpose |
+|---|---|
+| `_load_raw()` | Read `data/macro_library_fred.csv` raw |
+| `load_us_library()` / `load_us_library_as_list()` | US-only series (no `country` set) |
+| `load_intl_library()` | International series (with `country` set) |
+| `validate_series(...)` | Pre-flight check that a FRED series ID resolves |
+| `fetch_observations(series_id, …)` | FRED REST call with backoff |
+| `parse_observations(data)` | FRED JSON → `list[(date, float)]` |
+| `fetch_latest_prior(series_id, …)` | Snapshot helper — return latest + prior + change |
+| `fetch_series_as_pandas(series_id, start)` | Full series → pandas Series |
+| `parse_monthly_by_country(…)` | OECD-via-FRED naming-convention parser |
+
+#### 9.5.4 `sources/oecd.py` (191 lines)
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_oecd.csv` |
+| `parse_csv(text, label)` | OECD SDMX `format=csv` response → `dict` |
+| `_fetch(url, …)` | Generic OECD GET with backoff and the 4s rate-limit delay |
+| `fetch_snapshot(indic, …)` | Snapshot fetch for one indicator (latest + prior) |
+| `fetch_history(indic, country)` | Full history for a single country slot |
+
+#### 9.5.5 `sources/worldbank.py` (193 lines)
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_worldbank.csv` |
+| `validate_library(...)` | Pre-flight check that each WDI indicator code resolves |
+| `parse_response(data, label)` | WB JSON v2 → `dict` |
+| `_fetch(url, …)` | Generic WB GET |
+| `fetch_snapshot(indic, …)` / `fetch_history(indic, country)` | Snapshot + per-country history |
+
+#### 9.5.6 `sources/imf.py` (153 lines)
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_imf.csv` |
+| `validate_library(...)` | Pre-flight check |
+| `parse_response(data, indicator, label)` | IMF DataMapper v1 JSON → `dict` |
+| `fetch_indicator(indicator, …)` | Single-call full-history fetch (IMF returns whole panels in one shot) |
+
+#### 9.5.7 `sources/dbnomics.py` (180 lines)
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_dbnomics.csv` |
+| `fetch_series(series_path, …)` | DB.nomics REST call |
+| `parse_observations(doc)` | DB.nomics JSON → `list[(date, float)]` |
+| `parse_period_to_date(period)` | Handles annual / quarterly / monthly / daily DB.nomics period strings |
+| `obs_to_series(obs, col_name)` | `list[(date, float)]` → named pandas Series |
+
+#### 9.5.8 `sources/ifo.py` (344 lines)
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_ifo.csv` |
+| `_iter_recent_yyyymm(months_back)` / `_candidate_urls()` | Build candidate ifo workbook URLs (latest publication month + fallback months) |
+| `_try_download_xlsx(session, url)` | Download + magic-byte validate the workbook (`PK\\x03\\x04` zip header) |
+| `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition with retry across candidate URLs |
+| `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
 
 ### 9.6 `compute_macro_market.py` (1,967 lines)
 
