@@ -26,15 +26,20 @@ INPUT FILES (must exist — produced by earlier pipeline phases)
   data/macro_us_hist.csv          — weekly FRED macro series            (Phase A)
   data/macro_intl_hist.csv        — OECD CLI + macro, ffilled to weekly (Phase C)
 
-SUPPLEMENTAL DATA FETCHED HERE (not in the hist files above)
-------------------------------------------------------------
-  FRED : PIORECRUSDM, BAMLHE00EHYIOAS, INDIRLTLT01STM,
-         IRLTLT01GBM156N, IRLTLT01DEM156N, IRLTLT01ITM156N, DGS10,
-         MORTGAGE30US, JTSJOL, UNEMPLOY
-  ECB  : Euro area AAA govt yield + Euro IG corporate yield → EU_I1 spread
-         (data-api.ecb.europa.eu YC dataset; falls back to FRED
-         BAMLHE00EHYIOAS if ECB unavailable)
-  yfinance: FXI (iShares China Large-Cap ETF) for AS_G1 denominator
+SUPPLEMENTAL DATA FETCHED HERE (not in the unified macro_economic_hist)
+-----------------------------------------------------------------------
+  ECB  : Euro area AAA govt 10Y yield (data-api.ecb.europa.eu YC dataset).
+         Paired with a Euro IG corporate yield to compute EU_Cr1's IG
+         spread.  The corporate-yield half is currently unsourced (FRED
+         BAMLEC0A0RMEY 400s; see forward_plan.md §1 Known Data Gaps), so
+         EU_Cr1 returns n/a until a free source is wired in.  EU_Cr2
+         (Euro HY spread) is a separate indicator reading BAMLHE00EHYIOAS
+         from the unified hist — there is no HY-for-IG fallback.
+  yfinance: FXI (iShares China Large-Cap ETF) for AS_G1 denominator.
+
+  All other FRED, OECD, WB, IMF, DB.nomics and ifo series flow through the
+  unified macro_economic_hist via fetch_macro_economic.py — the calculators
+  read them via _get_col(mu, "<col>") (see §0 of forward_plan.md).
 
 DESIGN PRINCIPLES
 -----------------
@@ -167,13 +172,17 @@ def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
       1. Fetch ECB AAA euro-area govt 10Y yield (YC dataset — well-documented).
          This series is too deeply nested to live in macro_library_fred.csv as
          a single ID; the SDMX call happens here.
-      2. Read the Euro IG corporate yield (FRED BAMLEC0A0RMEY) from the unified
-         macro_economic_hist via `mu` — the row lives in macro_library_fred.csv
-         per §0 of forward_plan.md, so no direct FRED fetch is needed.
+      2. Read the Euro IG corporate effective yield from the unified
+         macro_economic_hist via `mu`.  This source is currently unwired —
+         FRED `BAMLEC0A0RMEY` was probed and 400s on every call, so the row
+         was removed (see forward_plan.md §1 Known Data Gaps).  When a free
+         historical Euro IG corporate yield source is identified, register
+         it in `data/macro_library_*.csv` (per §0) and update the column
+         name read below.
       3. Compute spread = corp_yield - govt_yield.
 
-    On failure return empty — _calc_EU_Cr1 falls back to the unified
-    BAMLHE00EHYIOAS column.
+    On failure return empty — _calc_EU_Cr1 returns NaN (no HY fallback;
+    Euro HY is its own indicator, EU_Cr2).
 
     Returns pd.Series with monthly DatetimeIndex; caller resamples to weekly.
     """
@@ -193,8 +202,10 @@ def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
             from io import StringIO
             df_ecb = pd.read_csv(StringIO(resp.text))
             if "OBS_VALUE" in df_ecb.columns and "TIME_PERIOD" in df_ecb.columns:
+                # ECB YC dataset returns daily TIME_PERIOD (YYYY-MM-DD); let
+                # pandas infer to handle either daily or monthly cadence.
                 df_ecb["_dt"] = pd.to_datetime(
-                    df_ecb["TIME_PERIOD"], format="%Y-%m", errors="coerce"
+                    df_ecb["TIME_PERIOD"], errors="coerce"
                 )
                 df_ecb = df_ecb.dropna(subset=["_dt", "OBS_VALUE"])
                 govt_yield = pd.Series(
@@ -202,7 +213,7 @@ def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
                     index=df_ecb["_dt"].values,
                     name="ECB_EUR_GOVT_10Y",
                 ).dropna().sort_index()
-                print(f"  [ECB] AAA euro govt yield: {len(govt_yield)} monthly obs")
+                print(f"  [ECB] AAA euro govt yield: {len(govt_yield)} obs")
         else:
             print(f"  [ECB] YC dataset HTTP {resp.status_code} — skipping govt yield")
     except Exception as exc:
@@ -210,12 +221,13 @@ def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
         time.sleep(ECB_REQUEST_DELAY)
 
     # --- Step 2: Euro IG corporate effective yield via the unified hist ---
+    # No source currently registered — see forward_plan.md §1 Known Data Gaps.
+    # The lookup below is a placeholder ready to receive the future column
+    # name once a free historical Euro IG corporate yield is wired in.
     corp_yield = pd.Series(dtype=float)
     if not govt_yield.empty:
-        corp_yield = _get_col(mu, "BAMLEC0A0RMEY").dropna()
-        if not corp_yield.empty:
-            print(f"  [ECB] Euro IG yield (BAMLEC0A0RMEY) from unified hist: "
-                  f"{len(corp_yield)} obs")
+        # corp_yield = _get_col(mu, "<future_eu_ig_corp_yield_col>").dropna()
+        pass
 
     # --- Step 3: Compute spread if both are available ---
     if not govt_yield.empty and not corp_yield.empty:
@@ -226,9 +238,10 @@ def fetch_ecb_euro_ig_spread(mu: pd.DataFrame) -> pd.Series:
         print(f"  [ECB] EU_I1 IG spread computed: {len(spread)} monthly obs")
         return spread
 
-    # On failure return empty — _calc_EU_Cr1 falls back to the unified
-    # macro_economic_hist column BAMLHE00EHYIOAS (Euro HY OAS) via _get_col.
-    print("  [ECB] EU_I1 spread unavailable — calculator will fall back to BAMLHE00EHYIOAS")
+    # On failure return empty — _calc_EU_Cr1 returns NaN (no HY fallback;
+    # Euro HY is its own indicator, EU_Cr2).
+    print("  [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a "
+          "(corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)")
     return pd.Series(dtype=float, name="EU_I1_spread")
 
 
@@ -521,6 +534,7 @@ REGIME_RULES = {
     "UK_G1":  lambda r, z: _r(r, z,  1, -1, "UK-domestic-strong","global-preferred"),
     "EU_G2":  lambda r, z: _r(r, z,  1, -1, "EU-outperform",    "US-dominance"),
     "EU_Cr1":  lambda r, z: _r(r, z,  1, -1, "EU-credit-tight",  "EU-easy"),
+    "EU_Cr2":  lambda r, z: _r(r, z,  1, -1, "EU-HY-stress",     "EU-HY-easy"),
     "UK_R2":  lambda r, z: _r(r, z,  1, -1, "high-UK-infl-exp", "disinflation"),
     "UK_R1":  lambda r, z: _r(r, z,  1, -1, "UK-premium",       "EU-stress"),
     "UK_Cr1":  lambda r, z: _r(r, z,  1, -1, "credit-appetite",  "flight-to-quality"),
@@ -1178,16 +1192,25 @@ def _calc_EU_G2(cp, **_):
 def _calc_EU_Cr1(supp, mu, **_):
     """
     Euro IG spread: Euro IG corporate yield minus ECB AAA govt yield.
-    Fetched via fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread']
-    (the only legitimate `supp` consumer left after the §2.4 refactor —
-    ECB SDW is not part of the unified macro_economic_hist).
-    Falls back to FRED BAMLHE00EHYIOAS (Euro HY OAS) sourced from the
-    unified hist if the ECB call returns empty.
+
+    EU_Cr1 explicitly tracks the Euro investment-grade spread, so it returns
+    only the genuine IG spread or empty — no HY substitute (Euro HY is a
+    separate regime, captured by EU_Cr2).
+
+    Source: fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread'].
+    The Euro IG corporate yield component is currently unsourced — see
+    forward_plan.md §1 Known Data Gaps. Until a free historical source is
+    wired in, EU_Cr1 returns an empty Series (regime 'n/a').
     """
     s = supp.get("euro_ig_spread")
     if s is None or s.empty:
-        s = _get_col(mu, "BAMLHE00EHYIOAS")
+        return pd.Series(dtype=float)
     return _to_weekly_friday(s)
+
+
+def _calc_EU_Cr2(mu, **_):
+    """Euro HY OAS, direct from FRED BAMLHE00EHYIOAS (Percent)."""
+    return _to_weekly_friday(_get_col(mu, "BAMLHE00EHYIOAS"))
 
 
 def _calc_UK_R2(cp, **_):
@@ -1295,6 +1318,7 @@ _EU_CALCULATORS = {
     "UK_G1":  _calc_UK_G1,
     "EU_G2":  _calc_EU_G2,
     "EU_Cr1":  _calc_EU_Cr1,
+    "EU_Cr2":  _calc_EU_Cr2,
     "UK_R2":  _calc_UK_R2,
     "UK_R1":  _calc_UK_R1,
     "UK_Cr1":  _calc_UK_Cr1,
@@ -1944,7 +1968,9 @@ def build_hist_df(results: dict) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
 
-    hist = pd.concat(frames, axis=1)
+    # .copy() defragments the block layout; without it the downstream
+    # reset_index() in run_phase_e raises pandas PerformanceWarning.
+    hist = pd.concat(frames, axis=1).copy()
     hist.index.name = "Date"
     hist = hist.sort_index()
     return hist
