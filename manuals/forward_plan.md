@@ -393,9 +393,9 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 
 ### 3.5 Library Manager Utility
 
-**Priority:** Low — developer tooling.
+**Priority:** Low — developer tooling. **Scope expanded** in §2.5: the original `index_library.csv`-only design has been generalised to validate every `data/macro_library_*.csv` plus `macro_indicator_library.csv`. See §2.5 for the current scope and acceptance criteria; the original `index_library.csv` checks below are retained as the yfinance-arm of that broader plan.
 
-Create `library_manager.py` — a standalone utility for maintaining `index_library.csv`:
+Create `library_manager.py` — a standalone utility. For the `index_library.csv` arm specifically:
 
 - Validate all tickers against yfinance (flag those returning no data)
 - Auto-set `validation_status = "UNAVAILABLE"` for dead tickers
@@ -632,11 +632,10 @@ Date_SPY  | SPY_Local | SPY_USD | Date_UNRATE | UNRATE  | ...
 | Tab | Columns | Max Rows | Cells |
 |---|---|---|---|
 | `market_data_comp_hist` | 390 x 3 = ~906 | ~9,000 | ~8.15M |
-| `macro_us_hist` | 43 x 2 = ~86 | ~430 (monthly) | ~37K |
-| `macro_intl_hist` | 56 x 2 = ~112 | ~430 | ~48K |
-| `macro_market_hist` | 150 (keep weekly) | ~1,300 | ~195K |
+| `macro_economic_hist` | ~150 (FRED + OECD + WB + IMF + DB.nomics + ifo) x 2 + 14 metadata rows | ~430 (monthly stored at native cadence) | ~130K |
+| `macro_market_hist` | 91 indicators × ~4 cols = ~365 (keep weekly) | ~1,300 | ~475K |
 | Snapshots | small | small | ~10K |
-| **Total** | | | **~8.4M** |
+| **Total** | | | **~8.8M** |
 
 Google Sheets limit is 10M cells. Headroom is tight. Future optimisation: drop `_Local` columns for USD-base tickers (saves ~150 columns).
 
@@ -644,14 +643,14 @@ Google Sheets limit is 10M cells. Headroom is tight. Future optimisation: drop `
 
 1. **Add alignment utilities to `library_utils.py`:** `load_ragged_series()`, `align_series()`, `detect_frequency()`, `freq_aware_shift()`
 2. **Convert `fetch_hist.py` to ragged output:** Replace spine-aligned builders with per-ticker ragged output
-3. **Convert `fetch_macro_international.py` to native frequency:** Store OECD monthly and WB/IMF annual at their natural cadence
-4. **Update `compute_macro_market.py`:** All 68 indicator calculator functions updated to consume ragged data via alignment utilities
+3. **Convert `fetch_macro_economic.py` to native frequency:** Each `sources/*.py` module yields series at native cadence (FRED daily/weekly, OECD monthly, WB/IMF annual, ifo monthly, DB.nomics monthly); the unified hist becomes ragged rather than Friday-spine forward-filled.
+4. **Update `compute_macro_market.py`:** All 91 indicator calculator functions updated to consume ragged data via alignment utilities
 5. **Validate:** Compare indicator values between weekly and ragged branches for overlapping Friday dates
 
 ### Risks
 
-1. **Sheets cell budget tight (8.4M/10M)** — if more tickers added, may need to drop `_Local` for USD-base instruments or split tabs
-2. **68 indicator functions to update** — each must be tested individually against weekly branch output
+1. **Sheets cell budget tight (8.8M/10M)** — if more tickers added, may need to drop `_Local` for USD-base instruments or split tabs
+2. **91 indicator functions to update** — each must be tested individually against weekly branch output
 3. **Z-score window equivalence** — 156 weekly != 780 daily (trading vs calendar days); verify regime classifications match
 4. **Cherry-pick conflicts** — hist/compute changes won't merge cleanly between branches; manual adaptation needed
 
