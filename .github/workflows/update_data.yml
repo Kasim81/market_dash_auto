@@ -1,11 +1,11 @@
 name: Update Market Data
 on:
   schedule:
-    # 03:17 UTC (04:17 BST / 03:17 GMT) — needs to finish before the 06:00
+    # 00:34 UTC (01:34 BST / 00:34 GMT) — needs to finish before the 06:00
     # UK local automations that consume this data. The odd minute avoids
     # GitHub Actions' scheduled-run congestion at the top of the hour, which
     # was delaying the previous 06:00 UTC run by 1-2+ hours.
-    - cron: '17 3 * * *'
+    - cron: '34 0 * * *'
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 permissions:
   contents: write

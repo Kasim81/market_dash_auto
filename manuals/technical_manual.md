@@ -30,7 +30,7 @@ Market Dashboard Auto is a fully automated daily data pipeline that fetches mark
 - **Google Sheets** (primary human-readable output, spreadsheet ID: `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`)
 - **CSV files** in `data/` (machine-readable; committed to git by GitHub Actions)
 
-The pipeline runs automatically every day at **03:17 UTC** via GitHub Actions (`python fetch_data.py` followed by `python docs/build_html.py`). The odd minute avoids GitHub's scheduled-run congestion at the top of the hour; the 03:17 slot ensures the run finishes before the 06:00 UK local automations that consume the data.
+The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`python fetch_data.py` followed by `python docs/build_html.py`). The odd minute avoids GitHub's scheduled-run congestion at the top of the hour; the 00:34 slot ensures the run finishes well before the 06:00 UK local automations that consume the data.
 
 ### Scope at a Glance
 
@@ -924,7 +924,7 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 
 ### GitHub Actions
 
-- **Schedule:** Daily at 03:17 UTC (cron `17 3 * * *`) — the odd minute avoids GitHub's scheduled-run congestion at the top of the hour; this slot ensures the run finishes before the 06:00 UK local automations that consume the data
+- **Schedule:** Daily at 00:34 UTC (cron `34 0 * * *`) — the odd minute avoids GitHub's scheduled-run congestion at the top of the hour; this slot ensures the run finishes well before the 06:00 UK local automations that consume the data
 - **Manual trigger:** workflow_dispatch — GitHub UI > Actions > "Update Market Data" > "Run workflow"
 - **Python version:** 3.11
 - **Timeout:** 120 minutes
