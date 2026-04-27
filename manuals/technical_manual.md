@@ -197,46 +197,67 @@ Both pipelines are now library-driven. The simple pipeline reads from `index_lib
 
 ## 5. Data Sources & APIs
 
+Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-Layer Registry" — see `forward_plan.md` §0 / §1). The Python fetchers below read those CSVs at runtime; nothing is hardcoded.
+
 ### yfinance
 
 - **Library:** `yfinance` Python package (no API key)
-- **Used for:** Price history for ~390 instruments (equities, ETFs, FX, commodities, crypto, volatility)
+- **Used for:** Price history for ~390 instruments (equities, ETFs, FX, commodities, crypto, volatility) defined in `data/index_library.csv`
 - **Rate limiting:** 0.3s delay between per-ticker fetches
 - **Known issues:**
   - Some official index tickers return empty history (STOXX 600 sectors, S&P style indices, TOPIX)
   - Russian tickers have data through mid-2022/mid-2024 only (sanctions)
-  - UK `.L` tickers report prices in pence (GBp) — corrected via median > 50 heuristic
+  - UK `.L` tickers report prices in pence (GBp) — corrected via `.endswith(".L")` + median > 50 heuristic
 
 ### FRED API
 
 - **URL:** `https://api.stlouisfed.org/fred/series/observations`
 - **Auth:** `FRED_API_KEY` environment variable (GitHub Secret)
-- **Used for:** US macro series (~43), treasury yields, credit spreads, OAS, international yields/confidence indicators
+- **Used for:** ~85 series across yields, inflation, labour, credit, surveys, commodities, OECD-mirror business/consumer confidence; back to 1947 where available. Library: `data/macro_library_fred.csv`.
 - **Rate limit:** 120 requests/minute per key; pipeline uses 0.6s delay (~100 req/min)
 - **Backoff:** Exponential on 429/5xx — 2s, 4s, 8s, 16s, 32s (max 5 retries)
+- **Fetcher:** `sources/fred.py` (called by `fetch_macro_economic.py`)
 
 ### OECD SDMX REST API
 
 - **URL:** `https://sdmx.oecd.org/public/rest/` (new API, migrated July 2024)
 - **Auth:** None required
-- **Used for:** Composite Leading Indicator (CLI), Unemployment Rate for 9+ countries
+- **Used for:** Composite Leading Indicator (CLI), Unemployment Rate, 3-month interbank rate across 11 economies. Library: `data/macro_library_oecd.csv`.
 - **Format:** `format=csv`
 - **Rate limit:** ~20 calls/hour
-- **Known issues:** DF_FINMARK (short-term interest rates) returning no data; EA19 and CHE CLI missing
+- **Known structural gap:** OECD does not publish CLI for EA19 or CHE — `compute_macro_market.py` uses the DEU+FRA equal-weight average as the Eurozone CLI proxy.
+- **Fetcher:** `sources/oecd.py`
 
 ### World Bank Open Data API
 
 - **URL:** `https://api.worldbank.org/v2/country/{code}/indicator/{indicator}`
 - **Auth:** None required
-- **Used for:** Annual CPI YoY % (`FP.CPI.TOTL.ZG`) for 11 economies
-- **Note:** Eurozone uses code `EMU` (not `EA19`)
+- **Used for:** Annual CPI YoY % across 11 economies (per the country registry). Library: `data/macro_library_worldbank.csv`.
+- **Note:** Eurozone uses code `EMU` (mapped from canonical `EA19` via `data/macro_library_countries.csv`).
+- **Fetcher:** `sources/worldbank.py`
 
 ### IMF DataMapper REST API
 
 - **URL:** `https://imf.org/external/datamapper/api/`
 - **Auth:** None required
-- **Used for:** Real GDP Growth % (annual WEO, includes projections)
-- **Known issues:** `XM` code (Eurozone) returning no data
+- **Used for:** Real GDP Growth % (annual WEO, includes projections) across 11 economies. Library: `data/macro_library_imf.csv`.
+- **Note:** Eurozone code is `EURO` (mapped from `EA19` via `data/macro_library_countries.csv`).
+- **Fetcher:** `sources/imf.py`
+
+### DB.nomics REST API
+
+- **URL:** `https://api.db.nomics.world/v22/series/{path}`
+- **Auth:** None required
+- **Used for:** Open-licensed series not on FRED — currently 9 series: 3 Eurostat economic-sentiment surveys (`EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`), 3 ISM series (`ISM_MFG_PMI`, `ISM_MFG_NEWORD`, `ISM_SVC_PMI`), 3 Eurostat real-economy series (`EZ_IND_PROD`, `EZ_RETAIL_VOL`, `EZ_EMPLOYMENT`). Library: `data/macro_library_dbnomics.csv`.
+- **Rate limit:** No published cap; pipeline uses a small inter-call delay
+- **Fetcher:** `sources/dbnomics.py`
+
+### ifo Institute Excel Workbook
+
+- **URL:** Direct download of the monthly ifo Geschäftsklimaindex Excel workbook from `ifo.de`
+- **Auth:** None required
+- **Used for:** 26 German business-survey series — Industry+Trade composite plus Manufacturing / Services / Trade / Wholesale / Retail / Construction sub-sectors, plus Uncertainty + Cycle Tracer. History from 1991. Library: `data/macro_library_ifo.csv` (registers each series by sheet index + Excel column).
+- **Fetcher:** `sources/ifo.py` (validates the workbook via magic-byte check before parsing)
 
 ### Google Sheets API v4
 
@@ -244,43 +265,48 @@ Both pipelines are now library-driven. The simple pipeline reads from `index_lib
 - **Spreadsheet ID:** `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`
 - **Write method:** `spreadsheets().values().update()` with `valueInputOption="USER_ENTERED"`
 - **Scopes:** `https://www.googleapis.com/auth/spreadsheets`
+- **Tab safety:** every writer checks `library_utils.SHEETS_PROTECTED_TABS` before writing; `library_utils.SHEETS_LEGACY_TABS_TO_DELETE` is swept on every run.
 
-### ECB Statistical Data Warehouse
+### ECB Data Portal
 
-- **URL:** `https://sdw-wsrest.ecb.europa.eu/service/data`
+- **URL:** `https://data-api.ecb.europa.eu/service/data` (replaced retired `sdw-wsrest.ecb.europa.eu` host on PR2, 2026-04-26)
 - **Auth:** None required
-- **Used for:** Euro IG credit spread (AAA govt 10Y yield) in `compute_macro_market.py`
+- **Used for:** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`. The series is too deeply nested to live in `macro_library_*.csv`, so the SDMX call is inline.
 - **Rate limit:** 2s delay between calls
+- **Status:** the ECB AAA govt-yield half is wired; the corresponding Euro IG corporate yield half is currently unsourced (see `forward_plan.md` §1 Known Data Gaps), so EU_Cr1 returns n/a until a free corp-yield source is found.
 
 ---
 
 ## 6. Google Sheets Tab Map
 
-All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`).
+All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`). Active and legacy tab sets are defined as `frozenset`s in `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`); all four writer modules import these constants instead of hardcoding tab names.
+
+### Active Tabs (7)
 
 | Tab Name | Written By | CSV Mirror | Contents |
 |---|---|---|---|
-| `market_data` | `fetch_data.py` | `data/market_data.csv` | ~70 simple-pipeline instruments, daily snapshot |
+| `market_data` | `fetch_data.py` | `data/market_data.csv` | ~70 simple-pipeline instruments, daily snapshot. **Protected** — consumed by downstream `trigger.py`. |
 | `market_data_comp` | `fetch_data.py` | `data/market_data_comp.csv` | ~390 comp-pipeline instruments, daily snapshot |
 | `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
-| `macro_us` | `fetch_macro_us_fred.py` | `data/macro_us.csv` | ~53 US FRED series snapshot |
-| `macro_us_hist` | `fetch_hist.py` | `data/macro_us_hist.csv` | Weekly FRED history from 1947 |
-| `macro_intl` | `fetch_macro_international.py` | `data/macro_intl.csv` | 11-country macro snapshot |
-| `macro_intl_hist` | `fetch_macro_international.py` | `data/macro_intl_hist.csv` | Weekly international history from 1960 |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 91-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
+| `macro_economic` | `fetch_macro_economic.py` | `data/macro_economic.csv` | Unified raw-macro snapshot (long-form) — every series from FRED + OECD + WB + IMF + DB.nomics + ifo, one row per series with metadata |
+| `macro_economic_hist` | `fetch_macro_economic.py` | `data/macro_economic_hist.csv` | Wide-form weekly Friday-spine history from 1947, with **14 metadata rows** above the data: Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 92-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
 
-The following tabs are automatically deleted on every run by `fetch_data.py` if they exist:
+`SHEETS_LEGACY_TABS_TO_DELETE` (in `library_utils.py`) is swept on every run by `fetch_data.py`. Currently 12 tab titles:
 
 | Tab | Reason |
 |---|---|
 | `Market Data` (with space) | Duplicate created by Apps Script; replaced by `market_data` |
-| `sentiment_data` | Content consolidated into `macro_us` + `macro_intl` |
-| `macro_surveys` | Content consolidated into `macro_us` |
-| `macro_surveys_hist` | Content consolidated into `macro_us_hist` |
+| `sentiment_data` | Retired simple-pipeline output (also still in `SHEETS_PROTECTED_TABS` so it is never overwritten by a writer) |
+| `macro_surveys`, `macro_surveys_hist` | Retired pre-Phase ME survey tabs |
 | `market_data_hist` | Simple-pipeline history removed; superseded by `market_data_comp_hist` |
+| `macro_us`, `macro_us_hist` | Retired Phase A tabs — consolidated into `macro_economic[_hist]` (Stage 2, 2026-04-23) |
+| `macro_intl`, `macro_intl_hist` | Retired Phase C tabs — consolidated into `macro_economic[_hist]` |
+| `macro_dbnomics`, `macro_dbnomics_hist` | Retired Phase D Tier 2 tabs — consolidated into `macro_economic[_hist]` |
+| `macro_ifo`, `macro_ifo_hist` | Retired Phase D ifo tabs — consolidated into `macro_economic[_hist]` |
 
 ### Downstream Consumer
 
@@ -295,31 +321,34 @@ https://docs.google.com/spreadsheets/d/12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4
 
 ### Configuration Libraries (input — read by Python, never overwritten)
 
+These are the "Data-Layer Registry" — every fetched identifier in the pipeline lives here, never in Python. Adding / removing / renaming a series = edit one of these CSVs (see `forward_plan.md` §0).
+
 | File | Rows | Consumed By | Purpose |
 |---|---|---|---|
-| `index_library.csv` | 390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments |
+| `index_library.csv` | ~390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
-| `macro_library_fred.csv` | 80 | fetch_macro_us_fred.py, fetch_macro_international.py | FRED series definitions (US + international) |
-| `macro_library_oecd.csv` | 3 | fetch_macro_international.py | OECD indicator definitions (CLI, unemployment) |
-| `macro_library_worldbank.csv` | 1 | fetch_macro_international.py | World Bank indicator definition (CPI) |
-| `macro_library_imf.csv` | 1 | fetch_macro_international.py | IMF indicator definition (GDP growth) |
-| `macro_indicator_library.csv` | 91 | compute_macro_market.py, docs/build_html.py | Macro-market indicator definitions (id, category, group, sub_group, naturally_leading, formula, interpretation, regime_classification, cycle_timing) |
-| `macro_library_dbnomics.csv` | 9 | fetch_macro_dbnomics.py | DB.nomics series definitions (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
-| `reference_indicators.csv` | 206 | Reference only | Cross-reference of 206 macro/market indicators from reference document with L/C/G cycle timing, match status, and source flags |
+| `macro_library_countries.csv` | 12 | sources/countries.py | 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) + canonical / WB / IMF code mappings |
+| `macro_library_fred.csv` | ~85 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor; `BAMLEC0A0RMEY` removed 2026-04-27) |
+| `macro_library_oecd.csv` | varies | sources/oecd.py | OECD SDMX dataflow + dimension keys (CLI, unemployment, 3-month rate) |
+| `macro_library_worldbank.csv` | varies | sources/worldbank.py | World Bank WDI indicator codes (CPI YoY) |
+| `macro_library_imf.csv` | varies | sources/imf.py | IMF DataMapper indicator codes (real GDP growth) |
+| `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
+| `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
+| `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, naturally_leading, formula, interpretation, regime_classification, cycle_timing) |
+| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.8 coverage analysis. |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
 | File | Rows | Written By | Content |
 |---|---|---|---|
-| `market_data.csv` | ~76 | fetch_data.py | Simple-pipeline daily snapshot |
+| `market_data.csv` | ~70 | fetch_data.py | Simple-pipeline daily snapshot |
 | `market_data_comp.csv` | ~360 | fetch_data.py | Comp-pipeline daily snapshot |
 | `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 10 metadata prefix rows + data |
-| `macro_us.csv` | ~44 | fetch_macro_us_fred.py | US FRED macro snapshot |
-| `macro_us_hist.csv` | ~4,144 | fetch_hist.py | Weekly FRED history, 8 metadata prefix rows + data |
-| `macro_intl.csv` | ~59 | fetch_macro_international.py | International macro snapshot |
-| `macro_intl_hist.csv` | ~3,466 | fetch_macro_international.py | Weekly international history, 8 metadata prefix rows + data |
-| `macro_market.csv` | ~91 | compute_macro_market.py | Macro-market indicator snapshot |
+| `macro_economic.csv` | ~170 | fetch_macro_economic.py | Unified raw-macro snapshot (long-form) — one row per series with metadata |
+| `macro_economic_hist.csv` | ~4,150 | fetch_macro_economic.py | Wide-form weekly Friday-spine history from 1947, **14 metadata prefix rows + data** |
+| `macro_market.csv` | ~92 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
+| `pipeline.log` | n/a | GitHub Actions | Captured stdout+stderr of the most recent run (committed by the `if: always()` step in `update_data.yml` — useful for diagnosing failures without needing to download artefacts) |
 
 ---
 
