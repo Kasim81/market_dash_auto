@@ -369,7 +369,7 @@ Once confirmed, add rows to `index_library.csv` — no new Python modules needed
 
 ### 3.3 Calculated Fields Expansion
 
-Several calculated fields were proposed but not yet implemented. Some may already be covered by the 68 macro-market indicators — audit before building duplicates.
+Several calculated fields were proposed but not yet implemented. Some may already be covered by the 91 macro-market indicators — audit before building duplicates.
 
 | Field | Formula | Status |
 |---|---|---|
@@ -381,7 +381,7 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 | Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented (US/DE/UK 10Y available; needs 2Y for DE/UK + full JP curve) |
 | % stocks above 200-day MA | Per-index breadth: fraction of constituents with close > 200-day SMA. Not exposed by yfinance as a field and no free FRED/OECD feed exists; StockCharts symbols (`$SPXA200R`, `$NYA200R`, `$NDXA200R`) are proprietary. Compute in-house from constituent daily closes. Candidate indices: S&P 500 (highest signal-to-cost), Nasdaq 100, Russell 1000, FTSE 100. Naming: `US_EQ_B1` / `US_EQ_B2` etc. ("Equity - Breadth"). Adds ~500-1000 extra daily yfinance pulls per index. | Not yet implemented |
 
-**Action:** Audit the 68 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
+**Action:** Audit the 91 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
 
 ### 3.4 Sheets Export Audit (Phase G)
 
@@ -501,8 +501,8 @@ These colour codes were extracted programmatically from the Word document's cell
 **Key observations:**
 - **US** is best covered (57% Full/Partial). Remaining gaps are mostly FRED_ADD (zero-code CSV rows).
 - **UK** and **Japan** have the largest actionable gaps (25 and 29 respectively) — these need new source modules (ONS, BoE, e-Stat, BoJ).
-- **China** has the most proprietary gaps (19) — NBS data has no free foreign API. Practical coverage limited to FRED OECD mirrors + FMP PMIs.
-- **Eurozone** is well-served by existing Eurostat/DB.nomics + FMP, with ECB SDW as the main new source needed.
+- **China** has the most proprietary gaps (19) — NBS data has no free foreign API. Practical coverage is limited to FRED OECD mirrors (`CHN_BUS_CONF`, `CHN_CON_CONF`) since the FMP route was rejected (see §3.7).
+- **Eurozone** is well-served by existing Eurostat / DB.nomics, with ECB SDW as the main new source needed.
 
 #### Prioritised FRED Additions (Zero-Code — Add Rows to `macro_library_fred.csv`)
 
@@ -560,7 +560,7 @@ These 20 indicators can be captured immediately by adding rows to the existing F
 
 51 indicators are flagged PROPRIETARY in `data/reference_indicators.csv`. The user should review these to determine if any can be sourced via institutional access. Key categories:
 
-- **S&P Global Flash PMIs** (3) — subscriber-only; we capture final PMIs via FMP
+- **S&P Global Flash PMIs** (3) — subscriber-only; we do **not** capture them (FMP route rejected — see §3.7). Coverage falls back to the OECD BCI mirrors on FRED where available.
 - **Conference Board composites** (4) — LEI/CLI; we use OECD CLI as substitute
 - **China NBS sub-data** (12) — property, FAI, retail sales, electricity; no free foreign API. Wind/CEIC/Bloomberg only
 - **Baltic Dry Index** (2) — Baltic Exchange; no reliable free API or yfinance ticker
