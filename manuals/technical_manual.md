@@ -2,6 +2,12 @@
 
 > Last updated: 2026-04-27
 
+This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
+
+- **`forward_plan.md`** — the phase summary, the architecture rules (`§0`), the priority queue (`§2`), and feature roadmap (`§3`). Read `forward_plan.md` §0 before touching any data-layer code: it codifies the rule that every fetched identifier must live in `data/macro_library_*.csv` rather than in Python.
+- **`forward_plan.md` §1 "Known Data Gaps"** is the single source of truth for series unavailable from any free source (CN 10Y, EU IG corp yield, ZEW, JP_PMI1, CN_PMI2, OECD CLI for EA19/CHE, etc.) — see §13 of this manual for the pointer.
+- **`multifreq_plan.md`** — detailed Phase 2 (multi-frequency / ragged-column) implementation plan, kept independent because of its size.
+
 ---
 
 ## Table of Contents
@@ -1044,12 +1050,13 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 
 - **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
 - **Run timeout:** Currently set to 120 minutes.
+- **Pipeline log capture (PR1, 2026-04-25):** the workflow pipes both Python steps through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits `pipeline.log` to the repo on every run alongside the data CSVs and explorer files. Useful for diagnosing failures without needing to download artefacts. The committed log is the artefact the §2.1 verification reads.
 
 ### Google Sheets
 
 - **CDN caching:** GitHub raw CSV URLs cache aggressively. Always use the Sheets export URL with `gid=` parameter for up-to-date data.
-- **Legacy tab cleanup:** `SHEETS_LEGACY_TABS_TO_DELETE` in `library_utils.py` drives automatic removal of deprecated tabs (`Market Data`, `sentiment_data`, `macro_surveys`, `macro_surveys_hist`, `market_data_hist`) on every run.
-- **Spreadsheet ID:** `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac` — hardcoded in all 5 modules that write to Sheets.
+- **Tab-state frozensets:** `library_utils.py` exports `SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, and `SHEETS_LEGACY_TABS_TO_DELETE` (see §6 Tab Map and §9.1). The legacy set is swept on every run by `fetch_data.py::push_to_google_sheets`; the protected set is checked by every writer before any update. To retire a tab, move its title from `SHEETS_ACTIVE_TABS` to `SHEETS_LEGACY_TABS_TO_DELETE` — the next run cleans it up.
+- **Spreadsheet ID:** `12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac` — hardcoded in all 4 active writer modules (`fetch_data.py`, `fetch_hist.py`, `fetch_macro_economic.py`, `compute_macro_market.py`).
 
 ### Downstream Consumer: trigger.py
 
