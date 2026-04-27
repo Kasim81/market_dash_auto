@@ -823,13 +823,13 @@ Every phase after `main()` is wrapped in `try/except` at the module level:
 
 ```python
 try:
-    from fetch_hist import run_hist
-    run_hist()
-except Exception as _hist_err:
-    print(f"[Hist] Non-fatal import/run error: {_hist_err}")
+    from fetch_macro_economic import run_phase_macro_economic
+    run_phase_macro_economic()
+except Exception as _me_err:
+    print(f"[macro_economic] Non-fatal error: {_me_err}")
 ```
 
-If Phase C crashes, `market_data`, `market_data_comp`, and `macro_us` are already written and safe. Each phase runs independently.
+If `run_phase_macro_economic` crashes, `market_data`, `market_data_comp`, and `market_data_comp_hist` are already written and safe. Each phase runs independently — see §3 Execution Flow for the full chain.
 
 ### Pattern 2: Per-Series Try/Except
 
@@ -855,10 +855,10 @@ All historical data is aligned to a weekly Friday date index. Monthly and quarte
 
 History tabs in Google Sheets have metadata rows above the data:
 
-- `macro_us_hist`: 8 prefix rows (Series ID, Source, Name, Category, Subcategory, Units, Frequency, Last Updated)
+- `macro_economic_hist`: 14 prefix rows (Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated)
 - `market_data_comp_hist`: 10 prefix rows (Ticker ID, Variant, Source, Name, Broad Asset Class, Region, Sub-Category, Currency, Units, Frequency)
 
-The CSVs include these prefix rows. Code that reads them back must skip the appropriate number of header rows (e.g. `pd.read_csv(..., header=N)`).
+The CSVs include these prefix rows. Code that reads them back must skip the appropriate number of header rows (e.g. `pd.read_csv(..., header=N)` or `df.iloc[N:]`).
 
 ### Pattern 5: Library-Driven Configuration
 
@@ -869,7 +869,7 @@ Both pipelines read everything from `index_library.csv` at runtime:
 - `simple_dash = True/False` controls simple pipeline inclusion
 - `broad_asset_class` and `units` are read from CSV, not computed in code
 
-Similarly, FRED series definitions live in `macro_library_fred.csv`, OECD/WB/IMF definitions in their respective CSVs, and macro-market indicator definitions in `macro_indicator_library.csv`. The indicator library CSV drives both `compute_macro_market.py` (metadata, grouping, naturally_leading flag) and `docs/build_html.py` (sidebar hierarchy, category, economic interpretation, regime descriptions).
+Similarly, every fetched macro identifier lives in one of the per-source library CSVs (`macro_library_countries.csv`, `_fred.csv`, `_oecd.csv`, `_worldbank.csv`, `_imf.csv`, `_dbnomics.csv`, `_ifo.csv`) — see §7 CSV File Inventory and `forward_plan.md` §0 for the architecture rules. Macro-market composite indicator definitions live in `macro_indicator_library.csv`, which drives both `compute_macro_market.py` (metadata, grouping, naturally_leading flag, cycle_timing) and `docs/build_html.py` (sidebar hierarchy, category, economic interpretation, regime descriptions).
 
 ### Pattern 6: Diff-Check CSV Commits
 
@@ -879,11 +879,12 @@ Output CSVs are only committed to git if content actually changed. This avoids n
 
 All modules follow the same pattern:
 
-1. Ensure tab exists (create via `batchUpdate addSheet` if absent)
-2. Clear entire range (`sheets.values().clear()`)
-3. Write header + data (`sheets.values().update()` with `valueInputOption="USER_ENTERED"`)
-4. NaN values converted to empty string before push (never write `"nan"` strings)
-5. Protected tab guard: legacy tabs (`market_data`, `sentiment_data`) are never overwritten by new phases
+1. **Protected-tab guard:** before any other call, the writer checks that the target tab is **not** in `library_utils.SHEETS_PROTECTED_TABS` (`market_data`, `sentiment_data`) — those are owned by the simple pipeline and downstream `trigger.py` and must never be overwritten by another phase.
+2. Ensure tab exists (create via `batchUpdate addSheet` if absent)
+3. Clear entire range (`sheets.values().clear()` over `A:ZZ`)
+4. Write header + data (`sheets.values().update()` with `valueInputOption="USER_ENTERED"`)
+5. NaN values converted to empty string before push (never write `"nan"` strings)
+6. After every snapshot run, `fetch_data.py::push_to_google_sheets` sweeps every title in `SHEETS_LEGACY_TABS_TO_DELETE` so retired tabs cannot accumulate
 
 ### Pattern 8: Rate Limiting with Exponential Backoff
 
@@ -906,7 +907,7 @@ All API calls include configurable delays and exponential backoff on 429/5xx:
 
 | Variable | Where Set | Used By |
 |---|---|---|
-| `FRED_API_KEY` | GitHub Secret | fetch_data.py, fetch_macro_us_fred.py, fetch_hist.py, fetch_macro_international.py, compute_macro_market.py |
+| `FRED_API_KEY` | GitHub Secret | `fetch_data.py`, `fetch_hist.py`, `sources/fred.py` (called by `fetch_macro_economic.py`) |
 | `GOOGLE_CREDENTIALS` | GitHub Secret | All modules that write to Sheets |
 
 `GOOGLE_CREDENTIALS` must be a JSON string of a Google service account key with editor access to the target spreadsheet.
@@ -938,10 +939,10 @@ python fetch_data.py
 Individual modules can also be run standalone:
 
 ```bash
-python fetch_macro_us_fred.py       # Phase A only
-python fetch_hist.py                # Historical only (requires FRED_MACRO_US from Phase A import)
-python fetch_macro_international.py # Phase C only
-python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
+python fetch_hist.py                # Comp-pipeline weekly history only (run_comp_hist)
+python fetch_macro_economic.py      # Phase ME only — unified raw-macro snapshot + history
+python compute_macro_market.py      # Phase E only (requires market_data_comp_hist + macro_economic_hist to exist)
+python docs/build_html.py           # Indicator Explorer rebuild only (requires every CSV above)
 ```
 
 ### GitHub Actions
@@ -960,34 +961,15 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | `FRED_API_KEY` | Exists | All FRED API calls |
 | `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
 | `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
-| `FMP_API_KEY` | Exists, reserved for future use | Registered 2026-04-21. **Phase D FMP calendar module deleted 2026-04-23** — economic calendar endpoint paywalled on free tier (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained for planned PE-ratio integration via `/stable/ratios` endpoint (still free; see `forward_plan.md` §3.9). Calendar-sourced indicators migrated to DB.nomics / ifo / Investing.com — see `pipeline_review.md` §1. |
+| `FMP_API_KEY` | Exists, reserved for future use | Registered 2026-04-21. **Phase D FMP calendar module deleted 2026-04-23** — economic calendar endpoint paywalled on free tier (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained for planned PE-ratio integration via `/stable/ratios` endpoint (still free; see `forward_plan.md` §3.9). Survey indicators that the FMP route was originally meant to carry now flow through DB.nomics + ifo via the unified hist (see `forward_plan.md` §3.7 for the source-evaluation verdicts). |
 
 ---
 
 ## 13. Known Issues & Status
 
-### Currently Broken / Returning No Data
+### Data Gaps — see `forward_plan.md` §1
 
-| Issue | Module | Notes |
-|---|---|---|
-| OECD EA19 and CHE CLI missing | fetch_macro_international.py | Structural — OECD doesn't publish these |
-| 3 Phase E Survey indicators return `Insufficient Data` | `compute_macro_market.py` | DE_ZEW1 (ZEW Mannheim, proprietary), JP_PMI1 (S&P Global, proprietary), CN_PMI2 (S&P Global/Caixin, proprietary). No free monthly source exists. German sentiment covered by DE_IFO1 + DEU_BUS_CONF; Chinese manufacturing by CN_PMI1 (OECD BCI). BoJ Tankan (quarterly) is future option for JP_PMI1. |
-
-### Recently Fixed (pending first post-fix run to confirm)
-
-| Issue | Module | Fix |
-|---|---|---|
-| OECD `DF_FINMARK` short-term interest rates returned zero data | `data/macro_library_oecd.csv` | `MEASURE` code corrected from `IRST` to `IR3TIB` (3-month interbank rate) — fixed 2026-04-21 |
-| IMF `XM` (Eurozone GDP Growth) returned no data | `fetch_macro_international.py` | `IMF_CODE_MAP` updated: IMF DataMapper v1 API uses `EURO` for the Euro Area — fixed 2026-04-21 |
-| `UMCSE` & `UMCSC` (UMich sub-indices) returned null | `data/macro_library_fred.csv`, `data/macro_us_hist.csv` | Not valid FRED series IDs — the UMich sub-indices (Expectations, Current Conditions) are not published via FRED; only the headline `UMCSENT` is. Both removed — fixed 2026-04-21 |
-| `^VIX` and `^MOVE` had blank `region` | `data/index_library.csv` | Set `region = "North America"`, `country_market = "United States"` — fixed 2026-04-21 |
-
-### Resolved / Removed
-
-| Issue | Resolution |
-|---|---|
-| EU_R1 metadata/code mismatch | Fixed during indicator groups review — CSV and code now both describe BTP-Bund spread |
-| USSLIND (LEI) stale data | FRED series stuck at Feb 2020 value — Philadelphia Fed permanently discontinued the Leading Economic Index in 2025. Indicator `US_LEI1` removed; USSLIND removed from `macro_library_fred.csv` |
+The canonical record of series unavailable from any free source we accept (China 10Y, Euro IG corporate yield, OECD CLI for EA19/CHE, ZEW, JP_PMI1 [au Jibun Bank PMI], CN_PMI2 [Caixin], NAPMOI, CHN_PPI, plus rejected paid sources) lives in **`forward_plan.md` §1 "Known Data Gaps"**. That table is the single source of truth — do not duplicate here. `compute_macro_market.py` calculators silently degrade to `n/a` for any indicator whose underlying series is in the gap list (currently `EU_Cr1`, `AS_CN_R1`, `DE_ZEW1`, `JP_PMI1`, `CN_PMI2`).
 
 ### Tickers Confirmed Unavailable via yfinance
 
@@ -1001,30 +983,43 @@ python compute_macro_market.py      # Phase E only (requires hist CSVs to exist)
 | `IMOEX.ME`, `RTSI.ME` | Russian indices | Data through mid-2022/2024 only (sanctions) |
 | `CYB` | WisdomTree Chinese Yuan ETF | Delisted Dec 2023; `CNYB.L` is replacement |
 | `DX-Y.NYB` | US Dollar Index | Data only from 2008 |
+| `SENSEXBEES.NS`, `^TSXV`, `^SP500V`, `^SP500G`, `^RMCCV`, `^RMCCG` | Indian Sensex ETN, TSX-Venture, S&P 500 Value/Growth, Russell Mid-Cap Value/Growth | Logged on every run as `possibly delisted` / `Period 'max' is invalid`; no replacement identified yet |
 
-### Metadata / Label Issues
+Each row in `index_library.csv` for the above carries `validation_status` other than `CONFIRMED` (or is filtered out by data-source convention) so the comp pipeline does not block on them.
 
-Status verified against `data/index_library.csv` on 2026-04-23.
+### Metadata / Label Issues — currently clean
 
-| Ticker | Previously Flagged | Current State | Action |
-|---|---|---|---|
-| `^IRX` | Labeled "US 2Y Treasury Yield" | `name = "US 3-Month Treasury Yield"` | Already fixed |
-| `^VIX` | Region "Global" | `region = "North America"`, `country_market = "United States"` | Fixed 2026-04-21 |
-| `^MOVE` | Region blank | `region = "North America"`, `country_market = "United States"` | Fixed 2026-04-21 |
-| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged | No change — owner decision: "North America" groups US & Canada deliberately |
+Last full audit against `data/index_library.csv`: 2026-04-21. The previously-flagged items below are all resolved; included here as historical record.
 
-### Remaining Redundancy Items
-
-These are lower-severity structural issues documented in `METADATA_REDUNDANCY_REVIEW.md` (2026-03-20). Items 1, 2, 5, 6, 7, 9 have been resolved. Remaining:
-
-| # | Issue | Current State |
+| Ticker | Previously Flagged | Current State |
 |---|---|---|
-| 3 | Simple pipeline instrument list was hardcoded 3x | Resolved — now library-driven via `simple_dash` column |
-| 4 | `PENCE_TICKERS` hardcoded set | Resolved — replaced with dynamic `.endsWith(".L")` + median check |
-| 8 | "Broad Asset Class" computed in code | Resolved — now read from `broad_asset_class` CSV column |
-| 10 | Ratio/spread definitions hardcoded in comp pipeline | Resolved — moved to `compute_macro_market.py` as indicator functions |
-| 11 | `_ac_units` mapping hardcoded | Resolved — now read from `units` CSV column |
-| 12 | `build_market_meta_prefix()` used hardcoded lists | Resolved — metadata now read from instrument dicts populated from library |
+| `^IRX` | Labeled "US 2Y Treasury Yield" | `name = "US 3-Month Treasury Yield"` |
+| `^VIX` | Region "Global" | `region = "North America"`, `country_market = "United States"` |
+| `^MOVE` | Region blank | `region = "North America"`, `country_market = "United States"` |
+| XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged — owner decision: "North America" groups US & Canada deliberately |
+
+### Past Refactors (Resolved)
+
+These items previously tracked active refactoring debt and have all landed. Kept as a brief history; for the broader stage-by-stage rebuild record see `forward_plan.md` §1 (Phase summaries) and §2 priority queue (Completed work block).
+
+| Issue | Resolution |
+|---|---|
+| Simple-pipeline instrument list hardcoded in three places | Library-driven via `simple_dash` column |
+| `PENCE_TICKERS` hardcoded set | Replaced with dynamic `.endswith(".L")` + median > 50 check |
+| `broad_asset_class` and `units` computed in code | Read from CSV columns |
+| Hardcoded ratio/spread definitions in the comp pipeline | Moved to `compute_macro_market.py` as indicator calculators |
+| `build_market_meta_prefix()` used hardcoded lists | Metadata read from instrument dicts populated from library |
+| `EU_R1` metadata/code mismatch | CSV and code now both describe BTP-Bund spread |
+| `USSLIND` (Philly Fed LEI) stuck at Feb 2020 | Philly Fed discontinued the LEI in 2025; indicator `US_LEI1` removed; series removed from `macro_library_fred.csv` |
+| `UMCSE` / `UMCSC` (UMich sub-indices) returned null | UMich sub-indices not published via FRED; both removed; only the headline `UMCSENT` retained |
+| OECD `DF_FINMARK` short-term-rate `MEASURE` code wrong | Corrected from `IRST` to `IR3TIB` (3-month interbank rate) in `data/macro_library_oecd.csv` |
+| IMF `XM` (Eurozone GDP Growth) returned no data | Eurozone code corrected to `EURO` in `data/macro_library_countries.csv` (IMF DataMapper v1 convention) |
+| `INDICATOR_META` Python dict in `compute_macro_market.py` | Moved to `data/macro_indicator_library.csv` (Stage 1, 2026-04-22) |
+| Per-source coordinators (`fetch_macro_us_fred.py`, `fetch_macro_international.py`, `fetch_macro_dbnomics.py`, `fetch_macro_ifo.py`) | Consolidated into `fetch_macro_economic.py` + `sources/` package (Stage 2, 2026-04-23) |
+| `fetch_supplemental_fred()` Python literal of FRED IDs | Last 7 supplementals moved into `data/macro_library_fred.csv` (2026-04-26); `compute_macro_market.py` now contains zero direct FRED API contact |
+| `BAMLEC0A0RMEY` returning persistent FRED HTTP 400 | Series not in the FRED database; row removed; EU_Cr1 returns n/a; new EU_Cr2 covers Euro HY separately (2026-04-27) |
+| ECB SDW host retired | Migrated to `data-api.ecb.europa.eu` (PR2, 2026-04-26); date parser fixed for daily YC returns (2026-04-27) |
+| 60+ pandas `PerformanceWarning: DataFrame is highly fragmented` per run | `pd.concat(...).copy()` defragmentation in `compute_macro_market.build_hist_df` and the per-source builders (PR3, 2026-04-26 + 2026-04-27 fix-forward) |
 
 ### Excluded Indicators (Do Not Implement Without Instruction)
 
