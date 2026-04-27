@@ -11,9 +11,21 @@
 
 ### 0.1 The single rule
 
-**Every identifier the pipeline fetches lives in a CSV under `data/`. Never in Python.**
+**Every identifier the pipeline fetches lives in one of the source-of-truth CSVs under `data/`. Never in Python.**
 
-If the change you're about to make adds, removes, renames, or substitutes a fetched identifier — the only file you should be editing is a `data/macro_library_*.csv`. If you are reaching for a string literal in a `.py` file that looks like `"INDIRLTLT01STM"`, `"BSCICP02DEM460S"`, `"ISM/pmi/pm"`, `"BAMLHE00EHYIOAS"`, etc., **stop and put it in a CSV instead.**
+There are multiple source-of-truth CSVs — one per data source — not a single registry. The full inventory is in **§1 Data-Layer Registry**, but the active set today is:
+
+- `data/index_library.csv` — comp pipeline tickers (~390 yfinance instruments)
+- `data/macro_library_countries.csv` — 12 country codes + WB / IMF mappings
+- `data/macro_library_fred.csv` — every FRED series ID
+- `data/macro_library_oecd.csv` — every OECD SDMX dataflow / dimension key
+- `data/macro_library_worldbank.csv` — every WB WDI indicator code
+- `data/macro_library_imf.csv` — every IMF DataMapper indicator code
+- `data/macro_library_dbnomics.csv` — every DB.nomics series path
+- `data/macro_library_ifo.csv` — every ifo workbook sheet/column location
+- `data/macro_indicator_library.csv` — every Phase E composite indicator
+
+If the change you're about to make adds, removes, renames, or substitutes a fetched identifier — the only file you should be editing is the appropriate `data/macro_library_*.csv` (or `index_library.csv` / `macro_indicator_library.csv` depending on what you're changing). If you are reaching for a string literal in a `.py` file that looks like `"INDIRLTLT01STM"`, `"BSCICP02DEM460S"`, `"ISM/pmi/pm"`, `"BAMLHE00EHYIOAS"`, etc., **stop and put it in the relevant CSV instead.**
 
 ### 0.2 What counts as an "identifier"
 
