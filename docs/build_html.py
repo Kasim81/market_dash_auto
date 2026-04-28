@@ -571,7 +571,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   color:#d29922;background:#272115;border:1px solid #3d2f0d
 }
 .series-cycle.G{
-  color:#f85149;background:#2d1416;border:1px solid #5c1e22
+  color:#ff7eb6;background:#2d1727;border:1px solid #5c2547
 }
 .series-dates{
   font-size:9px;color:#484f58;white-space:nowrap;flex-shrink:0;
@@ -1051,8 +1051,9 @@ function buildSimpleSection(title, seriesMap, dates, source, nameFn){
     body.appendChild(makeSeriesItem({
       source,
       key,
-      id:   key,
-      name: nameFn(meta),
+      id:    key,
+      name:  nameFn(meta),
+      cycle: meta.cycle_timing || '',
     }));
   });
 
