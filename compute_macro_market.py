@@ -128,7 +128,7 @@ def _load_indicator_library():
     """Load indicator metadata from macro_indicator_library.csv.
 
     Returns:
-        ind_meta : dict  {id: (group, sub_group, category, formula_note)}
+        ind_meta : dict  {id: (group, sub_group, category, formula, concept, subcategory)}
         all_ids  : list  ordered indicator IDs (CSV row order)
         naturally_leading : frozenset  IDs flagged as naturally leading
     """
@@ -140,11 +140,13 @@ def _load_indicator_library():
         ind_id = str(row.get("id", "")).strip()
         if not ind_id:
             continue
-        group     = str(row.get("group", "")).strip()
-        sub_group = str(row.get("sub_group", "")).strip()
-        category  = str(row.get("category", "")).strip()
-        formula   = str(row.get("formula_using_library_names", "")).strip()
-        ind_meta[ind_id] = (group, sub_group, category, formula)
+        group       = str(row.get("group", "")).strip()
+        sub_group   = str(row.get("sub_group", "")).strip()
+        category    = str(row.get("category", "")).strip()
+        formula     = str(row.get("formula_using_library_names", "")).strip()
+        concept     = str(row.get("concept", "")).strip()
+        subcategory = str(row.get("subcategory", "")).strip()
+        ind_meta[ind_id] = (group, sub_group, category, formula, concept, subcategory)
         all_ids.append(ind_id)
         if str(row.get("naturally_leading", "")).strip().upper() == "TRUE":
             leading.add(ind_id)
@@ -1895,14 +1897,16 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
     rows = []
     _empty_cols = ["raw", "zscore", "regime", "fwd_regime"]
     for ind_id in ALL_INDICATOR_IDS:
-        meta = INDICATOR_META.get(ind_id, ("", "", "", ""))
-        group, sub_group, category, formula_note = meta
+        meta = INDICATOR_META.get(ind_id, ("", "", "", "", "", ""))
+        group, sub_group, category, formula_note, concept, subcategory = meta
         df = results.get(ind_id, pd.DataFrame(columns=_empty_cols))
         if df.empty or df["raw"].dropna().empty:
             rows.append({
                 "id":                  ind_id,
                 "group":               group,
                 "sub_group":           sub_group,
+                "concept":             concept,
+                "subcategory":         subcategory,
                 "category":            category,
                 "last_date":           "",
                 "raw":                 "",
@@ -1930,6 +1934,8 @@ def build_snapshot_df(results: dict) -> pd.DataFrame:
                 "id":                  ind_id,
                 "group":               group,
                 "sub_group":           sub_group,
+                "concept":             concept,
+                "subcategory":         subcategory,
                 "category":            category,
                 "last_date":           str(last.name.date()),
                 "raw":                 round(last["raw"], 6),

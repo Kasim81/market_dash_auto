@@ -82,7 +82,8 @@ def _parse_date_col(df: pd.DataFrame) -> tuple[list, pd.DataFrame]:
 def load_indicator_meta() -> dict:
     """Load indicator metadata from macro_indicator_library.csv.
 
-    Returns dict keyed by indicator ID with metadata, group, sub_group,
+    Returns dict keyed by indicator ID with category, group, sub_group,
+    concept, subcategory, formula, interpretation, regime description,
     naturally_leading flag, and cycle_timing (L/C/G) — all driven by the
     CSV (source of truth).
     """
@@ -96,6 +97,8 @@ def load_indicator_meta() -> dict:
             "category":     str(row.get("category", "")).strip(),
             "group":        str(row.get("group", "")).strip(),
             "sub_group":    str(row.get("sub_group", "")).strip(),
+            "concept":      str(row.get("concept", "")).strip(),
+            "subcategory":  str(row.get("subcategory", "")).strip(),
             "formula":      str(row.get("formula_using_library_names", "")).strip(),
             "interp":       str(row.get("economic_interpretation", "")).strip(),
             "regime_desc":  str(row.get("regime_classification", "")).strip(),
