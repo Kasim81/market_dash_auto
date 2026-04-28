@@ -241,60 +241,41 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 
 ### 2.2 Refresh `manuals/technical_manual.md` to current reality
 
-**Priority:** High — the technical manual is the canonical reference; significant drift since the 2026-04-23 update has accumulated.
-**Status:** Not started. Requires a section-by-section pass.
+**Priority:** High — the technical manual is the canonical reference.
+**Status:** Done 2026-04-27 — section-by-section refresh landed in 8 commits on `claude/review-forward-plan-rQ2x9` (PR #98, merged 2026-04-28). Outcome below.
 
-Known stale spots (verified by grep on 2026-04-26 against current code):
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | Stale-reference punch list |
+| 2 | `8cea51e` | §1-§4 architecture (Scope, Directory Structure, Execution Flow, Two Pipelines) |
+| 3 | `5a4017b` | §5-§7 data layer (Data Sources & APIs, Tab Map, CSV Inventory) |
+| 4 | `d49bc21` | §9 part A — retire stale module entries + add `fetch_macro_economic.py` and `sources/` package |
+| (interleaved) | `49bd676` | Schedule change 03:17 → 00:34 UTC |
+| 5 | `b947447` | §9 part B — refresh surviving module entries (line counts + drift) |
+| 6 | `b464402` | §10-§13 — Patterns, Env Setup, Known Issues restructure |
+| 7 | `6bcfc8b` | §14 + ToC + cross-ref pointer to `forward_plan.md` §0 + final grep |
+| 8 | `5faa679` | `file_del_candidates.md` at the repo root (audit-only, 6 candidates surfaced) |
 
-- **§1 Scope at a Glance** still lists `macro_us`, `macro_us_hist`, `macro_intl`, `macro_intl_hist` as separate tabs. Replace with `macro_economic` + `macro_economic_hist` per §1 Phase G of this plan.
-- **§2 Directory Structure** lists deleted modules: `fetch_macro_us_fred.py` (510 lines), `fetch_macro_international.py` (1,426 lines). Replace with `fetch_macro_economic.py` + the `sources/` package (`base`, `countries`, `fred`, `oecd`, `worldbank`, `imf`, `dbnomics`, `ifo`).
-- **§3 Execution Flow** references `run_phase_a()`, `run_phase_c()`, etc. Phase A/B/C/D have all been retired into Phase ME — update the call graph.
-- **§6 Google Sheets Tab Map** carries 9 rows — should be 7 (matches §1 Phase G of this plan).
-- **§7 CSV File Inventory** is missing the per-source library CSVs (`macro_library_fred.csv`, `_oecd.csv`, `_worldbank.csv`, `_imf.csv`, `_dbnomics.csv`, `_ifo.csv`, `_countries.csv`) and `reference_indicators.csv`. Add per the §1 Data-Layer Registry of this plan.
-- **§9 Module Reference** has stale entries for the 4 retired coordinators. Replace with one entry covering `fetch_macro_economic.py` + `sources/` package modules.
-- **§13 Known Issues & Status** should absorb the §1 "Known Data Gaps" subsection of this plan (CN 10Y, proprietary PMIs, NAPMOI rerouted, CHN_PPI removed, OECD CLI proxy).
-- **§14 Operational Notes** should add: `pipeline.log` is committed to the repo on every workflow run (PR1, 2026-04-25); the workflow uses `set -o pipefail` + `tee pipeline.log` + an `if: always()` commit step.
-- **Cross-reference §0 of this plan** — the architecture preferences belong in the technical manual too (or a clear pointer to §0 of `forward_plan.md`).
-- **Repo-wide file audit + create `file_del_candidates.md`.** Walk the entire repo (top level, `manuals/`, `data/`, `archive/`, `docs/`, `sources/`, `.github/`, any cached fixtures, etc.) and evaluate every file. Build a new `file_del_candidates.md` at the repo root listing the location + name of any file that looks redundant, superseded, or orphaned. For each candidate include: the path, why it's a candidate (e.g. "superseded by `fetch_macro_economic.py`", "PoC artefact, no longer referenced", "stale workbook cache", "duplicate of git history"), and a confidence rating (High / Medium / Low) so the owner can decide what to delete. Do **not** delete anything in this task — the manual is the audit, deletion is a separate decision. Candidate categories to scrutinise: PoC scripts (`poc_*.py`), retired manual planning docs (`Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` if any of those still exist on disk), `archive/` contents, cached `.xlsx` workbooks, `.docx` artefacts that are regenerable from `.md` sources, duplicate review files, abandoned test fixtures.
-
-**Acceptance:** every grep that currently hits a deleted module name in `technical_manual.md` returns zero matches; tab inventory and CSV inventory match `library_utils.py::SHEETS_ACTIVE_TABS` and the §1 registry of this plan; `file_del_candidates.md` exists at the repo root with its full audit table.
+**Acceptance verified:** every grep against `technical_manual.md` for retired module names (`fetch_macro_us_fred.py`, `fetch_macro_international.py`, `fetch_macro_dbnomics.py`, `fetch_macro_ifo.py`), retired entry points (`run_phase_a`, `run_phase_c`, `run_hist`), and retired tabs (`macro_us[_hist]`, `macro_intl[_hist]`, `macro_dbnomics[_hist]`, `macro_ifo[_hist]`) returns only intentional historical-context hits in the retirement narratives. Indicator count (92) consistent across all 9 places it appears. All 14 ToC anchors valid. Tab inventory matches `library_utils.py::SHEETS_ACTIVE_TABS`; CSV inventory matches the §1 Data-Layer Registry.
 
 ### 2.3 Rewrite `forward_plan.md` to be self-contained (drop external doc dependencies)
 
-**Priority:** High — once done, the active manual set collapses to three documents (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`), eliminating the slow drift caused by overlapping content scattered across legacy planning docs.
-**Status:** Not started.
+**Priority:** High — collapses the active contributor doc set to three (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`).
+**Status:** Done 2026-04-28 — landed in 4 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-**Goal — the documents Kasim and Claude need to consult, end-state:**
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | External-doc reference punch list across `forward_plan.md` and `technical_manual.md` |
+| 2 | `09073ea` | Drop "Based on:" attribution line; replace with self-contained intro paragraph; reword §3.3 Phase F handover phrasing; verify §1 paragraphs are standalone |
+| 3 | `4e1e092` | Integrate `manuals/pipeline_review.md` content into new **§3.7.1 Per-Indicator Source Mapping** (12-row Phase D / FMP-rebuild table + 29-row partial-coverage / proxy table); delete the source file; rewire two §3.x cross-references |
+| 4 | this commit | Mark §2.2 + §2.3 Done in-place; final cross-reference grep + zero stale-reference verification |
 
-| Document | Role |
-|---|---|
-| `manuals/technical_manual.md` | The authoritative record of the current code state — modules, data flow, schemas, operational behaviour. |
-| `manuals/forward_plan.md` | The phase / architecture summary (§1), the architecture rules (§0), the priority queue (§2), and all forward feature work (§3). Self-contained — no references to deleted handover or planning docs. |
-| `manuals/multifreq_plan.md` | Detailed Phase 2 (multi-frequency) implementation plan. Kept independent because of its size and depth. Cross-referenced from §4 only. |
+**Acceptance verified:**
 
-Everything else in `manuals/` either (a) gets folded into one of the above, or (b) is a developer-tool helper script (`build_docx.py`, `md_to_docx.py`) that is not user-consulted content.
-
-**Plan:**
-
-1. **Drop the "Based on:" attribution line** at the top of `forward_plan.md` (the one that references "the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history)"). Replace with a single self-contained intro sentence.
-2. **Rewrite §1 to be standalone.** Audit every paragraph for phrases like "the original handover planned…", "Phase B was originally going to…", "the historic `Project Plan 260327`…". For each, decide: is the historic context still useful? If yes, fold it inline into the current §1 description so the reader doesn't need the external doc. If no, delete the reference. Net result: a §1 that a new contributor can read cold without needing any other doc.
-3. **Integrate `manuals/pipeline_review.md` into §3.** `pipeline_review.md` carries per-indicator source mappings (which Phase E indicator reads which raw series, and from which source library). Move that content into a new subsection under §3 — best fit alongside §3.7 "Source Evaluation Retrospective", as **§3.7.1 Per-Indicator Source Mapping** (or wherever sits cleanly). The source-mapping table is the one durable artefact that supports future source-build work like the new BoJ Tankan task: when adding a new source, you need to know which indicators already depend on what. Once integrated, delete `manuals/pipeline_review.md` (kept in git history).
-4. **Audit `forward_plan.md` and `technical_manual.md` for cross-references.** Anything pointing to a deleted manual gets either redirected or replaced inline. Final state: the only inter-manual links are between `forward_plan.md` ↔ `technical_manual.md` and from §4 → `multifreq_plan.md`.
-5. **Confirm `manuals/` directory inventory.** Expected after this work:
-   - `forward_plan.md` (this doc)
-   - `technical_manual.md`
-   - `multifreq_plan.md`
-   - `Macro Market Indicators Reference.docx` (source doc — already external; cited from §3.8 only)
-   - `indicator_manual.md` / `.docx` + `macro_market_cheat_sheet.md` / `.docx` — user-facing reference; not part of the contributor / Claude doc set; out of scope here.
-   - Helper scripts (`build_docx.py`, `md_to_docx.py`) — out of scope.
-
-**Acceptance:**
-
-- Zero references in `forward_plan.md` to: "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", "the historic …".
-- `manuals/pipeline_review.md` deleted; its content lives under §3 in `forward_plan.md`.
-- Reading `forward_plan.md` cold makes complete sense without consulting any other manual or deleted-from-tree doc.
-- §1 still contains the phase summary + reminder of completed work — but framed as standalone descriptions, not as deltas against external planning docs.
-- The §3 per-indicator source mapping (lifted from `pipeline_review.md`) supports the new BoJ Tankan task and any other future source-build work without needing to consult an external doc.
+- Zero references in `forward_plan.md` to "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", or "the historic …" outside of this completion ledger.
+- `manuals/pipeline_review.md` deleted (commit `4e1e092`); durable content lives in §3.7.1 of this doc.
+- The active contributor doc set is now exactly three: `forward_plan.md`, `technical_manual.md`, `multifreq_plan.md`.
+- The §3.7.1 per-indicator source mapping supports the §2.7 BoJ Tankan task and any other future source-build work without needing to consult an external doc.
 
 ### 2.4 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
 
