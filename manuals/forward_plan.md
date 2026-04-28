@@ -346,38 +346,22 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 
 ### 2.6 Per-ticker data-freshness audit
 
-**Priority:** High — multiple indicators have silently been forward-filling stale data for months without any flag. Live examples discovered post §2.5 v2 merge: `BSCICP03USM665S` (US Business Confidence, OECD via FRED) and `CSCICP03USM665S` (US Consumer Confidence, OECD via FRED) both stopped updating in January 2024; the unified hist's Friday spine forward-filled them for 16+ months before the staleness was visible. Any indicator built on these series has been computing on dead data without any pipeline-level warning.
-**Status:** Not started.
+**Priority:** High — multiple indicators were silently forward-filling stale data without any flag.
+**Status:** Done 2026-04-28 — landed in 4 commits + a small follow-up. Outcome below.
 
-**Goal:** every fetched series gets a per-run freshness check; the daily run logs (and ideally fails loudly on) any series that hasn't seen a fresh observation within an expected-cadence-aware tolerance window. Catches publisher discontinuations, retired series, and OECD-mirror-via-FRED freezes (the actual driver of the 2024-Jan staleness) before they corrupt downstream indicators.
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | `b900128` | New `freshness_override_days` column on every `data/macro_library_*.csv` (123 row updates across 6 libraries; default empty). |
+| 1.5 | `f23263f` | New `data/freshness_thresholds.csv` driving per-frequency default tolerances (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with inline rationale notes. CSV-driven per §0. |
+| 2 | `25e445b` | New `freshness_audit.py` at repo root. Walks every per-source library, finds last *value-change* per series in the unified hist (not last non-null — Friday-spine forward-fill would otherwise mask staleness), classifies FRESH/STALE/EXPIRED. Output: `freshness_audit.txt` + non-zero exit on any STALE/EXPIRED. |
+| 3 | `8f5ed42` | New "Run freshness audit" step in `.github/workflows/update_data.yml` between explorer rebuild and commit, `if: always()`, pipes output into `pipeline.log`. Non-fatal (`|| true`) — warning channel, not build gate. |
 
-**Plan:**
+**Acceptance verified:** `python freshness_audit.py` runs clean on current data; `BSCICP03USM665S` and `CSCICP03USM665S` both appear in the first EXPIRED batch (`last_obs=2024-01-05  age=844d  tolerance=45d`). The first run also surfaced ~27 other EXPIRED series (mostly OECD-mirror-via-FRED vintages that froze: JPN/CHN policy rates, GBR bank rate, EA HICP, DEU/JPN industrial production) plus ~46 STALE at 1-2× tolerance — the spec's expected "first wave" payload.
 
-1. **Threshold table.** Per-frequency staleness tolerance (defaults below; per-row override allowed via a new `freshness_override_days` column in the relevant `data/macro_library_*.csv` file when a known publisher delay justifies a wider window):
+**Follow-up not in §2.6 scope** (these are now actionable items, candidates for a future small fix-forward PR):
 
-   | Frequency | Default tolerance |
-   |---|---|
-   | Daily | 5 days |
-   | Weekly | 10 days |
-   | Monthly | 45 days |
-   | Quarterly | 120 days |
-   | Annual | 540 days |
-
-   The `frequency` column already exists in every `data/macro_library_*.csv`; the override column is new.
-
-2. **Standalone audit script — `freshness_audit.py`** (repo root). Reads every `data/macro_library_*.csv` library, looks up each series's last non-null observation in `data/macro_economic_hist.csv` (or `data/market_data_comp_hist.csv` for yfinance instruments), compares against today's date, and emits a sorted report grouped by status (FRESH / STALE / EXPIRED). Output: `freshness_audit.txt` plus a non-zero exit code if any STALE/EXPIRED row is found. Runnable ad-hoc.
-
-3. **Daily CI step.** A small `if: always()` block at the end of `update_data.yml` runs `python freshness_audit.py` and pipes its output into `pipeline.log`. Exit code is captured but not fatal (workflow already handles non-fatal phase errors); the output makes the staleness visible in the committed log.
-
-4. **Output format.** One line per stale series:
-   ```
-   STALE  monthly   BSCICP03USM665S   last_obs=2024-01-01   age=460d   tolerance=45d   indicators_affected=US_BUS_CONF
-   ```
-   The `indicators_affected` column is computed by reverse-lookup against the §3.3.1 per-indicator source mapping (which now lives in `forward_plan.md` per §2.3).
-
-5. **Quick wins to expect from the first run.** Beyond the two examples above, expect to surface several OECD-mirror-via-FRED series that froze when OECD discontinued or renamed legacy MEI vintages. The first run is the audit; the second wave is fix-forward (route to alternative sources or remove from the library).
-
-**Acceptance:** `python freshness_audit.py` runs cleanly on a current data snapshot and produces the report; CI step fires on every daily run with output committed in `pipeline.log`; `BSCICP03USM665S` and `CSCICP03USM665S` are explicitly named in the first STALE batch (verifying the rule fires).
+- The 27 EXPIRED rows: each needs either a per-row `freshness_override_days` (if the publisher genuinely lags badly), a reroute to an alternative source, or removal from the library.
+- The `indicators_affected` reverse-lookup column against §3.3.1 per-indicator source mapping was descoped to v2 — §3.3.1 is currently markdown not machine-readable; a future tool would need to either (a) parse the markdown table or (b) fold the mapping into a CSV. Out of scope for §2.6 v1.
 
 ### 2.7 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
 
