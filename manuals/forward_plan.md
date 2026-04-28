@@ -795,6 +795,13 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 - Daily run wall-clock time decreases by the simple-pipeline budget (~30-60 seconds of yfinance / FRED calls eliminated).
 - `trigger.py` continues to function (if still in use) or is acknowledged as retired.
 
+### 3.9 Regime-Based Indicator Labelling & ML-Driven Regime Identification
+
+**Priority:** High strategic — unlocks the §3.10 back-test + portfolio work; once shipped, every macro_market indicator carries a regime label in addition to its cycle-timing label, giving us a per-indicator "what does this say about the current regime?" signal.
+**Status:** Not started. Multi-phase research project; depends on §3.3 (full coverage) and the §2.6 freshness audit (so the regime model isn't trained on stale inputs).
+
+**Goal:** define a small set of well-grounded macroeconomic regimes; tag each Phase E composite indicator with a "regime-identification reliability" score; assemble an ensemble of the most reliable indicators into a current-regime classifier; use the classifier output as the regime status that drives §3.10's portfolio tilts.
+
 ---
 
 ## 4. Multi-Frequency Pipeline (Phase 2)
