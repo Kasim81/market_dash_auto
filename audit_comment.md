@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-28 — **100 ISSUES** (24 fetch errors, 75 stale series, 1 static-check failure)
+## Daily audit — 2026-04-28 — **100 ISSUES** (23 fetch errors, 75 stale series, 2 static-check failures)
 
-_Run: 2026-04-28 13:39 UTC_
+_Run: 2026-04-28 16:34 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -31,9 +31,8 @@ Full report attached as `data_audit.txt` in today's commit.
 - `^TSXV`
 - `^TX60`
 
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5530 obs`
 
 </details>
 
@@ -115,8 +114,9 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (1):
+**missing_columns** (2):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 

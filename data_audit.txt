@@ -1,6 +1,6 @@
 === Data audit @ 2026-04-28 ===
 
---- Section A: Fetch outcomes (24 issues) ---
+--- Section A: Fetch outcomes (23 issues) ---
   YFINANCE_DEAD       ISFA.L
   YFINANCE_DEAD       SENSEXBEES.NS
   YFINANCE_DEAD       ^CNXSC
@@ -24,12 +24,12 @@
   YFINANCE_DEAD       ^TSXV
   YFINANCE_DEAD       ^TX60
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
-  OTHER_WARNINGS      [ECB] AAA euro govt yield: 5530 obs
 
---- Section B: Static checks (1 issues) ---
+--- Section B: Static checks (2 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+  MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 88  STALE 46  EXPIRED 29) ---
+--- Section C: Value-change staleness (FRESH 62  STALE 46  EXPIRED 29) ---
   EXPIRED (29):
     Monthly     JPN_POLICY_RATE                   src=FRED         series=IRSTCB01JPM156N           last_obs=2008-12-05  age=6353d     tolerance=45d
     Monthly     CHN_POLICY_RATE                   src=FRED         series=IRSTCB01CNM156N           last_obs=2015-11-06  age=3826d     tolerance=45d
