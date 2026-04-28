@@ -610,6 +610,36 @@ These reference indicators have partial coverage today via adjacent / standardis
 | Global | Bloomberg Commodity Index | `DBC` ETF proxy | BCOM itself proprietary — keep DBC |
 | Global | Goldman Sachs FCI | `NFCI` (Chicago Fed) substitute | GS FCI proprietary — keep NFCI |
 
+### 3.5 Community Datasets Review — Yahoo-compatible ticker catalogues
+
+**Priority:** Medium — low-effort discovery exercise that could feed §3.1 Sub-track 4 (dead-ticker replacements), §3.3 (Instrument Expansion), and §1 Known Data Gaps in one pass.
+**Status:** Not started.
+
+**Context.** Two community-maintained catalogues of yfinance-compatible tickers exist that might cover instruments / regions / proxies the current `data/index_library.csv` misses:
+
+- **Kaggle — "Yahoo Finance Tickers"** (search Kaggle for the dataset of that title; the popular version contains 100,000+ symbols across global exchanges). CSV / database format.
+- **GitHub — `stockdatalab/YAHOO-FINANCE-SCREENER-SYMBOLS`** — categorised lists for 40+ countries.
+
+**Recency caveat.** Tickers in either source can be delisted, renamed, or moved between exchanges. Any candidate ticker pulled from these catalogues must be probed via yfinance before being added to `index_library.csv` (the existing validation pattern at §3.3 Step 1 applies).
+
+**Plan:**
+
+1. **Pull both datasets** into a working directory (not committed). Note Kaggle dataset version / GitHub commit hash for reproducibility.
+2. **Cross-check against current dead-ticker list** (§3.1 Sub-track 4 — 22 dead tickers as of 2026-04-28). For each dead ticker, search both catalogues for a same-instrument / same-index successor (e.g. is there a live `^TX60` replacement? a viable `^TOPX` substitute? alternative listings for the SX*P STOXX 600 sector family?).
+3. **Cross-check against §1 Known Data Gaps.** Specific targets where a free yfinance instrument might serve as a proxy:
+    - Euro IG corporate effective yield (`EU_Cr1`) — does either catalogue list a Euro IG corp-bond ETF with usable distribution-yield history?
+    - China 10Y govt yield (`AS_CN_R1`) — any free yfinance proxy via a CN govt-bond ETF or futures contract?
+    - JP Tankan-equivalent instrument — unlikely yfinance has it, but worth a check before §3.2's BoJ source-build.
+4. **Cross-check against §3.3 Instrument Expansion buckets.** Europe sector ETFs (`.DE`, EUR-denominated), EM regional ETFs, UK style ETFs, Asia/Japan additional coverage — does either catalogue surface candidates that haven't already been considered?
+5. **Produce a short report** at `manuals/community_datasets_review.md` (one-shot, not a recurring artefact): per-target finding (resolved / partial / no replacement / proxy candidate), with the exact ticker symbol + currency + last-data check date.
+6. **Action the wins.** For each candidate that probes clean, add a row to `index_library.csv` with `validation_status = "CONFIRMED"` and the appropriate `base_currency`. Update `§3.1 Sub-track 4` outcomes accordingly. Where no replacement exists, the gap stays in §1 Known Data Gaps (or is accepted as `UNAVAILABLE`).
+
+**Acceptance:**
+
+- The review report identifies, for each of the 22 dead yfinance tickers, whether the community catalogues offer a replacement.
+- At least one §1 Known Data Gap is either filled (corp-yield / CN 10Y / similar) or formally confirmed unavailable in the public-data universe.
+- Any added tickers ship as a single small commit to `index_library.csv` plus `validation_status` updates.
+
 ### 3.6 Incremental Fetch Mode (fetch_hist.py)
 
 **Priority:** Medium — performance improvement.
