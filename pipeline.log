@@ -17,27 +17,27 @@ $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 ============================================================
-Market Dashboard Data Fetch — 2026-04-27 23:59 UTC
+Market Dashboard Data Fetch — 2026-04-28 04:23 UTC
 ============================================================
 Fetching comprehensive FX rates...
-  GBP (GBPUSD=X): OK (5824 rows)
-  EUR (EURUSD=X): OK (5812 rows)
-  AUD (AUDUSD=X): OK (5188 rows)
-  JPY (USDJPY=X): OK (7646 rows)
-  CNY (CNY=X): OK (6214 rows)
-  INR (INR=X): OK (5809 rows)
-  KRW (KRW=X): OK (5810 rows)
+  GBP (GBPUSD=X): OK (5825 rows)
+  EUR (EURUSD=X): OK (5813 rows)
+  AUD (AUDUSD=X): OK (5189 rows)
+  JPY (USDJPY=X): OK (7647 rows)
+  CNY (CNY=X): OK (6215 rows)
+  INR (INR=X): OK (5810 rows)
+  KRW (KRW=X): OK (5811 rows)
   TWD (TWD=X): OK (5317 rows)
-  CAD (USDCAD=X): OK (5880 rows)
-  BRL (USDBRL=X): OK (5394 rows)
-  HKD (USDHKD=X): OK (6270 rows)
-  MXN (USDMXN=X): OK (5833 rows)
-  IDR (USDIDR=X): OK (6266 rows)
-  RUB (USDRUB=X): OK (5703 rows)
-  SAR (USDSAR=X): OK (5807 rows)
-  ZAR (USDZAR=X): OK (5826 rows)
-  TRY (USDTRY=X): OK (5541 rows)
-  ARS (USDARS=X): OK (5900 rows)
+  CAD (USDCAD=X): OK (5881 rows)
+  BRL (USDBRL=X): OK (5395 rows)
+  HKD (USDHKD=X): OK (6271 rows)
+  MXN (USDMXN=X): OK (5834 rows)
+  IDR (USDIDR=X): OK (6267 rows)
+  RUB (USDRUB=X): OK (5704 rows)
+  SAR (USDSAR=X): OK (5808 rows)
+  ZAR (USDZAR=X): OK (5827 rows)
+  TRY (USDTRY=X): OK (5542 rows)
+  ARS (USDARS=X): OK (5901 rows)
 
 ============================================================
 SIMPLE DASHBOARD (market_data)
@@ -237,66 +237,66 @@ $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
 $ISFA.L: possibly delisted; no timezone found
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 1927-05-22 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-27)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 1927-05-23 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 2000-01-01 -> 2026-04-28)
 $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
@@ -494,27 +494,27 @@ $SENSEXBEES.NS: possibly delisted; no timezone found
 
 1 Failed download:
 ['^TSXV']: possibly delisted; no timezone found
-$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $ISFA.L: possibly delisted; no timezone found
-$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $^TX60: possibly delisted; no timezone found
-$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
 
 11 Failed downloads:
-['^SX8P', '^SXKP', '^SX3P', '^SXNP', '^SX7E', '^SX6P', '^SX4P', '^SXDP', '^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX7E', '^SX8P', '^SX6P', '^SXKP', '^SXDP', '^SX4P', '^SXEP', '^SXNP', '^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 ['ISFA.L', '^TX60']: possibly delisted; no timezone found
-$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
 $SENSEXBEES.NS: possibly delisted; no timezone found
+$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 2 Failed downloads:
-['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
 ['SENSEXBEES.NS']: possibly delisted; no timezone found
+['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $^TSXV: possibly delisted; no timezone found
 
 1 Failed download:
@@ -527,46 +527,46 @@ $ISFA.L: possibly delisted; no timezone found
 
 1 Failed download:
 ['ISFA.L']: possibly delisted; no timezone found
-$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SXDP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SXDP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SX6P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX6P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SXNP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SXNP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SX8P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX8P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SX4P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX4P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SX7E']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SX7E']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^SXKP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
-$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^SXKP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 1 Failed download:
-['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-27)
+['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $SENSEXBEES.NS: possibly delisted; no timezone found
 
 1 Failed download:
@@ -708,7 +708,7 @@ Pushing data to Google Sheets...
   ✓ Written 359 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-28 00:03 UTC
+✓ Completed at 2026-04-28 04:28 UTC
 
 --- market_data asset class breakdown ---
 
@@ -750,16 +750,11 @@ Loaded 337 yfinance instruments, 19 FRED Rates series
     [7/19] BAMLH0A3HYC (ICE BofA US CCC & Lower HY OAS)...
     [8/19] BAMLH0A2HYB (ICE BofA US Single-B High Yield OAS)...
     [9/19] BAMLC0A3CA (ICE BofA US A Corporate OAS)...
-  [FRED] HTTP 500 on BAMLC0A3CA — backoff 2s (attempt 1/5)
     [10/19] BAMLC0A2CAA (ICE BofA US AA Corporate OAS)...
     [11/19] BAMLC0A1CAAA (ICE BofA US AAA Corporate OAS)...
     [12/19] BAMLC0A4CBBB (ICE BofA US BBB Corporate OAS)...
     [13/19] BAMLHE00EHYITRIV (ICE BofA Euro High Yield Bond Index)...
-  [FRED] HTTP 500 on BAMLHE00EHYITRIV — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on BAMLHE00EHYITRIV — backoff 4s (attempt 2/5)
-  [FRED] HTTP 500 on BAMLHE00EHYITRIV — backoff 8s (attempt 3/5)
     [14/19] BAMLHE00EHYIOAS (ICE BofA Euro High Yield OAS)...
-  [FRED] HTTP 500 on BAMLHE00EHYIOAS — backoff 2s (attempt 1/5)
     [15/19] BAMLEMCBPIOAS (ICE BofA EM Corporate Plus OAS)...
     [16/19] BAMLEMHBHYCRPIOAS (ICE BofA EM High Yield Corporate OAS)...
     [17/19] BAMLEMRACRPIASIAOAS (ICE BofA EM Asia Corporate OAS)...
@@ -771,7 +766,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 714 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 108.4s
+Comp historical build completed in 83.3s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -789,17 +784,16 @@ macro_economic — Unified Economic Data Coordinator
   by concept:
     Sentiment / Survey     49
     Rates / Yields         17
+    Credit / Spreads       12
     Inflation              12
-    Credit                 11
-    Growth                 9
-    Labor Market           8
+    Labour                 10
+    Growth                 8
     Consumer               5
     External / Trade       4
     Money / Liquidity      2
-    Labour                 2
     Manufacturing          2
     Housing                1
-    Credit / Spreads       1
+    Leading Indicators     1
   by cycle_timing:
     L          66
     C          39
@@ -818,12 +812,9 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/PERMIT]
   [FRED/IC4WSA]
   [FRED/PAYEMS]
-  [FRED] HTTP 500 on PAYEMS — backoff 2s (attempt 1/5)
   [FRED/UNRATE]
-  [FRED] HTTP 500 on UNRATE — backoff 2s (attempt 1/5)
   [FRED/JTSJOL]
   [FRED/UNEMPLOY]
-  [FRED] HTTP 500 on UNEMPLOY — backoff 2s (attempt 1/5)
   [FRED/INDPRO]
   [FRED/RSXFS]
   [FRED/DRTSCILM]
@@ -837,11 +828,8 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/T5YIFR]
   [FRED/MICH]
   [FRED/FEDFUNDS]
-  [FRED] HTTP 500 on FEDFUNDS — backoff 2s (attempt 1/5)
   [FRED/DGS2]
   [FRED/DGS10]
-  [FRED] HTTP 500 on DGS10 — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on DGS10 — backoff 4s (attempt 2/5)
   [FRED/MORTGAGE30US]
   [FRED/DFII10]
   [FRED/DFII5]
@@ -849,7 +837,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/BAMLC0A0CM]
   [FRED/BAMLC0A0CMEY]
   [FRED/BAMLCC0A0CMTRIV]
-  [FRED] HTTP 500 on BAMLCC0A0CMTRIV — backoff 2s (attempt 1/5)
   [FRED/DRTSCIS]
   [FRED/DRTSCLCC]
   [FRED/STDSOTHCONS]
@@ -860,23 +847,26 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/GACDFSA066MSFRBPHI]
   [FRED/GACDISA066MSFRBNY]
   [FRED/BACTUAMFRBDAL]
-  [FRED] HTTP 500 on BACTUAMFRBDAL — backoff 2s (attempt 1/5)
   [FRED/PIORECRUSDM]
-  [FRED] HTTP 500 on PIORECRUSDM — backoff 2s (attempt 1/5)
   [FRED/AWHMAN]
   [FRED/NEWORDER]
-  [FRED] HTTP 500 on NEWORDER — backoff 2s (attempt 1/5)
   [FRED/TCU]
   [FRED/W875RX1]
+  [FRED] HTTP 500 on W875RX1 — backoff 2s (attempt 1/5)
   [FRED/PCEC96]
+  [FRED] HTTP 500 on PCEC96 — backoff 2s (attempt 1/5)
   [FRED/CMRMTSPL]
   [FRED/CFNAI]
   [FRED/ULCNFB]
   [FRED/UEMPMEAN]
   [FRED/TOTCI]
   [FRED/CP]
+  [FRED] HTTP 500 on CP — backoff 2s (attempt 1/5)
   [FRED/CONSUMER_CONF]
+  [FRED] HTTP 500 on FRED/CONSUMER_CONF — backoff 2s (attempt 1/5)
   [FRED/GBR_GILT_10Y]
+  [FRED] HTTP 500 on FRED/GBR_GILT_10Y — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on FRED/GBR_GILT_10Y — backoff 4s (attempt 2/5)
   [FRED/DEU_BUND_10Y]
   [FRED/ITA_BTP_10Y]
   [FRED/IND_GOVT_10Y]
@@ -896,6 +886,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/EA_HICP]
   [FRED/EA_DEPOSIT_RATE]
   [FRED/JPN_REER]
+  [FRED] HTTP 500 on FRED/JPN_REER — backoff 2s (attempt 1/5)
   [FRED/JPN_IND_PROD]
   [FRED/JPN_CPI]
   [FRED/JPN_POLICY_RATE]
@@ -921,19 +912,43 @@ macro_economic — Unified Economic Data Coordinator
   Fetching IMF/GDP_GROWTH...
   [IMF/GDP_GROWTH] → 11 countries parsed from IMF
   [DB.nomics/EU_ESI]
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 2s
   [DB.nomics/EU_IND_CONF]
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 2s
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 4s
   [DB.nomics/EU_SVC_CONF]
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 2s
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 4s
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 8s
+    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 16s
+    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — 4 attempts exhausted
   [DB.nomics/ISM_MFG_PMI]
+    [DB.nomics timeout] ISM/pmi/pm — backing off 2s
+    [DB.nomics timeout] ISM/pmi/pm — backing off 4s
+    [DB.nomics timeout] ISM/pmi/pm — backing off 8s
+    [DB.nomics timeout] ISM/pmi/pm — backing off 16s
+    [DB.nomics FAIL] ISM/pmi/pm — 4 attempts exhausted
   [DB.nomics/ISM_MFG_NEWORD]
+    [DB.nomics timeout] ISM/neword/in — backing off 2s
+    [DB.nomics timeout] ISM/neword/in — backing off 4s
   [DB.nomics/ISM_SVC_PMI]
+    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 2s
   [DB.nomics/EZ_IND_PROD]
+    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 2s
+    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 4s
   [DB.nomics/EZ_RETAIL_VOL]
+    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 2s
   [DB.nomics/EZ_EMPLOYMENT]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
-  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
-  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
-  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
   Written 166 rows to data/macro_economic.csv
   [macro_economic] Written 167 rows to 'macro_economic'
 
@@ -1047,10 +1062,15 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EZ_EMPLOYMENT/hist]
   [ifo/DE_IFO/hist]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
-  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
-  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
-  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
+  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
   [ifo/DE_IFO_SIT/hist]
   [ifo/DE_IFO_EXP/hist]
   [ifo/DE_IFO_BAL/hist]
@@ -1076,16 +1096,16 @@ macro_economic — Unified Economic Data Coordinator
   [ifo/DE_IFO_CON_EXP/hist]
   [ifo/DE_IFO_UNC/hist]
   [ifo/DE_IFO_CYC/hist]
-  macro_economic_hist: 4140 rows × 163 data columns
+  macro_economic_hist: 4140 rows × 137 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 254.5s
+  macro_economic run completed in 897.8s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
   [load] comp_hist: 1373 rows × 712 cols (2000-01-07 → 2026-04-24)
-  [load] macro_economic_hist: 1373 rows × 163 cols (2000-01-07 → 2026-04-24)
+  [load] macro_economic_hist: 1373 rows × 137 cols (2000-01-07 → 2026-04-24)
   Fetching Euro IG spread (ECB SDW + unified hist) …
   [ECB] AAA euro govt yield: 5530 obs
   [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1179,7 +1199,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] EU_PMI2: raw=5.6  z=0.1  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] EU_ESI1: raw=96.7  z=0.93  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
   [compute] DE_ZEW1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
-  [compute] DE_IFO1: raw=86.6  z=0.02  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
+  [compute] DE_IFO1: raw=nan  z=nan  regime='n/a'  fwd='n/a [leading]'  (2026-04-24)
   [compute] UK_PMI1: raw=-8.0636  z=0.62  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] JP_PMI1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
   [compute] CN_PMI1: raw=0.8  z=1.48  regime='contraction'  fwd='improving [leading]'  (2026-04-24)
@@ -1203,15 +1223,15 @@ Building macro_survey payload...
 Building market_comp payload...
 
 Writing output files...
-  indicator_explorer.html  : 8.67 MB
+  indicator_explorer.html  : 8.12 MB
   indicator_explorer_mkt.js: 16.47 MB
 
 ── Summary ──────────────────────────────────────────────────────
 macro_market : 86 indicators across 7 groups
 macro_us     : 53 FRED series
 macro_intl   : 75 intl series
-macro_survey : 35 survey series
+macro_survey : 9 survey series
 market_comp  : 712 series across 6 asset classes
   asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators']
 
-Total output: 25.14 MB  (8.67 MB HTML + 16.47 MB companion JS)
+Total output: 24.58 MB  (8.12 MB HTML + 16.47 MB companion JS)
