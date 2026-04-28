@@ -1,7 +1,8 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-04-26
-> Based on: [`manuals/technical_manual.md`](technical_manual.md), [`manuals/multifreq_plan.md`](multifreq_plan.md), `archive/indicator_groups_review_UPDATED.xlsx`, and the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history — content consolidated into `technical_manual.md` and this file).
+> Last updated: 2026-04-28
+
+This is the project's forward-looking working doc. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need.
 
 ---
 
@@ -135,7 +136,7 @@ Phase D's "Tier 3 FMP calendar" track was paywalled and rejected on 2026-04-23 �
 
 #### Phase F — Calculated Fields — Partial
 
-Several synthetic fields from the original handover are already covered by Phase E indicators (HY/IG ratio → `US_Cr3`; value/growth → `US_EQ_F2`; US 5-regime credit spread → `US_Cr2`; EM vs DM equity ratio → `GL_G1` as EEM/URTH; EMFX basket → `FX_EM1` as of 2026-04-21; MOVE index → already ingested as `^MOVE` and used in `US_V2`). Outstanding items:
+Several synthetic fields originally scoped under Phase F have been absorbed into Phase E indicators (HY/IG ratio → `US_Cr3`; value/growth → `US_EQ_F2`; US 5-regime credit spread → `US_Cr2`; EM vs DM equity ratio → `GL_G1` as EEM/URTH; EMFX basket → `FX_EM1` as of 2026-04-21; MOVE index → already ingested as `^MOVE` and used in `US_V2`). Outstanding items:
 
 - Global PMI proxy — equal-weight ISM + Eurozone PMI + Japan PMI (blocked on Phase D)
 - Global yield curve — average of US / DE / UK / JP 10Y-2Y spreads (needs DE/UK 2Y yields + JP 2Y/10Y added to `macro_library_fred.csv`)
@@ -240,97 +241,91 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 
 ### 2.2 Refresh `manuals/technical_manual.md` to current reality
 
-**Priority:** High — the technical manual is the canonical reference; significant drift since the 2026-04-23 update has accumulated.
-**Status:** Not started. Requires a section-by-section pass.
+**Priority:** High — the technical manual is the canonical reference.
+**Status:** Done 2026-04-27 — section-by-section refresh landed in 8 commits on `claude/review-forward-plan-rQ2x9` (PR #98, merged 2026-04-28). Outcome below.
 
-Known stale spots (verified by grep on 2026-04-26 against current code):
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | Stale-reference punch list |
+| 2 | `8cea51e` | §1-§4 architecture (Scope, Directory Structure, Execution Flow, Two Pipelines) |
+| 3 | `5a4017b` | §5-§7 data layer (Data Sources & APIs, Tab Map, CSV Inventory) |
+| 4 | `d49bc21` | §9 part A — retire stale module entries + add `fetch_macro_economic.py` and `sources/` package |
+| (interleaved) | `49bd676` | Schedule change 03:17 → 00:34 UTC |
+| 5 | `b947447` | §9 part B — refresh surviving module entries (line counts + drift) |
+| 6 | `b464402` | §10-§13 — Patterns, Env Setup, Known Issues restructure |
+| 7 | `6bcfc8b` | §14 + ToC + cross-ref pointer to `forward_plan.md` §0 + final grep |
+| 8 | `5faa679` | `file_del_candidates.md` at the repo root (audit-only, 6 candidates surfaced) |
 
-- **§1 Scope at a Glance** still lists `macro_us`, `macro_us_hist`, `macro_intl`, `macro_intl_hist` as separate tabs. Replace with `macro_economic` + `macro_economic_hist` per §1 Phase G of this plan.
-- **§2 Directory Structure** lists deleted modules: `fetch_macro_us_fred.py` (510 lines), `fetch_macro_international.py` (1,426 lines). Replace with `fetch_macro_economic.py` + the `sources/` package (`base`, `countries`, `fred`, `oecd`, `worldbank`, `imf`, `dbnomics`, `ifo`).
-- **§3 Execution Flow** references `run_phase_a()`, `run_phase_c()`, etc. Phase A/B/C/D have all been retired into Phase ME — update the call graph.
-- **§6 Google Sheets Tab Map** carries 9 rows — should be 7 (matches §1 Phase G of this plan).
-- **§7 CSV File Inventory** is missing the per-source library CSVs (`macro_library_fred.csv`, `_oecd.csv`, `_worldbank.csv`, `_imf.csv`, `_dbnomics.csv`, `_ifo.csv`, `_countries.csv`) and `reference_indicators.csv`. Add per the §1 Data-Layer Registry of this plan.
-- **§9 Module Reference** has stale entries for the 4 retired coordinators. Replace with one entry covering `fetch_macro_economic.py` + `sources/` package modules.
-- **§13 Known Issues & Status** should absorb the §1 "Known Data Gaps" subsection of this plan (CN 10Y, proprietary PMIs, NAPMOI rerouted, CHN_PPI removed, OECD CLI proxy).
-- **§14 Operational Notes** should add: `pipeline.log` is committed to the repo on every workflow run (PR1, 2026-04-25); the workflow uses `set -o pipefail` + `tee pipeline.log` + an `if: always()` commit step.
-- **Cross-reference §0 of this plan** — the architecture preferences belong in the technical manual too (or a clear pointer to §0 of `forward_plan.md`).
-- **Repo-wide file audit + create `file_del_candidates.md`.** Walk the entire repo (top level, `manuals/`, `data/`, `archive/`, `docs/`, `sources/`, `.github/`, any cached fixtures, etc.) and evaluate every file. Build a new `file_del_candidates.md` at the repo root listing the location + name of any file that looks redundant, superseded, or orphaned. For each candidate include: the path, why it's a candidate (e.g. "superseded by `fetch_macro_economic.py`", "PoC artefact, no longer referenced", "stale workbook cache", "duplicate of git history"), and a confidence rating (High / Medium / Low) so the owner can decide what to delete. Do **not** delete anything in this task — the manual is the audit, deletion is a separate decision. Candidate categories to scrutinise: PoC scripts (`poc_*.py`), retired manual planning docs (`Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` if any of those still exist on disk), `archive/` contents, cached `.xlsx` workbooks, `.docx` artefacts that are regenerable from `.md` sources, duplicate review files, abandoned test fixtures.
-
-**Acceptance:** every grep that currently hits a deleted module name in `technical_manual.md` returns zero matches; tab inventory and CSV inventory match `library_utils.py::SHEETS_ACTIVE_TABS` and the §1 registry of this plan; `file_del_candidates.md` exists at the repo root with its full audit table.
+**Acceptance verified:** every grep against `technical_manual.md` for retired module names (`fetch_macro_us_fred.py`, `fetch_macro_international.py`, `fetch_macro_dbnomics.py`, `fetch_macro_ifo.py`), retired entry points (`run_phase_a`, `run_phase_c`, `run_hist`), and retired tabs (`macro_us[_hist]`, `macro_intl[_hist]`, `macro_dbnomics[_hist]`, `macro_ifo[_hist]`) returns only intentional historical-context hits in the retirement narratives. Indicator count (92) consistent across all 9 places it appears. All 14 ToC anchors valid. Tab inventory matches `library_utils.py::SHEETS_ACTIVE_TABS`; CSV inventory matches the §1 Data-Layer Registry.
 
 ### 2.3 Rewrite `forward_plan.md` to be self-contained (drop external doc dependencies)
 
-**Priority:** High — once done, the active manual set collapses to three documents (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`), eliminating the slow drift caused by overlapping content scattered across legacy planning docs.
-**Status:** Not started.
+**Priority:** High — collapses the active contributor doc set to three (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`).
+**Status:** Done 2026-04-28 — landed in 4 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-**Goal — the documents Kasim and Claude need to consult, end-state:**
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | External-doc reference punch list across `forward_plan.md` and `technical_manual.md` |
+| 2 | `09073ea` | Drop "Based on:" attribution line; replace with self-contained intro paragraph; reword §3.3 Phase F handover phrasing; verify §1 paragraphs are standalone |
+| 3 | `4e1e092` | Integrate `manuals/pipeline_review.md` content into new **§3.7.1 Per-Indicator Source Mapping** (12-row Phase D / FMP-rebuild table + 29-row partial-coverage / proxy table); delete the source file; rewire two §3.x cross-references |
+| 4 | this commit | Mark §2.2 + §2.3 Done in-place; final cross-reference grep + zero stale-reference verification |
 
-| Document | Role |
-|---|---|
-| `manuals/technical_manual.md` | The authoritative record of the current code state — modules, data flow, schemas, operational behaviour. |
-| `manuals/forward_plan.md` | The phase / architecture summary (§1), the architecture rules (§0), the priority queue (§2), and all forward feature work (§3). Self-contained — no references to deleted handover or planning docs. |
-| `manuals/multifreq_plan.md` | Detailed Phase 2 (multi-frequency) implementation plan. Kept independent because of its size and depth. Cross-referenced from §4 only. |
+**Acceptance verified:**
 
-Everything else in `manuals/` either (a) gets folded into one of the above, or (b) is a developer-tool helper script (`build_docx.py`, `md_to_docx.py`) that is not user-consulted content.
-
-**Plan:**
-
-1. **Drop the "Based on:" attribution line** at the top of `forward_plan.md` (the one that references "the historic `Project Plan 260327.md`, `MarketDashboard_ClaudeCode_Handover.md`, `METADATA_REDUNDANCY_REVIEW.md` (deleted from working tree; retained in git history)"). Replace with a single self-contained intro sentence.
-2. **Rewrite §1 to be standalone.** Audit every paragraph for phrases like "the original handover planned…", "Phase B was originally going to…", "the historic `Project Plan 260327`…". For each, decide: is the historic context still useful? If yes, fold it inline into the current §1 description so the reader doesn't need the external doc. If no, delete the reference. Net result: a §1 that a new contributor can read cold without needing any other doc.
-3. **Integrate `manuals/pipeline_review.md` into §3.** `pipeline_review.md` carries per-indicator source mappings (which Phase E indicator reads which raw series, and from which source library). Move that content into a new subsection under §3 — best fit alongside §3.7 "Source Evaluation Retrospective", as **§3.7.1 Per-Indicator Source Mapping** (or wherever sits cleanly). The source-mapping table is the one durable artefact that supports future source-build work like the new BoJ Tankan task: when adding a new source, you need to know which indicators already depend on what. Once integrated, delete `manuals/pipeline_review.md` (kept in git history).
-4. **Audit `forward_plan.md` and `technical_manual.md` for cross-references.** Anything pointing to a deleted manual gets either redirected or replaced inline. Final state: the only inter-manual links are between `forward_plan.md` ↔ `technical_manual.md` and from §4 → `multifreq_plan.md`.
-5. **Confirm `manuals/` directory inventory.** Expected after this work:
-   - `forward_plan.md` (this doc)
-   - `technical_manual.md`
-   - `multifreq_plan.md`
-   - `Macro Market Indicators Reference.docx` (source doc — already external; cited from §3.8 only)
-   - `indicator_manual.md` / `.docx` + `macro_market_cheat_sheet.md` / `.docx` — user-facing reference; not part of the contributor / Claude doc set; out of scope here.
-   - Helper scripts (`build_docx.py`, `md_to_docx.py`) — out of scope.
-
-**Acceptance:**
-
-- Zero references in `forward_plan.md` to: "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", "the historic …".
-- `manuals/pipeline_review.md` deleted; its content lives under §3 in `forward_plan.md`.
-- Reading `forward_plan.md` cold makes complete sense without consulting any other manual or deleted-from-tree doc.
-- §1 still contains the phase summary + reminder of completed work — but framed as standalone descriptions, not as deltas against external planning docs.
-- The §3 per-indicator source mapping (lifted from `pipeline_review.md`) supports the new BoJ Tankan task and any other future source-build work without needing to consult an external doc.
+- Zero references in `forward_plan.md` to "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", or "the historic …" outside of this completion ledger.
+- `manuals/pipeline_review.md` deleted (commit `4e1e092`); durable content lives in §3.7.1 of this doc.
+- The active contributor doc set is now exactly three: `forward_plan.md`, `technical_manual.md`, `multifreq_plan.md`.
+- The §3.7.1 per-indicator source mapping supports the §2.7 BoJ Tankan task and any other future source-build work without needing to consult an external doc.
 
 ### 2.4 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
 
 **Priority:** High — precondition for §2.5 (the indicator-explorer mirror) and structurally aligns the composite registry with the unified raw-series taxonomy.
-**Status:** Not started.
+**Status:** Done 2026-04-28 — landed in 3 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-The unified raw-series libraries (`macro_library_*.csv`) already carry `concept` ("Rates / Yields", "Inflation", "Labour", "Credit / Spreads", "Sentiment / Survey", etc.) and `subcategory` ("Government Yields", "Mortgage Rates", "CPI", …). The Phase E composite library (`data/macro_indicator_library.csv`) does **not** — it only has `category` / `group` / `sub_group` (region-based) and `cycle_timing`.
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | Survey existing per-source taxonomy; propose canonical 17-concept list (12 inherited from raw-source libraries + 5 new for indicator-level composites: Equity, Cross-Asset, Volatility, Momentum, FX); user signed off including the breakeven-inflation correction (US_R4 + UK_R2 → Inflation, not Rates / Yields) |
+| 2 | `d71e42d` | Add `concept` + `subcategory` columns to `data/macro_indicator_library.csv` between `sub_group` and `naturally_leading`; populate all 92 rows |
+| 3 | `9a48118` | Wire `compute_macro_market.py::_load_indicator_library()` (extend `INDICATOR_META` tuple to 6 elements); `build_snapshot_df()` emits two new columns in `macro_market.csv`; `docs/build_html.py::load_indicator_meta()` returns the new keys so the explorer JS payload's `meta` dict carries them per indicator |
 
-This means the indicator explorer can show "all US indicators" but cannot show "all rate / yield-curve indicators across regions" — which is the user-flagged feature in §2.5.
+**Concept distribution across the 92 indicators** (14 of the 17 canonical concepts are in active use; Manufacturing / External-Trade / Consumer reserved for future indicators):
 
-**Plan:**
+| Concept | Count | Concept | Count |
+|---|---|---|---|
+| Equity | 20 | FX | 4 |
+| Sentiment / Survey | 14 | Labour | 3 |
+| Leading Indicators | 14 | Growth | 3 |
+| Rates / Yields | 8 | Inflation | 2 |
+| Credit / Spreads | 7 | Volatility | 2 |
+| Cross-Asset | 6 | Housing | 2 |
+| Momentum | 6 | Money / Liquidity | 1 |
 
-1. Add `concept` and `subcategory` columns to `data/macro_indicator_library.csv` (CSV schema change, not code).
-2. Manually populate each of the 91 rows with the appropriate concept (matching the raw-series taxonomy where the indicator is built directly on a single concept; using the dominant concept for composites).
-3. Update `compute_macro_market.py::_load_indicator_library()` to surface the two new fields in the `INDICATOR_META` dict.
-4. Plumb through the `build_html.py` reader so the explorer JS payload carries `concept` / `subcategory` per indicator.
+**Acceptance verified:**
 
-**Acceptance:** every row in `macro_indicator_library.csv` has a non-empty `concept` value; no Python literal contains a concept-string list (per §0).
+- Every row in `macro_indicator_library.csv` has a non-empty `concept` value (zero missing across all 92 rows).
+- Per `forward_plan.md` §0: zero Python literals contain a concept-string list — every concept value is in the CSV.
+- The single `INDICATOR_META` consumer (`build_snapshot_df`) is updated to the new 6-tuple shape.
+- `_load_indicator_library()` and `docs/build_html.py::load_indicator_meta()` both surface the new fields.
+- §2.5 is now unblocked — the data is in place; only the explorer-side rendering remains.
 
 ### 2.5 Mirror the unified macro library structure in `docs/indicator_explorer.html`
 
-**Priority:** High — user-flagged. Folds in the previously-pending §3.8 "HTML Charting Tool Integration" item.
-**Status:** Not started. Depends on §2.4.
+**Priority:** High — user-flagged. Absorbed the previously-pending §3.8 "HTML Charting Tool Integration" item.
+**Status:** Done 2026-04-28 — landed in 7 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-**Goal:** make the indicator explorer browsable by the same taxonomy as the unified macro library, so related concepts can be viewed together regardless of region.
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | `d8d1e45` | Normalise concept values across raw-source libraries — `Labor Market` → `Labour` (8 rows), `Credit` → `Credit / Spreads` (11 rows), OECD CLI series `Growth` → `Leading Indicators` (1 row) |
+| 2 | `5fee5e8` | Server-side payload — new `INDICATOR_CONCEPT_ORDER` in `library_utils.py`; `build_macro_market` emits a parallel `groupsByConcept` tree alongside the existing region-based `groups` |
+| 3 | `ce796bd` | L/C/G cycle-timing badges in every macro section — `buildSimpleSection` now passes `cycle: meta.cycle_timing`; G colour palette adjusted from red to pink (`#ff7eb6`) to match the spec |
+| 4 | `cd84536` | View-mode toggle ("By Region" ↔ "By Concept") + alternate sidebar trees — covers Phase E composites (server-supplied `groupsByConcept`) and raw-macro sections (client-side regrouping via `meta.concept`/`subcategory`); checkbox state preserved across toggles |
+| 5 | `5758d57` | L/C/G filter chips + country dropdown — unified `applySidebarFilters()` evaluates search + variant + cycle + country in one pass; country dropdown auto-populated from data (12 canonical country codes alphabetical + 4 broad-region tags for multi-country composites) |
+| 6 | `c42d3ca` | Inline `L = Leading · C = Coincident · G = Lagging` legend beneath the cycle-filter chips |
+| 7 | this commit | Mark §2.5 Done; drop source-filter mention from spec (parked) |
 
-Today, `build_html.py` cuts the macro payloads by source/country (`build_macro_us` = FRED-USA, `build_macro_intl` = OECD/WB/IMF + non-USA FRED, `build_macro_survey` = DB.nomics + ifo). And `macro_indicator_library.csv` groups Phase E composites by region (US / UK / Europe / Japan / Asia / Global / FX & Commodities). Neither lets you find, say, all "Sentiment / Survey" indicators side-by-side.
+**Source filter parked.** The original spec mentioned a "source" filter (FRED / OECD / WB / IMF / DB.nomics / ifo) under the "By Concept" view. Parked during step 0 — composites read from multiple raw sources, making single-source attribution brittle, and the L/C/G + country filters cover the most useful filter axes. If a future need surfaces, revisit.
 
-**Plan:**
-
-1. **Sidebar restructure.** Add a top-level filter / view-mode toggle to `indicator_explorer.html`: **By Region** (current behaviour, default) ↔ **By Concept** (new). When "By Concept" is active, the sidebar groups by `concept` → `subcategory` → indicator, drawing from the new `concept` column.
-2. **Cycle-timing badge + filter.** Display L / C / G next to every indicator in both views. Optional "show only Leading" / "show only Coincident" / "show only Lagging" filter. Colour convention: blue (L) / amber (C) / pink (G), matching the `manuals/Macro Market Indicators Reference.docx` source-doc shading.
-3. **Country / source secondary filters.** When "By Concept" is active, allow filtering by country (12 codes) and / or source (FRED / OECD / WB / IMF / DB.nomics / ifo).
-4. **Legend.** Small inline legend explaining L/C/G + the source codes.
-5. **Build pipeline.** `build_html.py` already reads the unified `macro_economic_hist` metadata rows (incl. `Concept` and `cycle_timing`); the change is JS-side payload shape + sidebar rendering. No new fetcher needed.
-
-**Acceptance:** the explorer renders correctly under both view modes; switching between modes is instant (no re-fetch); the cycle-timing filter and the country / source filters work in the new view; the existing region-based view is preserved unchanged.
+**Acceptance verified:** the explorer renders correctly under both view modes; switching is instant and preserves checked-state for plotted series; cycle-timing and country filters work in both views; existing region-based view is preserved unchanged.
 
 ### 2.6 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
 
@@ -398,7 +393,7 @@ Filter to significant changes (feature additions, bug fixes, schema changes, new
 
 **Result:** 10 of the original 13 Phase D indicators are live and read from `macro_economic_hist`. The 3 proprietary holdouts (`DE_ZEW1`, `JP_PMI1`, `CN_PMI2` — see §1 Known Data Gaps) return `Insufficient Data`. `JP_PMI1` will be partially addressed by §2.7 (BoJ Tankan, quarterly DI).
 
-**Source-per-indicator detail:** see `manuals/pipeline_review.md` §1 and §5 for the historical record. The current source-of-truth for survey data is the unified `macro_economic_hist`, populated by `sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py` per `data/macro_library_*.csv`.
+**Source-per-indicator detail:** see §3.7.1 below for the FMP-rebuild resolution table (which Phase E indicator now reads which raw series, and from which library) plus the partial-coverage / proxy / upgrade-path catalogue. The current source-of-truth for survey data is the unified `macro_economic_hist`, populated by `sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py` per `data/macro_library_*.csv`.
 
 ### 3.2 Instrument Expansion
 
@@ -468,7 +463,7 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 ### 3.7 Macro Library Expansion — Source Evaluation Retrospective
 
-**Status:** The original three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail moved to §1 Phase ME, the per-indicator wiring lives in `manuals/pipeline_review.md`, and the still-actionable forward-looking expansion work is in §3.8 below.
+**Status:** The three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail lives in §1 Phase ME, the per-indicator wiring is catalogued in §3.7.1 immediately below, and the still-actionable forward-looking expansion work is in §3.8.
 
 #### Source Evaluation Verdicts (still binding)
 
@@ -497,6 +492,71 @@ All resulting series already live in `macro_economic_hist`:
 - **ifo**: 26 series across the Industry+Trade composite, six sub-sector groups, plus uncertainty + cycle tracer.
 
 **Forward-looking expansion** (additional FRED rows + new source modules — ONS, e-Stat, BoE, ECB SDW direct, etc.) lives in §3.8 alongside the cycle-timing gap analysis.
+
+#### 3.7.1 Per-Indicator Source Mapping
+
+Inverse of the source-evaluation verdicts above: for each Phase E composite that depends on a survey or proxy series, this section records the raw source it currently consumes and any upgrade path. Use it when:
+
+- **Adding a new source** (e.g. §2.7 BoJ Tankan) — find which indicators currently depend on alternatives that the new source would replace.
+- **Diagnosing why an indicator returns n/a** — trace the calculator back to the missing input.
+- **Deciding whether a series can be retired** — find every indicator that reads it.
+
+##### Survey / PMI indicators wired during the Phase D / FMP rebuild (2026-04-21 → 2026-04-23)
+
+12 Phase E indicators were originally scoped against the FMP economic calendar. After FMP's free tier paywalled in Aug 2025 (verified 2026-04-22), the table below records the resolution. 9 are LIVE through free proxies; 3 remain proprietary (no free monthly source exists).
+
+| Phase E ID | Description | Resolution | Status |
+|---|---|---|---|
+| `US_PMI1` | ISM Manufacturing PMI | DB.nomics `ISM/pmi/pm` (column `ISM_MFG_PMI`) | LIVE |
+| `US_PMI2` / `US_ISM1` | ISM Manufacturing New Orders | DB.nomics `ISM/neword/in` (column `ISM_MFG_NEWORD`) — rerouted from FRED `NAPMOI` after FRED retired the series in April 2026 | LIVE |
+| `US_SVC1` | ISM Services PMI | DB.nomics `ISM/nm-pmi/pm` (column `ISM_SVC_PMI`) | LIVE |
+| `DE_IFO1` | ifo Business Climate | ifo Excel workbook (`sources/ifo.py`) | LIVE |
+| `EU_PMI1` | EZ Manufacturing PMI | EC Industry Confidence (column `EU_IND_CONF`, DB.nomics Eurostat) — same 3 PMI questions as a proxy | LIVE (proxy) |
+| `EU_PMI2` | EZ Services PMI | EC Services Confidence (column `EU_SVC_CONF`, DB.nomics Eurostat) | LIVE (proxy) |
+| `UK_PMI1` | UK Manufacturing PMI | OECD BCI for UK (FRED `BSCICP02GBM460S`, column `GBR_BUS_CONF`) | LIVE (proxy, monthly) |
+| `CN_PMI1` | China NBS Manufacturing PMI | OECD BCI for China (FRED `CHNBSCICP02STSAM`, column `CHN_BUS_CONF`) | LIVE (proxy) |
+| `GL_PMI1` | Global PMI | Z-score-normalised 4-region composite (`ISM_MFG_PMI` + `EU_IND_CONF` + `GBR_BUS_CONF` + `CHN_BUS_CONF`) | LIVE (auto-rebuilds from components) |
+| `DE_ZEW1` | ZEW Economic Sentiment | **Proprietary** — ZEW Mannheim licences archive | n/a — covered by `DE_IFO1` + `DEU_BUS_CONF` |
+| `JP_PMI1` | au Jibun Bank Japan Mfg PMI | **Proprietary** — S&P Global, no monthly free source | n/a — BoJ Tankan quarterly is the future option (§2.7) |
+| `CN_PMI2` | Caixin China Mfg PMI | **Proprietary** — S&P Global / Caixin | n/a — Chinese manufacturing covered by `CN_PMI1` |
+
+##### Partial-coverage indicators (proxy in use, upgrade paths noted)
+
+These reference indicators have partial coverage today via adjacent / standardised proxies. Rows marked **Done** landed in Stage 2 (2026-04-23); rows without a date are still actionable upgrades. Items flagged "no upgrade" are either functional matches (proxy is fine) or genuinely blocked.
+
+| Region | Indicator | Current source | Upgrade path / status |
+|---|---|---|---|
+| US | UMich Consumer Sentiment — Expectations sub-index | `UMCSENT` headline only | No free path — sub-index is UMich portal only |
+| US | Retail Sales (Control Group) | `RSXFS` (ex-Autos) | FRED `RSFSXMV` — zero-code row addition (listed in §3.8 Prioritised FRED Additions) |
+| UK | UK Gilt Curve (10Y-2Y) | 10Y only via FRED | Add UK 2Y via BoE BOESD (§3.8 New Source Modules) |
+| UK | UK CPI Inflation | FRED `GBRCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Eurozone | EC Consumer Confidence | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | INSEE Business Climate | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | ISTAT Business Confidence | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | Bund Curve (10Y-2Y) | 10Y only via FRED | Add DE 2Y via ECB SDW / Bundesbank (§3.8) |
+| Eurozone | Eurozone GDP | IMF annual | Eurostat quarterly via DB.nomics |
+| Eurozone | Euro Area Unemployment | OECD monthly | Functional match — no upgrade |
+| Eurozone | HICP Inflation | FRED `EA19CPALTT01GYM` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Eurozone | Industrial Production | DB.nomics Eurostat (column `EZ_IND_PROD`) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Retail Sales | DB.nomics Eurostat (column `EZ_RETAIL_VOL`) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Employment | DB.nomics Eurostat (column `EZ_EMPLOYMENT`, quarterly) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Euro IG corporate bond yield (component of `EU_Cr1` IG spread) | None — FRED `BAMLEC0A0RMEY` invalid; row removed 2026-04-27 | See §1 Known Data Gaps for candidate sources (DB.nomics ECB MIR / iShares EUR IG ETF proxy / Bundesbank SDMX). EU_Cr1 returns n/a until wired |
+| Japan | Consumer Confidence Index | FRED OECD proxy | Functional match — no upgrade |
+| Japan | Real GDP | IMF annual | e-Stat quarterly (§3.8 New Source Modules) |
+| Japan | Unemployment Rate | OECD monthly | Functional match — no upgrade |
+| Japan | Core CPI | FRED `JPNCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Japan | Mfg PMI (`JP_PMI1`) | None (proprietary; n/a) | BoJ Tankan quarterly DI (§2.7) |
+| China | Sovereign Curve (10Y-2Y) | 10Y only via FRED (currently NaN — China 10Y itself unsourced) | 2Y is proprietary (ChinaBond/Wind) — accept the gap |
+| China | China 10Y govt bond yield | None — FRED carries only short-term `IR3TTS01CNM156N` | Future: DB.nomics PBoC mirror (see §1 Known Data Gaps) |
+| China | Real GDP | IMF annual | Direct PBoC scrape — accept gap (Wind/CEIC otherwise) |
+| China | CPI Inflation | FRED `CHNCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| China | Industrial Production | FRED `CHNPRINTO01IXPYM` (monthly) | **Done** — Stage 2, 2026-04-23 |
+| China | Urban Surveyed Unemployment | OECD monthly | Functional match — no upgrade |
+| Global | Global Mfg PMI | `GL_PMI1` 4-region composite (above) | True JPM Global PMI is proprietary — keep proxy |
+| Global | Bloomberg Commodity Index | `DBC` ETF proxy | BCOM itself proprietary — keep DBC |
+| Global | Goldman Sachs FCI | `NFCI` (Chicago Fed) substitute | GS FCI proprietary — keep NFCI |
+
+For the prioritised list of new sources to wire (Tier 2 — e-Stat, ONS, BoE, ECB SDW, BIS, CPB, OFR, Atlanta Fed) and the full FRED-additions queue, see §3.8 below.
 
 ### 3.8 Cycle Timing Framework (L/C/G) & Indicator Coverage Expansion
 

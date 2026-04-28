@@ -25,7 +25,11 @@ DOCS   = ROOT / "docs"
 
 # Allow importing library_utils from the repo root
 sys.path.insert(0, str(ROOT))
-from library_utils import INDICATOR_GROUP_ORDER, INDICATOR_SUB_GROUP_ORDER
+from library_utils import (
+    INDICATOR_GROUP_ORDER,
+    INDICATOR_SUB_GROUP_ORDER,
+    INDICATOR_CONCEPT_ORDER,
+)
 
 MACRO_MKT       = DATA / "macro_market_hist.csv"
 MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
@@ -82,7 +86,8 @@ def _parse_date_col(df: pd.DataFrame) -> tuple[list, pd.DataFrame]:
 def load_indicator_meta() -> dict:
     """Load indicator metadata from macro_indicator_library.csv.
 
-    Returns dict keyed by indicator ID with metadata, group, sub_group,
+    Returns dict keyed by indicator ID with category, group, sub_group,
+    concept, subcategory, formula, interpretation, regime description,
     naturally_leading flag, and cycle_timing (L/C/G) — all driven by the
     CSV (source of truth).
     """
@@ -96,6 +101,8 @@ def load_indicator_meta() -> dict:
             "category":     str(row.get("category", "")).strip(),
             "group":        str(row.get("group", "")).strip(),
             "sub_group":    str(row.get("sub_group", "")).strip(),
+            "concept":      str(row.get("concept", "")).strip(),
+            "subcategory":  str(row.get("subcategory", "")).strip(),
             "formula":      str(row.get("formula_using_library_names", "")).strip(),
             "interp":       str(row.get("economic_interpretation", "")).strip(),
             "regime_desc":  str(row.get("regime_classification", "")).strip(),
@@ -162,7 +169,37 @@ def build_macro_market(ind_meta: dict) -> dict:
     if ungrouped:
         groups["Other"] = {"Ungrouped": sorted(ungrouped)}
 
-    return {"dates": dates, "indicators": indicators, "groups": groups}
+    # Parallel "By Concept" tree (§2.5): concept → subcategory → [ids].
+    # Drives the alternate sidebar view; built from the per-indicator concept
+    # and subcategory fields populated in macro_indicator_library.csv (§2.4).
+    raw_concepts: dict[str, dict[str, list]] = {}
+    unconcepted = set()
+    for ind_id in present_ids:
+        m = ind_meta.get(ind_id, {})
+        c   = m.get("concept", "")
+        sc  = m.get("subcategory", "")
+        if c:
+            raw_concepts.setdefault(c, {}).setdefault(sc or "—", []).append(ind_id)
+        else:
+            unconcepted.add(ind_id)
+
+    groups_by_concept: dict[str, dict[str, list]] = {}
+    for c in sorted(raw_concepts,
+                    key=lambda c: INDICATOR_CONCEPT_ORDER.get(c, 99)):
+        sub: dict[str, list] = {}
+        for sc in sorted(raw_concepts[c]):
+            sub[sc] = sorted(raw_concepts[c][sc])
+        groups_by_concept[c] = sub
+
+    if unconcepted:
+        groups_by_concept["Uncategorised"] = {"—": sorted(unconcepted)}
+
+    return {
+        "dates": dates,
+        "indicators": indicators,
+        "groups": groups,
+        "groupsByConcept": groups_by_concept,
+    }
 
 
 # ── 3-5. unified macro_economic_hist → macro_us / macro_intl / macro_survey ──
@@ -200,6 +237,12 @@ def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]
     for ci in range(len(col_headers) - 1):             # skip Date
         raw_vals = meta_raw.iloc[:, ci + 1].tolist()   # +1 to skip the label column
         m = {label: str(v).strip() for label, v in zip(labels, raw_vals)}
+        # Lowercase aliases so JS code can read meta.concept / meta.subcategory
+        # consistently across raw-macro and Phase E payloads (load_indicator_meta
+        # already uses lowercase keys).  The original capitalised keys are
+        # preserved for backwards compatibility with existing readers.
+        m["concept"]     = m.get("Concept", "")
+        m["subcategory"] = m.get("Subcategory", "")
         meta[col_headers[ci + 1]] = m
 
     _UNIFIED_DF = df
@@ -424,6 +467,61 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 #btn-apply-dates:hover{background:#2ea043}
 
+/* ── view-mode toggle ── */
+#view-mode-controls{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-bottom:1px solid #30363d;
+  flex-shrink:0;flex-wrap:wrap
+}
+#view-mode-controls label{font-size:11px;color:#8b949e;white-space:nowrap}
+.view-mode-btn{
+  padding:4px 10px;border-radius:5px;
+  border:1px solid #30363d;background:#0d1117;
+  color:#8b949e;font-size:11px;cursor:pointer
+}
+.view-mode-btn:hover{border-color:#58a6ff;color:#c9d1d9}
+.view-mode-btn.active{
+  background:#1f3a5f;border-color:#58a6ff;color:#58a6ff
+}
+
+/* ── filter controls (§2.5) ── */
+#filter-controls{
+  padding:8px 14px;border-bottom:1px solid #30363d;
+  flex-shrink:0;display:flex;flex-direction:column;gap:6px
+}
+#cycle-filter, #country-filter{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap
+}
+#cycle-filter label, #country-filter label{
+  font-size:11px;color:#8b949e;white-space:nowrap;min-width:48px
+}
+.cycle-chip{
+  padding:2px 9px;border-radius:5px;
+  font-size:11px;font-weight:600;cursor:pointer;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  background:#0d1117;border:1px solid #30363d;color:#484f58
+}
+.cycle-chip.L.active{
+  color:#58a6ff;background:#0d1f33;border-color:#1f3a5f
+}
+.cycle-chip.C.active{
+  color:#d29922;background:#272115;border-color:#3d2f0d
+}
+.cycle-chip.G.active{
+  color:#ff7eb6;background:#2d1727;border-color:#5c2547
+}
+.cycle-legend{
+  flex-basis:100%;font-size:9px;color:#6e7681;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  margin-top:2px;letter-spacing:0.2px
+}
+#country-select{
+  flex:1;padding:4px 7px;border-radius:5px;
+  border:1px solid #30363d;background:#0d1117;
+  color:#c9d1d9;font-size:11px;outline:none;min-width:120px
+}
+#country-select:focus{border-color:#58a6ff}
+
 /* ── sidebar tree ── */
 #sidebar-tree{
   flex:1;overflow-y:auto;padding:4px 0 12px
@@ -534,7 +632,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   color:#d29922;background:#272115;border:1px solid #3d2f0d
 }
 .series-cycle.G{
-  color:#f85149;background:#2d1416;border:1px solid #5c1e22
+  color:#ff7eb6;background:#2d1727;border:1px solid #5c2547
 }
 .series-dates{
   font-size:9px;color:#484f58;white-space:nowrap;flex-shrink:0;
@@ -775,6 +873,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <input class="date-input" id="date-to" type="text" placeholder="today">
     <button id="btn-apply-dates">Apply</button>
   </div>
+  <div id="view-mode-controls">
+    <label>View</label>
+    <button class="view-mode-btn active" data-view="region">By Region</button>
+    <button class="view-mode-btn" data-view="concept">By Concept</button>
+  </div>
+  <div id="filter-controls">
+    <div id="cycle-filter">
+      <label>Cycle</label>
+      <button class="cycle-chip L active" data-cycle="L" title="Leading">L</button>
+      <button class="cycle-chip C active" data-cycle="C" title="Coincident">C</button>
+      <button class="cycle-chip G active" data-cycle="G" title="Lagging">G</button>
+      <span class="cycle-legend">L = Leading · C = Coincident · G = Lagging</span>
+    </div>
+    <div id="country-filter">
+      <label>Country</label>
+      <select id="country-select"><!-- options populated by JS --></select>
+    </div>
+  </div>
   <div id="coverage-warn"></div>
   <div id="sidebar-tree"><!-- populated by JS --></div>
 </div>
@@ -856,6 +972,33 @@ const STATE = {
   legendHeight: 0,
   showDetail: true,   // global toggle for legend formula rows
   searchQuery: '',
+  viewMode: 'region',                  // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
+  cycleFilter: new Set(['L','C','G']), // which L/C/G letters are visible (§2.5)
+  countryFilter: '',                   // '' = all countries, else one country/region tag (§2.5)
+};
+
+// ── concept ordering for the §2.5 By-Concept sidebar view ────────────────
+// Mirrors INDICATOR_CONCEPT_ORDER from library_utils.py.  Used as a sort key
+// when grouping raw-macro series by concept; Phase E composites already arrive
+// pre-sorted server-side via build_macro_market::groupsByConcept.
+const CONCEPT_ORDER = {
+  'Equity':              1,
+  'Rates / Yields':      2,
+  'Credit / Spreads':    3,
+  'Inflation':           4,
+  'Sentiment / Survey':  5,
+  'Leading Indicators':  6,
+  'Growth':              7,
+  'Labour':              8,
+  'Consumer':            9,
+  'Housing':            10,
+  'Manufacturing':      11,
+  'External / Trade':   12,
+  'Money / Liquidity':  13,
+  'Cross-Asset':        14,
+  'FX':                 15,
+  'Volatility':         16,
+  'Momentum':           17,
 };
 
 // ── colour palette for auto-assignment ────────────────────────────────────
@@ -935,7 +1078,11 @@ function buildMacroMarketSection(){
 
   const body = el('div','src-body open');
 
-  Object.entries(mm.groups).forEach(([groupName, subGroups]) => {
+  // §2.5: pick the tree based on viewMode.  Server provides both:
+  //   mm.groups          — region → sub_group → [ids]   (default)
+  //   mm.groupsByConcept — concept → subcategory → [ids]
+  const tree = STATE.viewMode === 'concept' ? mm.groupsByConcept : mm.groups;
+  Object.entries(tree).forEach(([groupName, subGroups]) => {
     body.appendChild(buildGroupSection(groupName, subGroups, mm.indicators));
   });
 
@@ -944,7 +1091,10 @@ function buildMacroMarketSection(){
   return wrap;
 }
 
-function buildGroupSection(groupName, subGroups, indicators){
+// `rawMacroOpts` (optional, §2.5): when present, render items from a raw-macro
+// seriesMap (US/Intl/Survey) instead of from the Phase E `indicators` dict.
+// Shape: { source: 'macro_us' | 'macro_intl' | 'macro_survey', seriesMap, nameFn }
+function buildGroupSection(groupName, subGroups, indicators, rawMacroOpts){
   // subGroups = { sub_group_name: [indicator_ids], ... }
   const totalIds = Object.values(subGroups).reduce((n, ids) => n + ids.length, 0);
 
@@ -959,7 +1109,7 @@ function buildGroupSection(groupName, subGroups, indicators){
   const body = el('div','grp-body open');
 
   Object.entries(subGroups).forEach(([sgName, ids]) => {
-    body.appendChild(buildSubGroupSection(sgName, ids, indicators));
+    body.appendChild(buildSubGroupSection(sgName, ids, indicators, rawMacroOpts));
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -967,7 +1117,7 @@ function buildGroupSection(groupName, subGroups, indicators){
   return wrap;
 }
 
-function buildSubGroupSection(sgName, ids, indicators){
+function buildSubGroupSection(sgName, ids, indicators, rawMacroOpts){
   const wrap = el('div','sgrp-section');
   const hdr  = el('div','sgrp-header');
   const arr  = makeArrow('sgrp-arrow open');
@@ -977,18 +1127,33 @@ function buildSubGroupSection(sgName, ids, indicators){
   wrap.appendChild(hdr);
 
   const body = el('div','sgrp-body open');
-  ids.forEach(indId => {
-    const ind = indicators[indId];
-    if(!ind) return;
-    const meta = ind.meta || {};
-    const shortName = meta.category || indId;
-    body.appendChild(makeSeriesItem({
-      source: 'macro_market',
-      key:    indId,
-      id:     indId,
-      name:   shortName,
-      cycle:  meta.cycle_timing || '',
-    }));
+  ids.forEach(itemKey => {
+    if(rawMacroOpts){
+      // Raw-macro by-concept path: itemKey is a column id in seriesMap
+      const s = rawMacroOpts.seriesMap[itemKey];
+      if(!s) return;
+      const meta = s.meta || {};
+      body.appendChild(makeSeriesItem({
+        source: rawMacroOpts.source,
+        key:    itemKey,
+        id:     itemKey,
+        name:   rawMacroOpts.nameFn(meta),
+        cycle:  meta.cycle_timing || '',
+      }));
+    } else {
+      // Phase E composites: itemKey is an indicator id in indicators
+      const ind = indicators[itemKey];
+      if(!ind) return;
+      const meta = ind.meta || {};
+      const shortName = meta.category || itemKey;
+      body.appendChild(makeSeriesItem({
+        source: 'macro_market',
+        key:    itemKey,
+        id:     itemKey,
+        name:   shortName,
+        cycle:  meta.cycle_timing || '',
+      }));
+    }
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1008,16 +1173,44 @@ function buildSimpleSection(title, seriesMap, dates, source, nameFn){
   wrap.appendChild(hdr);
 
   const body = el('div','src-body');
-  keys.forEach(key => {
-    const s = seriesMap[key];
-    const meta = s.meta || {};
-    body.appendChild(makeSeriesItem({
-      source,
-      key,
-      id:   key,
-      name: nameFn(meta),
-    }));
-  });
+
+  if(STATE.viewMode === 'concept'){
+    // §2.5: group keys by concept → subcategory.  Uses lowercase aliases
+    // (m.concept / m.subcategory) added in _load_unified_hist_once.
+    const tree = {};
+    keys.forEach(key => {
+      const m = seriesMap[key].meta || {};
+      const c  = m.concept     || 'Uncategorised';
+      const sc = m.subcategory || '—';
+      tree[c] = tree[c] || {};
+      tree[c][sc] = tree[c][sc] || [];
+      tree[c][sc].push(key);
+    });
+    const ordered = Object.keys(tree).sort((a, b) => {
+      return (CONCEPT_ORDER[a] || 99) - (CONCEPT_ORDER[b] || 99);
+    });
+    ordered.forEach(concept => {
+      const subGroups = {};
+      Object.keys(tree[concept]).sort().forEach(sc => {
+        subGroups[sc] = tree[concept][sc];
+      });
+      body.appendChild(buildGroupSection(concept, subGroups, null, {
+        source, seriesMap, nameFn,
+      }));
+    });
+  } else {
+    keys.forEach(key => {
+      const s = seriesMap[key];
+      const meta = s.meta || {};
+      body.appendChild(makeSeriesItem({
+        source,
+        key,
+        id:    key,
+        name:  nameFn(meta),
+        cycle: meta.cycle_timing || '',
+      }));
+    });
+  }
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
   wrap.appendChild(body);
@@ -1134,8 +1327,37 @@ function getSeriesDateRange(source, key){
   return {};
 }
 
+// Country/region tag for the §2.5 country filter.  Returns one of the 12
+// canonical country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE,
+// EA19, IND) for items tied to a single country, or a broad-region label
+// ("Europe", "Asia", "Global", "FX & Commodities") for Phase E composites
+// that span multiple countries.  Returns '' for items with no country tag
+// (e.g. market_comp series).
+function getItemCountry(source, key){
+  // Phase E composites: derive from indicator's group field
+  if(source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[key];
+    if(!ind) return '';
+    const g = (ind.meta || {}).group || '';
+    const map = {
+      'US':    'USA',
+      'UK':    'GBR',
+      'Japan': 'JPN',
+    };
+    return map[g] || g;
+  }
+  // Raw-macro series: meta.Country (capitalised) is one of the 12 codes
+  if(source === 'macro_us' || source === 'macro_intl' || source === 'macro_survey'){
+    const store = MAIN_DATA[source];
+    const s = store ? store.series[key] : null;
+    return s ? ((s.meta || {}).Country || '') : '';
+  }
+  return '';
+}
+
 function makeSeriesItem({source, key, id, name, cycle, variant}){
   const {first, last} = getSeriesDateRange(source, key);
+  const country       = getItemCountry(source, key);
 
   const wrap = el('div','series-item');
   wrap.dataset.source  = source;
@@ -1143,6 +1365,8 @@ function makeSeriesItem({source, key, id, name, cycle, variant}){
   if(variant)    wrap.dataset.variant   = variant;
   if(first)      wrap.dataset.firstDate = first;
   if(last)       wrap.dataset.lastDate  = last;
+  if(cycle)      wrap.dataset.cycle     = cycle;
+  if(country)    wrap.dataset.country   = country;
 
   const cb = document.createElement('input');
   cb.type  = 'checkbox';
@@ -1181,46 +1405,127 @@ function makeSeriesItem({source, key, id, name, cycle, variant}){
   return wrap;
 }
 
-// ── Search ─────────────────────────────────────────────────────────────────
-document.getElementById('search-box').addEventListener('input', function(){
-  const q = this.value.toLowerCase().trim();
-  STATE.searchQuery = q;
+// ── Sidebar filters (§2.5) ─────────────────────────────────────────────────
+// Unified filter pipeline: each .series-item is hidden if ANY of the active
+// filters reject it (search, market-data variant, cycle, country).  Empty
+// section containers are then collapsed visually.
+function applySidebarFilters(){
+  const q = STATE.searchQuery;
+  const cycleOn  = STATE.cycleFilter;
+  const countryOn = STATE.countryFilter;
 
   document.querySelectorAll('.series-item').forEach(item => {
+    let hide = false;
+
+    // Market-data variant filter (Local / USD)
     if(item.dataset.variant && item.dataset.variant !== STATE.mktVariant){
-      item.classList.add('hidden'); return;
+      hide = true;
     }
-    if(!q){ item.classList.remove('hidden'); return; }
-    const text = item.textContent.toLowerCase();
-    item.classList.toggle('hidden', !text.includes(q));
+
+    // Search filter
+    if(!hide && q){
+      const text = item.textContent.toLowerCase();
+      if(!text.includes(q)) hide = true;
+    }
+
+    // Cycle filter — only applies to items that have a cycle tag.  Items
+    // without one (e.g. market_comp series) are always shown.
+    if(!hide && item.dataset.cycle && !cycleOn.has(item.dataset.cycle)){
+      hide = true;
+    }
+
+    // Country filter — empty = "All".  Items without a country tag (e.g.
+    // market_comp series) are always shown.
+    if(!hide && countryOn && item.dataset.country && item.dataset.country !== countryOn){
+      hide = true;
+    }
+
+    item.classList.toggle('hidden', hide);
   });
 
-  // hide empty sub-group sections (no visible children)
+  // Hide empty sub-group sections (no visible children)
   document.querySelectorAll('.sgrp-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
     body.closest('.sgrp-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // hide empty group / asset-class bodies (no visible children)
+  // Hide empty group / asset-class bodies (no visible children)
   document.querySelectorAll('.grp-body,.ac-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
     body.closest('.grp-section,.ac-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // auto-open src sections that have matches
-  if(q){
+  // Auto-open src sections that have matches when search is active; restore
+  // collapsed sections when no narrowing filter is in effect.
+  const filtersActive = q || cycleOn.size < 3 || countryOn;
+  if(filtersActive){
     document.querySelectorAll('.src-body').forEach(body => {
       const anyVisible = Array.from(body.querySelectorAll('.series-item'))
         .some(i => !i.classList.contains('hidden'));
-      if(anyVisible){ body.classList.add('open');
-        body.previousElementSibling.querySelector('.src-arrow').classList.add('open'); }
+      if(anyVisible){
+        body.classList.add('open');
+        body.previousElementSibling.querySelector('.src-arrow').classList.add('open');
+      }
     });
-  } else {
-    // restore hidden groups and sub-groups
-    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section').forEach(s => s.style.display = '');
   }
+  if(!filtersActive){
+    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section')
+      .forEach(s => s.style.display = '');
+  }
+}
+
+document.getElementById('search-box').addEventListener('input', function(){
+  STATE.searchQuery = this.value.toLowerCase().trim();
+  applySidebarFilters();
+});
+
+// L/C/G chip toggles
+document.querySelectorAll('.cycle-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const letter = chip.dataset.cycle;
+    if(STATE.cycleFilter.has(letter)){
+      STATE.cycleFilter.delete(letter);
+      chip.classList.remove('active');
+    } else {
+      STATE.cycleFilter.add(letter);
+      chip.classList.add('active');
+    }
+    applySidebarFilters();
+  });
+});
+
+// Country dropdown — populated on first render from data; selection updates state
+function populateCountryFilterOptions(){
+  // Collect every country tag actually present in the rendered sidebar.
+  const tags = new Set();
+  document.querySelectorAll('.series-item[data-country]').forEach(item => {
+    tags.add(item.dataset.country);
+  });
+
+  // Order: 12 country codes first (alphabetical), then broad-region tags.
+  const COUNTRY_CODES = ['AUS','CAN','CHE','CHN','DEU','EA19','FRA','GBR','IND','ITA','JPN','USA'];
+  const codeTags  = COUNTRY_CODES.filter(c => tags.has(c));
+  const otherTags = Array.from(tags).filter(t => !COUNTRY_CODES.includes(t)).sort();
+
+  const sel = document.getElementById('country-select');
+  const current = STATE.countryFilter;
+  sel.innerHTML = '';
+  const optAll = document.createElement('option');
+  optAll.value = ''; optAll.textContent = 'All';
+  sel.appendChild(optAll);
+  [...codeTags, ...otherTags].forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  sel.value = current; // restore previous selection if it still exists
+}
+
+document.getElementById('country-select').addEventListener('change', function(){
+  STATE.countryFilter = this.value;
+  applySidebarFilters();
 });
 
 // ── Date controls ──────────────────────────────────────────────────────────
@@ -2299,8 +2604,37 @@ document.getElementById('btn-detail-toggle').addEventListener('click', () => {
   requestAnimationFrame(() => updateChartMargin());
 });
 
+// ── §2.5 view-mode toggle ──────────────────────────────────────────────────
+function syncSidebarCheckboxes(){
+  // After a sidebar re-render, mirror STATE.active back onto the new
+  // checkbox elements so the user sees their plotted series stay checked.
+  STATE.active.forEach(s => {
+    const cb = document.querySelector(
+      `.series-cb[data-source="${s.source}"][data-key="${s.key.replace(/"/g, '\\"')}"]`
+    );
+    if(cb) cb.checked = true;
+  });
+}
+
+document.querySelectorAll('.view-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const next = btn.dataset.view; // 'region' | 'concept'
+    if(STATE.viewMode === next) return;
+    STATE.viewMode = next;
+    document.querySelectorAll('.view-mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === next);
+    });
+    buildSidebar();
+    syncSidebarCheckboxes();
+    populateCountryFilterOptions();
+    applySidebarFilters();
+  });
+});
+
 // ── Boot ───────────────────────────────────────────────────────────────────
 buildSidebar();
+populateCountryFilterOptions();
+applySidebarFilters();
 setStatus('Ready — ' + Object.keys(MAIN_DATA.macro_market.indicators).length
   + ' indicators · ' + Object.keys(MAIN_DATA.macro_us.series).length
   + ' FRED series · ' + Object.keys(MAIN_DATA.macro_intl.series).length

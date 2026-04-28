@@ -3,13 +3,13 @@ T10Y2Y,,US Yield Curve 10Y-2Y Spread,Growth,Yield Curve,Percentage Points,Daily,
 T10Y3M,,US Yield Curve 10Y-3M Spread,Growth,Yield Curve,Percentage Points,Daily,Campbell & Shiller preferred recession predictor; stronger near-term signal,20,USA,Rates / Yields,L
 M2SL,,US M2 Money Supply,Growth,Money Supply,Billions USD (SA),Monthly,YoY growth leads nominal GDP by 12-18m; negative YoY = deflation risk,30,USA,Money / Liquidity,L
 PERMIT,,US Building Permits (SAAR),Growth,Leading Indicators,Thousands of Units (SAAR),Monthly,Leads housing starts 1-2m; YoY negative = construction contraction,50,USA,Housing,L
-IC4WSA,,US Initial Jobless Claims 4-Week Average,Growth,Labour Market,Thousands of Persons (SA),Weekly,Sustained rise above 300k signals labour market deterioration,60,USA,Labor Market,L
-PAYEMS,,US Nonfarm Payrolls MoM Change,Growth,Labour Market,Thousands of Persons (SA),Monthly,3m avg >200k = solid expansion; <100k = slowdown; negative = recession,70,USA,Labor Market,C
-UNRATE,,US Unemployment Rate,Growth,Labour Market,Percent (SA),Monthly,Sahm Rule: 0.5pp rise in 3m average vs prior 12m low = recession signal,80,USA,Labor Market,G
+IC4WSA,,US Initial Jobless Claims 4-Week Average,Growth,Labour Market,Thousands of Persons (SA),Weekly,Sustained rise above 300k signals labour market deterioration,60,USA,Labour,L
+PAYEMS,,US Nonfarm Payrolls MoM Change,Growth,Labour Market,Thousands of Persons (SA),Monthly,3m avg >200k = solid expansion; <100k = slowdown; negative = recession,70,USA,Labour,C
+UNRATE,,US Unemployment Rate,Growth,Labour Market,Percent (SA),Monthly,Sahm Rule: 0.5pp rise in 3m average vs prior 12m low = recession signal,80,USA,Labour,G
 INDPRO,,US Industrial Production Index,Growth,Real Activity,Index 2017=100 (SA),Monthly,YoY negative = recession signal; companion to manufacturing PMI,90,USA,Growth,C
 RSXFS,,US Retail Sales ex-Autos MoM,Growth,Real Activity,Millions USD (SA),Monthly,Consumer spending momentum; YoY real negative = recessionary signal,100,USA,Consumer,C
-DRTSCILM,,US SLOOS Net % Banks Tightening C&I Lending Standards (Large Firms),Growth,Credit Cycle,Net Percent (SA),Quarterly,Net tightening >20% has preceded every recession; 6-12m lead time,110,USA,Credit,L
-NFCI,,Chicago Fed National Financial Conditions Index (NFCI),Financial Conditions,Composite,Index,Weekly,Negative = easier than avg; positive and rising = tightening; leads growth 3-6m,120,USA,Credit,L
+DRTSCILM,,US SLOOS Net % Banks Tightening C&I Lending Standards (Large Firms),Growth,Credit Cycle,Net Percent (SA),Quarterly,Net tightening >20% has preceded every recession; 6-12m lead time,110,USA,Credit / Spreads,L
+NFCI,,Chicago Fed National Financial Conditions Index (NFCI),Financial Conditions,Composite,Index,Weekly,Negative = easier than avg; positive and rising = tightening; leads growth 3-6m,120,USA,Credit / Spreads,L
 CPIAUCSL,,US CPI Headline,Inflation,CPI,Index 1982-84=100 (SA),Monthly,Primary public inflation benchmark; >5% YoY = high-inflation regime,130,USA,Inflation,G
 CPILFESL,,US Core CPI (ex Food & Energy),Inflation,CPI,Index 1982-84=100 (SA),Monthly,Strips transitory commodity effects; sticky >3% = overheating signal,140,USA,Inflation,G
 PCEPILFE,,US Core PCE Deflator,Inflation,PCE,Index 2017=100 (SA),Monthly,Fed's preferred inflation measure; Fed 2% target refers to this series,150,USA,Inflation,G
@@ -23,14 +23,14 @@ DGS2,,US 2-Year Treasury Yield (Constant Maturity),Monetary Policy,Government Yi
 DGS10,,US 10-Year Treasury Yield (Constant Maturity),Monetary Policy,Government Yields,Percent,Daily,"Benchmark long-end nominal rate; input to yield-curve slope, breakeven, and term-premium indicators; drives mortgage pricing",217,USA,Rates / Yields,C
 DFII10,,US 10Y Real Interest Rate (TIPS),Monetary Policy,Real Rates,Percent,Daily,Real rates >2% historically associated with growth decel and recession risk,220,USA,Rates / Yields,L
 DFII5,,US 5Y Real Interest Rate (TIPS),Monetary Policy,Real Rates,Percent,Daily,Short-end real rate; rising = tightening financial conditions for risk assets,230,USA,Rates / Yields,L
-BAMLH0A0HYM2,,US HY Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,>600bps = severe stress; >800bps = crisis; tightening from stress = risk-on,240,USA,Credit,L
-BAMLC0A0CM,,US IG Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,>200bps historically coincides with recessions; IG-HY ratio = risk appetite,250,USA,Credit,L
-BAMLC0A0CMEY,,ICE BofA US Corporate Index Effective Yield,Financial Conditions,Credit Markets,Percent,Daily,All-in effective yield on broad US IG corporate bond index; level reflects risk appetite and funding costs for IG issuers,252,USA,Credit,C
-BAMLCC0A0CMTRIV,,ICE BofA US Corporate Index Total Return Index Value,Financial Conditions,Credit Markets,Index,Daily,Total return index for US IG corporates; captures coupon income plus price return; use for momentum and drawdown signals,253,USA,Credit,C
-DRTSCIS,,SLOOS: Net Tightening — C&I Loans Small Firms,Financial Conditions,Credit Conditions,Net Percent,Quarterly,Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle.,260,USA,Credit,L
-DRTSCLCC,,SLOOS: Net Tightening — Credit Card Loans,Financial Conditions,Credit Conditions,Net Percent,Quarterly,Consumer credit availability. Tightening leads consumer spending slowdown.,270,USA,Credit,L
-STDSOTHCONS,,SLOOS: Net Tightening — Consumer Loans (ex Credit Card & Auto),Financial Conditions,Credit Conditions,Net Percent,Quarterly,Auto/student/personal loan standards. Broadens consumer credit picture.,280,USA,Credit,L
-SUBLPDRCSN,,SLOOS: Net Tightening — CRE Loans (Nonfarm Nonresidential),Financial Conditions,Credit Conditions,Net Percent,Quarterly,CRE credit cycle; leads commercial property stress by 2-4 quarters.,290,USA,Credit,L
+BAMLH0A0HYM2,,US HY Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,>600bps = severe stress; >800bps = crisis; tightening from stress = risk-on,240,USA,Credit / Spreads,L
+BAMLC0A0CM,,US IG Credit Spread OAS (ICE BofA),Financial Conditions,Credit Spreads,Percent,Daily,>200bps historically coincides with recessions; IG-HY ratio = risk appetite,250,USA,Credit / Spreads,L
+BAMLC0A0CMEY,,ICE BofA US Corporate Index Effective Yield,Financial Conditions,Credit Markets,Percent,Daily,All-in effective yield on broad US IG corporate bond index; level reflects risk appetite and funding costs for IG issuers,252,USA,Credit / Spreads,C
+BAMLCC0A0CMTRIV,,ICE BofA US Corporate Index Total Return Index Value,Financial Conditions,Credit Markets,Index,Daily,Total return index for US IG corporates; captures coupon income plus price return; use for momentum and drawdown signals,253,USA,Credit / Spreads,C
+DRTSCIS,,SLOOS: Net Tightening — C&I Loans Small Firms,Financial Conditions,Credit Conditions,Net Percent,Quarterly,Companion to DRTSCILM (large firms). Divergence = dual-speed credit cycle.,260,USA,Credit / Spreads,L
+DRTSCLCC,,SLOOS: Net Tightening — Credit Card Loans,Financial Conditions,Credit Conditions,Net Percent,Quarterly,Consumer credit availability. Tightening leads consumer spending slowdown.,270,USA,Credit / Spreads,L
+STDSOTHCONS,,SLOOS: Net Tightening — Consumer Loans (ex Credit Card & Auto),Financial Conditions,Credit Conditions,Net Percent,Quarterly,Auto/student/personal loan standards. Broadens consumer credit picture.,280,USA,Credit / Spreads,L
+SUBLPDRCSN,,SLOOS: Net Tightening — CRE Loans (Nonfarm Nonresidential),Financial Conditions,Credit Conditions,Net Percent,Quarterly,CRE credit cycle; leads commercial property stress by 2-4 quarters.,290,USA,Credit / Spreads,L
 UMCSENT,,UMich Consumer Sentiment (Overall),Survey,Consumer Sentiment,Index (1966 Q1 = 100),Monthly,Headline consumer confidence; below 70 historically correlated with recessions.,300,USA,Sentiment / Survey,L
 CSCICP03USM665S,,Conference Board Consumer Confidence (US),Survey,Consumer Sentiment,Index (2015 = 100),Monthly,Business-sourced survey; leading indicator for consumer spending and employment.,310,USA,Sentiment / Survey,L
 BSCICP03USM665S,,US Business Confidence,Survey,Business Sentiment,Composite indicator (normal value = 100),Monthly,OECD business confidence for US; companion to consumer confidence.,340,USA,Sentiment / Survey,L
@@ -50,16 +50,16 @@ CSCICP02GBM460S,GBR_CON_CONF,UK Consumer Confidence,Survey,Consumer Sentiment,Co
 CSCICP02JPM460S,JPN_CON_CONF,Japan Consumer Confidence,Survey,Consumer Sentiment,Composite indicator (normal value = 100),Monthly,OECD consumer opinion survey composite for Japan; below 100 = below-trend pessimism,412,JPN,Sentiment / Survey,L
 CSCICP02CNM460S,CHN_CON_CONF,China Consumer Confidence,Survey,Consumer Sentiment,Composite indicator (normal value = 100),Monthly,OECD consumer opinion survey composite for China; below 100 = below-trend pessimism,413,CHN,Sentiment / Survey,L
 CHNBSCICP02STSAM,CHN_BUS_CONF,China Business Confidence,Survey,Business Sentiment,Composite indicator (normal value = 100),Monthly,OECD business tendency survey composite (manufacturing) for China; NBS PMI-derived; 100 = long-run average. Feb 2000+.,414,CHN,Sentiment / Survey,L
-AWHMAN,,US Average Weekly Hours (Manufacturing),Growth,Labour Market,Hours (SA),Monthly,Hours cut before headcount; LEI component. Decline leads payroll cuts by 1-3m.,420,USA,Labor Market,L
+AWHMAN,,US Average Weekly Hours (Manufacturing),Growth,Labour Market,Hours (SA),Monthly,Hours cut before headcount; LEI component. Decline leads payroll cuts by 1-3m.,420,USA,Labour,L
 NEWORDER,,US Manufacturers' New Orders: Nondefense Capital Goods ex-Aircraft,Growth,Leading Indicators,Millions USD (SA),Monthly,Proxy for business capex intentions; LEI component. Feb 1992+.,425,USA,Manufacturing,L
 TCU,,US Capacity Utilization (Total Industry),Growth,Real Activity,Percent of Capacity (SA),Monthly,Above 80% signals inflation pressure; below 75% = excess slack. Cycle-coincident.,430,USA,Manufacturing,C
 W875RX1,,US Real Personal Income less Transfers,Growth,Real Activity,Billions 2017 USD (SAAR),Monthly,Private-sector income generating capacity; NBER CEI component.,432,USA,Consumer,C
 PCEC96,,US Real Personal Consumption Expenditures,Growth,Real Activity,Billions 2017 USD (SAAR),Monthly,~68% of GDP; tracks business cycle closely. Core demand metric.,434,USA,Consumer,C
 CMRMTSPL,,US Manufacturing & Trade Sales,Growth,Real Activity,Millions USD (SA),Monthly,CEI component covering wholesale + retail + manufacturing. Broad activity measure.,436,USA,Consumer,C
 CFNAI,,Chicago Fed National Activity Index (CFNAI),Growth,Composite,Index,Monthly,Weighted avg of 85 monthly indicators; 3m avg (MA3) < -0.7 signals recession.,438,USA,Growth,C
-ULCNFB,,US Unit Labour Costs (Nonfarm Business),Inflation,Labour Costs,Index 2012=100 (SA),Quarterly,Wage inflation measure; turns after cycle peak. Rising = margin squeeze.,440,USA,Labor Market,G
-UEMPMEAN,,US Average Duration of Unemployment,Growth,Labour Market,Weeks (SA),Monthly,LAG component; extends well into recoveries. >25 weeks = severe labour slack.,442,USA,Labor Market,G
-TOTCI,,US Commercial & Industrial Loans Outstanding,Financial Conditions,Credit Conditions,Billions USD (SA),Weekly,Bank lending volumes lag new-order signals. YoY contraction = credit crunch.,444,USA,Credit,G
+ULCNFB,,US Unit Labour Costs (Nonfarm Business),Inflation,Labour Costs,Index 2012=100 (SA),Quarterly,Wage inflation measure; turns after cycle peak. Rising = margin squeeze.,440,USA,Labour,G
+UEMPMEAN,,US Average Duration of Unemployment,Growth,Labour Market,Weeks (SA),Monthly,LAG component; extends well into recoveries. >25 weeks = severe labour slack.,442,USA,Labour,G
+TOTCI,,US Commercial & Industrial Loans Outstanding,Financial Conditions,Credit Conditions,Billions USD (SA),Weekly,Bank lending volumes lag new-order signals. YoY contraction = credit crunch.,444,USA,Credit / Spreads,G
 CP,,US Corporate Profits After Tax (NIPA),Growth,Earnings,Billions USD (SAAR),Quarterly,Economy-wide corporate profitability. Confirms cycle turns; forward-looking for equities.,446,USA,Growth,C
 GBRCPIALLMINMEI,GBR_CPI,UK CPI (All Items),Inflation,CPI,Index 2015=100,Monthly,UK headline consumer prices. Replaces annual World Bank CPI proxy.,450,GBR,Inflation,G
 BOERUKM,GBR_BANK_RATE,Bank of England Policy Rate,Monetary Policy,Policy Rate,Percent,Monthly,BoE Bank Rate. MPC decisions react to backward-looking data.,452,GBR,Rates / Yields,G
