@@ -7,8 +7,8 @@ Russell 1000,Equity,Equity,Index,Equity Large Cap,North America,United States,,L
 S&P MidCap 400,Equity,Equity,Index,Equity Mid Cap,North America,United States,,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^MID,MDY,,,,,,,1981-01-02,False
 Russell 2000,Equity,Equity,Index,Equity Small Cap,North America,United States,,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RUT,IWM,,,,,,,1987-09-10,True
 S&P SmallCap 600,Equity,Equity,Index,Equity Small Cap,North America,United States,,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP600,IJR,,,,,,,1989-01-03,False
-S&P 500 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500V,IVE,,,,,,,2000-05-26,False
-S&P 500 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500G,IVW,,,,,,,2000-05-26,False
+S&P 500 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IVE,,,,,,,2000-05-26,False
+S&P 500 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IVW,,,,,,,2000-05-26,False
 Russell 1000 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RLV,IWD,,,,,,,2002-09-30,False
 Russell 1000 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RLG,IWF,,,,,,,2002-09-30,True
 Russell 2000 Value,Equity,Equity,Index,Equity Small Cap (Value),North America,United States,Value,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RUJ,IWN,,,,,,,2002-09-30,False
@@ -123,8 +123,8 @@ CBOE GVZ - Gold Volatility Index,Volatility,Macro-Market Indicators,Index,Volati
 CBOE OVX - Crude Oil Volatility,Volatility,Macro-Market Indicators,Index,Volatility,Global,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10,False
 NYSE FANG+ Index,Equity,Equity,Index,,,,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,2014-09-22,False
 S&P 500 Equal Weight Index,Equity,Equity,Index,Equity Large Cap,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SPXEW,RSP,,,,,,,2006-12-08,False
-Russell Midcap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RMCCG,IWP,,,,,,,2001-08-02,False
-Russell Midcap Value Index,Equity,Equity,Index,Equity Mid Cap (Value),North America,United States,Value,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RMCCV,IWS,,,,,,,2001-08-02,False
+Russell Midcap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IWP,,,,,,,2001-08-02,False
+Russell Midcap Value Index,Equity,Equity,Index,Equity Mid Cap (Value),North America,United States,Value,Mid,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IWS,,,,,,,2001-08-02,False
 Wilshire US Large-Cap Growth Index,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Wilshire US Large-Cap Value Index,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Wilshire US Mid-Cap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
