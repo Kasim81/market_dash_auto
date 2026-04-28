@@ -78,7 +78,8 @@ PR2 (2026-04-26) added `INDIRLTLT01STM` directly to the `series_to_fetch` litera
 1. [Project Phase Summary](#1-project-phase-summary)
 2. [Resume Here — Priority Tasks](#2-resume-here--priority-tasks)
 3. [New Feature Development](#3-new-feature-development)
-4. [Multi-Frequency Pipeline (Phase 2)](#4-multi-frequency-pipeline-phase-2)
+4. [Project Chronology](#4-project-chronology)
+5. [Multi-Frequency Pipeline (Phase 2)](#5-multi-frequency-pipeline-phase-2)
 
 ---
 ## 1. Project Phase Summary
@@ -237,18 +238,6 @@ Completed work that previously lived in this section:
 - ~~§2.2 (old) — Update technical manual~~ — was marked complete 2026-04-23 but has since gone stale; relisted as **§2.2 below** with a full review-and-update scope.
 - ~~§2.3 (old) — Phase D Rebuild — FMP Replacement Plan~~ — done 2026-04-23 (Phase D consolidated into Phase ME, FMP rejected); the BoJ Tankan follow-up was tracked at §2.8 then absorbed into the comprehensive surveys sub-project (currently §3.2) on 2026-04-28.
 - ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.7 below** at low priority.
-
-### 2.7 Generate a dated chronology from git history
-
-**Priority:** Low — useful project history but doesn't move the pipeline forward.
-**Status:** Not started; carried forward from the old §2.1.
-
-```bash
-git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
-```
-
-Filter to significant changes (feature additions, bug fixes, schema changes, new modules). Output as either a dated chronology section in `manuals/technical_manual.md` (preferred — keeps the manual self-contained) or a standalone `manuals/chronology.md`. Update periodically as new features land.
-
 
 ---
 
@@ -863,7 +852,20 @@ A new top-level `backtest/` directory holds:
 
 ---
 
-## 4. Multi-Frequency Pipeline (Phase 2)
+## 4. Project Chronology
+
+**Priority:** Low — useful project history but doesn't move the pipeline forward.
+**Status:** Not started; carried forward from the original §2.1.
+
+```bash
+git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
+```
+
+Filter to significant changes (feature additions, bug fixes, schema changes, new modules). Output as either a dated chronology section in `manuals/technical_manual.md` (preferred — keeps the manual self-contained) or a standalone `manuals/chronology.md`. Update periodically as new features land.
+
+---
+
+## 5. Multi-Frequency Pipeline (Phase 2)
 
 **Priority:** High impact but large effort. Detailed implementation plan in [`manuals/multifreq_plan.md`](multifreq_plan.md).
 **Status:** Not started.
