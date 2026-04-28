@@ -7,8 +7,8 @@ Russell 1000,Equity,Equity,Index,Equity Large Cap,North America,United States,,L
 S&P MidCap 400,Equity,Equity,Index,Equity Mid Cap,North America,United States,,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^MID,MDY,,,,,,,1981-01-02,False
 Russell 2000,Equity,Equity,Index,Equity Small Cap,North America,United States,,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RUT,IWM,,,,,,,1987-09-10,True
 S&P SmallCap 600,Equity,Equity,Index,Equity Small Cap,North America,United States,,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP600,IJR,,,,,,,1989-01-03,False
-S&P 500 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500V,IVE,,,,,,,2000-05-26,False
-S&P 500 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500G,IVW,,,,,,,2000-05-26,False
+S&P 500 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IVE,,,,,,,2000-05-26,False
+S&P 500 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IVW,,,,,,,2000-05-26,False
 Russell 1000 Value,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RLV,IWD,,,,,,,2002-09-30,False
 Russell 1000 Growth,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RLG,IWF,,,,,,,2002-09-30,True
 Russell 2000 Value,Equity,Equity,Index,Equity Small Cap (Value),North America,United States,Value,Small,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RUJ,IWN,,,,,,,2002-09-30,False
@@ -26,7 +26,7 @@ S&P 500 Utilities,Equity,Equity,Index,Equity Sector,North America,United States,
 S&P 500 Real Estate,Equity,Equity,Index,Equity Sector,North America,United States,Real Estate,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-60,XLRE,,,,,,,2001-10-09,True
 FTSE 100,Equity,Equity,Index,Equity Large Cap,UK,United Kingdom,,Large,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTSE,ISF.L,,,,,,,1984-01-03,True
 FTSE 250,Equity,Equity,Index,Equity Mid Cap,UK,United Kingdom,,Mid,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTMC,VMID.L,,,,,,,1985-12-31,True
-FTSE All-Share,Equity,Equity,Index,Equity Broad,UK,United Kingdom,,Broad,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTAS,ISFA.L,,,,,,,1980-02-11,False
+FTSE All-Share,Equity,Equity,Index,Equity Broad,UK,United Kingdom,,Broad,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTAS,,,,,,,,1980-02-11,False
 FTSE SmallCap,Equity,Equity,Index,Equity Small Cap,UK,United Kingdom,,Small,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTSC,,,,,,,,1993-02-19,False
 DAX 40,Equity,Equity,Index,Equity Large Cap,Europe,Germany,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^GDAXI,EXS1.DE,,,,,,,1987-12-30,True
 MDAX,Equity,Equity,Index,Equity Mid Cap,Europe,Germany,,Mid,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^MDAXI,EXS3.DE,,,,,,,1996-02-29,False
@@ -36,10 +36,10 @@ CAC 40,Equity,Equity,Index,Equity Large Cap,Europe,France,,Large,,,,EUR,False,,F
 CAC Mid 60,Equity,Equity,Index,Equity Mid Cap,Europe,France,,Mid,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^CM100,,,,,,,,1999-01-25,False
 FTSE MIB Index,Equity,Equity,Index,,Europe,Italy,,,,,,EUR,False,,False,,yfinance PR,CONFIRMED,FTSEMIB.MI,IMIB.MI,,,,,,,1997-12-31,False
 Nikkei 225,Equity,Equity,Index,Equity Large Cap,Japan,Japan,,Large,,,,JPY,False,,False,,yfinance PR,CONFIRMED,^N225,1321.T,,,,,,,1965-01-05,True
-TOPIX Index,Equity,Equity,Index,Equity Broad,Japan,Japan,,Broad,,,,JPY,False,,False,,yfinance PR,CONFIRMED,^TOPX,1306.T,,,,,,,2008-01-04,False
+TOPIX Index,Equity,Equity,Index,Equity Broad,Japan,Japan,,Broad,,,,JPY,False,,False,,yfinance TR,CONFIRMED,,1306.T,,,,,,,2008-01-04,False
 S&P/TSX Composite,Equity,Equity,Index,Equity Broad,North America,Canada,,Broad,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^GSPTSE,XIU.TO,,,,,,,1979-06-29,False
-S&P/TSX 60,Equity,Equity,Index,,North America,Canada,,,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^TX60,XIU.TO,,,,,,,1999-10-04,False
-S&P/TSX SmallCap,Equity,Equity,Index,Equity Small Cap,North America,Canada,,Small,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^TSXV,XCS.TO,,,,,,,2007-05-18,False
+S&P/TSX 60,Equity,Equity,Index,,North America,Canada,,,,,,CAD,False,,False,,yfinance TR,CONFIRMED,,XIU.TO,,,,,,,1999-10-04,False
+S&P/TSX SmallCap,Equity,Equity,Index,Equity Small Cap,North America,Canada,,Small,,,,CAD,False,,False,,yfinance TR,CONFIRMED,,XCS.TO,,,,,,,2007-05-18,False
 S&P/ASX 200,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AXJO,IOZ.AX,,,,,,,1992-11-23,False
 S&P/ASX All Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AORD,VAS.AX,,,,,,,1984-08-03,False
 S&P/ASX Small Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AXSO,SSO.AX,,,,,,,2004-05-03,False
@@ -48,10 +48,10 @@ CSI 300 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfi
 CSI 500 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,,False
 CSI 1000 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,,False
 Hang Seng Index,Equity,Equity,Index,,Asia Pacific,Hong Kong,,,,,,HKD,False,,False,,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31,False
-S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,SENSEXBEES.NS,,,,,,,1997-07-01,True
+S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,,,,,,,,1997-07-01,True
 Nifty 50,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17,True
 Nifty Midcap 100,Equity,Equity,Index,Equity Mid Cap,Asia Pacific,India,,Mid,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,2007-09-17,False
-Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXSC,SMALLCAP.NS,,,,,,,2024-03-18,False
+Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance TR,CONFIRMED,,SMALLCAP.NS,,,,,,,2024-03-18,False
 Bovespa (IBOVESPA),Equity,Equity,Index,,Latin America,Brazil,,,,,,BRL,False,,False,,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,1993-04-27,False
 KOSPI,Equity,Equity,Index,,Asia Pacific,South Korea,,,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS11,069500.KS,,,,,,,1996-12-11,False
 KOSPI 200,Equity,Equity,Index,Equity Large Cap,Asia Pacific,South Korea,,Large,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS200,069500.KS,,,,,,,1996-03-20,False
@@ -66,15 +66,15 @@ Borsa Istanbul 30,Equity,Equity,Index,,Europe,Turkey,,,,,,TRY,False,,False,,yfin
 MERVAL (Argentina),Equity,Equity,Index,,Latin America,Argentina,,,,,,ARS,False,,False,,yfinance PR,CONFIRMED,^MERV,,,,,,,,1996-10-08,False
 Euro Stoxx 50,Equity,Equity,Index,Equity Large Cap,Europe,Developed Europe,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX50E,FEZ,,,,,,,2007-03-30,True
 STOXX Europe 600,Equity,Equity,Index,Equity Broad,Europe,Developed Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX,EXSA.DE,,,,,,,2004-04-26,False
-STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX7E,EXV1.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Europe,Health Care,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXDP,EXV4.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Technology,Equity,Equity,Index,Equity Sector,Europe,Europe,Information Technology,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX8P,EXV3.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Energy,Equity,Equity,Index,Equity Sector,Europe,Europe,Energy,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXEP,EXH1.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Industrials,Equity,Equity,Index,Equity Sector,Europe,Europe,Industrials,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXNP,EXH4.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Consumer Staples,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Staples,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX3P,EXH3.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Utilities,Equity,Equity,Index,Equity Sector,Europe,Europe,Utilities,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX6P,EXH9.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Telecom,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXKP,EXV2.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Real Estate,Equity,Equity,Index,Equity Sector,Europe,Europe,Real Estate,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX4P,EXI5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Europe,Health Care,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Technology,Equity,Equity,Index,Equity Sector,Europe,Europe,Information Technology,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Energy,Equity,Equity,Index,Equity Sector,Europe,Europe,Energy,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Industrials,Equity,Equity,Index,Equity Sector,Europe,Europe,Industrials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Consumer Staples,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Staples,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Utilities,Equity,Equity,Index,Equity Sector,Europe,Europe,Utilities,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH9.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Telecom,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV2.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Real Estate,Equity,Equity,Index,Equity Sector,Europe,Europe,Real Estate,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXI5.DE,,,,,,,2008-01-02,False
 iShares MSCI ACWI ETF,Equity,Equity,Index,Equity Broad,Global,Global,,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,ACWI,,,,,,,2008-03-28,False
 iShares MSCI World ETF,Equity,Equity,Index,Equity Broad,Global,Global,,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,URTH,,,,,,,2012-01-12,False
 iShares MSCI Emerging Markets ETF,Equity,Equity,Index,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EEM,,,,,,,2003-04-14,False
@@ -123,8 +123,8 @@ CBOE GVZ - Gold Volatility Index,Volatility,Macro-Market Indicators,Index,Volati
 CBOE OVX - Crude Oil Volatility,Volatility,Macro-Market Indicators,Index,Volatility,Global,United States,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^OVX,,,,,,,,2007-05-10,False
 NYSE FANG+ Index,Equity,Equity,Index,,,,,,,,,USD,False,,False,,yfinance PR,CONFIRMED,^NYFANG,,,,,,,,2014-09-22,False
 S&P 500 Equal Weight Index,Equity,Equity,Index,Equity Large Cap,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SPXEW,RSP,,,,,,,2006-12-08,False
-Russell Midcap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RMCCG,IWP,,,,,,,2001-08-02,False
-Russell Midcap Value Index,Equity,Equity,Index,Equity Mid Cap (Value),North America,United States,Value,Mid,,,,USD,False,,False,,yfinance PR,CONFIRMED,^RMCCV,IWS,,,,,,,2001-08-02,False
+Russell Midcap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IWP,,,,,,,2001-08-02,False
+Russell Midcap Value Index,Equity,Equity,Index,Equity Mid Cap (Value),North America,United States,Value,Mid,,,,USD,False,,False,,yfinance TR,CONFIRMED,,IWS,,,,,,,2001-08-02,False
 Wilshire US Large-Cap Growth Index,Equity,Equity,Index,Equity Large Cap (Growth),North America,United States,Growth,Large,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Wilshire US Large-Cap Value Index,Equity,Equity,Index,Equity Large Cap (Value),North America,United States,Value,Large,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Wilshire US Mid-Cap Growth Index,Equity,Equity,Index,Equity Mid Cap (Growth),North America,United States,Growth,Mid,,,,USD,False,,False,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
@@ -213,7 +213,6 @@ S&P 500 Household Durables (Ind,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Leisure Products (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-252020,,,,,,,,2000-01-07,False
 "S&P 500 Textiles, Apparel & Lux",Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-252030,,,,,,,,2000-01-07,False
 S&P 500 Hotels Restaurants & Le,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-253010,,,,,,,,,False
-S&P 500 Diversified Consumer Services (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-253020,,,,,,,,2020-09-18,False
 S&P 500 Distributors (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-255010,,,,,,,,2004-01-02,False
 S&P 500 Broadline Retail (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-255030,,,,,,,,,False
 S&P 500 Specialty Retail (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-255040,,,,,,,,2000-02-18,False
@@ -225,7 +224,6 @@ S&P 500 Household Products (Ind,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Personal Care Products,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-303020,,,,,,,,2000-01-07,False
 S&P 500 Health Care Equipment &,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351010,,,,,,,,2000-03-06,False
 S&P 500 Health Care Providers &,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351020,,,,,,,,2000-01-07,False
-S&P 500 Health Care Technology (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351030,,,,,,,,2022-06-07,False
 S&P 500 - Biotechnology (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-352010,,,,,,,,2000-02-29,False
 S&P 500 - Pharmaceuticals (Indu,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-352020,,,,,,,,2000-01-07,False
 S&P 500 - Life Sciences Tools &,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-352030,,,,,,,,,False
@@ -250,7 +248,6 @@ S&P 500 Gas Utilities (Industry,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Multi-Utilities (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-551030,,,,,,,,2000-01-07,False
 S&P 500 Water Utilities (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-551040,,,,,,,,,False
 S&P 500 Independent Power and R,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-551050,,,,,,,,,False
-S&P 500 Equity Real Estate Investment Trusts (REITs) (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-601010,,,,,,,,2023-03-17,False
 S&P 500 Industrial REITs (Indus,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601025,,,,,,,,,False
 S&P 500 Hotel & Resort REITs (I,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601030,,,,,,,,,False
 S&P 500 Office REITs (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601040,,,,,,,,,False

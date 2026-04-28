@@ -77,7 +77,7 @@ def archive_columns(rows: list[list[str]], ticker: str, idxs: list[int]) -> Path
     header_row = rows[11]
     keep_idxs = [1] + idxs  # column 1 is Date
     with out_path.open("w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow([header_row[i] for i in keep_idxs])
         for r in rows[12:]:
             w.writerow([r[i] if i < len(r) else "" for i in keep_idxs])
@@ -120,7 +120,7 @@ def main() -> int:
 
     new_rows = drop_columns(rows, drop_idxs)
     with HIST_PATH.open("w", newline="") as f:
-        csv.writer(f).writerows(new_rows)
+        csv.writer(f, lineterminator="\n").writerows(new_rows)
     n_dropped = len(drop_idxs)
     n_cols_after = len(new_rows[0]) if new_rows else 0
     print(f"  dropped {n_dropped} column(s); {n_cols_after} column(s) remain in {HIST_PATH.relative_to(ROOT)}")
