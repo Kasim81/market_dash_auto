@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-6 top-level Python modules + 8-module `sources/` package + `docs/build_html.py`, totalling ~8,866 lines. Configuration: 9 input CSV libraries (1 instrument library + 7 raw-source libraries + 1 composite-indicator library) plus `reference_indicators.csv` for the cycle-timing cross-reference. Output: 7 CSV files (one per active Sheets tab).
+7 top-level Python modules (incl. `data_audit.py`) + 8-module `sources/` package + `docs/build_html.py`, totalling ~9,400 lines. Configuration: 9 input CSV libraries (1 instrument library + 7 raw-source libraries + 1 composite-indicator library) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit. Output: 7 data CSVs (one per active Sheets tab) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -347,7 +347,8 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
 | `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4) — populated for all 92 indicators using the canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum). |
-| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.8 coverage analysis. |
+| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.3 coverage analysis. |
+| `freshness_thresholds.csv` | 5 | `data_audit.py` | Per-frequency staleness tolerance (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) used by §2.6's daily integrated audit. Per-row override available via the `freshness_override_days` column on every `macro_library_*.csv` (added 2026-04-28). |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
@@ -361,6 +362,8 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_market.csv` | ~92 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `pipeline.log` | n/a | GitHub Actions | Captured stdout+stderr of the most recent run (committed by the `if: always()` step in `update_data.yml` — useful for diagnosing failures without needing to download artefacts) |
+| `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness). Regenerated each daily run. |
+| `audit_comment.md` | n/a | `data_audit.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. |
 
 ---
 
