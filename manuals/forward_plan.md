@@ -634,6 +634,18 @@ Some of these overlap with the §3.1 surveys sub-project (BoJ Statistics specifi
 7. BoJ Statistics (6 Japan series — overlaps with §3.1 surveys; build there)
 8. BIS + Bundesbank + Atlanta Fed (4 series — lower priority)
 
+#### Proprietary indicators (user review)
+
+51 indicators in `data/reference_indicators.csv` are flagged PROPRIETARY. The user should review these to determine if any can be sourced via institutional access. Key categories:
+
+- **S&P Global Flash PMIs** (3) — subscriber-only; we do **not** capture them (FMP route rejected). Coverage falls back to OECD BCI mirrors on FRED where available.
+- **Conference Board composites** (4) — LEI/CLI; we use OECD CLI as substitute.
+- **China NBS sub-data** (12) — property, FAI, retail sales, electricity; no free foreign API. Wind/CEIC/Bloomberg only.
+- **Baltic Dry Index** (2) — Baltic Exchange; no reliable free API or yfinance ticker.
+- **Sell-side cycle models** (1) — GS/BCA/TS Lombard; subscription research.
+- **CBI, Lloyds, Sentix, Reuters Tankan** (5) — UK/EU business surveys with no free API. Some may be revisitable via the §3.1 surveys sub-project's scraper-infrastructure track.
+- **Other** (24) — various proprietary feeds across regions.
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
