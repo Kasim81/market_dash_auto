@@ -646,6 +646,14 @@ Some of these overlap with the §3.1 surveys sub-project (BoJ Statistics specifi
 - **CBI, Lloyds, Sentix, Reuters Tankan** (5) — UK/EU business surveys with no free API. Some may be revisitable via the §3.1 surveys sub-project's scraper-infrastructure track.
 - **Other** (24) — various proprietary feeds across regions.
 
+#### 3.3.1 Per-Indicator Source Mapping
+
+Inverse of the source-verdicts table above: for each Phase E composite that depends on a survey or proxy series, this section records the raw source it currently consumes and any upgrade path. Use it when:
+
+- **Adding a new source** (e.g. BoJ Tankan or ONS UK series — see §3.1) — find which indicators currently depend on alternatives that the new source would replace.
+- **Diagnosing why an indicator returns n/a** — trace the calculator back to the missing input.
+- **Deciding whether a series can be retired** — find every indicator that reads it.
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
