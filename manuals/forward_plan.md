@@ -610,24 +610,6 @@ These reference indicators have partial coverage today via adjacent / standardis
 | Global | Bloomberg Commodity Index | `DBC` ETF proxy | BCOM itself proprietary — keep DBC |
 | Global | Goldman Sachs FCI | `NFCI` (Chicago Fed) substitute | GS FCI proprietary — keep NFCI |
 
-### 3.5 Sheets Export Audit (Phase G)
-
-**Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
-
-**Remaining (low value):**
-- Record Sheets GIDs for each of the 9 active tabs in `technical_manual.md` (housekeeping; only useful if downstream consumers need stable GID links).
-- Build an automated drift check: compare the tab set in the Sheet against `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE` and flag extras. Useful only if ad-hoc tabs are being created outside the pipeline.
-
-### 3.6 Library Manager Utility — superseded by §2.6
-
-**Status:** Superseded 2026-04-28. The originally-planned standalone `library_manager.py` validator (which probed every API independently) was folded into §2.6's daily integrated audit instead — the daily fetch already calls every API, so we capture validity outcomes from `pipeline.log` rather than running duplicate probes. See §2.6 for the live tooling.
-
-The two specific arms originally listed here are now both covered by the daily audit:
-- yfinance ticker validity → §2.6 Section A (cross-checked against `market_data_comp_hist.csv` to filter transient warnings).
-- Per-source library schema integrity → §2.6 Section B (countries orphans, indicator-id uniqueness, calculator registration, `_get_col` column existence).
-
-The one residual item not yet automated is **auto-setting `validation_status = "UNAVAILABLE"`** on dead tickers in `index_library.csv` — the audit *reports* dead tickers but doesn't yet write back to the registry. Candidate for a small fix-forward PR; out of §2.6 v2 scope.
-
 ### 3.7 Incremental Fetch Mode (fetch_hist.py)
 
 **Priority:** Medium — performance improvement.
