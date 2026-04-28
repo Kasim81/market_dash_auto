@@ -545,6 +545,41 @@ Outcome of the 2026-04 source-evaluation cycle. Verdicts are durable — do not 
 | **Investing.com** | Skip | `investpy` broken since 2023 (Cloudflare); scraping violates ToS. |
 | **S&P Global / ISM direct** | Skip | No programmatic API; paid institutional subscription for sub-indices. ISM redistributed by DB.nomics. |
 
+#### Coverage today vs the 206-row reference baseline
+
+Cross-reference of every reference indicator from `Macro Market Indicators Reference.docx` against our pipeline (last refreshed 2026-04). Full list at `data/reference_indicators.csv` (206 rows × 10 cols).
+
+| Match Status | Count | Description |
+|---|---|---|
+| Full | 44 | Fully captured in our pipeline |
+| Partial | 22 | Close proxy or related series captured |
+| None | 140 | Not yet captured |
+
+| Flag | Count | Meaning |
+|---|---|---|
+| PROPRIETARY | 51 | No free API available — user review needed |
+| NEW_SOURCE | 54 | Requires new fetcher module (BoE, ONS, ECB SDW, BoJ, e-Stat, BIS, CPB, OFR) |
+| FRED_ADD/CHECK | 29 | Zero-code addition to `macro_library_fred.csv` or needs FRED ID verification |
+| DBNOMICS_ADD/CHECK | 11 | Available or potentially available on DB.nomics |
+| DERIVED | 4 | Computed indicator requiring multiple source series |
+| BETTER_SOURCE_PREFERRED | 1 | Available as snapshot only; historic time series preferred |
+
+| Region | Total | Full | Partial | None | Actionable Gaps | Proprietary |
+|---|---|---|---|---|---|---|
+| US | 37 | 19 | 2 | 16 | 14 | 4 |
+| UK | 36 | 2 | 2 | 32 | 25 | 11 |
+| Eurozone | 36 | 9 | 7 | 20 | 18 | 3 |
+| Japan | 35 | 2 | 4 | 29 | 29 | 4 |
+| China | 36 | 3 | 4 | 29 | 9 | 19 |
+| Global | 26 | 9 | 3 | 14 | 4 | 9 |
+| **Total** | **206** | **44** | **22** | **140** | **99** | **51** |
+
+**Key observations:**
+- **US** is best covered (57% Full/Partial). Remaining gaps are mostly FRED_ADD (zero-code CSV rows).
+- **UK** and **Japan** have the largest actionable gaps (25 and 29 respectively) — these need new source modules (ONS, BoE, e-Stat, BoJ — see "New source modules needed" below).
+- **China** has the most proprietary gaps (19) — NBS data has no free foreign API. Practical coverage is limited to FRED OECD mirrors (`CHN_BUS_CONF`, `CHN_CON_CONF`).
+- **Eurozone** is well-served by existing Eurostat / DB.nomics, with ECB SDW as the main new source needed.
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
