@@ -9,6 +9,7 @@ on:
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 permissions:
   contents: write
+  issues: write   # required to post the daily audit comment (§2.6 v2)
 jobs:
   update-data:
     runs-on: ubuntu-latest
@@ -41,19 +42,53 @@ jobs:
         set -o pipefail
         cd docs
         python build_html.py 2>&1 | tee -a ../pipeline.log
-    - name: Run freshness audit
-      # Reads every data/macro_library_*.csv, finds last value-change per
-      # series in macro_economic_hist.csv, classifies FRESH/STALE/EXPIRED
-      # per the data/freshness_thresholds.csv defaults plus per-row
-      # `freshness_override_days` overrides.  Output appended to
-      # pipeline.log so the staleness is visible in the committed log;
-      # script's non-zero exit on any STALE/EXPIRED is suppressed with
-      # `|| true` since this is a warning channel, not a build gate.
+    - name: Run data audit
+      # Three-section audit (§2.6 v2): A) pipeline.log scrape for fetch
+      # outcomes (yfinance dead tickers, FRED persistent HTTP errors —
+      # transient retried-then-recovered errors are filtered out by only
+      # matching the "— skipping" suffix), B) static checks (countries
+      # orphans, indicator-library schema, calculator registration,
+      # _get_col column existence), C) value-change staleness on the
+      # unified hist.  Outputs data_audit.txt + audit_comment.md at
+      # repo root.  Exit code is always 0 — warning channel, not a
+      # build gate.
       if: always()
       run: |
         echo "" >> pipeline.log
         echo "" >> pipeline.log
-        python freshness_audit.py 2>&1 | tee -a pipeline.log || true
+        python data_audit.py 2>&1 | tee -a pipeline.log
+    - name: Post daily audit to perpetual GitHub Issue
+      # Posts a comment to the perpetual "Daily Audit Log" issue so the
+      # user gets a GitHub notification email for the day's findings.
+      # First line of the comment is the one-sentence ALL CLEAN / N
+      # ISSUES summary; collapsible detail sections follow.  If the
+      # issue doesn't exist yet (first run) the workflow creates it
+      # along with a `daily-audit` label.
+      if: always()
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Ensure the label exists
+        gh label create daily-audit --color 0366d6 \
+          --description "Perpetual daily-audit log issue" 2>/dev/null || true
+
+        # Find the perpetual issue (open, with the label).  If absent, create it.
+        ISSUE_NUM=$(gh issue list --label daily-audit --state open --limit 1 \
+                       --json number --jq '.[0].number' 2>/dev/null || echo "")
+        if [ -z "$ISSUE_NUM" ]; then
+          ISSUE_NUM=$(gh issue create \
+            --title "Daily Audit Log" \
+            --label daily-audit \
+            --body "Perpetual issue collecting daily \`data_audit.py\` reports.\n\nClose this issue and the next daily run will create a fresh one." \
+            | tail -1 | grep -oE '[0-9]+$')
+        fi
+
+        # Post today's comment.  audit_comment.md was written by data_audit.py.
+        if [ -f audit_comment.md ]; then
+          gh issue comment "$ISSUE_NUM" --body-file audit_comment.md
+        else
+          gh issue comment "$ISSUE_NUM" --body "Daily audit ran but produced no comment file."
+        fi
     - name: Commit and push if changed
       # `if: always()` so even a crashed run still commits the
       # pipeline.log so we can diagnose without re-opening the GitHub
@@ -65,7 +100,10 @@ jobs:
         # Pipeline log first — this is the diagnostic record of every
         # run.  Always commit it, even on failure.
         [ -f pipeline.log ] && git add -f pipeline.log || true
-        [ -f freshness_audit.txt ] && git add -f freshness_audit.txt || true
+        [ -f data_audit.txt ] && git add -f data_audit.txt || true
+        [ -f audit_comment.md ] && git add -f audit_comment.md || true
+        # Retire the v1 freshness audit output (replaced by data_audit.txt):
+        [ -f freshness_audit.txt ] && git rm -f freshness_audit.txt || true
         [ -f data/market_data.csv ] && git add -f data/market_data.csv || true
         [ -f data/market_data_comp.csv ] && git add -f data/market_data_comp.csv || true
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true

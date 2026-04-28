@@ -190,7 +190,7 @@ These 10 CSVs in `data/` are the single source of truth for everything the pipel
 
 **Read order in `fetch_macro_economic.py`:** `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`).
 
-**Library Manager (planned, §2.7):** a standalone `library_manager.py` will validate every CSV — verify FRED IDs against the FRED API, probe OECD dataflows + DB.nomics paths, sanity-check ifo sheet positions, and lint `index_library.csv` tickers against yfinance.
+**Library validity** is now covered by §2.6 (the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks during the existing fetch — no separate probe needed).
 
 ### Known Data Gaps (consolidated, 2026-04-26)
 
@@ -221,7 +221,7 @@ Completed work that previously lived in this section:
 - ~~§2.4 (old) — Eliminate `fetch_supplemental_fred()`~~ — done 2026-04-26 (commit `48c8c1c`); see §1 Phase E description.
 - ~~§2.2 (old) — Update technical manual~~ — was marked complete 2026-04-23 but has since gone stale; relisted as **§2.2 below** with a full review-and-update scope.
 - ~~§2.3 (old) — Phase D Rebuild — FMP Replacement Plan~~ — done 2026-04-23 (Phase D consolidated into Phase ME, FMP rejected); the BoJ Tankan follow-up was tracked at §2.8 then absorbed into **§3.1** (the comprehensive surveys sub-project) on 2026-04-28.
-- ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.9 below** at low priority.
+- ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.7 below** at low priority.
 
 ### 2.1 Verify the merged stack on the next nightly CI run
 
@@ -344,54 +344,48 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 
 **Acceptance verified:** the explorer renders three top-level sections (Macro Market Indicators / Economic Data / Market Data); the "Economic Data" section's By Region view shows 12 country buckets in registry order; the By Concept view shows the canonical concepts (Rates / Inflation / Labour / etc.); cycle-timing and country filters work; existing region-based view of Macro Market Indicators is preserved.
 
-### 2.6 Per-ticker data-freshness audit
+### 2.6 Daily integrated data audit (freshness + fetch outcomes + static checks)
 
-**Priority:** High — multiple indicators were silently forward-filling stale data without any flag.
-**Status:** Done 2026-04-28 — landed in 4 commits + a small follow-up. Outcome below.
+**Priority:** High — single-source-of-truth alerting for everything that can go wrong with the daily data fetch: stale series, dead tickers, broken FRED IDs, library-schema drift.
+**Status:** Done 2026-04-28 — v1 (freshness-only) shipped earlier; v2 (integrated three-section audit + GitHub Issue notification) shipped same day after rescope. Merges the previous §2.7 (`library_manager.py` validator) and §2.8 (yfinance ticker audit) by piggy-backing on the daily run rather than running independent API probes.
+
+**v1 — freshness-only (5 commits):**
 
 | Step | Commit | Scope |
 |---|---|---|
-| 1 | `b900128` | New `freshness_override_days` column on every `data/macro_library_*.csv` (123 row updates across 6 libraries; default empty). |
-| 1.5 | `f23263f` | New `data/freshness_thresholds.csv` driving per-frequency default tolerances (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with inline rationale notes. CSV-driven per §0. |
-| 2 | `25e445b` | New `freshness_audit.py` at repo root. Walks every per-source library, finds last *value-change* per series in the unified hist (not last non-null — Friday-spine forward-fill would otherwise mask staleness), classifies FRESH/STALE/EXPIRED. Output: `freshness_audit.txt` + non-zero exit on any STALE/EXPIRED. |
-| 3 | `8f5ed42` | New "Run freshness audit" step in `.github/workflows/update_data.yml` between explorer rebuild and commit, `if: always()`, pipes output into `pipeline.log`. Non-fatal (`|| true`) — warning channel, not build gate. |
+| 1 | `b900128` | `freshness_override_days` column on every per-source library (123 row updates). |
+| 1.5 | `f23263f` | `data/freshness_thresholds.csv` driving per-frequency default tolerances (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d). |
+| 2 | `25e445b` | `freshness_audit.py` — value-change detection on the unified hist. |
+| 3 | `8f5ed42` | CI step in `update_data.yml`. |
+| 4 | `a7539f3` | Mark v1 Done. |
 
-**Acceptance verified:** `python freshness_audit.py` runs clean on current data; `BSCICP03USM665S` and `CSCICP03USM665S` both appear in the first EXPIRED batch (`last_obs=2024-01-05  age=844d  tolerance=45d`). The first run also surfaced ~27 other EXPIRED series (mostly OECD-mirror-via-FRED vintages that froze: JPN/CHN policy rates, GBR bank rate, EA HICP, DEU/JPN industrial production) plus ~46 STALE at 1-2× tolerance — the spec's expected "first wave" payload.
+**v2 — integrated audit + GitHub Issue alerting (5 commits):**
 
-**Follow-up not in §2.6 scope** (these are now actionable items, candidates for a future small fix-forward PR):
+| Step | Commit | Scope |
+|---|---|---|
+| 1a | `4e4b416` | `data_audit.py` scaffold + Section C (port of v1 staleness logic). Two outputs: `data_audit.txt` (full report) + `audit_comment.md` (formatted for GitHub Issue comment with first-line `ALL CLEAN` / `N ISSUES` summary). |
+| 1b | `4579999` | Section A — `pipeline.log` scrape for fetch outcomes. yfinance dead-ticker detection cross-checked against `market_data_comp_hist.csv` to filter transient warnings. FRED retried-then-succeeded errors filtered out by only matching the `— skipping` suffix. |
+| 1c | `7ef3df2` | Section B — static checks (countries-orphan / indicator-id uniqueness / calculator registration / `_get_col` column existence). |
+| 2 | `d16a43a` | CI rewire: `data_audit.py` replaces `freshness_audit.py`; new "Post daily audit to perpetual GitHub Issue" step uses `gh` CLI (no SMTP secrets needed); commits `data_audit.txt` + `audit_comment.md`; deletes v1 `freshness_audit.py` + `.txt`. |
+| 3 | this commit | Mark v2 Done; merge §2.7 + §2.8 into §2.6; renumber §2.9 → §2.7. |
 
-- The 27 EXPIRED rows: each needs either a per-row `freshness_override_days` (if the publisher genuinely lags badly), a reroute to an alternative source, or removal from the library.
-- The `indicators_affected` reverse-lookup column against §3.3.1 per-indicator source mapping was descoped to v2 — §3.3.1 is currently markdown not machine-readable; a future tool would need to either (a) parse the markdown table or (b) fold the mapping into a CSV. Out of scope for §2.6 v1.
+**Why v1 → v2 rescope.** v1 ran a *separate* freshness probe; the originally-planned §2.7 would have *also* run separate per-source API probes for validity. Both duplicated work the daily fetch already does. v2 piggy-backs on the existing pipeline: the daily fetch's HTTP responses are already the validity check; we just capture the signal post-run via `pipeline.log` scrape. Result: **zero extra API calls**, single combined log, single notification channel.
 
-### 2.7 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
+**Notification mechanism.** Workflow posts a comment on a perpetual `daily-audit`-labelled GitHub Issue every day. GitHub's native notification email gives the user the daily heartbeat without any SMTP setup. First line of the comment is the one-sentence ISSUE/CLEAN summary, e.g.:
+- `## Daily audit — 2026-04-28 — **ALL CLEAN**`
+- `## Daily audit — 2026-04-28 — **100 ISSUES** (24 fetch errors, 1 static-check failure, 75 stale series)`
 
-**Priority:** Medium — durable defence against future drift. Subsumes the old §3.5 (which scoped only `index_library.csv`).
-**Status:** Not started.
+If the issue grows unwieldy, close it manually — the next daily run creates a fresh one. Self-healing.
 
-The 7 source library CSVs are now the registry; a validator that runs locally (or weekly in CI) catches dead identifiers before they show up as runtime fetch failures. Per-source checks:
+**Acceptance verified:** `BSCICP03USM665S` + `CSCICP03USM665S` flagged EXPIRED in Section C (`last_obs=2024-01-05, age=844d, tolerance=45d`); 22 truly-dead yfinance tickers in Section A (`^TX60`, `^TOPX`, `^SXEP` family, `^SP500V/G`, `^RMCCV/G`, `SENSEXBEES.NS`, `ISFA.L`, etc.) with cross-check filtering of 1 transient warning; 1 broken `_get_col(...,'CHN_GOVT_10Y')` reference in Section B (matches the documented China-10Y data gap). 0 false-positive FRED retries reported.
 
-- `index_library.csv` — yfinance ticker liveness, currency present, `validation_status` consistent (this is the one §3.5 originally specified; absorbs §2.8 below).
-- `macro_library_fred.csv` — FRED `/series?series_id=…` returns a valid record for every row; `country` is a known code in `macro_library_countries.csv`.
-- `macro_library_oecd.csv` — every row's `oecd_key_template` resolves to a non-empty SDMX response with the listed `oecd_countries`.
-- `macro_library_worldbank.csv` — WB WDI `/indicator/{wb_id}` returns a valid record.
-- `macro_library_imf.csv` — IMF DataMapper indicator + entity codes are valid.
-- `macro_library_dbnomics.csv` — DB.nomics `/series/{path}` returns ≥ 1 observation.
-- `macro_library_ifo.csv` — `sheet_index` and `excel_col` resolve in the latest cached workbook.
-- `macro_library_countries.csv` — every code referenced from a source library exists here; no orphan rows.
-- `macro_indicator_library.csv` — every `id` is unique; every `id` is registered as a calculator in `compute_macro_market.py::_*_CALCULATORS`; every series referenced via `_get_col(...)` in a calculator exists as a column in `macro_economic_hist.csv`.
+**Follow-up not in §2.6 scope:**
 
-Output: a single `library_audit.txt` report with per-row pass/fail. Not part of the daily pipeline — run manually or via a separate weekly workflow.
+- The 27 EXPIRED Section-C series each need either a per-row `freshness_override_days` override (publisher genuinely lags), a reroute to an alternative source, or removal from the library. Fix-forward exercise.
+- The 22 dead yfinance tickers each need `validation_status` updated to `UNAVAILABLE` in `index_library.csv` or a replacement ticker. Fix-forward exercise (was the §2.8 scope).
+- `indicators_affected` reverse-lookup column was descoped — §3.3.1 per-indicator source mapping is markdown, not machine-readable. Future v3 could fold the mapping into a CSV.
 
-**Acceptance:** running `python library_manager.py` on a clean repo prints "all libraries valid" or a precise list of bad rows with the specific failure mode for each.
-
-### 2.8 Audit yfinance tickers in `index_library.csv`
-
-**Priority:** Low — folded into §2.7. Listed separately here only because it was on the previous session's todo list as "PR4".
-**Status:** Not started; will land as part of §2.7's `library_manager.py` build.
-
-Validate ~390 tickers, flag dead/renamed ones, auto-mark `validation_status = "UNAVAILABLE"`, suggest replacements where obvious. No standalone PR — implementation is the `index_library.csv` arm of §2.7.
-
-### 2.9 Generate a dated chronology from git history
+### 2.7 Generate a dated chronology from git history
 
 **Priority:** Low — useful project history but doesn't move the pipeline forward.
 **Status:** Not started; carried forward from the old §2.1.
@@ -701,17 +695,15 @@ These reference indicators have partial coverage today via adjacent / standardis
 - Record Sheets GIDs for each of the 9 active tabs in `technical_manual.md` (housekeeping; only useful if downstream consumers need stable GID links).
 - Build an automated drift check: compare the tab set in the Sheet against `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE` and flag extras. Useful only if ad-hoc tabs are being created outside the pipeline.
 
-### 3.5 Library Manager Utility
+### 3.5 Library Manager Utility — superseded by §2.6
 
-**Priority:** Low — developer tooling. **Scope expanded** in §2.7: the original `index_library.csv`-only design has been generalised to validate every `data/macro_library_*.csv` plus `macro_indicator_library.csv`. See §2.7 for the current scope and acceptance criteria; the original `index_library.csv` checks below are retained as the yfinance-arm of that broader plan.
+**Status:** Superseded 2026-04-28. The originally-planned standalone `library_manager.py` validator (which probed every API independently) was folded into §2.6's daily integrated audit instead — the daily fetch already calls every API, so we capture validity outcomes from `pipeline.log` rather than running duplicate probes. See §2.6 for the live tooling.
 
-Create `library_manager.py` — a standalone utility. For the `index_library.csv` arm specifically:
+The two specific arms originally listed here are now both covered by the daily audit:
+- yfinance ticker validity → §2.6 Section A (cross-checked against `market_data_comp_hist.csv` to filter transient warnings).
+- Per-source library schema integrity → §2.6 Section B (countries orphans, indicator-id uniqueness, calculator registration, `_get_col` column existence).
 
-- Validate all tickers against yfinance (flag those returning no data)
-- Auto-set `validation_status = "UNAVAILABLE"` for dead tickers
-- Suggest alternative tickers for unavailable instruments
-- Check metadata consistency (no duplicate tickers, all required fields filled)
-- Run manually (`python library_manager.py`), not as part of the daily pipeline
+The one residual item not yet automated is **auto-setting `validation_status = "UNAVAILABLE"`** on dead tickers in `index_library.csv` — the audit *reports* dead tickers but doesn't yet write back to the registry. Candidate for a small fix-forward PR; out of §2.6 v2 scope.
 
 ### 3.6 Incremental Fetch Mode (fetch_hist.py)
 
