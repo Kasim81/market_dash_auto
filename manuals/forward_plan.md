@@ -310,22 +310,22 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 
 ### 2.5 Mirror the unified macro library structure in `docs/indicator_explorer.html`
 
-**Priority:** High — user-flagged. Folds in the previously-pending §3.8 "HTML Charting Tool Integration" item.
-**Status:** Not started. Depends on §2.4.
+**Priority:** High — user-flagged. Absorbed the previously-pending §3.8 "HTML Charting Tool Integration" item.
+**Status:** Done 2026-04-28 — landed in 7 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-**Goal:** make the indicator explorer browsable by the same taxonomy as the unified macro library, so related concepts can be viewed together regardless of region.
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | `d8d1e45` | Normalise concept values across raw-source libraries — `Labor Market` → `Labour` (8 rows), `Credit` → `Credit / Spreads` (11 rows), OECD CLI series `Growth` → `Leading Indicators` (1 row) |
+| 2 | `5fee5e8` | Server-side payload — new `INDICATOR_CONCEPT_ORDER` in `library_utils.py`; `build_macro_market` emits a parallel `groupsByConcept` tree alongside the existing region-based `groups` |
+| 3 | `ce796bd` | L/C/G cycle-timing badges in every macro section — `buildSimpleSection` now passes `cycle: meta.cycle_timing`; G colour palette adjusted from red to pink (`#ff7eb6`) to match the spec |
+| 4 | `cd84536` | View-mode toggle ("By Region" ↔ "By Concept") + alternate sidebar trees — covers Phase E composites (server-supplied `groupsByConcept`) and raw-macro sections (client-side regrouping via `meta.concept`/`subcategory`); checkbox state preserved across toggles |
+| 5 | `5758d57` | L/C/G filter chips + country dropdown — unified `applySidebarFilters()` evaluates search + variant + cycle + country in one pass; country dropdown auto-populated from data (12 canonical country codes alphabetical + 4 broad-region tags for multi-country composites) |
+| 6 | `c42d3ca` | Inline `L = Leading · C = Coincident · G = Lagging` legend beneath the cycle-filter chips |
+| 7 | this commit | Mark §2.5 Done; drop source-filter mention from spec (parked) |
 
-Today, `build_html.py` cuts the macro payloads by source/country (`build_macro_us` = FRED-USA, `build_macro_intl` = OECD/WB/IMF + non-USA FRED, `build_macro_survey` = DB.nomics + ifo). And `macro_indicator_library.csv` groups Phase E composites by region (US / UK / Europe / Japan / Asia / Global / FX & Commodities). Neither lets you find, say, all "Sentiment / Survey" indicators side-by-side.
+**Source filter parked.** The original spec mentioned a "source" filter (FRED / OECD / WB / IMF / DB.nomics / ifo) under the "By Concept" view. Parked during step 0 — composites read from multiple raw sources, making single-source attribution brittle, and the L/C/G + country filters cover the most useful filter axes. If a future need surfaces, revisit.
 
-**Plan:**
-
-1. **Sidebar restructure.** Add a top-level filter / view-mode toggle to `indicator_explorer.html`: **By Region** (current behaviour, default) ↔ **By Concept** (new). When "By Concept" is active, the sidebar groups by `concept` → `subcategory` → indicator, drawing from the new `concept` column.
-2. **Cycle-timing badge + filter.** Display L / C / G next to every indicator in both views. Optional "show only Leading" / "show only Coincident" / "show only Lagging" filter. Colour convention: blue (L) / amber (C) / pink (G), matching the `manuals/Macro Market Indicators Reference.docx` source-doc shading.
-3. **Country / source secondary filters.** When "By Concept" is active, allow filtering by country (12 codes) and / or source (FRED / OECD / WB / IMF / DB.nomics / ifo).
-4. **Legend.** Small inline legend explaining L/C/G + the source codes.
-5. **Build pipeline.** `build_html.py` already reads the unified `macro_economic_hist` metadata rows (incl. `Concept` and `cycle_timing`); the change is JS-side payload shape + sidebar rendering. No new fetcher needed.
-
-**Acceptance:** the explorer renders correctly under both view modes; switching between modes is instant (no re-fetch); the cycle-timing filter and the country / source filters work in the new view; the existing region-based view is preserved unchanged.
+**Acceptance verified:** the explorer renders correctly under both view modes; switching is instant and preserves checked-state for plotted series; cycle-timing and country filters work in both views; existing region-based view is preserved unchanged.
 
 ### 2.6 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
 
