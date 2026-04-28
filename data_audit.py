@@ -327,13 +327,146 @@ def _yfinance_truly_dead(suspects: set[str]) -> set[str]:
 
 
 # =============================================================================
-# Section B — Static checks
+# Section B — Static checks (no network)
 # =============================================================================
 
 def section_b_static_checks() -> dict:
-    """Stub for step 1c — returns empty buckets for now."""
-    return {"orphan_country_codes": [], "duplicate_indicator_ids": [],
-            "missing_calculators": [], "missing_columns": []}
+    """Local sanity checks against the registry CSVs and the Phase E calculator
+    code.  Each check returns a list of human-readable issue strings.
+
+    Checks performed:
+      - Orphan country codes: every country code referenced in any per-source
+        library exists in macro_library_countries.csv.
+      - Duplicate indicator ids: every `id` in macro_indicator_library.csv
+        appears exactly once.
+      - Missing calculators: every indicator id is registered in one of the
+        `_*_CALCULATORS` dicts in compute_macro_market.py.
+      - Missing _get_col columns: every `_get_col(mu, "X")` literal in the
+        calculator code resolves to a column that exists in
+        macro_economic_hist.csv.
+    """
+    return {
+        "orphan_country_codes":   _check_orphan_country_codes(),
+        "duplicate_indicator_ids": _check_duplicate_indicator_ids(),
+        "missing_calculators":    _check_missing_calculators(),
+        "missing_columns":        _check_missing_get_col_columns(),
+    }
+
+
+def _check_orphan_country_codes() -> list[str]:
+    """Every country code referenced in fred / oecd / dbnomics / ifo libraries
+    must exist in macro_library_countries.csv."""
+    countries_path = DATA / "macro_library_countries.csv"
+    if not countries_path.exists():
+        return ["macro_library_countries.csv missing — cannot check orphans"]
+
+    with countries_path.open(newline="") as f:
+        valid = {row["code"].strip() for row in csv.DictReader(f) if row.get("code")}
+
+    issues: list[str] = []
+    for lib_name in ("fred", "dbnomics", "ifo"):
+        path = DATA / f"macro_library_{lib_name}.csv"
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            for i, row in enumerate(csv.DictReader(f), start=2):  # +2 = header is row 1
+                code = (row.get("country") or "").strip()
+                if code and code not in valid:
+                    issues.append(
+                        f"{lib_name}.csv row {i}: country={code!r} not in registry "
+                        f"(series_id={row.get('series_id', '?').strip()})"
+                    )
+
+    # OECD has the multi-country fan-out via oecd_countries column (e.g. "AUS+CAN+...")
+    oecd_path = DATA / "macro_library_oecd.csv"
+    if oecd_path.exists():
+        with oecd_path.open(newline="") as f:
+            for i, row in enumerate(csv.DictReader(f), start=2):
+                codes_str = (row.get("oecd_countries") or "").strip()
+                if not codes_str:
+                    continue
+                for code in codes_str.split("+"):
+                    code = code.strip()
+                    if code and code not in valid:
+                        issues.append(
+                            f"oecd.csv row {i}: country={code!r} in oecd_countries "
+                            f"not in registry (series_id={row.get('series_id', '?').strip()})"
+                        )
+    return issues
+
+
+def _check_duplicate_indicator_ids() -> list[str]:
+    """Every `id` in macro_indicator_library.csv must be unique."""
+    path = DATA / "macro_indicator_library.csv"
+    if not path.exists():
+        return ["macro_indicator_library.csv missing"]
+
+    seen: dict[str, int] = {}
+    issues: list[str] = []
+    with path.open(newline="") as f:
+        for i, row in enumerate(csv.DictReader(f), start=2):
+            ind_id = (row.get("id") or "").strip()
+            if not ind_id:
+                continue
+            if ind_id in seen:
+                issues.append(
+                    f"duplicate indicator id {ind_id!r} at rows {seen[ind_id]} and {i}"
+                )
+            else:
+                seen[ind_id] = i
+    return issues
+
+
+def _check_missing_calculators() -> list[str]:
+    """Every indicator id in macro_indicator_library.csv must be registered as
+    a calculator in compute_macro_market.py."""
+    lib_path = DATA / "macro_indicator_library.csv"
+    code_path = ROOT / "compute_macro_market.py"
+    if not (lib_path.exists() and code_path.exists()):
+        return []
+
+    with lib_path.open(newline="") as f:
+        ind_ids = {
+            (row.get("id") or "").strip()
+            for row in csv.DictReader(f)
+            if (row.get("id") or "").strip()
+        }
+
+    code = code_path.read_text()
+    # Look for `"<ID>": _calc_...` inside *_CALCULATORS dicts.  Indicator IDs
+    # are mixed-case (e.g. EU_Cr1, US_Cr2) so we allow [A-Za-z0-9_].
+    import re
+    registered = set(re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"\s*:\s*_calc_', code))
+
+    missing = sorted(ind_ids - registered)
+    return [f"indicator {ind_id!r} declared in CSV but no calculator dispatch found"
+            for ind_id in missing]
+
+
+def _check_missing_get_col_columns() -> list[str]:
+    """Every `_get_col(mu, "X")` / `_get_col(mu_or_dbn, "X")` literal in
+    compute_macro_market.py must resolve to a column id that exists in
+    macro_economic_hist.csv."""
+    code_path = ROOT / "compute_macro_market.py"
+    hist_path = DATA / "macro_economic_hist.csv"
+    if not (code_path.exists() and hist_path.exists()):
+        return []
+
+    code = code_path.read_text()
+    import re
+    referenced = set(re.findall(r'_get_col\(\s*\w+\s*,\s*"([A-Z][A-Z0-9_]*)"', code))
+
+    # Read column ids from row 1 of the unified hist (Column ID metadata row)
+    with hist_path.open(newline="") as f:
+        first = next(csv.reader(f))
+    hist_cols = {c.strip() for c in first[1:]}
+
+    missing = sorted(referenced - hist_cols)
+    return [
+        f"_get_col(...,{col!r}) referenced in compute_macro_market.py but column "
+        f"absent from macro_economic_hist.csv"
+        for col in missing
+    ]
 
 
 # =============================================================================
