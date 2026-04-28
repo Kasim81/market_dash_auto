@@ -484,6 +484,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   background:#1f3a5f;border-color:#58a6ff;color:#58a6ff
 }
 
+/* ── filter controls (§2.5) ── */
+#filter-controls{
+  padding:8px 14px;border-bottom:1px solid #30363d;
+  flex-shrink:0;display:flex;flex-direction:column;gap:6px
+}
+#cycle-filter, #country-filter{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap
+}
+#cycle-filter label, #country-filter label{
+  font-size:11px;color:#8b949e;white-space:nowrap;min-width:48px
+}
+.cycle-chip{
+  padding:2px 9px;border-radius:5px;
+  font-size:11px;font-weight:600;cursor:pointer;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  background:#0d1117;border:1px solid #30363d;color:#484f58
+}
+.cycle-chip.L.active{
+  color:#58a6ff;background:#0d1f33;border-color:#1f3a5f
+}
+.cycle-chip.C.active{
+  color:#d29922;background:#272115;border-color:#3d2f0d
+}
+.cycle-chip.G.active{
+  color:#ff7eb6;background:#2d1727;border-color:#5c2547
+}
+#country-select{
+  flex:1;padding:4px 7px;border-radius:5px;
+  border:1px solid #30363d;background:#0d1117;
+  color:#c9d1d9;font-size:11px;outline:none;min-width:120px
+}
+#country-select:focus{border-color:#58a6ff}
+
 /* ── sidebar tree ── */
 #sidebar-tree{
   flex:1;overflow-y:auto;padding:4px 0 12px
@@ -840,6 +873,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <button class="view-mode-btn active" data-view="region">By Region</button>
     <button class="view-mode-btn" data-view="concept">By Concept</button>
   </div>
+  <div id="filter-controls">
+    <div id="cycle-filter">
+      <label>Cycle</label>
+      <button class="cycle-chip L active" data-cycle="L" title="Leading">L</button>
+      <button class="cycle-chip C active" data-cycle="C" title="Coincident">C</button>
+      <button class="cycle-chip G active" data-cycle="G" title="Lagging">G</button>
+    </div>
+    <div id="country-filter">
+      <label>Country</label>
+      <select id="country-select"><!-- options populated by JS --></select>
+    </div>
+  </div>
   <div id="coverage-warn"></div>
   <div id="sidebar-tree"><!-- populated by JS --></div>
 </div>
@@ -921,7 +966,9 @@ const STATE = {
   legendHeight: 0,
   showDetail: true,   // global toggle for legend formula rows
   searchQuery: '',
-  viewMode: 'region', // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
+  viewMode: 'region',                  // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
+  cycleFilter: new Set(['L','C','G']), // which L/C/G letters are visible (§2.5)
+  countryFilter: '',                   // '' = all countries, else one country/region tag (§2.5)
 };
 
 // ── concept ordering for the §2.5 By-Concept sidebar view ────────────────
@@ -1274,8 +1321,37 @@ function getSeriesDateRange(source, key){
   return {};
 }
 
+// Country/region tag for the §2.5 country filter.  Returns one of the 12
+// canonical country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE,
+// EA19, IND) for items tied to a single country, or a broad-region label
+// ("Europe", "Asia", "Global", "FX & Commodities") for Phase E composites
+// that span multiple countries.  Returns '' for items with no country tag
+// (e.g. market_comp series).
+function getItemCountry(source, key){
+  // Phase E composites: derive from indicator's group field
+  if(source === 'macro_market'){
+    const ind = MAIN_DATA.macro_market.indicators[key];
+    if(!ind) return '';
+    const g = (ind.meta || {}).group || '';
+    const map = {
+      'US':    'USA',
+      'UK':    'GBR',
+      'Japan': 'JPN',
+    };
+    return map[g] || g;
+  }
+  // Raw-macro series: meta.Country (capitalised) is one of the 12 codes
+  if(source === 'macro_us' || source === 'macro_intl' || source === 'macro_survey'){
+    const store = MAIN_DATA[source];
+    const s = store ? store.series[key] : null;
+    return s ? ((s.meta || {}).Country || '') : '';
+  }
+  return '';
+}
+
 function makeSeriesItem({source, key, id, name, cycle, variant}){
   const {first, last} = getSeriesDateRange(source, key);
+  const country       = getItemCountry(source, key);
 
   const wrap = el('div','series-item');
   wrap.dataset.source  = source;
@@ -1283,6 +1359,8 @@ function makeSeriesItem({source, key, id, name, cycle, variant}){
   if(variant)    wrap.dataset.variant   = variant;
   if(first)      wrap.dataset.firstDate = first;
   if(last)       wrap.dataset.lastDate  = last;
+  if(cycle)      wrap.dataset.cycle     = cycle;
+  if(country)    wrap.dataset.country   = country;
 
   const cb = document.createElement('input');
   cb.type  = 'checkbox';
@@ -1321,46 +1399,127 @@ function makeSeriesItem({source, key, id, name, cycle, variant}){
   return wrap;
 }
 
-// ── Search ─────────────────────────────────────────────────────────────────
-document.getElementById('search-box').addEventListener('input', function(){
-  const q = this.value.toLowerCase().trim();
-  STATE.searchQuery = q;
+// ── Sidebar filters (§2.5) ─────────────────────────────────────────────────
+// Unified filter pipeline: each .series-item is hidden if ANY of the active
+// filters reject it (search, market-data variant, cycle, country).  Empty
+// section containers are then collapsed visually.
+function applySidebarFilters(){
+  const q = STATE.searchQuery;
+  const cycleOn  = STATE.cycleFilter;
+  const countryOn = STATE.countryFilter;
 
   document.querySelectorAll('.series-item').forEach(item => {
+    let hide = false;
+
+    // Market-data variant filter (Local / USD)
     if(item.dataset.variant && item.dataset.variant !== STATE.mktVariant){
-      item.classList.add('hidden'); return;
+      hide = true;
     }
-    if(!q){ item.classList.remove('hidden'); return; }
-    const text = item.textContent.toLowerCase();
-    item.classList.toggle('hidden', !text.includes(q));
+
+    // Search filter
+    if(!hide && q){
+      const text = item.textContent.toLowerCase();
+      if(!text.includes(q)) hide = true;
+    }
+
+    // Cycle filter — only applies to items that have a cycle tag.  Items
+    // without one (e.g. market_comp series) are always shown.
+    if(!hide && item.dataset.cycle && !cycleOn.has(item.dataset.cycle)){
+      hide = true;
+    }
+
+    // Country filter — empty = "All".  Items without a country tag (e.g.
+    // market_comp series) are always shown.
+    if(!hide && countryOn && item.dataset.country && item.dataset.country !== countryOn){
+      hide = true;
+    }
+
+    item.classList.toggle('hidden', hide);
   });
 
-  // hide empty sub-group sections (no visible children)
+  // Hide empty sub-group sections (no visible children)
   document.querySelectorAll('.sgrp-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
     body.closest('.sgrp-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // hide empty group / asset-class bodies (no visible children)
+  // Hide empty group / asset-class bodies (no visible children)
   document.querySelectorAll('.grp-body,.ac-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
     body.closest('.grp-section,.ac-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // auto-open src sections that have matches
-  if(q){
+  // Auto-open src sections that have matches when search is active; restore
+  // collapsed sections when no narrowing filter is in effect.
+  const filtersActive = q || cycleOn.size < 3 || countryOn;
+  if(filtersActive){
     document.querySelectorAll('.src-body').forEach(body => {
       const anyVisible = Array.from(body.querySelectorAll('.series-item'))
         .some(i => !i.classList.contains('hidden'));
-      if(anyVisible){ body.classList.add('open');
-        body.previousElementSibling.querySelector('.src-arrow').classList.add('open'); }
+      if(anyVisible){
+        body.classList.add('open');
+        body.previousElementSibling.querySelector('.src-arrow').classList.add('open');
+      }
     });
-  } else {
-    // restore hidden groups and sub-groups
-    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section').forEach(s => s.style.display = '');
   }
+  if(!filtersActive){
+    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section')
+      .forEach(s => s.style.display = '');
+  }
+}
+
+document.getElementById('search-box').addEventListener('input', function(){
+  STATE.searchQuery = this.value.toLowerCase().trim();
+  applySidebarFilters();
+});
+
+// L/C/G chip toggles
+document.querySelectorAll('.cycle-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const letter = chip.dataset.cycle;
+    if(STATE.cycleFilter.has(letter)){
+      STATE.cycleFilter.delete(letter);
+      chip.classList.remove('active');
+    } else {
+      STATE.cycleFilter.add(letter);
+      chip.classList.add('active');
+    }
+    applySidebarFilters();
+  });
+});
+
+// Country dropdown — populated on first render from data; selection updates state
+function populateCountryFilterOptions(){
+  // Collect every country tag actually present in the rendered sidebar.
+  const tags = new Set();
+  document.querySelectorAll('.series-item[data-country]').forEach(item => {
+    tags.add(item.dataset.country);
+  });
+
+  // Order: 12 country codes first (alphabetical), then broad-region tags.
+  const COUNTRY_CODES = ['AUS','CAN','CHE','CHN','DEU','EA19','FRA','GBR','IND','ITA','JPN','USA'];
+  const codeTags  = COUNTRY_CODES.filter(c => tags.has(c));
+  const otherTags = Array.from(tags).filter(t => !COUNTRY_CODES.includes(t)).sort();
+
+  const sel = document.getElementById('country-select');
+  const current = STATE.countryFilter;
+  sel.innerHTML = '';
+  const optAll = document.createElement('option');
+  optAll.value = ''; optAll.textContent = 'All';
+  sel.appendChild(optAll);
+  [...codeTags, ...otherTags].forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  sel.value = current; // restore previous selection if it still exists
+}
+
+document.getElementById('country-select').addEventListener('change', function(){
+  STATE.countryFilter = this.value;
+  applySidebarFilters();
 });
 
 // ── Date controls ──────────────────────────────────────────────────────────
@@ -2461,16 +2620,15 @@ document.querySelectorAll('.view-mode-btn').forEach(btn => {
     });
     buildSidebar();
     syncSidebarCheckboxes();
-    // Re-apply the search filter so the freshly-rendered tree honours it
-    if(STATE.searchQuery){
-      const ev = new Event('input');
-      document.getElementById('search-box').dispatchEvent(ev);
-    }
+    populateCountryFilterOptions();
+    applySidebarFilters();
   });
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 buildSidebar();
+populateCountryFilterOptions();
+applySidebarFilters();
 setStatus('Ready — ' + Object.keys(MAIN_DATA.macro_market.indicators).length
   + ' indicators · ' + Object.keys(MAIN_DATA.macro_us.series).length
   + ' FRED series · ' + Object.keys(MAIN_DATA.macro_intl.series).length
