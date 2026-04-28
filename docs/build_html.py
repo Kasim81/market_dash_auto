@@ -237,6 +237,12 @@ def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]
     for ci in range(len(col_headers) - 1):             # skip Date
         raw_vals = meta_raw.iloc[:, ci + 1].tolist()   # +1 to skip the label column
         m = {label: str(v).strip() for label, v in zip(labels, raw_vals)}
+        # Lowercase aliases so JS code can read meta.concept / meta.subcategory
+        # consistently across raw-macro and Phase E payloads (load_indicator_meta
+        # already uses lowercase keys).  The original capitalised keys are
+        # preserved for backwards compatibility with existing readers.
+        m["concept"]     = m.get("Concept", "")
+        m["subcategory"] = m.get("Subcategory", "")
         meta[col_headers[ci + 1]] = m
 
     _UNIFIED_DF = df
@@ -460,6 +466,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   background:#238636;color:#fff;font-size:11px;cursor:pointer
 }
 #btn-apply-dates:hover{background:#2ea043}
+
+/* ── view-mode toggle ── */
+#view-mode-controls{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-bottom:1px solid #30363d;
+  flex-shrink:0;flex-wrap:wrap
+}
+#view-mode-controls label{font-size:11px;color:#8b949e;white-space:nowrap}
+.view-mode-btn{
+  padding:4px 10px;border-radius:5px;
+  border:1px solid #30363d;background:#0d1117;
+  color:#8b949e;font-size:11px;cursor:pointer
+}
+.view-mode-btn:hover{border-color:#58a6ff;color:#c9d1d9}
+.view-mode-btn.active{
+  background:#1f3a5f;border-color:#58a6ff;color:#58a6ff
+}
 
 /* ── sidebar tree ── */
 #sidebar-tree{
@@ -812,6 +835,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <input class="date-input" id="date-to" type="text" placeholder="today">
     <button id="btn-apply-dates">Apply</button>
   </div>
+  <div id="view-mode-controls">
+    <label>View</label>
+    <button class="view-mode-btn active" data-view="region">By Region</button>
+    <button class="view-mode-btn" data-view="concept">By Concept</button>
+  </div>
   <div id="coverage-warn"></div>
   <div id="sidebar-tree"><!-- populated by JS --></div>
 </div>
@@ -893,6 +921,31 @@ const STATE = {
   legendHeight: 0,
   showDetail: true,   // global toggle for legend formula rows
   searchQuery: '',
+  viewMode: 'region', // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
+};
+
+// ── concept ordering for the §2.5 By-Concept sidebar view ────────────────
+// Mirrors INDICATOR_CONCEPT_ORDER from library_utils.py.  Used as a sort key
+// when grouping raw-macro series by concept; Phase E composites already arrive
+// pre-sorted server-side via build_macro_market::groupsByConcept.
+const CONCEPT_ORDER = {
+  'Equity':              1,
+  'Rates / Yields':      2,
+  'Credit / Spreads':    3,
+  'Inflation':           4,
+  'Sentiment / Survey':  5,
+  'Leading Indicators':  6,
+  'Growth':              7,
+  'Labour':              8,
+  'Consumer':            9,
+  'Housing':            10,
+  'Manufacturing':      11,
+  'External / Trade':   12,
+  'Money / Liquidity':  13,
+  'Cross-Asset':        14,
+  'FX':                 15,
+  'Volatility':         16,
+  'Momentum':           17,
 };
 
 // ── colour palette for auto-assignment ────────────────────────────────────
@@ -972,7 +1025,11 @@ function buildMacroMarketSection(){
 
   const body = el('div','src-body open');
 
-  Object.entries(mm.groups).forEach(([groupName, subGroups]) => {
+  // §2.5: pick the tree based on viewMode.  Server provides both:
+  //   mm.groups          — region → sub_group → [ids]   (default)
+  //   mm.groupsByConcept — concept → subcategory → [ids]
+  const tree = STATE.viewMode === 'concept' ? mm.groupsByConcept : mm.groups;
+  Object.entries(tree).forEach(([groupName, subGroups]) => {
     body.appendChild(buildGroupSection(groupName, subGroups, mm.indicators));
   });
 
@@ -981,7 +1038,10 @@ function buildMacroMarketSection(){
   return wrap;
 }
 
-function buildGroupSection(groupName, subGroups, indicators){
+// `rawMacroOpts` (optional, §2.5): when present, render items from a raw-macro
+// seriesMap (US/Intl/Survey) instead of from the Phase E `indicators` dict.
+// Shape: { source: 'macro_us' | 'macro_intl' | 'macro_survey', seriesMap, nameFn }
+function buildGroupSection(groupName, subGroups, indicators, rawMacroOpts){
   // subGroups = { sub_group_name: [indicator_ids], ... }
   const totalIds = Object.values(subGroups).reduce((n, ids) => n + ids.length, 0);
 
@@ -996,7 +1056,7 @@ function buildGroupSection(groupName, subGroups, indicators){
   const body = el('div','grp-body open');
 
   Object.entries(subGroups).forEach(([sgName, ids]) => {
-    body.appendChild(buildSubGroupSection(sgName, ids, indicators));
+    body.appendChild(buildSubGroupSection(sgName, ids, indicators, rawMacroOpts));
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1004,7 +1064,7 @@ function buildGroupSection(groupName, subGroups, indicators){
   return wrap;
 }
 
-function buildSubGroupSection(sgName, ids, indicators){
+function buildSubGroupSection(sgName, ids, indicators, rawMacroOpts){
   const wrap = el('div','sgrp-section');
   const hdr  = el('div','sgrp-header');
   const arr  = makeArrow('sgrp-arrow open');
@@ -1014,18 +1074,33 @@ function buildSubGroupSection(sgName, ids, indicators){
   wrap.appendChild(hdr);
 
   const body = el('div','sgrp-body open');
-  ids.forEach(indId => {
-    const ind = indicators[indId];
-    if(!ind) return;
-    const meta = ind.meta || {};
-    const shortName = meta.category || indId;
-    body.appendChild(makeSeriesItem({
-      source: 'macro_market',
-      key:    indId,
-      id:     indId,
-      name:   shortName,
-      cycle:  meta.cycle_timing || '',
-    }));
+  ids.forEach(itemKey => {
+    if(rawMacroOpts){
+      // Raw-macro by-concept path: itemKey is a column id in seriesMap
+      const s = rawMacroOpts.seriesMap[itemKey];
+      if(!s) return;
+      const meta = s.meta || {};
+      body.appendChild(makeSeriesItem({
+        source: rawMacroOpts.source,
+        key:    itemKey,
+        id:     itemKey,
+        name:   rawMacroOpts.nameFn(meta),
+        cycle:  meta.cycle_timing || '',
+      }));
+    } else {
+      // Phase E composites: itemKey is an indicator id in indicators
+      const ind = indicators[itemKey];
+      if(!ind) return;
+      const meta = ind.meta || {};
+      const shortName = meta.category || itemKey;
+      body.appendChild(makeSeriesItem({
+        source: 'macro_market',
+        key:    itemKey,
+        id:     itemKey,
+        name:   shortName,
+        cycle:  meta.cycle_timing || '',
+      }));
+    }
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1045,17 +1120,44 @@ function buildSimpleSection(title, seriesMap, dates, source, nameFn){
   wrap.appendChild(hdr);
 
   const body = el('div','src-body');
-  keys.forEach(key => {
-    const s = seriesMap[key];
-    const meta = s.meta || {};
-    body.appendChild(makeSeriesItem({
-      source,
-      key,
-      id:    key,
-      name:  nameFn(meta),
-      cycle: meta.cycle_timing || '',
-    }));
-  });
+
+  if(STATE.viewMode === 'concept'){
+    // §2.5: group keys by concept → subcategory.  Uses lowercase aliases
+    // (m.concept / m.subcategory) added in _load_unified_hist_once.
+    const tree = {};
+    keys.forEach(key => {
+      const m = seriesMap[key].meta || {};
+      const c  = m.concept     || 'Uncategorised';
+      const sc = m.subcategory || '—';
+      tree[c] = tree[c] || {};
+      tree[c][sc] = tree[c][sc] || [];
+      tree[c][sc].push(key);
+    });
+    const ordered = Object.keys(tree).sort((a, b) => {
+      return (CONCEPT_ORDER[a] || 99) - (CONCEPT_ORDER[b] || 99);
+    });
+    ordered.forEach(concept => {
+      const subGroups = {};
+      Object.keys(tree[concept]).sort().forEach(sc => {
+        subGroups[sc] = tree[concept][sc];
+      });
+      body.appendChild(buildGroupSection(concept, subGroups, null, {
+        source, seriesMap, nameFn,
+      }));
+    });
+  } else {
+    keys.forEach(key => {
+      const s = seriesMap[key];
+      const meta = s.meta || {};
+      body.appendChild(makeSeriesItem({
+        source,
+        key,
+        id:    key,
+        name:  nameFn(meta),
+        cycle: meta.cycle_timing || '',
+      }));
+    });
+  }
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
   wrap.appendChild(body);
@@ -2335,6 +2437,36 @@ document.getElementById('btn-detail-toggle').addEventListener('click', () => {
     el.style.display = STATE.showDetail ? '' : 'none';
   });
   requestAnimationFrame(() => updateChartMargin());
+});
+
+// ── §2.5 view-mode toggle ──────────────────────────────────────────────────
+function syncSidebarCheckboxes(){
+  // After a sidebar re-render, mirror STATE.active back onto the new
+  // checkbox elements so the user sees their plotted series stay checked.
+  STATE.active.forEach(s => {
+    const cb = document.querySelector(
+      `.series-cb[data-source="${s.source}"][data-key="${s.key.replace(/"/g, '\\"')}"]`
+    );
+    if(cb) cb.checked = true;
+  });
+}
+
+document.querySelectorAll('.view-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const next = btn.dataset.view; // 'region' | 'concept'
+    if(STATE.viewMode === next) return;
+    STATE.viewMode = next;
+    document.querySelectorAll('.view-mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === next);
+    });
+    buildSidebar();
+    syncSidebarCheckboxes();
+    // Re-apply the search filter so the freshly-rendered tree honours it
+    if(STATE.searchQuery){
+      const ev = new Event('input');
+      document.getElementById('search-box').dispatchEvent(ev);
+    }
+  });
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────
