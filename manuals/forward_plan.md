@@ -302,6 +302,8 @@ Design:
 
 #### Sub-track 4 — Replace dead yfinance tickers where alternatives exist
 
+**Status:** Done 2026-04-28 — all 22 dead tickers triaged. The next pipeline run will regenerate `pipeline.log` without these tickers and Section A of the daily audit will clean up automatically.
+
 The 22 dead tickers (first-run snapshot):
 
 ```
@@ -310,12 +312,11 @@ ISFA.L · SENSEXBEES.NS · ^CNXSC · ^RMCCG · ^RMCCV · ^SP500-253020 · ^SP500
 ^SXEP · ^SXKP · ^SXNP · ^TOPX · ^TSXV · ^TX60
 ```
 
-Some have known replacements:
-- `^TOPX` (TOPIX) → no free yfinance equivalent; accept gap or use `EWJ`/`1306.T` as proxy
-- `^TX60` (S&P/TSX 60) → no free equivalent; `XIU.TO` ETF is the proxy already in the library
-- `^SXEP` family (STOXX 600 sectors) → no free yfinance source; SPDR sector UCITS ETFs (`EXH3.DE` etc.) already cover this and are in the library
+**Disposition (per `data/removed_tickers.csv`):**
 
-For each dead ticker: either find a replacement and update `index_library.csv`, or accept the gap and let sub-track 3 mark it UNAVAILABLE.
+- **17 PR-blanks (tr_retained)** — TR ETF proxy on the same row remained working in the audit, so the PR field was blanked and `data_source` flipped to `yfinance TR`. Covers all 9 STOXX 600 sectors (TR proxies `EXH1/3/4/9.DE`, `EXI5.DE`, `EXV1/2/3/4.DE`); ^SP500G→IVW, ^SP500V→IVE, ^RMCCG→IWP, ^RMCCV→IWS; ^TOPX→1306.T, ^TX60→XIU.TO, ^TSXV→XCS.TO; ^CNXSC→SMALLCAP.NS.
+- **2 TR-blanks (pr_retained)** — `ISFA.L` (TR for FTSE All-Share, PR `^FTAS` retained); `SENSEXBEES.NS` (TR for S&P BSE Sensex, PR `^BSESN` retained).
+- **3 row removals (none)** — `^SP500-253020`, `^SP500-351030`, `^SP500-601010`. No TR proxy was configured, and grep confirmed no Phase E indicator references them by name. No calculator hashing-out required.
 
 **Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. Schema: `date_removed, ticker, ticker_field (pr|tr|row), library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred), notes`. Removal rules (agreed 2026-04-28):
 
@@ -323,7 +324,9 @@ For each dead ticker: either find a replacement and update `index_library.csv`, 
 - TR dead, PR working & correctly mapped → blank the TR field, keep the row, log `replacement_status=pr_retained`.
 - Both PR and TR dead → remove the entire row, log `replacement_status=none`. Any `_calc_*` indicator referencing the removed `name` is hashed out with a one-line `# DISABLED <date>: source ticker removed, see removed_tickers.csv` comment until a replacement is approved (proxies are NEVER auto-wired without explicit user approval).
 
-Hist-file column drops are handled by `library_sync.py` — the source-of-truth library CSV is the only file edited by hand; the sync utility prunes orphan columns from `data/market_data_comp_hist.csv` and archives them under `data/_archived_columns/`. `data_audit.py`'s static-checks section reports any `_hist.csv` columns that aren't present in their source-of-truth library CSV (registry drift).
+Hist-file column drops are handled by `library_sync.py` — the source-of-truth library CSV is the only file edited by hand; the sync utility prunes orphan columns from `data/market_data_comp_hist.csv` and archives them under `data/_archived_columns/`. `data_audit.py`'s static-checks section reports any `_hist.csv` columns that aren't present in their source-of-truth library CSV (registry drift). Drift after the 2026-04-28 triage: 0.
+
+**Outstanding gaps (deferred — proxies require explicit approval per §3.5).** All 17 PR-blanked rows now rely solely on the TR ETF proxy; the underlying index PR series is gone from yfinance for the foreseeable future. Where a replacement PR ticker becomes available (e.g. via §3.5 Community Datasets Review) the row's `ticker_yfinance_pr` can be re-populated.
 
 #### Acceptance
 
