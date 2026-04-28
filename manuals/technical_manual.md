@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-6 top-level Python modules + 8-module `sources/` package + `docs/build_html.py`, totalling ~8,866 lines. Configuration: 9 input CSV libraries (1 instrument library + 7 raw-source libraries + 1 composite-indicator library) plus `reference_indicators.csv` for the cycle-timing cross-reference. Output: 7 CSV files (one per active Sheets tab).
+7 top-level Python modules (incl. `data_audit.py`) + 8-module `sources/` package + `docs/build_html.py`, totalling ~9,400 lines. Configuration: 9 input CSV libraries (1 instrument library + 7 raw-source libraries + 1 composite-indicator library) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit. Output: 7 data CSVs (one per active Sheets tab) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -65,6 +65,9 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (733 lines)
 ├── compute_macro_market.py        # 92 macro-market composite indicators (2,103 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (347 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness (§2.6 v2; ~530 lines)
+├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
+├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -97,6 +100,9 @@ market_dash_auto/
 │   ├── macro_indicator_library.csv    # 92 macro-market indicator definitions
 │   ├── reference_indicators.csv       # 206-row L/C/G cycle-timing cross-reference
 │   │
+│   ├── # Audit infrastructure (§2.6 v2):
+│   ├── freshness_thresholds.csv       # Per-frequency staleness defaults (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d)
+│   │
 │   ├── # Pipeline outputs (regenerated each run, committed to git):
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
@@ -128,7 +134,7 @@ market_dash_auto/
 │   └── indicator_groups_review_UPDATED.xlsx  # Output of that review — drove macro_indicator_library.csv
 │
 └── .github/workflows/
-    └── update_data.yml            # GitHub Actions daily scheduler (pipes both runs through `tee pipeline.log` and commits the log on every run)
+    └── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits the log + audit + data CSVs
 ```
 
 ---
@@ -341,7 +347,8 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
 | `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4) — populated for all 92 indicators using the canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum). |
-| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.8 coverage analysis. |
+| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.3 coverage analysis. |
+| `freshness_thresholds.csv` | 5 | `data_audit.py` | Per-frequency staleness tolerance (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) used by §2.6's daily integrated audit. Per-row override available via the `freshness_override_days` column on every `macro_library_*.csv` (added 2026-04-28). |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
@@ -355,6 +362,8 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_market.csv` | ~92 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `pipeline.log` | n/a | GitHub Actions | Captured stdout+stderr of the most recent run (committed by the `if: always()` step in `update_data.yml` — useful for diagnosing failures without needing to download artefacts) |
+| `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness). Regenerated each daily run. |
+| `audit_comment.md` | n/a | `data_audit.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. |
 
 ---
 
@@ -766,6 +775,44 @@ Each indicator goes through:
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
+### 9.8 `data_audit.py` (630 lines)
+
+**Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
+
+Runs as a CI step at the end of `update_data.yml`; never fails the build (warning channel, not gate).
+
+#### Three audit sections
+
+| Section | Purpose | Mechanism |
+|---|---|---|
+| **A — Fetch outcomes** | Catch broken FRED IDs, dead yfinance tickers, persistent HTTP errors | Scrape `pipeline.log` post-run for known per-series patterns (`HTTP <code> on X — skipping`, `possibly delisted`, `Quote not found for symbol: X`, `Period 'max' is invalid`). Retried-then-recovered transients are filtered out by only matching the `— skipping` suffix. yfinance suspects are cross-checked against the latest non-empty row of `market_data_comp_hist.csv` to filter transient warnings. |
+| **B — Static checks** | Catch registry / code drift before it shows up at runtime | Local sanity checks: orphan country codes (every code referenced in `fred` / `oecd` / `dbnomics` / `ifo` libraries exists in `macro_library_countries.csv`); indicator-id uniqueness; calculator registration (every `id` in `macro_indicator_library.csv` is registered as `"<id>": _calc_…` in `compute_macro_market.py`); `_get_col(...)` column existence (every literal in the calculator code resolves to a column in `macro_economic_hist.csv`). |
+| **C — Value-change staleness** | Catch silent publisher freezes that the Friday-spine forward-fill would otherwise mask | For each column in the unified hist, find the last *value-change* date (not just last non-null cell — forward-fill makes that wrong). Compare age against per-frequency tolerance from `data/freshness_thresholds.csv` plus per-row `freshness_override_days` overrides. Classify FRESH / STALE (1×–2×) / EXPIRED (>2× or no obs). |
+
+#### Outputs
+
+- `data_audit.txt` — full sorted plaintext report grouped by section + status.
+- `audit_comment.md` — Markdown body posted to the perpetual `daily-audit`-labelled GitHub Issue. First line is the one-sentence summary:
+  - `## Daily audit — 2026-04-28 — **ALL CLEAN**`
+  - `## Daily audit — 2026-04-28 — **100 ISSUES** (24 fetch errors, 1 static-check failure, 75 stale series)`
+  - Detail follows in collapsible `<details>` blocks; rows capped at 30-50 per category for readability (full detail in `data_audit.txt`).
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `load_thresholds()` | Read `data/freshness_thresholds.csv` → `{frequency: days}` dict |
+| `load_overrides()` | Walk every per-source library CSV; collect per-row `freshness_override_days` → `{(source, series_id): days}` |
+| `load_macro_hist()` | Read `data/macro_economic_hist.csv`; for each column, find last value-change date (walks forward through non-null cells, tracks date when value differs from previous) |
+| `classify_age(age, threshold)` | FRESH / STALE / EXPIRED per the 1× / 2× tolerance bands |
+| `section_a_fetch_outcomes()` | Scrape `pipeline.log` + cross-check against `market_data_comp_hist.csv` |
+| `_yfinance_truly_dead(suspects)` | Filter yfinance suspects: keep only those without data in the latest comp-hist row |
+| `section_b_static_checks()` | Run the 4 sub-checks (orphan countries / duplicate ids / missing calculators / missing columns) |
+| `section_c_staleness()` | Bucket every series into FRESH / STALE / EXPIRED |
+| `render_report(sections)` | Build the plaintext `data_audit.txt` |
+| `render_comment(sections)` | Build the GitHub Issue Markdown `audit_comment.md` with first-line summary |
+| `main()` | Orchestrate; always returns exit code 0 (warning channel) |
+
 ---
 
 ## 10. FX Conversion Logic
@@ -1060,6 +1107,23 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 - **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
 - **Run timeout:** Currently set to 120 minutes.
 - **Pipeline log capture (PR1, 2026-04-25):** the workflow pipes both Python steps through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits `pipeline.log` to the repo on every run alongside the data CSVs and explorer files. Useful for diagnosing failures without needing to download artefacts. The committed log is the artefact the §2.1 verification reads.
+- **Permissions:** the workflow has `contents: write` (for git push) plus `issues: write` (added 2026-04-28 for the §2.6 v2 audit-comment posting). No SMTP secrets are required — the daily audit notification uses GitHub's native issue-notification email.
+
+### Daily audit notification flow (§2.6 v2)
+
+The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. Mechanism:
+
+- **Audit step.** `python data_audit.py` runs at the end of `update_data.yml` (after fetch + explorer rebuild). Three sections: fetch outcomes from `pipeline.log` scrape; static checks against the registry CSVs; value-change staleness against the unified hist. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Posting step.** Uses the pre-installed `gh` CLI:
+  1. Ensure a `daily-audit` label exists (`gh label create daily-audit ...`, idempotent).
+  2. Find the open issue with that label, or create it on first run with title "Daily Audit Log".
+  3. Post `audit_comment.md` as a comment on the issue: `gh issue comment $ISSUE_NUM --body-file audit_comment.md`.
+- **User notification.** GitHub's native notification settings email watchers when an issue gains a comment — so the daily comment triggers the alert with no extra infrastructure.
+- **Self-healing on overgrowth.** If the comment thread becomes unwieldy, close the issue manually — the next daily run will create a fresh one and resume posting there.
+- **First-line summary format.** `audit_comment.md`'s first line is always one of:
+  - `## Daily audit — YYYY-MM-DD — **ALL CLEAN**`
+  - `## Daily audit — YYYY-MM-DD — **N ISSUES** (X fetch errors, Y static-check failures, Z stale series)`
+- **Build-gate behaviour.** The audit step is non-fatal (`exit 0` always); a stale series doesn't fail the workflow. The audit is purely a warning channel.
 
 ### Google Sheets
 
