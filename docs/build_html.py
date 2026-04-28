@@ -25,7 +25,11 @@ DOCS   = ROOT / "docs"
 
 # Allow importing library_utils from the repo root
 sys.path.insert(0, str(ROOT))
-from library_utils import INDICATOR_GROUP_ORDER, INDICATOR_SUB_GROUP_ORDER
+from library_utils import (
+    INDICATOR_GROUP_ORDER,
+    INDICATOR_SUB_GROUP_ORDER,
+    INDICATOR_CONCEPT_ORDER,
+)
 
 MACRO_MKT       = DATA / "macro_market_hist.csv"
 MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
@@ -165,7 +169,37 @@ def build_macro_market(ind_meta: dict) -> dict:
     if ungrouped:
         groups["Other"] = {"Ungrouped": sorted(ungrouped)}
 
-    return {"dates": dates, "indicators": indicators, "groups": groups}
+    # Parallel "By Concept" tree (§2.5): concept → subcategory → [ids].
+    # Drives the alternate sidebar view; built from the per-indicator concept
+    # and subcategory fields populated in macro_indicator_library.csv (§2.4).
+    raw_concepts: dict[str, dict[str, list]] = {}
+    unconcepted = set()
+    for ind_id in present_ids:
+        m = ind_meta.get(ind_id, {})
+        c   = m.get("concept", "")
+        sc  = m.get("subcategory", "")
+        if c:
+            raw_concepts.setdefault(c, {}).setdefault(sc or "—", []).append(ind_id)
+        else:
+            unconcepted.add(ind_id)
+
+    groups_by_concept: dict[str, dict[str, list]] = {}
+    for c in sorted(raw_concepts,
+                    key=lambda c: INDICATOR_CONCEPT_ORDER.get(c, 99)):
+        sub: dict[str, list] = {}
+        for sc in sorted(raw_concepts[c]):
+            sub[sc] = sorted(raw_concepts[c][sc])
+        groups_by_concept[c] = sub
+
+    if unconcepted:
+        groups_by_concept["Uncategorised"] = {"—": sorted(unconcepted)}
+
+    return {
+        "dates": dates,
+        "indicators": indicators,
+        "groups": groups,
+        "groupsByConcept": groups_by_concept,
+    }
 
 
 # ── 3-5. unified macro_economic_hist → macro_us / macro_intl / macro_survey ──

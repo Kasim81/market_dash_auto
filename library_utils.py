@@ -176,6 +176,35 @@ INDICATOR_SUB_GROUP_ORDER = {
     "Inflation":               29,
 }
 
+# Sort order for the new "By Concept" sidebar view (§2.5).  Mirrors the canonical
+# 17-concept taxonomy from forward_plan.md §2.4 step 1; ordered roughly by
+# typical macro-strategist navigation priority (asset-class lenses first,
+# then forward-looking signals, then real-economy aggregates, then financial
+# plumbing and signal-construction concepts).
+INDICATOR_CONCEPT_ORDER = {
+    # Asset-class lenses
+    "Equity":              1,
+    "Rates / Yields":      2,
+    "Credit / Spreads":    3,
+    "Inflation":           4,
+    # Forward-looking
+    "Sentiment / Survey":  5,
+    "Leading Indicators":  6,
+    # Real economy
+    "Growth":              7,
+    "Labour":              8,
+    "Consumer":            9,
+    "Housing":            10,
+    "Manufacturing":      11,
+    "External / Trade":   12,
+    # Financial / signal-construction
+    "Money / Liquidity":  13,
+    "Cross-Asset":        14,
+    "FX":                 15,
+    "Volatility":         16,
+    "Momentum":           17,
+}
+
 # ---------------------------------------------------------------------------
 # SORT KEY FUNCTION
 # ---------------------------------------------------------------------------
