@@ -2,7 +2,8 @@
 build_html.py
 =============
 Generates indicator_explorer.html (and companion indicator_explorer_mkt.js)
-from the _hist CSVs (macro_market, macro_us, macro_intl, survey, market_comp).
+from the _hist CSVs (macro_market_hist, macro_economic_hist, market_data_comp_hist)
+plus the macro_indicator_library and macro_library_countries registries.
 Also writes intermediate payload JSON files for
 inspection.
 
@@ -35,6 +36,7 @@ MACRO_MKT       = DATA / "macro_market_hist.csv"
 MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
 MKT_COMP        = DATA / "market_data_comp_hist.csv"
 IND_LIB         = DATA / "macro_indicator_library.csv"
+COUNTRIES_LIB   = DATA / "macro_library_countries.csv"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -202,12 +204,13 @@ def build_macro_market(ind_meta: dict) -> dict:
     }
 
 
-# ── 3-5. unified macro_economic_hist → macro_us / macro_intl / macro_survey ──
+# ── 3. unified macro_economic_hist → merged Economic Data payload ────────────
 #
 # The unified macro_economic_hist.csv holds every raw economic series keyed by
-# canonical column name.  The three explorer payloads (macro_us / macro_intl /
-# macro_survey) are now filtered slices of that single file rather than reads
-# from three separate files.
+# canonical column name.  build_macro_economic() returns a single payload
+# spanning every source (FRED + OECD + WB + IMF + DB.nomics + ifo); the JS
+# sidebar groups it by country (default By Region view) or concept (By Concept
+# view) — see §2.5 of forward_plan.md.
 #
 # File layout written by fetch_macro_economic.py:
 #   Rows 0–13 : 14 metadata rows (label in col 0, per-column values in col 1+)
@@ -276,35 +279,45 @@ def _build_payload(keep_column) -> dict:
     return {"dates": dates, "series": series}
 
 
-def build_macro_us() -> dict:
-    """Slice of the unified hist: FRED US single-country rows."""
-    return _build_payload(
-        lambda m: m.get("Source") == "FRED" and m.get("Country") == "USA"
-    )
-
-
-def build_macro_intl() -> dict:
+def build_macro_economic() -> dict:
+    """Single merged payload spanning every raw-macro source — FRED (US +
+    intl), OECD, World Bank, IMF, DB.nomics, ifo.  Powers the unified
+    "Economic Data" sidebar section (§2.5 restructure) where the user
+    browses all raw indicators by country (default By Region view) or by
+    concept (By Concept view), with the per-source distinction kept only as
+    filterable metadata in `meta.Source`.
     """
-    Slice of the unified hist: international macro (OECD / World Bank / IMF
-    multi-country fan-outs plus FRED rows for non-USA countries).
+    return _build_payload(lambda m: m.get("Source") in {
+        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo",
+    })
+
+
+# ── 6. countries registry — drives sidebar by-country grouping & dropdown ────
+
+def load_countries() -> list[dict]:
+    """Read data/macro_library_countries.csv — the single source of truth
+    for the 12 country codes (per §0 of forward_plan.md).  Returned in CSV
+    row order so the sidebar renders countries in the same order the user
+    sees in the registry.
+
+    Each entry: {code, name, region}.  wb_code / imf_code intentionally
+    omitted — those are provider-mapping concerns, not display concerns.
     """
-    intl_multi = {"OECD", "World Bank", "IMF"}
-    return _build_payload(
-        lambda m: (
-            m.get("Source") in intl_multi
-            or (m.get("Source") == "FRED" and m.get("Country") not in ("USA", ""))
-        )
-    )
+    df = pd.read_csv(COUNTRIES_LIB)
+    out: list[dict] = []
+    for _, row in df.iterrows():
+        code = str(row.get("code", "")).strip()
+        if not code:
+            continue
+        out.append({
+            "code":   code,
+            "name":   str(row.get("name", "")).strip(),
+            "region": str(row.get("region", "")).strip(),
+        })
+    return out
 
 
-def build_macro_survey() -> dict:
-    """Slice of the unified hist: DB.nomics + ifo survey sources."""
-    return _build_payload(
-        lambda m: m.get("Source") in {"DB.nomics", "ifo"}
-    )
-
-
-# ── 6. market_data_comp_hist ──────────────────────────────────────────────────
+# ── 7. market_data_comp_hist ──────────────────────────────────────────────────
 
 def build_market_comp() -> dict:
     # rows 0-10 = metadata, row 11 = headers, row 12+ = data
@@ -355,27 +368,27 @@ def main():
     print("Loading indicator metadata...")
     ind_meta = load_indicator_meta()
 
+    print("Loading countries registry...")
+    countries = load_countries()
+
     print("Building macro_market payload...")
     macro_mkt_data = build_macro_market(ind_meta)
 
-    print("Building macro_us payload...")
-    macro_us_data = build_macro_us()
-
-    print("Building macro_intl payload...")
-    macro_intl_data = build_macro_intl()
-
-    print("Building macro_survey payload...")
-    macro_survey_data = build_macro_survey()
+    print("Building macro_economic payload (merged: FRED + OECD + WB + IMF + DB.nomics + ifo)...")
+    macro_econ_data = build_macro_economic()
 
     print("Building market_comp payload...")
     mkt_comp_data = build_market_comp()
 
     # ── assemble payloads ─────────────────────────────────────────────────────
+    # Sidebar layout (post §2.5 restructure):
+    #   1. Macro Market Indicators (Phase E composites)
+    #   2. Economic Data (every raw-macro source merged)
+    #   3. Market Data
     main_payload = {
-        "macro_market": macro_mkt_data,
-        "macro_us":     macro_us_data,
-        "macro_intl":   macro_intl_data,
-        "macro_survey": macro_survey_data,
+        "macro_market":   macro_mkt_data,
+        "macro_economic": macro_econ_data,
+        "countries":      countries,
     }
 
     # ── write output files ────────────────────────────────────────────────────
@@ -384,12 +397,12 @@ def main():
 
     # ── summary ───────────────────────────────────────────────────────────────
     print("\n── Summary ──────────────────────────────────────────────────────")
-    print(f"macro_market : {len(macro_mkt_data['indicators'])} indicators "
+    print(f"macro_market   : {len(macro_mkt_data['indicators'])} indicators "
           f"across {len(macro_mkt_data['groups'])} groups")
-    print(f"macro_us     : {len(macro_us_data['series'])} FRED series")
-    print(f"macro_intl   : {len(macro_intl_data['series'])} intl series")
-    print(f"macro_survey : {len(macro_survey_data['series'])} survey series")
-    print(f"market_comp  : {len(mkt_comp_data['series'])} series "
+    print(f"macro_economic : {len(macro_econ_data['series'])} raw series "
+          f"(merged FRED + OECD + WB + IMF + DB.nomics + ifo)")
+    print(f"countries      : {len(countries)} codes from macro_library_countries.csv")
+    print(f"market_comp    : {len(mkt_comp_data['series'])} series "
           f"across {len(mkt_comp_data['groups'])} asset classes")
     print(f"  asset classes: {list(mkt_comp_data['groups'].keys())}")
     html_mb = (DOCS / 'indicator_explorer.html').stat().st_size / 1e6
@@ -1031,35 +1044,14 @@ function buildSidebar(){
   const tree = document.getElementById('sidebar-tree');
   tree.innerHTML = '';
 
-  // 1. Macro Market Indicators
+  // 1. Macro Market Indicators (Phase E composites)
   tree.appendChild(buildMacroMarketSection());
-  // 2. US Economic Data (FRED)
-  tree.appendChild(buildSimpleSection(
-    'US Economic Data (FRED)',
-    MAIN_DATA.macro_us.series,
-    MAIN_DATA.macro_us.dates,
-    'macro_us',
-    s => s['Name'] || s['Series ID'] || '',
-  ));
-  // 3. International Data
-  tree.appendChild(buildSimpleSection(
-    'International Data',
-    MAIN_DATA.macro_intl.series,
-    MAIN_DATA.macro_intl.dates,
-    'macro_intl',
-    s => (s['Country'] ? s['Country'] + ' — ' : '') + (s['Indicator'] || s['Column ID'] || ''),
-  ));
-  // 4. Survey Data (DB.nomics + ifo)
-  if(MAIN_DATA.macro_survey && Object.keys(MAIN_DATA.macro_survey.series).length > 0){
-    tree.appendChild(buildSimpleSection(
-      'Survey Data (DB.nomics / ifo)',
-      MAIN_DATA.macro_survey.series,
-      MAIN_DATA.macro_survey.dates,
-      'macro_survey',
-      s => (s['Source'] ? s['Source'] + ' — ' : '') + (s['Indicator'] || s['Column ID'] || ''),
-    ));
-  }
-  // 5. Market Data
+  // 2. Economic Data (every raw-macro source merged: FRED + OECD + WB +
+  //    IMF + DB.nomics + ifo).  By Region view groups by country (using
+  //    the registry order from MAIN_DATA.countries); By Concept view
+  //    groups by concept → subcategory.
+  tree.appendChild(buildEconomicDataSection());
+  // 3. Market Data
   tree.appendChild(buildMarketSection());
 }
 
@@ -1092,8 +1084,8 @@ function buildMacroMarketSection(){
 }
 
 // `rawMacroOpts` (optional, §2.5): when present, render items from a raw-macro
-// seriesMap (US/Intl/Survey) instead of from the Phase E `indicators` dict.
-// Shape: { source: 'macro_us' | 'macro_intl' | 'macro_survey', seriesMap, nameFn }
+// seriesMap (the merged macro_economic payload) instead of the Phase E
+// `indicators` dict.  Shape: { source: 'macro_economic', seriesMap, nameFn }.
 function buildGroupSection(groupName, subGroups, indicators, rawMacroOpts){
   // subGroups = { sub_group_name: [indicator_ids], ... }
   const totalIds = Object.values(subGroups).reduce((n, ids) => n + ids.length, 0);
@@ -1162,21 +1154,37 @@ function buildSubGroupSection(sgName, ids, indicators, rawMacroOpts){
 }
 
 // ── Simple (FRED / intl) section ───────────────────────────────────────────
-function buildSimpleSection(title, seriesMap, dates, source, nameFn){
-  const keys  = Object.keys(seriesMap);
-  const wrap  = el('div','src-section');
-  const hdr   = el('div','src-header');
-  const arr   = makeArrow('src-arrow');
-  const ttl   = el('span','src-title', title);
-  const cnt   = el('span','src-count', keys.length);
+// ── Economic Data section (§2.5 restructure) ──────────────────────────────
+// Single merged sidebar section spanning every raw-macro source (FRED, OECD,
+// WB, IMF, DB.nomics, ifo).  By Region view groups by country (registry order
+// from MAIN_DATA.countries); By Concept view groups by concept → subcategory.
+function buildEconomicDataSection(){
+  const econ    = MAIN_DATA.macro_economic;
+  const seriesMap = econ.series;
+  const keys    = Object.keys(seriesMap);
+
+  const wrap = el('div','src-section');
+  const hdr  = el('div','src-header');
+  const arr  = makeArrow('src-arrow');
+  const ttl  = el('span','src-title','Economic Data');
+  const cnt  = el('span','src-count', keys.length);
   hdr.append(arr, ttl, cnt);
   wrap.appendChild(hdr);
 
   const body = el('div','src-body');
 
+  // Per-series display name for the merged section.  Most rows already have
+  // `Indicator` in their metadata; prefix with country code where present
+  // and fall back to `Name` (FRED-flavour) or the column id as last resort.
+  const nameFn = m => {
+    const country = m['Country'] || '';
+    const ind = m['Indicator'] || m['Name'] || m['Column ID'] || '';
+    return country ? `${country} — ${ind}` : ind;
+  };
+
   if(STATE.viewMode === 'concept'){
-    // §2.5: group keys by concept → subcategory.  Uses lowercase aliases
-    // (m.concept / m.subcategory) added in _load_unified_hist_once.
+    // Group by concept → subcategory.  Uses the lowercase aliases
+    // m.concept / m.subcategory added by _load_unified_hist_once.
     const tree = {};
     keys.forEach(key => {
       const m = seriesMap[key].meta || {};
@@ -1192,22 +1200,35 @@ function buildSimpleSection(title, seriesMap, dates, source, nameFn){
     ordered.forEach(concept => {
       const subGroups = {};
       Object.keys(tree[concept]).sort().forEach(sc => {
-        subGroups[sc] = tree[concept][sc];
+        subGroups[sc] = tree[concept][sc].sort();
       });
       body.appendChild(buildGroupSection(concept, subGroups, null, {
-        source, seriesMap, nameFn,
+        source: 'macro_economic', seriesMap, nameFn,
       }));
     });
   } else {
+    // By Region: group by Country.  Order driven by MAIN_DATA.countries
+    // (the registry from data/macro_library_countries.csv per §0).  Items
+    // without a country tag fall under "Other".
+    const tree = {};
     keys.forEach(key => {
-      const s = seriesMap[key];
-      const meta = s.meta || {};
-      body.appendChild(makeSeriesItem({
-        source,
-        key,
-        id:    key,
-        name:  nameFn(meta),
-        cycle: meta.cycle_timing || '',
+      const m = seriesMap[key].meta || {};
+      const country = m['Country'] || 'Other';
+      tree[country] = tree[country] || [];
+      tree[country].push(key);
+    });
+    const registryOrder = (MAIN_DATA.countries || []).map(c => c.code);
+    const orderedCountries = [
+      ...registryOrder.filter(c => tree[c]),
+      ...Object.keys(tree).filter(c => !registryOrder.includes(c)).sort(),
+    ];
+    // By-Country view is naturally single-level (country → items), so we
+    // skip the buildGroupSection wrapper and render each country directly
+    // as an .sgrp-section.  applySidebarFilters' collapse-empty logic for
+    // .sgrp-body still applies.
+    orderedCountries.forEach(country => {
+      body.appendChild(buildSubGroupSection(country, tree[country].sort(), null, {
+        source: 'macro_economic', seriesMap, nameFn,
       }));
     });
   }
@@ -1312,12 +1333,8 @@ function getSeriesDateRange(source, key){
     const ind = MAIN_DATA.macro_market.indicators[key];
     return ind ? {first: ind.first_date, last: ind.last_date} : {};
   }
-  if(source === 'macro_us'){
-    const s = MAIN_DATA.macro_us.series[key];
-    return s ? {first: s.first_date, last: s.last_date} : {};
-  }
-  if(source === 'macro_intl'){
-    const s = MAIN_DATA.macro_intl.series[key];
+  if(source === 'macro_economic'){
+    const s = MAIN_DATA.macro_economic.series[key];
     return s ? {first: s.first_date, last: s.last_date} : {};
   }
   if(source === 'market_comp'){
@@ -1346,10 +1363,9 @@ function getItemCountry(source, key){
     };
     return map[g] || g;
   }
-  // Raw-macro series: meta.Country (capitalised) is one of the 12 codes
-  if(source === 'macro_us' || source === 'macro_intl' || source === 'macro_survey'){
-    const store = MAIN_DATA[source];
-    const s = store ? store.series[key] : null;
+  // Raw-macro merged section: meta.Country (capitalised) is one of the 12 codes
+  if(source === 'macro_economic'){
+    const s = MAIN_DATA.macro_economic.series[key];
     return s ? ((s.meta || {}).Country || '') : '';
   }
   return '';
@@ -1496,7 +1512,9 @@ document.querySelectorAll('.cycle-chip').forEach(chip => {
   });
 });
 
-// Country dropdown — populated on first render from data; selection updates state
+// Country dropdown — populated on first render from data; selection updates state.
+// Country code order is driven by data/macro_library_countries.csv (the §0
+// registry) via MAIN_DATA.countries — NOT a hardcoded JS literal.
 function populateCountryFilterOptions(){
   // Collect every country tag actually present in the rendered sidebar.
   const tags = new Set();
@@ -1504,10 +1522,12 @@ function populateCountryFilterOptions(){
     tags.add(item.dataset.country);
   });
 
-  // Order: 12 country codes first (alphabetical), then broad-region tags.
-  const COUNTRY_CODES = ['AUS','CAN','CHE','CHN','DEU','EA19','FRA','GBR','IND','ITA','JPN','USA'];
-  const codeTags  = COUNTRY_CODES.filter(c => tags.has(c));
-  const otherTags = Array.from(tags).filter(t => !COUNTRY_CODES.includes(t)).sort();
+  // Order: registry country codes first (in CSV row order), then any
+  // broad-region tags (Europe / Asia / Global / FX & Commodities) used by
+  // multi-country Phase E composites, alphabetically.
+  const registryCodes = (MAIN_DATA.countries || []).map(c => c.code);
+  const codeTags  = registryCodes.filter(c => tags.has(c));
+  const otherTags = Array.from(tags).filter(t => !registryCodes.includes(t)).sort();
 
   const sel = document.getElementById('country-select');
   const current = STATE.countryFilter;
@@ -1699,17 +1719,11 @@ function getSeriesDetail(s){
     const m   = ind?.meta || {};
     return { fullName: m.category || s.key, detail: m.formula || m.interp || '' };
   }
-  if(s.source === 'macro_us'){
-    const ser = MAIN_DATA.macro_us.series[s.key];
-    const m   = ser?.meta || {};
-    return { fullName: m['Name'] || m['Indicator'] || s.key,
-             detail: [m['Units'], m['Subcategory']].filter(Boolean).join(' · ') };
-  }
-  if(s.source === 'macro_intl'){
-    const ser = MAIN_DATA.macro_intl.series[s.key];
+  if(s.source === 'macro_economic'){
+    const ser = MAIN_DATA.macro_economic.series[s.key];
     const m   = ser?.meta || {};
     const country = m['Country'] || '';
-    const ind2    = m['Indicator'] || s.key;
+    const ind2    = m['Indicator'] || m['Name'] || s.key;
     return { fullName: country ? `${country} — ${ind2}` : ind2,
              detail: [m['Units'], m['Subcategory']].filter(Boolean).join(' · ') };
   }
@@ -1950,14 +1964,10 @@ function seriesFriendlyLabel(s){
     const cat = ind?.meta?.category || s.key;
     return cat.replace(/^[^/]+\/\s*/,'').replace(/\s*\(.*\)/,'').trim() || s.key;
   }
-  if(s.source === 'macro_us'){
-    const ser = MAIN_DATA.macro_us.series[s.key];
-    return ser?.meta?.Name || s.key;
-  }
-  if(s.source === 'macro_intl'){
-    const ser = MAIN_DATA.macro_intl.series[s.key];
+  if(s.source === 'macro_economic'){
+    const ser = MAIN_DATA.macro_economic.series[s.key];
     const country = ser?.meta?.Country || '';
-    const ind2    = ser?.meta?.Indicator || s.key;
+    const ind2    = ser?.meta?.Indicator || ser?.meta?.Name || s.key;
     return country ? `${country} ${ind2}` : ind2;
   }
   if(s.source === 'market_comp'){
@@ -1996,15 +2006,10 @@ function getSeriesData(s){
     zscore     = ind.zscore     || [];
     regime     = ind.regime     || [];
     fwd_regime = ind.fwd_regime || [];
-  } else if(s.source === 'macro_us'){
-    const ser = MAIN_DATA.macro_us.series[s.key];
+  } else if(s.source === 'macro_economic'){
+    const ser = MAIN_DATA.macro_economic.series[s.key];
     if(!ser) return null;
-    srcDates = MAIN_DATA.macro_us.dates;
-    values   = ser.values;
-  } else if(s.source === 'macro_intl'){
-    const ser = MAIN_DATA.macro_intl.series[s.key];
-    if(!ser) return null;
-    srcDates = MAIN_DATA.macro_intl.dates;
+    srcDates = MAIN_DATA.macro_economic.dates;
     values   = ser.values;
   } else if(s.source === 'market_comp'){
     const ser = MKT_DATA.series[s.key];
@@ -2636,9 +2641,8 @@ buildSidebar();
 populateCountryFilterOptions();
 applySidebarFilters();
 setStatus('Ready — ' + Object.keys(MAIN_DATA.macro_market.indicators).length
-  + ' indicators · ' + Object.keys(MAIN_DATA.macro_us.series).length
-  + ' FRED series · ' + Object.keys(MAIN_DATA.macro_intl.series).length
-  + ' intl series · ' + Object.keys(MKT_DATA.series).length + ' market series');
+  + ' indicators · ' + Object.keys(MAIN_DATA.macro_economic.series).length
+  + ' raw macro series · ' + Object.keys(MKT_DATA.series).length + ' market series');
 </script>
 </body>
 </html>

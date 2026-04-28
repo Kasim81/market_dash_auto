@@ -311,7 +311,9 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 ### 2.5 Mirror the unified macro library structure in `docs/indicator_explorer.html`
 
 **Priority:** High — user-flagged. Absorbed the previously-pending §3.8 "HTML Charting Tool Integration" item.
-**Status:** Done 2026-04-28 — landed in 7 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
+**Status:** Done 2026-04-28 — landed in 7 commits, then restructured in a follow-up 3-commit pass after merge feedback (the original v1 added a region/concept toggle within the existing source-based sidebar layout but didn't merge the three raw-macro sections; v2 collapses them into a single "Economic Data" section).
+
+**v1 — initial implementation:**
 
 | Step | Commit | Scope |
 |---|---|---|
@@ -319,13 +321,28 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 | 2 | `5fee5e8` | Server-side payload — new `INDICATOR_CONCEPT_ORDER` in `library_utils.py`; `build_macro_market` emits a parallel `groupsByConcept` tree alongside the existing region-based `groups` |
 | 3 | `ce796bd` | L/C/G cycle-timing badges in every macro section — `buildSimpleSection` now passes `cycle: meta.cycle_timing`; G colour palette adjusted from red to pink (`#ff7eb6`) to match the spec |
 | 4 | `cd84536` | View-mode toggle ("By Region" ↔ "By Concept") + alternate sidebar trees — covers Phase E composites (server-supplied `groupsByConcept`) and raw-macro sections (client-side regrouping via `meta.concept`/`subcategory`); checkbox state preserved across toggles |
-| 5 | `5758d57` | L/C/G filter chips + country dropdown — unified `applySidebarFilters()` evaluates search + variant + cycle + country in one pass; country dropdown auto-populated from data (12 canonical country codes alphabetical + 4 broad-region tags for multi-country composites) |
+| 5 | `5758d57` | L/C/G filter chips + country dropdown — unified `applySidebarFilters()` evaluates search + variant + cycle + country in one pass; country dropdown auto-populated from data |
 | 6 | `c42d3ca` | Inline `L = Leading · C = Coincident · G = Lagging` legend beneath the cycle-filter chips |
-| 7 | this commit | Mark §2.5 Done; drop source-filter mention from spec (parked) |
+| 7 | `d8acb73` | Mark §2.5 Done; drop source-filter mention from spec (parked) |
 
-**Source filter parked.** The original spec mentioned a "source" filter (FRED / OECD / WB / IMF / DB.nomics / ifo) under the "By Concept" view. Parked during step 0 — composites read from multiple raw sources, making single-source attribution brittle, and the L/C/G + country filters cover the most useful filter axes. If a future need surfaces, revisit.
+**v2 — restructure after merge feedback:**
 
-**Acceptance verified:** the explorer renders correctly under both view modes; switching is instant and preserves checked-state for plotted series; cycle-timing and country filters work in both views; existing region-based view is preserved unchanged.
+| Step | Commit | Scope |
+|---|---|---|
+| R1 | `529b7d6` | Server payload — new `load_countries()` reader (single source of truth: `data/macro_library_countries.csv`); new `build_macro_economic()` combiner spanning every raw-macro source |
+| R2 | `e38b619` | JS rework — replace 3 `buildSimpleSection` calls with 1 `buildEconomicDataSection`; By Region groups by Country (registry order via `MAIN_DATA.countries`), By Concept groups by concept → subcategory; drop the hardcoded `COUNTRY_CODES` JS literal (a §0 violation introduced by step 5); drop `build_macro_us` / `build_macro_intl` / `build_macro_survey` and `buildSimpleSection`; consolidate three legacy chart-rendering source dispatches into one `macro_economic` branch each |
+| R3 | this commit | Mark §2.5 v2 Done; record what changed |
+
+**Final sidebar layout (post v2):**
+1. **Macro Market Indicators** — Phase E composites; By Region / By Concept toggle.
+2. **Economic Data** — every raw-macro source merged (FRED + OECD + WB + IMF + DB.nomics + ifo); By Region groups by Country (12 codes from the registry), By Concept groups by concept → subcategory.
+3. **Market Data** — yfinance comp pipeline (unchanged).
+
+**Source filter parked.** The original spec mentioned a "source" filter (FRED / OECD / WB / IMF / DB.nomics / ifo) under the "By Concept" view. Parked during step 0 — Phase E composites read from multiple raw sources, making single-source attribution brittle. The L/C/G + country filters cover the most useful axes. If a future need surfaces, the per-series `meta.Source` is preserved and the filter is small to add.
+
+**Architecture-rule fix recorded:** v1 step 5 introduced a hardcoded `COUNTRY_CODES = ['AUS','CAN', ...]` JS literal — a §0 violation (registry duplicated in Python instead of read from the CSV). v2 step R2 replaced it with `MAIN_DATA.countries.map(c => c.code)` driven by `data/macro_library_countries.csv`.
+
+**Acceptance verified:** the explorer renders three top-level sections (Macro Market Indicators / Economic Data / Market Data); the "Economic Data" section's By Region view shows 12 country buckets in registry order; the By Concept view shows the canonical concepts (Rates / Inflation / Labour / etc.); cycle-timing and country filters work; existing region-based view of Macro Market Indicators is preserved.
 
 ### 2.6 Expand `library_manager.py` scope to validate every `data/macro_library_*.csv`
 
