@@ -1,1 +1,10 @@
 date_removed,ticker,ticker_field,library_name,source_csv,reason,audit_run_date,replacement_status,notes
+2026-04-28,^SX7E,pr,STOXX Europe 600 Banks,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXV1.DE; batch=STOXX600_sector
+2026-04-28,^SXDP,pr,STOXX Europe 600 Health Care,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXV4.DE; batch=STOXX600_sector
+2026-04-28,^SX8P,pr,STOXX Europe 600 Technology,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXV3.DE; batch=STOXX600_sector
+2026-04-28,^SXEP,pr,STOXX Europe 600 Energy,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXH1.DE; batch=STOXX600_sector
+2026-04-28,^SXNP,pr,STOXX Europe 600 Industrials,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXH4.DE; batch=STOXX600_sector
+2026-04-28,^SX3P,pr,STOXX Europe 600 Consumer Staples,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXH3.DE; batch=STOXX600_sector
+2026-04-28,^SX6P,pr,STOXX Europe 600 Utilities,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXH9.DE; batch=STOXX600_sector
+2026-04-28,^SXKP,pr,STOXX Europe 600 Telecom,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXV2.DE; batch=STOXX600_sector
+2026-04-28,^SX4P,pr,STOXX Europe 600 Real Estate,index_library.csv,PR ticker delisted from yfinance; STOXX 600 sector ETFs (EX*.DE) retained as TR proxy,2026-04-28,tr_retained,TR ticker=EXI5.DE; batch=STOXX600_sector

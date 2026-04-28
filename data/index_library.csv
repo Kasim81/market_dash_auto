@@ -66,15 +66,15 @@ Borsa Istanbul 30,Equity,Equity,Index,,Europe,Turkey,,,,,,TRY,False,,False,,yfin
 MERVAL (Argentina),Equity,Equity,Index,,Latin America,Argentina,,,,,,ARS,False,,False,,yfinance PR,CONFIRMED,^MERV,,,,,,,,1996-10-08,False
 Euro Stoxx 50,Equity,Equity,Index,Equity Large Cap,Europe,Developed Europe,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX50E,FEZ,,,,,,,2007-03-30,True
 STOXX Europe 600,Equity,Equity,Index,Equity Broad,Europe,Developed Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX,EXSA.DE,,,,,,,2004-04-26,False
-STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX7E,EXV1.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Europe,Health Care,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXDP,EXV4.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Technology,Equity,Equity,Index,Equity Sector,Europe,Europe,Information Technology,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX8P,EXV3.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Energy,Equity,Equity,Index,Equity Sector,Europe,Europe,Energy,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXEP,EXH1.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Industrials,Equity,Equity,Index,Equity Sector,Europe,Europe,Industrials,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXNP,EXH4.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Consumer Staples,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Staples,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX3P,EXH3.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Utilities,Equity,Equity,Index,Equity Sector,Europe,Europe,Utilities,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX6P,EXH9.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Telecom,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SXKP,EXV2.DE,,,,,,,2008-01-02,False
-STOXX Europe 600 Real Estate,Equity,Equity,Index,Equity Sector,Europe,Europe,Real Estate,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^SX4P,EXI5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Europe,Health Care,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Technology,Equity,Equity,Index,Equity Sector,Europe,Europe,Information Technology,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Energy,Equity,Equity,Index,Equity Sector,Europe,Europe,Energy,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Industrials,Equity,Equity,Index,Equity Sector,Europe,Europe,Industrials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Consumer Staples,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Staples,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Utilities,Equity,Equity,Index,Equity Sector,Europe,Europe,Utilities,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH9.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Telecom,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV2.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Real Estate,Equity,Equity,Index,Equity Sector,Europe,Europe,Real Estate,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXI5.DE,,,,,,,2008-01-02,False
 iShares MSCI ACWI ETF,Equity,Equity,Index,Equity Broad,Global,Global,,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,ACWI,,,,,,,2008-03-28,False
 iShares MSCI World ETF,Equity,Equity,Index,Equity Broad,Global,Global,,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,URTH,,,,,,,2012-01-12,False
 iShares MSCI Emerging Markets ETF,Equity,Equity,Index,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EEM,,,,,,,2003-04-14,False
