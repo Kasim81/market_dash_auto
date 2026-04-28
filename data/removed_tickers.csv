@@ -12,3 +12,6 @@ date_removed,ticker,ticker_field,library_name,source_csv,reason,audit_run_date,r
 2026-04-28,^SP500G,pr,S&P 500 Growth,index_library.csv,PR ticker delisted from yfinance; iShares S&P 500 / Russell Midcap style ETFs retained as TR proxy,2026-04-28,tr_retained,TR ticker=IVW; batch=US_ETF_backed
 2026-04-28,^RMCCG,pr,Russell Midcap Growth Index,index_library.csv,PR ticker delisted from yfinance; iShares S&P 500 / Russell Midcap style ETFs retained as TR proxy,2026-04-28,tr_retained,TR ticker=IWP; batch=US_ETF_backed
 2026-04-28,^RMCCV,pr,Russell Midcap Value Index,index_library.csv,PR ticker delisted from yfinance; iShares S&P 500 / Russell Midcap style ETFs retained as TR proxy,2026-04-28,tr_retained,TR ticker=IWS; batch=US_ETF_backed
+2026-04-28,^TOPX,pr,TOPIX Index,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=1306.T; batch=CA_JP_index
+2026-04-28,^TX60,pr,S&P/TSX 60,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=XIU.TO; batch=CA_JP_index
+2026-04-28,^TSXV,pr,S&P/TSX SmallCap,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=XCS.TO; batch=CA_JP_index

@@ -36,10 +36,10 @@ CAC 40,Equity,Equity,Index,Equity Large Cap,Europe,France,,Large,,,,EUR,False,,F
 CAC Mid 60,Equity,Equity,Index,Equity Mid Cap,Europe,France,,Mid,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^CM100,,,,,,,,1999-01-25,False
 FTSE MIB Index,Equity,Equity,Index,,Europe,Italy,,,,,,EUR,False,,False,,yfinance PR,CONFIRMED,FTSEMIB.MI,IMIB.MI,,,,,,,1997-12-31,False
 Nikkei 225,Equity,Equity,Index,Equity Large Cap,Japan,Japan,,Large,,,,JPY,False,,False,,yfinance PR,CONFIRMED,^N225,1321.T,,,,,,,1965-01-05,True
-TOPIX Index,Equity,Equity,Index,Equity Broad,Japan,Japan,,Broad,,,,JPY,False,,False,,yfinance PR,CONFIRMED,^TOPX,1306.T,,,,,,,2008-01-04,False
+TOPIX Index,Equity,Equity,Index,Equity Broad,Japan,Japan,,Broad,,,,JPY,False,,False,,yfinance TR,CONFIRMED,,1306.T,,,,,,,2008-01-04,False
 S&P/TSX Composite,Equity,Equity,Index,Equity Broad,North America,Canada,,Broad,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^GSPTSE,XIU.TO,,,,,,,1979-06-29,False
-S&P/TSX 60,Equity,Equity,Index,,North America,Canada,,,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^TX60,XIU.TO,,,,,,,1999-10-04,False
-S&P/TSX SmallCap,Equity,Equity,Index,Equity Small Cap,North America,Canada,,Small,,,,CAD,False,,False,,yfinance PR,CONFIRMED,^TSXV,XCS.TO,,,,,,,2007-05-18,False
+S&P/TSX 60,Equity,Equity,Index,,North America,Canada,,,,,,CAD,False,,False,,yfinance TR,CONFIRMED,,XIU.TO,,,,,,,1999-10-04,False
+S&P/TSX SmallCap,Equity,Equity,Index,Equity Small Cap,North America,Canada,,Small,,,,CAD,False,,False,,yfinance TR,CONFIRMED,,XCS.TO,,,,,,,2007-05-18,False
 S&P/ASX 200,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AXJO,IOZ.AX,,,,,,,1992-11-23,False
 S&P/ASX All Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AORD,VAS.AX,,,,,,,1984-08-03,False
 S&P/ASX Small Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AXSO,SSO.AX,,,,,,,2004-05-03,False
