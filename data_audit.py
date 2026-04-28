@@ -201,8 +201,129 @@ def section_c_staleness() -> dict:
 # =============================================================================
 
 def section_a_fetch_outcomes() -> dict:
-    """Stub for step 1b — returns empty buckets for now."""
-    return {"http_errors": [], "delisted": [], "insufficient_data": []}
+    """Scrape pipeline.log for per-series fetch failures.
+
+    Patterns the daily pipeline emits today:
+
+      yfinance:
+        $<TICKER>: possibly delisted; no timezone found
+        ^<TICKER>: Period 'max' is invalid, must be one of: 1d, 5d
+        HTTP Error 404: ... Quote not found for symbol: <TICKER>
+
+      FRED:
+        [FRED] HTTP <code> on <X> — skipping             (final failure)
+        [FRED] HTTP <code> on FRED/<X> — backoff ...     (retry — IGNORED)
+      The backoff retry lines naturally filter out because we only match the
+      `— skipping` suffix.  A series whose first 4 attempts 500'd but whose 5th
+      succeeded never emits a `skipping` line, so it doesn't appear here.
+
+      ECB / fallbacks (informational; included for visibility):
+        [ECB] EU_I1 spread unavailable — ...
+
+    Cross-check: yfinance "delisted" tickers are cross-referenced against the
+    latest non-empty observation in market_data_comp_hist.csv.  If a ticker
+    has data in the latest row, the warning was transient and the ticker is
+    omitted from the audit (false positive).  If the ticker has no data, it's
+    a real concern and it's reported.
+
+    Returns dict with three sorted lists:
+      yfinance_dead, fred_persistent_errors, other_warnings
+    """
+    import re
+
+    log_path = ROOT / "pipeline.log"
+    if not log_path.exists():
+        return {"yfinance_dead": [], "fred_persistent_errors": [], "other_warnings": []}
+
+    text = log_path.read_text()
+
+    # ---------- yfinance ticker failures ----------
+    yf_suspects: set[str] = set()
+    for m in re.finditer(r'\$([\^A-Z][A-Z0-9.\-^]*[A-Z0-9]):\s*possibly delisted', text):
+        yf_suspects.add(m.group(1))
+    for m in re.finditer(
+        r'Quote not found for symbol:\s*([\^A-Z][A-Z0-9.\-^]*[A-Z0-9])', text
+    ):
+        yf_suspects.add(m.group(1))
+    for m in re.finditer(
+        r'^([\^A-Z][A-Z0-9.\-^]+):\s*Period \'max\' is invalid', text, re.M
+    ):
+        yf_suspects.add(m.group(1))
+
+    # Cross-check against latest comp_hist row to filter transient warnings.
+    yfinance_dead = sorted(_yfinance_truly_dead(yf_suspects))
+
+    # ---------- FRED final failures ----------
+    fred_final: set[tuple[str, str]] = set()
+    # Match: "[FRED] HTTP 400 on FRED/SERIES — skipping"  OR
+    #        "[FRED] HTTP 400 on SERIES — skipping"
+    for m in re.finditer(
+        r'\[FRED\]\s+HTTP\s+(\d{3})\s+on\s+(?:FRED/)?([A-Z0-9_/.\-]+)\s+—\s+skipping',
+        text,
+    ):
+        fred_final.add((m.group(1), m.group(2)))
+    fred_persistent_errors = sorted(f"HTTP {c} on {s}" for c, s in fred_final)
+
+    # ---------- Other source warnings (informational) ----------
+    other_warnings: list[str] = []
+    # ECB / DBnomics / OECD per-source notable lines
+    for pat in [
+        r'\[ECB\][^\n]*spread unavailable[^\n]*',
+        r'\[ECB\][^\n]*0 (monthly )?obs[^\n]*',
+        r'\[OECD\][^\n]*HTTP\s+\d{3}[^\n]*',
+        r'\[DBnomics\][^\n]*HTTP\s+\d{3}[^\n]*',
+        r'\[ifo\][^\n]*workbook[^\n]*(failed|empty)[^\n]*',
+    ]:
+        for m in re.finditer(pat, text):
+            other_warnings.append(m.group(0).strip())
+    # Dedupe while preserving order
+    seen: set[str] = set()
+    other_warnings = [x for x in other_warnings if not (x in seen or seen.add(x))]
+
+    return {
+        "yfinance_dead": yfinance_dead,
+        "fred_persistent_errors": fred_persistent_errors,
+        "other_warnings": other_warnings,
+    }
+
+
+def _yfinance_truly_dead(suspects: set[str]) -> set[str]:
+    """Cross-check suspect yfinance tickers against market_data_comp_hist.csv.
+
+    Returns the subset of suspects that have NO data in the latest non-empty
+    observation row of the comp hist — i.e. the warnings are real, not
+    transient.  Tickers that appear in the suspect set but DO have recent
+    data are omitted (probably fetched successfully on a retry).
+    """
+    comp_path = DATA / "market_data_comp_hist.csv"
+    if not comp_path.exists():
+        return suspects  # Can't cross-check; report all
+
+    with comp_path.open(newline="") as f:
+        rows = list(csv.reader(f))
+
+    if len(rows) < 12:
+        return suspects
+
+    # market_data_comp_hist has 11 metadata-prefix rows + 1 header row + data.
+    # Row 0 col 0 is "Ticker ID"; row 0 cols 1+ are tickers.
+    header = rows[0]
+    tickers = [t.strip() for t in header[1:]]
+    ticker_to_idx = {t: i + 1 for i, t in enumerate(tickers)}
+
+    # Last data row
+    last_row = rows[-1]
+    truly_dead: set[str] = set()
+    for sus in suspects:
+        idx = ticker_to_idx.get(sus)
+        if idx is None or idx >= len(last_row):
+            # Ticker isn't even in the comp hist columns → genuinely missing
+            truly_dead.add(sus)
+            continue
+        val = last_row[idx].strip()
+        if val == "":
+            truly_dead.add(sus)
+    return truly_dead
 
 
 # =============================================================================
