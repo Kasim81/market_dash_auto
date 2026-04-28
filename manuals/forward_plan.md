@@ -895,6 +895,25 @@ Two benchmarks are planned, run side-by-side:
 
 Exact composition of both benchmarks is locked in at implementation, after the §3 coverage work resolves which asset classes we have reliable long-history data for.
 
+#### Asset-class universe & tilt rules
+
+The asset universe will be defined at implementation, **using the existing asset-class nomenclature in `data/index_library.csv`** (Equity / Fixed Income / Rates / Spread / FX / Commodity / Crypto / Volatility, plus the established sub-classes within each). Concrete buckets selected from those classes once §3 coverage tells us what we have reliable data for.
+
+For each (asset class × regime) cell, an explicit **tilt rule** specifies an over/underweight versus the strategic benchmark, e.g.:
+
+| Asset class | Goldilocks | Reflation / Overheating | Stagflation | Disinflation / Recession |
+|---|---|---|---|---|
+| Developed equity | + | + | − | − |
+| EM equity | + | + + | − − | − |
+| Long-duration govt | − | − − | − | + + |
+| IG credit | + | 0 | − | − |
+| HY credit | + | + | − − | − − |
+| Commodities | 0 | + + | + | − |
+| Gold | − | + | + + | + |
+| Cash / short-duration | − | 0 | + | + |
+
+Magnitudes (percentage-point tilts vs benchmark weight) are TBD at implementation. The `leading_alignment` confidence dimension from §3.9 modulates the tilt magnitude — high-conviction regime calls get full tilts; low-conviction or transition states get scaled-down tilts.
+
 ---
 
 ## 4. Multi-Frequency Pipeline (Phase 2)
