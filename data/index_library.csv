@@ -213,7 +213,6 @@ S&P 500 Household Durables (Ind,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Leisure Products (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-252020,,,,,,,,2000-01-07,False
 "S&P 500 Textiles, Apparel & Lux",Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-252030,,,,,,,,2000-01-07,False
 S&P 500 Hotels Restaurants & Le,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-253010,,,,,,,,,False
-S&P 500 Diversified Consumer Services (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-253020,,,,,,,,2020-09-18,False
 S&P 500 Distributors (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-255010,,,,,,,,2004-01-02,False
 S&P 500 Broadline Retail (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-255030,,,,,,,,,False
 S&P 500 Specialty Retail (Indus,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-255040,,,,,,,,2000-02-18,False
@@ -225,7 +224,6 @@ S&P 500 Household Products (Ind,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Personal Care Products,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-303020,,,,,,,,2000-01-07,False
 S&P 500 Health Care Equipment &,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351010,,,,,,,,2000-03-06,False
 S&P 500 Health Care Providers &,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351020,,,,,,,,2000-01-07,False
-S&P 500 Health Care Technology (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-351030,,,,,,,,2022-06-07,False
 S&P 500 - Biotechnology (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-352010,,,,,,,,2000-02-29,False
 S&P 500 - Pharmaceuticals (Indu,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-352020,,,,,,,,2000-01-07,False
 S&P 500 - Life Sciences Tools &,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-352030,,,,,,,,,False
@@ -250,7 +248,6 @@ S&P 500 Gas Utilities (Industry,Equity,Equity,Index,Equity Industry,North Americ
 S&P 500 Multi-Utilities (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-551030,,,,,,,,2000-01-07,False
 S&P 500 Water Utilities (Indust,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-551040,,,,,,,,,False
 S&P 500 Independent Power and R,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-551050,,,,,,,,,False
-S&P 500 Equity Real Estate Investment Trusts (REITs) (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-601010,,,,,,,,2023-03-17,False
 S&P 500 Industrial REITs (Indus,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601025,,,,,,,,,False
 S&P 500 Hotel & Resort REITs (I,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601030,,,,,,,,,False
 S&P 500 Office REITs (Industry),Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-601040,,,,,,,,,False
