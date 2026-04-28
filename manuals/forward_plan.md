@@ -525,6 +525,26 @@ The `Macro Market Indicators Reference.docx` source doc catalogues 206 macro/mar
 
 The `cycle_timing` column was added to `data/macro_indicator_library.csv` for all 92 Phase E indicators in Stage 2 (2026-04-23). Result: **90 Leading, 2 Coincident, 0 Lagging** — the library is overwhelmingly forward-looking by design; the two coincident components are `US_JOBS3` (labour composite blending L+C+G) and `US_G6` (IP + Retail Sales). The L/C/G badges + filter are surfaced in the explorer per §2.5.
 
+#### Source verdicts (binding)
+
+Outcome of the 2026-04 source-evaluation cycle. Verdicts are durable — do not re-investigate without new evidence.
+
+| Source | Verdict | Rationale |
+|---|---|---|
+| **FRED** | Primary US + OECD-mirror series | Adding rows to `data/macro_library_fred.csv` is zero-code. |
+| **DB.nomics** | Primary for open-licensed series | Free REST, no key, no rate limit. Carries Eurostat survey + ISM + (some) BoJ. |
+| **OECD SDMX** | Primary for OECD harmonised series | Multi-country fan-out; CLI / unemployment / 3-month rate. |
+| **World Bank WDI** | Primary for cross-country annual macro | CPI YoY, etc. |
+| **IMF DataMapper** | Primary for cross-country GDP growth | Annual real GDP growth. |
+| **ifo Institute Excel** | Primary for German business surveys | Direct workbook scrape via `sources/ifo.py`; 26 series, 1991+. |
+| **ECB Data Portal** (`data-api.ecb.europa.eu`) | Backup — used inline for Euro IG yield-curve point | SDMX 2.1 REST. Migrated from old `sdw-wsrest` host (PR2, 2026-04-26). |
+| **Bank of Japan** (`stat-search.boj.or.jp`) | Future — see §3.1 | DB.nomics mirror is empty for Tankan; absorbed into the comprehensive surveys sub-project. |
+| **UMich portal** | Defer | No official API; headline `UMCSENT` already on FRED; sub-indices high-correlated. |
+| **FMP economic calendar** | Rejected (paywalled Aug 2025) | All endpoints behind paid tier. Module deleted. |
+| **Trading Economics** | Skip | Paid only. Same data via DB.nomics + FRED. |
+| **Investing.com** | Skip | `investpy` broken since 2023 (Cloudflare); scraping violates ToS. |
+| **S&P Global / ISM direct** | Skip | No programmatic API; paid institutional subscription for sub-indices. ISM redistributed by DB.nomics. |
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
