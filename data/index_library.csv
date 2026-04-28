@@ -26,7 +26,7 @@ S&P 500 Utilities,Equity,Equity,Index,Equity Sector,North America,United States,
 S&P 500 Real Estate,Equity,Equity,Index,Equity Sector,North America,United States,Real Estate,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-60,XLRE,,,,,,,2001-10-09,True
 FTSE 100,Equity,Equity,Index,Equity Large Cap,UK,United Kingdom,,Large,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTSE,ISF.L,,,,,,,1984-01-03,True
 FTSE 250,Equity,Equity,Index,Equity Mid Cap,UK,United Kingdom,,Mid,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTMC,VMID.L,,,,,,,1985-12-31,True
-FTSE All-Share,Equity,Equity,Index,Equity Broad,UK,United Kingdom,,Broad,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTAS,ISFA.L,,,,,,,1980-02-11,False
+FTSE All-Share,Equity,Equity,Index,Equity Broad,UK,United Kingdom,,Broad,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTAS,,,,,,,,1980-02-11,False
 FTSE SmallCap,Equity,Equity,Index,Equity Small Cap,UK,United Kingdom,,Small,,,,GBP,False,,False,,yfinance PR,CONFIRMED,^FTSC,,,,,,,,1993-02-19,False
 DAX 40,Equity,Equity,Index,Equity Large Cap,Europe,Germany,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^GDAXI,EXS1.DE,,,,,,,1987-12-30,True
 MDAX,Equity,Equity,Index,Equity Mid Cap,Europe,Germany,,Mid,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^MDAXI,EXS3.DE,,,,,,,1996-02-29,False
@@ -48,10 +48,10 @@ CSI 300 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfi
 CSI 500 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,,False
 CSI 1000 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,,False
 Hang Seng Index,Equity,Equity,Index,,Asia Pacific,Hong Kong,,,,,,HKD,False,,False,,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31,False
-S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,SENSEXBEES.NS,,,,,,,1997-07-01,True
+S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,,,,,,,,1997-07-01,True
 Nifty 50,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17,True
 Nifty Midcap 100,Equity,Equity,Index,Equity Mid Cap,Asia Pacific,India,,Mid,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,2007-09-17,False
-Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXSC,SMALLCAP.NS,,,,,,,2024-03-18,False
+Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance TR,CONFIRMED,,SMALLCAP.NS,,,,,,,2024-03-18,False
 Bovespa (IBOVESPA),Equity,Equity,Index,,Latin America,Brazil,,,,,,BRL,False,,False,,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,1993-04-27,False
 KOSPI,Equity,Equity,Index,,Asia Pacific,South Korea,,,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS11,069500.KS,,,,,,,1996-12-11,False
 KOSPI 200,Equity,Equity,Index,Equity Large Cap,Asia Pacific,South Korea,,Large,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS200,069500.KS,,,,,,,1996-03-20,False

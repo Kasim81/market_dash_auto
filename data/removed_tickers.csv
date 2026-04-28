@@ -15,3 +15,6 @@ date_removed,ticker,ticker_field,library_name,source_csv,reason,audit_run_date,r
 2026-04-28,^TOPX,pr,TOPIX Index,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=1306.T; batch=CA_JP_index
 2026-04-28,^TX60,pr,S&P/TSX 60,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=XIU.TO; batch=CA_JP_index
 2026-04-28,^TSXV,pr,S&P/TSX SmallCap,index_library.csv,PR ticker delisted from yfinance; Canada/Japan ETF proxies retained as TR,2026-04-28,tr_retained,TR ticker=XCS.TO; batch=CA_JP_index
+2026-04-28,ISFA.L,tr,FTSE All-Share,index_library.csv,TR ticker delisted from yfinance; PR index ticker retained as primary,2026-04-28,pr_retained,PR ticker=^FTAS; batch=IN_UK_TR_dead
+2026-04-28,SENSEXBEES.NS,tr,S&P BSE Sensex,index_library.csv,TR ticker delisted from yfinance; PR index ticker retained as primary,2026-04-28,pr_retained,PR ticker=^BSESN; batch=IN_UK_TR_dead
+2026-04-28,^CNXSC,pr,Nifty Smallcap 100,index_library.csv,PR ticker delisted from yfinance; SMALLCAP.NS ETF retained as TR proxy,2026-04-28,tr_retained,TR ticker=SMALLCAP.NS; batch=IN_PR_dead
