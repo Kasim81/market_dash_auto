@@ -1107,6 +1107,23 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 - **60-day inactivity pause:** GitHub Actions auto-pauses workflows after 60 days of no pushes to the repo. The daily pipeline produces commits, so this is not currently an issue, but will trigger if the pipeline fails for an extended period. Fix: push a trivial commit or re-enable from the Actions tab.
 - **Run timeout:** Currently set to 120 minutes.
 - **Pipeline log capture (PR1, 2026-04-25):** the workflow pipes both Python steps through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits `pipeline.log` to the repo on every run alongside the data CSVs and explorer files. Useful for diagnosing failures without needing to download artefacts. The committed log is the artefact the §2.1 verification reads.
+- **Permissions:** the workflow has `contents: write` (for git push) plus `issues: write` (added 2026-04-28 for the §2.6 v2 audit-comment posting). No SMTP secrets are required — the daily audit notification uses GitHub's native issue-notification email.
+
+### Daily audit notification flow (§2.6 v2)
+
+The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. Mechanism:
+
+- **Audit step.** `python data_audit.py` runs at the end of `update_data.yml` (after fetch + explorer rebuild). Three sections: fetch outcomes from `pipeline.log` scrape; static checks against the registry CSVs; value-change staleness against the unified hist. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Posting step.** Uses the pre-installed `gh` CLI:
+  1. Ensure a `daily-audit` label exists (`gh label create daily-audit ...`, idempotent).
+  2. Find the open issue with that label, or create it on first run with title "Daily Audit Log".
+  3. Post `audit_comment.md` as a comment on the issue: `gh issue comment $ISSUE_NUM --body-file audit_comment.md`.
+- **User notification.** GitHub's native notification settings email watchers when an issue gains a comment — so the daily comment triggers the alert with no extra infrastructure.
+- **Self-healing on overgrowth.** If the comment thread becomes unwieldy, close the issue manually — the next daily run will create a fresh one and resume posting there.
+- **First-line summary format.** `audit_comment.md`'s first line is always one of:
+  - `## Daily audit — YYYY-MM-DD — **ALL CLEAN**`
+  - `## Daily audit — YYYY-MM-DD — **N ISSUES** (X fetch errors, Y static-check failures, Z stale series)`
+- **Build-gate behaviour.** The audit step is non-fatal (`exit 0` always); a stale series doesn't fail the workflow. The audit is purely a warning channel.
 
 ### Google Sheets
 
