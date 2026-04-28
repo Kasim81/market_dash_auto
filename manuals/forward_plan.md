@@ -499,9 +499,13 @@ Once confirmed, add rows to `index_library.csv` — no new Python modules needed
 4. For `.L` tickers: pence correction is automatic (no code change needed)
 5. For new currencies: add to `COMP_FX_TICKERS` and `COMP_FCY_PER_USD` in `library_utils.py`
 
-### 3.3 Calculated Fields Expansion
+### 3.3 Indicator Coverage & Source Expansion
 
-Several calculated fields were proposed but not yet implemented. Some may already be covered by the 91 macro-market indicators — audit before building duplicates.
+This section catalogues forward-looking work on indicator coverage: source verdicts, the gap between current coverage and the `Macro Market Indicators Reference.docx` baseline, the prioritised FRED additions, the new source modules needed, and the per-indicator source mapping. Replaces and merges the old §3.3 (Calculated Fields Expansion), §3.7 (Source Evaluation Retrospective), and §3.8 (Cycle Timing & Coverage Expansion). The largest single source-expansion track — comprehensive business + consumer surveys — has its own dedicated sub-project at §3.1; this section holds everything else.
+
+#### Outstanding calculated fields
+
+Several calculated fields proposed historically are not yet implemented. Some may already be covered by the 92 macro-market indicators — audit before building duplicates.
 
 | Field | Formula | Status |
 |---|---|---|
@@ -509,11 +513,11 @@ Several calculated fields were proposed but not yet implemented. Some may alread
 | EMFX basket | Equal-weight CNY, INR, KRW, TWD vs USD (inverted so rising = EM FX strengthening) | Implemented 2026-04-21 as `FX_EM1` |
 | EEM/IWDA ratio | EEM / URTH (MSCI World ETF in USD — functional equivalent of IWDA.L after FX adjustment) | Covered by `GL_G1` |
 | MOVE proxy | 30-day realised vol on ^TNX | Not needed — `^MOVE` ticker itself is in the comp pipeline (used in `US_V2`) |
-| Global PMI proxy | Equal-weight ISM + Eurozone PMI + Japan PMI | Depends on Phase D |
-| Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented (US/DE/UK 10Y available; needs 2Y for DE/UK + full JP curve) |
+| Global PMI proxy | Equal-weight ISM + Eurozone PMI + Japan PMI | Implemented 2026-04-23 as `GL_PMI1` (4-region z-score composite) |
+| Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented (US/DE/UK 10Y available; needs 2Y for DE/UK + full JP curve via §3.3 New Source Modules) |
 | % stocks above 200-day MA | Per-index breadth: fraction of constituents with close > 200-day SMA. Not exposed by yfinance as a field and no free FRED/OECD feed exists; StockCharts symbols (`$SPXA200R`, `$NYA200R`, `$NDXA200R`) are proprietary. Compute in-house from constituent daily closes. Candidate indices: S&P 500 (highest signal-to-cost), Nasdaq 100, Russell 1000, FTSE 100. Naming: `US_EQ_B1` / `US_EQ_B2` etc. ("Equity - Breadth"). Adds ~500-1000 extra daily yfinance pulls per index. | Not yet implemented |
 
-**Action:** Audit the 91 indicators in `compute_macro_market.py` against this list to confirm coverage before building. New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv`. No hardcoded metadata needed — everything is read from the CSV at runtime.
+New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv` (with `concept` + `subcategory` per §2.4 + cycle-timing per below).
 
 ### 3.4 Sheets Export Audit (Phase G)
 
