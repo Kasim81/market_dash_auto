@@ -775,6 +775,44 @@ Each indicator goes through:
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
+### 9.8 `data_audit.py` (630 lines)
+
+**Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
+
+Runs as a CI step at the end of `update_data.yml`; never fails the build (warning channel, not gate).
+
+#### Three audit sections
+
+| Section | Purpose | Mechanism |
+|---|---|---|
+| **A — Fetch outcomes** | Catch broken FRED IDs, dead yfinance tickers, persistent HTTP errors | Scrape `pipeline.log` post-run for known per-series patterns (`HTTP <code> on X — skipping`, `possibly delisted`, `Quote not found for symbol: X`, `Period 'max' is invalid`). Retried-then-recovered transients are filtered out by only matching the `— skipping` suffix. yfinance suspects are cross-checked against the latest non-empty row of `market_data_comp_hist.csv` to filter transient warnings. |
+| **B — Static checks** | Catch registry / code drift before it shows up at runtime | Local sanity checks: orphan country codes (every code referenced in `fred` / `oecd` / `dbnomics` / `ifo` libraries exists in `macro_library_countries.csv`); indicator-id uniqueness; calculator registration (every `id` in `macro_indicator_library.csv` is registered as `"<id>": _calc_…` in `compute_macro_market.py`); `_get_col(...)` column existence (every literal in the calculator code resolves to a column in `macro_economic_hist.csv`). |
+| **C — Value-change staleness** | Catch silent publisher freezes that the Friday-spine forward-fill would otherwise mask | For each column in the unified hist, find the last *value-change* date (not just last non-null cell — forward-fill makes that wrong). Compare age against per-frequency tolerance from `data/freshness_thresholds.csv` plus per-row `freshness_override_days` overrides. Classify FRESH / STALE (1×–2×) / EXPIRED (>2× or no obs). |
+
+#### Outputs
+
+- `data_audit.txt` — full sorted plaintext report grouped by section + status.
+- `audit_comment.md` — Markdown body posted to the perpetual `daily-audit`-labelled GitHub Issue. First line is the one-sentence summary:
+  - `## Daily audit — 2026-04-28 — **ALL CLEAN**`
+  - `## Daily audit — 2026-04-28 — **100 ISSUES** (24 fetch errors, 1 static-check failure, 75 stale series)`
+  - Detail follows in collapsible `<details>` blocks; rows capped at 30-50 per category for readability (full detail in `data_audit.txt`).
+
+#### Key Functions
+
+| Function | Purpose |
+|---|---|
+| `load_thresholds()` | Read `data/freshness_thresholds.csv` → `{frequency: days}` dict |
+| `load_overrides()` | Walk every per-source library CSV; collect per-row `freshness_override_days` → `{(source, series_id): days}` |
+| `load_macro_hist()` | Read `data/macro_economic_hist.csv`; for each column, find last value-change date (walks forward through non-null cells, tracks date when value differs from previous) |
+| `classify_age(age, threshold)` | FRESH / STALE / EXPIRED per the 1× / 2× tolerance bands |
+| `section_a_fetch_outcomes()` | Scrape `pipeline.log` + cross-check against `market_data_comp_hist.csv` |
+| `_yfinance_truly_dead(suspects)` | Filter yfinance suspects: keep only those without data in the latest comp-hist row |
+| `section_b_static_checks()` | Run the 4 sub-checks (orphan countries / duplicate ids / missing calculators / missing columns) |
+| `section_c_staleness()` | Bucket every series into FRESH / STALE / EXPIRED |
+| `render_report(sections)` | Build the plaintext `data_audit.txt` |
+| `render_comment(sections)` | Build the GitHub Issue Markdown `audit_comment.md` with first-line summary |
+| `main()` | Orchestrate; always returns exit code 0 (warning channel) |
+
 ---
 
 ## 10. FX Conversion Logic
