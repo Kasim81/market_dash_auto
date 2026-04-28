@@ -280,20 +280,33 @@ Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 r
 ### 2.4 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
 
 **Priority:** High — precondition for §2.5 (the indicator-explorer mirror) and structurally aligns the composite registry with the unified raw-series taxonomy.
-**Status:** Not started.
+**Status:** Done 2026-04-28 — landed in 3 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
 
-The unified raw-series libraries (`macro_library_*.csv`) already carry `concept` ("Rates / Yields", "Inflation", "Labour", "Credit / Spreads", "Sentiment / Survey", etc.) and `subcategory` ("Government Yields", "Mortgage Rates", "CPI", …). The Phase E composite library (`data/macro_indicator_library.csv`) does **not** — it only has `category` / `group` / `sub_group` (region-based) and `cycle_timing`.
+| Step | Commit | Scope |
+|---|---|---|
+| 1 | (audit only) | Survey existing per-source taxonomy; propose canonical 17-concept list (12 inherited from raw-source libraries + 5 new for indicator-level composites: Equity, Cross-Asset, Volatility, Momentum, FX); user signed off including the breakeven-inflation correction (US_R4 + UK_R2 → Inflation, not Rates / Yields) |
+| 2 | `d71e42d` | Add `concept` + `subcategory` columns to `data/macro_indicator_library.csv` between `sub_group` and `naturally_leading`; populate all 92 rows |
+| 3 | `9a48118` | Wire `compute_macro_market.py::_load_indicator_library()` (extend `INDICATOR_META` tuple to 6 elements); `build_snapshot_df()` emits two new columns in `macro_market.csv`; `docs/build_html.py::load_indicator_meta()` returns the new keys so the explorer JS payload's `meta` dict carries them per indicator |
 
-This means the indicator explorer can show "all US indicators" but cannot show "all rate / yield-curve indicators across regions" — which is the user-flagged feature in §2.5.
+**Concept distribution across the 92 indicators** (14 of the 17 canonical concepts are in active use; Manufacturing / External-Trade / Consumer reserved for future indicators):
 
-**Plan:**
+| Concept | Count | Concept | Count |
+|---|---|---|---|
+| Equity | 20 | FX | 4 |
+| Sentiment / Survey | 14 | Labour | 3 |
+| Leading Indicators | 14 | Growth | 3 |
+| Rates / Yields | 8 | Inflation | 2 |
+| Credit / Spreads | 7 | Volatility | 2 |
+| Cross-Asset | 6 | Housing | 2 |
+| Momentum | 6 | Money / Liquidity | 1 |
 
-1. Add `concept` and `subcategory` columns to `data/macro_indicator_library.csv` (CSV schema change, not code).
-2. Manually populate each of the 91 rows with the appropriate concept (matching the raw-series taxonomy where the indicator is built directly on a single concept; using the dominant concept for composites).
-3. Update `compute_macro_market.py::_load_indicator_library()` to surface the two new fields in the `INDICATOR_META` dict.
-4. Plumb through the `build_html.py` reader so the explorer JS payload carries `concept` / `subcategory` per indicator.
+**Acceptance verified:**
 
-**Acceptance:** every row in `macro_indicator_library.csv` has a non-empty `concept` value; no Python literal contains a concept-string list (per §0).
+- Every row in `macro_indicator_library.csv` has a non-empty `concept` value (zero missing across all 92 rows).
+- Per `forward_plan.md` §0: zero Python literals contain a concept-string list — every concept value is in the CSV.
+- The single `INDICATOR_META` consumer (`build_snapshot_df`) is updated to the new 6-tuple shape.
+- `_load_indicator_library()` and `docs/build_html.py::load_indicator_meta()` both surface the new fields.
+- §2.5 is now unblocked — the data is in place; only the explorer-side rendering remains.
 
 ### 2.5 Mirror the unified macro library structure in `docs/indicator_explorer.html`
 
