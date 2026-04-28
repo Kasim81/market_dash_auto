@@ -1,0 +1,6 @@
+frequency,default_days,notes
+Daily,5,Daily series — flag if no observation in the last 5 days. Allows for weekend + 1 holiday tolerance.
+Weekly,10,Weekly series (e.g. FRED MORTGAGE30US) — flag if no observation in the last 10 days.
+Monthly,45,Monthly series — flag if no observation in 45+ days. Covers month-end publication delay (most monthly series publish 2-4 weeks after period end) plus headroom for skipped months.
+Quarterly,120,Quarterly series (e.g. SLOOS surveys) — flag if no observation in 120+ days. Covers ~1 quarter of publication lag.
+Annual,540,Annual series (World Bank CPI, IMF GDP) — flag if no observation in 540+ days. Covers annual-vintage 12-month publication lag plus 6-month tolerance.
