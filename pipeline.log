@@ -17,7 +17,7 @@ $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 ============================================================
-Market Dashboard Data Fetch — 2026-04-28 04:23 UTC
+Market Dashboard Data Fetch — 2026-04-28 07:35 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5825 rows)
@@ -25,15 +25,15 @@ Fetching comprehensive FX rates...
   AUD (AUDUSD=X): OK (5189 rows)
   JPY (USDJPY=X): OK (7647 rows)
   CNY (CNY=X): OK (6215 rows)
-  INR (INR=X): OK (5810 rows)
+  INR (INR=X): OK (5809 rows)
   KRW (KRW=X): OK (5811 rows)
-  TWD (TWD=X): OK (5317 rows)
+  TWD (TWD=X): OK (5318 rows)
   CAD (USDCAD=X): OK (5881 rows)
   BRL (USDBRL=X): OK (5395 rows)
   HKD (USDHKD=X): OK (6271 rows)
   MXN (USDMXN=X): OK (5834 rows)
   IDR (USDIDR=X): OK (6267 rows)
-  RUB (USDRUB=X): OK (5704 rows)
+  RUB (USDRUB=X): OK (5703 rows)
   SAR (USDSAR=X): OK (5808 rows)
   ZAR (USDZAR=X): OK (5827 rows)
   TRY (USDTRY=X): OK (5542 rows)
@@ -304,6 +304,8 @@ $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
 $SENSEXBEES.NS: possibly delisted; no timezone found
 ^CNXSC: Period 'max' is invalid, must be one of: 1d, 5d
+^CNXSC: Period 'max' is invalid, must be one of: 1d, 5d
+^CNXSC: Period 'max' is invalid, must be one of: 1d, 5d
 
   [Pr] ^SP500-3510 (S&P 500 Health Care Equipment & Services)...
   [Pr] ^SP500-3520 (S&P 500 Pharma Biotech & Life Sciences)...
@@ -453,6 +455,7 @@ $SENSEXBEES.NS: possibly delisted; no timezone found
   [Pr] ^CRSMID (Nifty Midcap 100)...
   [To] MID150BEES.NS (Nifty Midcap 100)...
   [Pr] ^CNXSC (Nifty Smallcap 100)...
+    → No data
   [To] SMALLCAP.NS (Nifty Smallcap 100)...
   [Pr] ^CNXENERGY (Nifty Energy)...
   [Pr] 000300.SS (CSI 300 Index)...
@@ -494,27 +497,27 @@ $SENSEXBEES.NS: possibly delisted; no timezone found
 
 1 Failed download:
 ['^TSXV']: possibly delisted; no timezone found
+$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$ISFA.L: possibly delisted; no timezone found
 $^SX7E: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $^SX8P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $^SX6P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$ISFA.L: possibly delisted; no timezone found
-$^SXKP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$^SXDP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$^SX4P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$^SXNP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
-$^SX3P: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 $^TX60: possibly delisted; no timezone found
+$^SXEP: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 
 11 Failed downloads:
-['^SX7E', '^SX8P', '^SX6P', '^SXKP', '^SXDP', '^SX4P', '^SXEP', '^SXNP', '^SX3P']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+['^SX4P', '^SX3P', '^SXNP', '^SXKP', '^SX7E', '^SXDP', '^SX8P', '^SX6P', '^SXEP']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
 ['ISFA.L', '^TX60']: possibly delisted; no timezone found
-$SENSEXBEES.NS: possibly delisted; no timezone found
 $^TOPX: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+$SENSEXBEES.NS: possibly delisted; no timezone found
 
 2 Failed downloads:
-['SENSEXBEES.NS']: possibly delisted; no timezone found
 ['^TOPX']: possibly delisted; no price data found  (1d 1950-01-01 -> 2026-04-28)
+['SENSEXBEES.NS']: possibly delisted; no timezone found
 $^TSXV: possibly delisted; no timezone found
 
 1 Failed download:
@@ -708,7 +711,7 @@ Pushing data to Google Sheets...
   ✓ Written 359 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-28 04:28 UTC
+✓ Completed at 2026-04-28 07:39 UTC
 
 --- market_data asset class breakdown ---
 
@@ -766,7 +769,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 714 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 83.3s
+Comp historical build completed in 80.8s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -852,21 +855,15 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/NEWORDER]
   [FRED/TCU]
   [FRED/W875RX1]
-  [FRED] HTTP 500 on W875RX1 — backoff 2s (attempt 1/5)
   [FRED/PCEC96]
-  [FRED] HTTP 500 on PCEC96 — backoff 2s (attempt 1/5)
   [FRED/CMRMTSPL]
   [FRED/CFNAI]
   [FRED/ULCNFB]
   [FRED/UEMPMEAN]
   [FRED/TOTCI]
   [FRED/CP]
-  [FRED] HTTP 500 on CP — backoff 2s (attempt 1/5)
   [FRED/CONSUMER_CONF]
-  [FRED] HTTP 500 on FRED/CONSUMER_CONF — backoff 2s (attempt 1/5)
   [FRED/GBR_GILT_10Y]
-  [FRED] HTTP 500 on FRED/GBR_GILT_10Y — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on FRED/GBR_GILT_10Y — backoff 4s (attempt 2/5)
   [FRED/DEU_BUND_10Y]
   [FRED/ITA_BTP_10Y]
   [FRED/IND_GOVT_10Y]
@@ -886,7 +883,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/EA_HICP]
   [FRED/EA_DEPOSIT_RATE]
   [FRED/JPN_REER]
-  [FRED] HTTP 500 on FRED/JPN_REER — backoff 2s (attempt 1/5)
   [FRED/JPN_IND_PROD]
   [FRED/JPN_CPI]
   [FRED/JPN_POLICY_RATE]
@@ -912,43 +908,19 @@ macro_economic — Unified Economic Data Coordinator
   Fetching IMF/GDP_GROWTH...
   [IMF/GDP_GROWTH] → 11 countries parsed from IMF
   [DB.nomics/EU_ESI]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 2s
   [DB.nomics/EU_IND_CONF]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 4s
   [DB.nomics/EU_SVC_CONF]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — 4 attempts exhausted
   [DB.nomics/ISM_MFG_PMI]
-    [DB.nomics timeout] ISM/pmi/pm — backing off 2s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 4s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 8s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 16s
-    [DB.nomics FAIL] ISM/pmi/pm — 4 attempts exhausted
   [DB.nomics/ISM_MFG_NEWORD]
-    [DB.nomics timeout] ISM/neword/in — backing off 2s
-    [DB.nomics timeout] ISM/neword/in — backing off 4s
   [DB.nomics/ISM_SVC_PMI]
-    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 2s
   [DB.nomics/EZ_IND_PROD]
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 4s
   [DB.nomics/EZ_RETAIL_VOL]
-    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 2s
   [DB.nomics/EZ_EMPLOYMENT]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   Written 166 rows to data/macro_economic.csv
   [macro_economic] Written 167 rows to 'macro_economic'
 
@@ -1062,15 +1034,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EZ_EMPLOYMENT/hist]
   [ifo/DE_IFO/hist]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   [ifo/DE_IFO_SIT/hist]
   [ifo/DE_IFO_EXP/hist]
   [ifo/DE_IFO_BAL/hist]
@@ -1096,16 +1063,16 @@ macro_economic — Unified Economic Data Coordinator
   [ifo/DE_IFO_CON_EXP/hist]
   [ifo/DE_IFO_UNC/hist]
   [ifo/DE_IFO_CYC/hist]
-  macro_economic_hist: 4140 rows × 137 data columns
+  macro_economic_hist: 4140 rows × 163 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 897.8s
+  macro_economic run completed in 211.3s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
   [load] comp_hist: 1373 rows × 712 cols (2000-01-07 → 2026-04-24)
-  [load] macro_economic_hist: 1373 rows × 137 cols (2000-01-07 → 2026-04-24)
+  [load] macro_economic_hist: 1373 rows × 163 cols (2000-01-07 → 2026-04-24)
   Fetching Euro IG spread (ECB SDW + unified hist) …
   [ECB] AAA euro govt yield: 5530 obs
   [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1199,7 +1166,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] EU_PMI2: raw=5.6  z=0.1  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] EU_ESI1: raw=96.7  z=0.93  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
   [compute] DE_ZEW1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
-  [compute] DE_IFO1: raw=nan  z=nan  regime='n/a'  fwd='n/a [leading]'  (2026-04-24)
+  [compute] DE_IFO1: raw=86.6  z=0.02  regime='neutral'  fwd='stable [leading]'  (2026-04-24)
   [compute] UK_PMI1: raw=-8.0636  z=0.62  regime='contraction'  fwd='stable [leading]'  (2026-04-24)
   [compute] JP_PMI1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
   [compute] CN_PMI1: raw=0.8  z=1.48  regime='contraction'  fwd='improving [leading]'  (2026-04-24)
@@ -1216,22 +1183,20 @@ macro_economic — Unified Economic Data Coordinator
 === Phase E complete ===
 
 Loading indicator metadata...
+Loading countries registry...
 Building macro_market payload...
-Building macro_us payload...
-Building macro_intl payload...
-Building macro_survey payload...
+Building macro_economic payload (merged: FRED + OECD + WB + IMF + DB.nomics + ifo)...
 Building market_comp payload...
 
 Writing output files...
-  indicator_explorer.html  : 8.12 MB
+  indicator_explorer.html  : 8.59 MB
   indicator_explorer_mkt.js: 16.47 MB
 
 ── Summary ──────────────────────────────────────────────────────
-macro_market : 86 indicators across 7 groups
-macro_us     : 53 FRED series
-macro_intl   : 75 intl series
-macro_survey : 9 survey series
-market_comp  : 712 series across 6 asset classes
+macro_market   : 86 indicators across 7 groups
+macro_economic : 163 raw series (merged FRED + OECD + WB + IMF + DB.nomics + ifo)
+countries      : 12 codes from macro_library_countries.csv
+market_comp    : 712 series across 6 asset classes
   asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators']
 
-Total output: 24.58 MB  (8.12 MB HTML + 16.47 MB companion JS)
+Total output: 25.06 MB  (8.59 MB HTML + 16.47 MB companion JS)
