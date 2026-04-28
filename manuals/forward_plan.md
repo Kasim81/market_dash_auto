@@ -886,6 +886,15 @@ Each stage ends in a CSV / output that can be inspected and signed off before th
 
 **Goal:** define a multi-asset portfolio managed against a strategic benchmark; consume `regime_status` from §3.9 plus a small set of explicit tilt rules (which asset classes to over/underweight in each regime, by what amount); back-test the resulting time series of allocations against the benchmark over the longest sample where the data supports; produce a historical performance record that flags whether the system delivers positive excess return.
 
+#### Benchmarks (final composition decided at implementation)
+
+Two benchmarks are planned, run side-by-side:
+
+1. **Classic 60/40** — 60% MSCI ACWI / 40% Bloomberg Global Aggregate (in USD). Industry standard; gives an intuitive "are we beating the obvious passive comparator?" read.
+2. **Regime-probability-weighted total-return benchmark** — for each regime, a static long-only composition that represents the regime's "natural" passive blend (e.g. Goldilocks ≈ heavy equity + duration; Stagflation ≈ heavy commodity + short-duration); the live benchmark is the time-weighted average of these compositions weighted by the regime probability output from §3.9. Acts as the "regime-aware buy-and-hold" comparator — the strategy must add value beyond just having the right static blend per regime.
+
+Exact composition of both benchmarks is locked in at implementation, after the §3 coverage work resolves which asset classes we have reliable long-history data for.
+
 ---
 
 ## 4. Multi-Frequency Pipeline (Phase 2)
