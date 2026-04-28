@@ -607,6 +607,33 @@ These 20 indicators can be captured immediately by adding rows to the existing F
 | Japan | BoJ Policy Rate | IRSTCB01JPM156N |
 | China | PPI Inflation | CHNPPIALLMINMEI |
 
+#### New source modules needed (ranked by indicator count)
+
+Some of these overlap with the §3.1 surveys sub-project (BoJ Statistics specifically — covered there). The rest are non-survey targets.
+
+| Source | Indicators | Key Series | Effort |
+|---|---|---|---|
+| **e-Stat (Japan)** | 16 | Machinery orders, housing starts, economy watchers, retail sales, tertiary industry, coincident/leading indices, labour, household spending | Medium — free API with registration; `estat-api-client` package available |
+| **ONS API (UK)** | 14 | Monthly GDP, IP, retail sales, employment, wages, CPI, claimant count, productivity, BICS | Medium — beta REST API; dataset IDs known (mgdp, iop, rsi) |
+| **BoJ Statistics (Japan)** | 6 | Tankan (all variants), JGB curve, M2/M3 — see §3.1 | Low-medium — REST API; `bojpy` package wraps it |
+| **BoE BOESD (UK)** | 4 | Credit conditions survey, mortgage approvals, M4 lending, UK 2Y gilt yield | Low — free interactive database with CSV download; may need scraper |
+| **ECB SDW (Eurozone)** | 4 | Bank Lending Survey, M3, negotiated wages, 2Y Bund yield | Low-medium — SDMX 2.1 REST API; `sdmx1` package |
+| **BIS SDMX (Global)** | 2 | Household debt/GDP, global credit impulse components | Low — SDMX API |
+| **CPB (Netherlands)** | 2 | World Trade Monitor, World Industrial Production | Low — free CSV download, monthly |
+| **OFR (US/Global)** | 1 | Financial Stress Index | Low — free CSV/JSON API, daily |
+| **Atlanta Fed** | 1 | GDPNow | Low — JSON API, snapshot-only (append through time) |
+| **Bundesbank SDMX** | 1 | Germany Factory Orders | Low — SDMX API |
+
+**Recommended build order** (highest impact, lowest effort first):
+1. FRED additions (20 series, zero code — see table above)
+2. CPB + OFR (3 series, simple downloaders, high signal value)
+3. ONS API (14 UK series — fills the largest single-region gap)
+4. e-Stat (16 Japan series — fills the second-largest gap)
+5. ECB SDW (4 EZ series — complements existing Eurostat coverage)
+6. BoE BOESD (4 UK series — complements ONS)
+7. BoJ Statistics (6 Japan series — overlaps with §3.1 surveys; build there)
+8. BIS + Bundesbank + Atlanta Fed (4 series — lower priority)
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
