@@ -879,6 +879,13 @@ Each stage ends in a CSV / output that can be inspected and signed off before th
 - Per-indicator `regime_label` column appears in `macro_market.csv`; explorer surfaces it (small UI follow-up).
 - §3.10 back-test consumes `regime_status` directly without further data plumbing.
 
+### 3.10 Regime-Driven Back-Test & Portfolio Optimisation
+
+**Priority:** High strategic — this is the project's end-state artefact: a historical performance record of a regime-tilted multi-asset portfolio vs benchmark, demonstrating whether the indicator library + regime framework actually generates positive excess return.
+**Status:** Not started. Hard prerequisite: §3.9 (regime status output). Soft prerequisite: §2.6 freshness audit + the broader §3 coverage work so the portfolio rules are tilted on clean data.
+
+**Goal:** define a multi-asset portfolio managed against a strategic benchmark; consume `regime_status` from §3.9 plus a small set of explicit tilt rules (which asset classes to over/underweight in each regime, by what amount); back-test the resulting time series of allocations against the benchmark over the longest sample where the data supports; produce a historical performance record that flags whether the system delivers positive excess return.
+
 ---
 
 ## 4. Multi-Frequency Pipeline (Phase 2)
