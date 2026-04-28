@@ -65,6 +65,9 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (733 lines)
 ├── compute_macro_market.py        # 92 macro-market composite indicators (2,103 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (347 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness (§2.6 v2; ~530 lines)
+├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
+├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -97,6 +100,9 @@ market_dash_auto/
 │   ├── macro_indicator_library.csv    # 92 macro-market indicator definitions
 │   ├── reference_indicators.csv       # 206-row L/C/G cycle-timing cross-reference
 │   │
+│   ├── # Audit infrastructure (§2.6 v2):
+│   ├── freshness_thresholds.csv       # Per-frequency staleness defaults (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d)
+│   │
 │   ├── # Pipeline outputs (regenerated each run, committed to git):
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
@@ -128,7 +134,7 @@ market_dash_auto/
 │   └── indicator_groups_review_UPDATED.xlsx  # Output of that review — drove macro_indicator_library.csv
 │
 └── .github/workflows/
-    └── update_data.yml            # GitHub Actions daily scheduler (pipes both runs through `tee pipeline.log` and commits the log on every run)
+    └── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits the log + audit + data CSVs
 ```
 
 ---
