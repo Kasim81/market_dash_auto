@@ -41,6 +41,19 @@ jobs:
         set -o pipefail
         cd docs
         python build_html.py 2>&1 | tee -a ../pipeline.log
+    - name: Run freshness audit
+      # Reads every data/macro_library_*.csv, finds last value-change per
+      # series in macro_economic_hist.csv, classifies FRESH/STALE/EXPIRED
+      # per the data/freshness_thresholds.csv defaults plus per-row
+      # `freshness_override_days` overrides.  Output appended to
+      # pipeline.log so the staleness is visible in the committed log;
+      # script's non-zero exit on any STALE/EXPIRED is suppressed with
+      # `|| true` since this is a warning channel, not a build gate.
+      if: always()
+      run: |
+        echo "" >> pipeline.log
+        echo "" >> pipeline.log
+        python freshness_audit.py 2>&1 | tee -a pipeline.log || true
     - name: Commit and push if changed
       # `if: always()` so even a crashed run still commits the
       # pipeline.log so we can diagnose without re-opening the GitHub
@@ -52,6 +65,7 @@ jobs:
         # Pipeline log first — this is the diagnostic record of every
         # run.  Always commit it, even on failure.
         [ -f pipeline.log ] && git add -f pipeline.log || true
+        [ -f freshness_audit.txt ] && git add -f freshness_audit.txt || true
         [ -f data/market_data.csv ] && git add -f data/market_data.csv || true
         [ -f data/market_data_comp.csv ] && git add -f data/market_data_comp.csv || true
         [ -f data/market_data_comp_hist.csv ] && git add -f data/market_data_comp_hist.csv || true
