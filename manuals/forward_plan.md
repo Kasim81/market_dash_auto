@@ -230,14 +230,9 @@ These are cases where a planned series is unavailable from any free source we ac
 
 ## 2. Resume Here — Priority Tasks
 
-This is the priority queue distilled from the 2026-04-22 → 2026-04-26 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup). Items are listed in execution order; each is self-contained with its own acceptance criteria.
+The 2026-04-22 → 2026-04-28 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup → concept/subcategory taxonomy → indicator-explorer restructure → daily integrated audit) has been delivered end-to-end; durable outcomes are documented in §1 Phase Summary and `manuals/technical_manual.md`.
 
-Completed work that previously lived in this section:
-
-- ~~§2.4 (old) — Eliminate `fetch_supplemental_fred()`~~ — done 2026-04-26 (commit `48c8c1c`); see §1 Phase E description.
-- ~~§2.2 (old) — Update technical manual~~ — was marked complete 2026-04-23 but has since gone stale; relisted as **§2.2 below** with a full review-and-update scope.
-- ~~§2.3 (old) — Phase D Rebuild — FMP Replacement Plan~~ — done 2026-04-23 (Phase D consolidated into Phase ME, FMP rejected); the BoJ Tankan follow-up was tracked at §2.8 then absorbed into the comprehensive surveys sub-project (currently §3.2) on 2026-04-28.
-- ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.7 below** at low priority.
+**Active priority is §3.1** — act on the audit findings (29 EXPIRED series, 22 dead yfinance tickers, 1 broken `_get_col` reference). Until that backlog is worked down, the daily audit issue (§1 Phase H) will continue to surface the same flags.
 
 ---
 
