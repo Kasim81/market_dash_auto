@@ -1,27 +1,27 @@
-series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,sheet_index,excel_col
-it_climate_idx,DE_IFO,ifo Business Climate (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Headline ifo composite (Manufacturing + Trade) in index form. History back to 01/1991 via Sectors sheet.,10,Sentiment / Survey,L,1,2
-it_situation_idx,DE_IFO_SIT,ifo Business Situation (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Current-assessment component of the Industry+Trade composite. Index form.,20,Sentiment / Survey,C,1,3
-it_expectations_idx,DE_IFO_EXP,ifo Business Expectations (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Forward-looking component of the Industry+Trade composite. Index form.,30,Sentiment / Survey,L,1,4
-it_climate_bal,DE_IFO_BAL,ifo Business Climate (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form (% positive - % negative) of Industry+Trade Climate.,40,Sentiment / Survey,L,1,5
-it_situation_bal,DE_IFO_SIT_BAL,ifo Business Situation (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form of Industry+Trade Situation.,50,Sentiment / Survey,C,1,6
-it_expectations_bal,DE_IFO_EXP_BAL,ifo Business Expectations (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form of Industry+Trade Expectations.,60,Sentiment / Survey,L,1,7
-mfg_climate,DE_IFO_MFG,ifo Manufacturing Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector climate balance. History from 01/1991.,70,Sentiment / Survey,L,1,8
-mfg_situation,DE_IFO_MFG_SIT,ifo Manufacturing Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector current-situation balance.,80,Sentiment / Survey,C,1,9
-mfg_expectations,DE_IFO_MFG_EXP,ifo Manufacturing Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector expectations balance.,90,Sentiment / Survey,L,1,10
-svc_climate,DE_IFO_SVC,ifo Services Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector climate balance. Series starts 04/2005.,100,Sentiment / Survey,L,1,11
-svc_situation,DE_IFO_SVC_SIT,ifo Services Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector situation balance. Starts 04/2005.,110,Sentiment / Survey,C,1,12
-svc_expectations,DE_IFO_SVC_EXP,ifo Services Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector expectations balance. Starts 04/2005.,120,Sentiment / Survey,L,1,13
-trd_climate,DE_IFO_TRD,ifo Trade Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade climate balance.,130,Sentiment / Survey,L,1,14
-trd_situation,DE_IFO_TRD_SIT,ifo Trade Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade situation balance.,140,Sentiment / Survey,C,1,15
-trd_expectations,DE_IFO_TRD_EXP,ifo Trade Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade expectations balance.,150,Sentiment / Survey,L,1,16
-whs_climate,DE_IFO_WHS,ifo Wholesaling Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector climate balance.,160,Sentiment / Survey,L,1,17
-whs_situation,DE_IFO_WHS_SIT,ifo Wholesaling Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector situation balance.,170,Sentiment / Survey,C,1,18
-whs_expectations,DE_IFO_WHS_EXP,ifo Wholesaling Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector expectations balance.,180,Sentiment / Survey,L,1,19
-rtl_climate,DE_IFO_RTL,ifo Retailing Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector climate balance.,190,Sentiment / Survey,L,1,20
-rtl_situation,DE_IFO_RTL_SIT,ifo Retailing Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector situation balance.,200,Sentiment / Survey,C,1,21
-rtl_expectations,DE_IFO_RTL_EXP,ifo Retailing Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector expectations balance.,210,Sentiment / Survey,L,1,22
-con_climate,DE_IFO_CON,ifo Construction Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector climate balance.,220,Sentiment / Survey,L,1,23
-con_situation,DE_IFO_CON_SIT,ifo Construction Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector situation balance.,230,Sentiment / Survey,C,1,24
-con_expectations,DE_IFO_CON_EXP,ifo Construction Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector expectations balance.,240,Sentiment / Survey,L,1,25
-business_uncertainty,DE_IFO_UNC,ifo Business Uncertainty Index,Survey,Business Sentiment,Index,Monthly,DEU,Disagreement / dispersion of survey responses; higher = more uncertainty. Limited history.,250,Sentiment / Survey,L,0,8
-business_cycle_tracer,DE_IFO_CYC,ifo Business Cycle Tracer Probability,Survey,Business Sentiment,Probability (%),Monthly,DEU,Cycle-tracer model probability of expansion phase. Starts 01/2005.,260,Sentiment / Survey,L,0,9
+series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,sheet_index,excel_col,freshness_override_days
+it_climate_idx,DE_IFO,ifo Business Climate (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Headline ifo composite (Manufacturing + Trade) in index form. History back to 01/1991 via Sectors sheet.,10,Sentiment / Survey,L,1,2,
+it_situation_idx,DE_IFO_SIT,ifo Business Situation (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Current-assessment component of the Industry+Trade composite. Index form.,20,Sentiment / Survey,C,1,3,
+it_expectations_idx,DE_IFO_EXP,ifo Business Expectations (Industry+Trade),Survey,Business Sentiment,Index (2015 = 100),Monthly,DEU,Forward-looking component of the Industry+Trade composite. Index form.,30,Sentiment / Survey,L,1,4,
+it_climate_bal,DE_IFO_BAL,ifo Business Climate (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form (% positive - % negative) of Industry+Trade Climate.,40,Sentiment / Survey,L,1,5,
+it_situation_bal,DE_IFO_SIT_BAL,ifo Business Situation (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form of Industry+Trade Situation.,50,Sentiment / Survey,C,1,6,
+it_expectations_bal,DE_IFO_EXP_BAL,ifo Business Expectations (Industry+Trade balance),Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Balance form of Industry+Trade Expectations.,60,Sentiment / Survey,L,1,7,
+mfg_climate,DE_IFO_MFG,ifo Manufacturing Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector climate balance. History from 01/1991.,70,Sentiment / Survey,L,1,8,
+mfg_situation,DE_IFO_MFG_SIT,ifo Manufacturing Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector current-situation balance.,80,Sentiment / Survey,C,1,9,
+mfg_expectations,DE_IFO_MFG_EXP,ifo Manufacturing Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Manufacturing sector expectations balance.,90,Sentiment / Survey,L,1,10,
+svc_climate,DE_IFO_SVC,ifo Services Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector climate balance. Series starts 04/2005.,100,Sentiment / Survey,L,1,11,
+svc_situation,DE_IFO_SVC_SIT,ifo Services Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector situation balance. Starts 04/2005.,110,Sentiment / Survey,C,1,12,
+svc_expectations,DE_IFO_SVC_EXP,ifo Services Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Services sector expectations balance. Starts 04/2005.,120,Sentiment / Survey,L,1,13,
+trd_climate,DE_IFO_TRD,ifo Trade Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade climate balance.,130,Sentiment / Survey,L,1,14,
+trd_situation,DE_IFO_TRD_SIT,ifo Trade Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade situation balance.,140,Sentiment / Survey,C,1,15,
+trd_expectations,DE_IFO_TRD_EXP,ifo Trade Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Combined Wholesale + Retail trade expectations balance.,150,Sentiment / Survey,L,1,16,
+whs_climate,DE_IFO_WHS,ifo Wholesaling Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector climate balance.,160,Sentiment / Survey,L,1,17,
+whs_situation,DE_IFO_WHS_SIT,ifo Wholesaling Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector situation balance.,170,Sentiment / Survey,C,1,18,
+whs_expectations,DE_IFO_WHS_EXP,ifo Wholesaling Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Wholesale sub-sector expectations balance.,180,Sentiment / Survey,L,1,19,
+rtl_climate,DE_IFO_RTL,ifo Retailing Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector climate balance.,190,Sentiment / Survey,L,1,20,
+rtl_situation,DE_IFO_RTL_SIT,ifo Retailing Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector situation balance.,200,Sentiment / Survey,C,1,21,
+rtl_expectations,DE_IFO_RTL_EXP,ifo Retailing Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Retail sub-sector expectations balance.,210,Sentiment / Survey,L,1,22,
+con_climate,DE_IFO_CON,ifo Construction Climate,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector climate balance.,220,Sentiment / Survey,L,1,23,
+con_situation,DE_IFO_CON_SIT,ifo Construction Situation,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector situation balance.,230,Sentiment / Survey,C,1,24,
+con_expectations,DE_IFO_CON_EXP,ifo Construction Expectations,Survey,Business Sentiment,Balance (% points SA),Monthly,DEU,Construction sector expectations balance.,240,Sentiment / Survey,L,1,25,
+business_uncertainty,DE_IFO_UNC,ifo Business Uncertainty Index,Survey,Business Sentiment,Index,Monthly,DEU,Disagreement / dispersion of survey responses; higher = more uncertainty. Limited history.,250,Sentiment / Survey,L,0,8,
+business_cycle_tracer,DE_IFO_CYC,ifo Business Cycle Tracer Probability,Survey,Business Sentiment,Probability (%),Monthly,DEU,Cycle-tracer model probability of expansion phase. Starts 01/2005.,260,Sentiment / Survey,L,0,9,
