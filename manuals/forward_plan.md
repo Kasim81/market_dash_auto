@@ -399,7 +399,7 @@ Filter to significant changes (feature additions, bug fixes, schema changes, new
 
 **Result:** 10 of the original 13 Phase D indicators are live and read from `macro_economic_hist`. The 3 proprietary holdouts (`DE_ZEW1`, `JP_PMI1`, `CN_PMI2` — see §1 Known Data Gaps) return `Insufficient Data`. `JP_PMI1` will be partially addressed by §2.7 (BoJ Tankan, quarterly DI).
 
-**Source-per-indicator detail:** see `manuals/pipeline_review.md` §1 and §5 for the historical record. The current source-of-truth for survey data is the unified `macro_economic_hist`, populated by `sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py` per `data/macro_library_*.csv`.
+**Source-per-indicator detail:** see §3.7.1 below for the FMP-rebuild resolution table (which Phase E indicator now reads which raw series, and from which library) plus the partial-coverage / proxy / upgrade-path catalogue. The current source-of-truth for survey data is the unified `macro_economic_hist`, populated by `sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py` per `data/macro_library_*.csv`.
 
 ### 3.2 Instrument Expansion
 
@@ -469,7 +469,7 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 ### 3.7 Macro Library Expansion — Source Evaluation Retrospective
 
-**Status:** The original three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail moved to §1 Phase ME, the per-indicator wiring lives in `manuals/pipeline_review.md`, and the still-actionable forward-looking expansion work is in §3.8 below.
+**Status:** The three-tier source-evaluation plan (FRED Tier 1 / DB.nomics Tier 2 / FMP Tier 3) was fully resolved during the 2026-04-21 → 2026-04-23 Phase D rebuild and the Stage 2 unification. This section retains only the verdicts that affect future-source decisions; the implementation detail lives in §1 Phase ME, the per-indicator wiring is catalogued in §3.7.1 immediately below, and the still-actionable forward-looking expansion work is in §3.8.
 
 #### Source Evaluation Verdicts (still binding)
 
@@ -498,6 +498,71 @@ All resulting series already live in `macro_economic_hist`:
 - **ifo**: 26 series across the Industry+Trade composite, six sub-sector groups, plus uncertainty + cycle tracer.
 
 **Forward-looking expansion** (additional FRED rows + new source modules — ONS, e-Stat, BoE, ECB SDW direct, etc.) lives in §3.8 alongside the cycle-timing gap analysis.
+
+#### 3.7.1 Per-Indicator Source Mapping
+
+Inverse of the source-evaluation verdicts above: for each Phase E composite that depends on a survey or proxy series, this section records the raw source it currently consumes and any upgrade path. Use it when:
+
+- **Adding a new source** (e.g. §2.7 BoJ Tankan) — find which indicators currently depend on alternatives that the new source would replace.
+- **Diagnosing why an indicator returns n/a** — trace the calculator back to the missing input.
+- **Deciding whether a series can be retired** — find every indicator that reads it.
+
+##### Survey / PMI indicators wired during the Phase D / FMP rebuild (2026-04-21 → 2026-04-23)
+
+12 Phase E indicators were originally scoped against the FMP economic calendar. After FMP's free tier paywalled in Aug 2025 (verified 2026-04-22), the table below records the resolution. 9 are LIVE through free proxies; 3 remain proprietary (no free monthly source exists).
+
+| Phase E ID | Description | Resolution | Status |
+|---|---|---|---|
+| `US_PMI1` | ISM Manufacturing PMI | DB.nomics `ISM/pmi/pm` (column `ISM_MFG_PMI`) | LIVE |
+| `US_PMI2` / `US_ISM1` | ISM Manufacturing New Orders | DB.nomics `ISM/neword/in` (column `ISM_MFG_NEWORD`) — rerouted from FRED `NAPMOI` after FRED retired the series in April 2026 | LIVE |
+| `US_SVC1` | ISM Services PMI | DB.nomics `ISM/nm-pmi/pm` (column `ISM_SVC_PMI`) | LIVE |
+| `DE_IFO1` | ifo Business Climate | ifo Excel workbook (`sources/ifo.py`) | LIVE |
+| `EU_PMI1` | EZ Manufacturing PMI | EC Industry Confidence (column `EU_IND_CONF`, DB.nomics Eurostat) — same 3 PMI questions as a proxy | LIVE (proxy) |
+| `EU_PMI2` | EZ Services PMI | EC Services Confidence (column `EU_SVC_CONF`, DB.nomics Eurostat) | LIVE (proxy) |
+| `UK_PMI1` | UK Manufacturing PMI | OECD BCI for UK (FRED `BSCICP02GBM460S`, column `GBR_BUS_CONF`) | LIVE (proxy, monthly) |
+| `CN_PMI1` | China NBS Manufacturing PMI | OECD BCI for China (FRED `CHNBSCICP02STSAM`, column `CHN_BUS_CONF`) | LIVE (proxy) |
+| `GL_PMI1` | Global PMI | Z-score-normalised 4-region composite (`ISM_MFG_PMI` + `EU_IND_CONF` + `GBR_BUS_CONF` + `CHN_BUS_CONF`) | LIVE (auto-rebuilds from components) |
+| `DE_ZEW1` | ZEW Economic Sentiment | **Proprietary** — ZEW Mannheim licences archive | n/a — covered by `DE_IFO1` + `DEU_BUS_CONF` |
+| `JP_PMI1` | au Jibun Bank Japan Mfg PMI | **Proprietary** — S&P Global, no monthly free source | n/a — BoJ Tankan quarterly is the future option (§2.7) |
+| `CN_PMI2` | Caixin China Mfg PMI | **Proprietary** — S&P Global / Caixin | n/a — Chinese manufacturing covered by `CN_PMI1` |
+
+##### Partial-coverage indicators (proxy in use, upgrade paths noted)
+
+These reference indicators have partial coverage today via adjacent / standardised proxies. Rows marked **Done** landed in Stage 2 (2026-04-23); rows without a date are still actionable upgrades. Items flagged "no upgrade" are either functional matches (proxy is fine) or genuinely blocked.
+
+| Region | Indicator | Current source | Upgrade path / status |
+|---|---|---|---|
+| US | UMich Consumer Sentiment — Expectations sub-index | `UMCSENT` headline only | No free path — sub-index is UMich portal only |
+| US | Retail Sales (Control Group) | `RSXFS` (ex-Autos) | FRED `RSFSXMV` — zero-code row addition (listed in §3.8 Prioritised FRED Additions) |
+| UK | UK Gilt Curve (10Y-2Y) | 10Y only via FRED | Add UK 2Y via BoE BOESD (§3.8 New Source Modules) |
+| UK | UK CPI Inflation | FRED `GBRCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Eurozone | EC Consumer Confidence | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | INSEE Business Climate | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | ISTAT Business Confidence | FRED OECD proxy | Functional match — no upgrade |
+| Eurozone | Bund Curve (10Y-2Y) | 10Y only via FRED | Add DE 2Y via ECB SDW / Bundesbank (§3.8) |
+| Eurozone | Eurozone GDP | IMF annual | Eurostat quarterly via DB.nomics |
+| Eurozone | Euro Area Unemployment | OECD monthly | Functional match — no upgrade |
+| Eurozone | HICP Inflation | FRED `EA19CPALTT01GYM` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Eurozone | Industrial Production | DB.nomics Eurostat (column `EZ_IND_PROD`) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Retail Sales | DB.nomics Eurostat (column `EZ_RETAIL_VOL`) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Employment | DB.nomics Eurostat (column `EZ_EMPLOYMENT`, quarterly) | **Done** — Stage 2, 2026-04-23 |
+| Eurozone | Euro IG corporate bond yield (component of `EU_Cr1` IG spread) | None — FRED `BAMLEC0A0RMEY` invalid; row removed 2026-04-27 | See §1 Known Data Gaps for candidate sources (DB.nomics ECB MIR / iShares EUR IG ETF proxy / Bundesbank SDMX). EU_Cr1 returns n/a until wired |
+| Japan | Consumer Confidence Index | FRED OECD proxy | Functional match — no upgrade |
+| Japan | Real GDP | IMF annual | e-Stat quarterly (§3.8 New Source Modules) |
+| Japan | Unemployment Rate | OECD monthly | Functional match — no upgrade |
+| Japan | Core CPI | FRED `JPNCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| Japan | Mfg PMI (`JP_PMI1`) | None (proprietary; n/a) | BoJ Tankan quarterly DI (§2.7) |
+| China | Sovereign Curve (10Y-2Y) | 10Y only via FRED (currently NaN — China 10Y itself unsourced) | 2Y is proprietary (ChinaBond/Wind) — accept the gap |
+| China | China 10Y govt bond yield | None — FRED carries only short-term `IR3TTS01CNM156N` | Future: DB.nomics PBoC mirror (see §1 Known Data Gaps) |
+| China | Real GDP | IMF annual | Direct PBoC scrape — accept gap (Wind/CEIC otherwise) |
+| China | CPI Inflation | FRED `CHNCPIALLMINMEI` (monthly) | **Done** — Stage 2, 2026-04-23 (was World Bank annual) |
+| China | Industrial Production | FRED `CHNPRINTO01IXPYM` (monthly) | **Done** — Stage 2, 2026-04-23 |
+| China | Urban Surveyed Unemployment | OECD monthly | Functional match — no upgrade |
+| Global | Global Mfg PMI | `GL_PMI1` 4-region composite (above) | True JPM Global PMI is proprietary — keep proxy |
+| Global | Bloomberg Commodity Index | `DBC` ETF proxy | BCOM itself proprietary — keep DBC |
+| Global | Goldman Sachs FCI | `NFCI` (Chicago Fed) substitute | GS FCI proprietary — keep NFCI |
+
+For the prioritised list of new sources to wire (Tier 2 — e-Stat, ONS, BoE, ECB SDW, BIS, CPB, OFR, Atlanta Fed) and the full FRED-additions queue, see §3.8 below.
 
 ### 3.8 Cycle Timing Framework (L/C/G) & Indicator Coverage Expansion
 
