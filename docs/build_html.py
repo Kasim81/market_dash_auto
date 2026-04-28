@@ -35,6 +35,7 @@ MACRO_MKT       = DATA / "macro_market_hist.csv"
 MACRO_ECONOMIC  = DATA / "macro_economic_hist.csv"
 MKT_COMP        = DATA / "market_data_comp_hist.csv"
 IND_LIB         = DATA / "macro_indicator_library.csv"
+COUNTRIES_LIB   = DATA / "macro_library_countries.csv"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -304,7 +305,45 @@ def build_macro_survey() -> dict:
     )
 
 
-# ── 6. market_data_comp_hist ──────────────────────────────────────────────────
+def build_macro_economic() -> dict:
+    """Single merged payload spanning every raw-macro source — FRED (US +
+    intl), OECD, World Bank, IMF, DB.nomics, ifo.  Powers the unified
+    "Economic Data" sidebar section (§2.5 restructure) where the user
+    browses all raw indicators by country (default By Region view) or by
+    concept (By Concept view), with the per-source distinction kept only as
+    filterable metadata in `meta.Source`.
+    """
+    return _build_payload(lambda m: m.get("Source") in {
+        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo",
+    })
+
+
+# ── 6. countries registry — drives sidebar by-country grouping & dropdown ────
+
+def load_countries() -> list[dict]:
+    """Read data/macro_library_countries.csv — the single source of truth
+    for the 12 country codes (per §0 of forward_plan.md).  Returned in CSV
+    row order so the sidebar renders countries in the same order the user
+    sees in the registry.
+
+    Each entry: {code, name, region}.  wb_code / imf_code intentionally
+    omitted — those are provider-mapping concerns, not display concerns.
+    """
+    df = pd.read_csv(COUNTRIES_LIB)
+    out: list[dict] = []
+    for _, row in df.iterrows():
+        code = str(row.get("code", "")).strip()
+        if not code:
+            continue
+        out.append({
+            "code":   code,
+            "name":   str(row.get("name", "")).strip(),
+            "region": str(row.get("region", "")).strip(),
+        })
+    return out
+
+
+# ── 7. market_data_comp_hist ──────────────────────────────────────────────────
 
 def build_market_comp() -> dict:
     # rows 0-10 = metadata, row 11 = headers, row 12+ = data
@@ -355,6 +394,9 @@ def main():
     print("Loading indicator metadata...")
     ind_meta = load_indicator_meta()
 
+    print("Loading countries registry...")
+    countries = load_countries()
+
     print("Building macro_market payload...")
     macro_mkt_data = build_macro_market(ind_meta)
 
@@ -367,15 +409,24 @@ def main():
     print("Building macro_survey payload...")
     macro_survey_data = build_macro_survey()
 
+    print("Building macro_economic payload (merged: FRED + OECD + WB + IMF + DB.nomics + ifo)...")
+    macro_econ_data = build_macro_economic()
+
     print("Building market_comp payload...")
     mkt_comp_data = build_market_comp()
 
     # ── assemble payloads ─────────────────────────────────────────────────────
+    # The three legacy entries (macro_us / macro_intl / macro_survey) are kept
+    # in this commit so the existing JS sidebar continues to work; sub-step 2
+    # of the §2.5 restructure replaces them with the merged macro_economic
+    # entry below.
     main_payload = {
-        "macro_market": macro_mkt_data,
-        "macro_us":     macro_us_data,
-        "macro_intl":   macro_intl_data,
-        "macro_survey": macro_survey_data,
+        "macro_market":   macro_mkt_data,
+        "macro_us":       macro_us_data,
+        "macro_intl":     macro_intl_data,
+        "macro_survey":   macro_survey_data,
+        "macro_economic": macro_econ_data,
+        "countries":      countries,
     }
 
     # ── write output files ────────────────────────────────────────────────────
@@ -384,12 +435,15 @@ def main():
 
     # ── summary ───────────────────────────────────────────────────────────────
     print("\n── Summary ──────────────────────────────────────────────────────")
-    print(f"macro_market : {len(macro_mkt_data['indicators'])} indicators "
+    print(f"macro_market   : {len(macro_mkt_data['indicators'])} indicators "
           f"across {len(macro_mkt_data['groups'])} groups")
-    print(f"macro_us     : {len(macro_us_data['series'])} FRED series")
-    print(f"macro_intl   : {len(macro_intl_data['series'])} intl series")
-    print(f"macro_survey : {len(macro_survey_data['series'])} survey series")
-    print(f"market_comp  : {len(mkt_comp_data['series'])} series "
+    print(f"macro_us       : {len(macro_us_data['series'])} FRED series")
+    print(f"macro_intl     : {len(macro_intl_data['series'])} intl series")
+    print(f"macro_survey   : {len(macro_survey_data['series'])} survey series")
+    print(f"macro_economic : {len(macro_econ_data['series'])} raw series "
+          f"(merged FRED + OECD + WB + IMF + DB.nomics + ifo)")
+    print(f"countries      : {len(countries)} codes from macro_library_countries.csv")
+    print(f"market_comp    : {len(mkt_comp_data['series'])} series "
           f"across {len(mkt_comp_data['groups'])} asset classes")
     print(f"  asset classes: {list(mkt_comp_data['groups'].keys())}")
     html_mb = (DOCS / 'indicator_explorer.html').stat().st_size / 1e6
