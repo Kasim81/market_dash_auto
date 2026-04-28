@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-04-27
+> Last updated: 2026-04-28
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -63,8 +63,8 @@ market_dash_auto/
 ├── fetch_data.py                  # Master orchestrator — runs all phases (888 lines)
 ├── fetch_hist.py                  # Comp-pipeline weekly history (769 lines)
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (733 lines)
-├── compute_macro_market.py        # 92 macro-market composite indicators (2,097 lines)
-├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets (318 lines)
+├── compute_macro_market.py        # 92 macro-market composite indicators (2,103 lines)
+├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (347 lines)
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -107,7 +107,7 @@ market_dash_auto/
 │   └── macro_market_hist.csv          # OUTPUT — macro-market indicator weekly history
 │
 ├── docs/                          # Indicator Explorer generator
-│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,345 lines)
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,683 lines)
 │   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
 │   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
 │
@@ -296,7 +296,7 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
 | `macro_economic` | `fetch_macro_economic.py` | `data/macro_economic.csv` | Unified raw-macro snapshot (long-form) — every series from FRED + OECD + WB + IMF + DB.nomics + ifo, one row per series with metadata |
 | `macro_economic_hist` | `fetch_macro_economic.py` | `data/macro_economic_hist.csv` | Wide-form weekly Friday-spine history from 1947, with **14 metadata rows** above the data: Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 92-indicator snapshot (id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note) |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 92-indicator snapshot (id, group, sub_group, concept, subcategory, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note). `concept` + `subcategory` added 2026-04-28 (§2.4) — drives the explorer's By-Concept sidebar view. |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
@@ -333,14 +333,14 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 |---|---|---|---|
 | `index_library.csv` | ~390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
-| `macro_library_countries.csv` | 12 | sources/countries.py | 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) + canonical / WB / IMF code mappings |
+| `macro_library_countries.csv` | 12 | sources/countries.py, docs/build_html.py | 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) + canonical / WB / IMF code mappings. Also drives the explorer's "Economic Data" By-Country sidebar grouping + country-filter dropdown (§2.5 v2). |
 | `macro_library_fred.csv` | ~85 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor; `BAMLEC0A0RMEY` removed 2026-04-27) |
 | `macro_library_oecd.csv` | varies | sources/oecd.py | OECD SDMX dataflow + dimension keys (CLI, unemployment, 3-month rate) |
 | `macro_library_worldbank.csv` | varies | sources/worldbank.py | World Bank WDI indicator codes (CPI YoY) |
 | `macro_library_imf.csv` | varies | sources/imf.py | IMF DataMapper indicator codes (real GDP growth) |
 | `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
-| `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, naturally_leading, formula, interpretation, regime_classification, cycle_timing) |
+| `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4) — populated for all 92 indicators using the canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum). |
 | `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.8 coverage analysis. |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
@@ -421,7 +421,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 
 ## 9. Module Reference
 
-### 9.1 `library_utils.py` (318 lines)
+### 9.1 `library_utils.py` (347 lines)
 
 **Role:** Shared constants and helpers — single authoritative source for sort logic, FX maps, and the Sheets tab-state frozensets used by every writer.
 
@@ -439,6 +439,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `SPREAD_SUBCLASS_ORDER` | dict | Sort order for spread subcategories |
 | `INDICATOR_GROUP_ORDER` | dict | Sort order for macro-market indicator groups (US, UK, Europe, …) |
 | `INDICATOR_SUB_GROUP_ORDER` | dict | Sort order for macro-market indicator sub-groups |
+| `INDICATOR_CONCEPT_ORDER` | dict | Sort order for the 17-concept canonical taxonomy used by the §2.5 By-Concept sidebar view (Equity, Rates / Yields, Credit / Spreads, …). Mirrored by `CONCEPT_ORDER` in `docs/build_html.py`'s embedded JS. |
 | `COMP_FX_TICKERS` | dict | Currency code → yfinance ticker (18 currencies) |
 | `COMP_FCY_PER_USD` | set | Indirect-quote currencies (JPY, CNY, INR, etc.) — divide by FX rate |
 | `lib_sort_key(row)` | function | Returns sort tuple from instrument dict for consistent ordering; Industry Groups/Industries sorted by GICS ticker code |
@@ -640,7 +641,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition with retry across candidate URLs |
 | `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
 
-### 9.6 `compute_macro_market.py` (2,097 lines)
+### 9.6 `compute_macro_market.py` (2,103 lines)
 
 **Role:** Phase E — 92 composite macro-market indicators with z-scores, regime classifications, forward regime signals, and z-score trend diagnostics.
 
@@ -715,7 +716,7 @@ Each indicator goes through:
 | `_FWD_SLOPE_POS` | +0.15 | Weekly z-score slope threshold for `improving` |
 | `_FWD_SLOPE_NEG` | -0.15 | Weekly z-score slope threshold for `deteriorating` |
 | `ECB_BASE_URL` | `https://data-api.ecb.europa.eu/service/data` | ECB Data Portal SDMX REST endpoint |
-| `INDICATOR_META` | dict | Maps 92 IDs to `(group, sub_group, category, formula_note)` — loaded from CSV |
+| `INDICATOR_META` | dict | Maps 92 IDs to `(group, sub_group, category, formula_note, concept, subcategory)` — 6-tuple loaded from CSV. `concept` and `subcategory` were added 2026-04-28 (§2.4) and propagate into the `macro_market.csv` snapshot output. |
 | `ALL_INDICATOR_IDS` | list | Ordered indicator IDs (CSV row order) |
 | `NATURALLY_LEADING` | frozenset | IDs flagged as naturally leading in the CSV |
 | `REGIME_RULES` | dict | Maps 92 IDs to regime classification lambdas |
@@ -725,32 +726,40 @@ Each indicator goes through:
 | `_PHASE_D_CALCULATORS` | dict | Survey-derived indicators (ISM, ifo, Eurostat) — historical naming, all now read from the unified hist |
 | `_ALL_CALCULATORS` | dict | Merged union of the above four dicts |
 
-### 9.7 `docs/build_html.py` (2,345 lines)
+### 9.7 `docs/build_html.py` (2,683 lines)
 
-**Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a nested sidebar. Reads the freshly-written CSVs at the end of each pipeline run.
+**Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a 3-section sidebar. Reads the freshly-written CSVs at the end of each pipeline run.
+
+**Sidebar layout (post §2.5 v2 restructure, 2026-04-28):** three top-level sections —
+1. **Macro Market Indicators** — Phase E composites; toggleable between By Region (default, the existing region grouping) and By Concept (concept → subcategory).
+2. **Economic Data** — every raw-macro source merged into one section (FRED + OECD + WB + IMF + DB.nomics + ifo); toggleable between By Region (groups by Country in registry order from `data/macro_library_countries.csv`) and By Concept.
+3. **Market Data** — yfinance comp-pipeline price series (Local / USD variant toggle preserved).
 
 #### Key Functions
 
 | Function | Purpose |
 |---|---|
 | `_clean(val)` / `_series_to_list(s)` / `_date_range(dates, values)` / `_parse_date_col(df)` | Internal helpers for value coercion and date-axis construction |
-| `load_indicator_meta()` | Load `macro_indicator_library.csv` → dict keyed by id with category, group, sub_group, formula, interpretation, regime description, leading flag, cycle_timing (L/C/G) |
-| `build_macro_market(ind_meta)` | Load `macro_market_hist.csv`, extract per-indicator time series for the explorer payload |
-| `_load_unified_hist_once()` | Cache the unified `macro_economic_hist` DataFrame + per-column metadata (read once, reused by every `build_macro_*` consumer) |
+| `load_indicator_meta()` | Load `macro_indicator_library.csv` → dict keyed by id with category, group, sub_group, **concept, subcategory**, formula, interpretation, regime description, leading flag, cycle_timing (L/C/G) |
+| `load_countries()` | Read `data/macro_library_countries.csv` and surface the 12-row registry (code + name + region) into `MAIN_DATA.countries`. Drives the By-Country sidebar grouping + the country-filter dropdown ordering. (§0 of forward_plan.md: country list lives in the CSV, never in JS.) |
+| `build_macro_market(ind_meta)` | Load `macro_market_hist.csv`; emits `groups` (region tree) + `groupsByConcept` (concept tree) for the toggleable sidebar |
+| `_load_unified_hist_once()` | Cache the unified `macro_economic_hist` DataFrame + per-column metadata (read once, reused). Adds lowercase `concept` / `subcategory` aliases so JS uses one key style across both Phase E and raw-macro payloads. |
 | `_build_payload(keep_column)` | Generic payload builder that filters the cached unified hist by a per-column predicate |
-| `build_macro_us()` / `build_macro_intl()` / `build_macro_survey()` | Three sidebar groupings cut from the unified hist (FRED-USA, OECD/WB/IMF + non-USA FRED, DB.nomics + ifo) |
+| `build_macro_economic()` | Single combined payload spanning every raw-macro source (FRED + OECD + WB + IMF + DB.nomics + ifo). Replaces the three retired `build_macro_us` / `build_macro_intl` / `build_macro_survey` builders. |
 | `build_market_comp()` | Load `market_data_comp_hist.csv`, build the comp-pipeline market-data payload |
 | `build_html_file(main_payload, mkt_payload)` | Render `HTML_TEMPLATE` against the assembled payloads and write `docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js` |
-| `main()` | Orchestrate: load metadata → build all payloads → emit files |
+| `main()` | Orchestrate: load metadata + countries → build all payloads → emit files |
 
 #### Notable Features
 
-- **3-level sidebar:** group → sub_group → indicator (CSS classes `.grp-section`, `.sgrp-section`)
-- **4-colour regime palette:** positive (green), negative (red), amber (gold), neutral (grey) — each maps a set of regime labels
-- **Forward regime display:** `fwd_regime` shown as a coloured badge alongside current regime
-- **Custom PNG snapshot:** Camera button composites chart title, Plotly chart image, legend entries, and regime colour key onto a single canvas
-- **Cycle timing badges:** L/C/G badges in sidebar (blue=Leading, amber=Coincident, red=Lagging) with tooltip for full label
-- **Search filter:** Live search that hides/shows group and sub-group sections dynamically
+- **3-section sidebar with two view modes:** Macro Market Indicators / Economic Data / Market Data. The first two sections support a By Region ↔ By Concept toggle; switching is instant and preserves the user's checked-state for plotted series.
+- **Multi-level grouping:** Phase E composites use group → sub_group → indicator; Economic Data uses country → indicator (By Region) or concept → subcategory → indicator (By Concept).
+- **4-colour regime palette:** positive (green), negative (red), amber (gold), neutral (grey) — each maps a set of regime labels.
+- **Forward regime display:** `fwd_regime` shown as a coloured badge alongside current regime.
+- **Custom PNG snapshot:** Camera button composites chart title, Plotly chart image, legend entries, and regime colour key onto a single canvas.
+- **Cycle-timing badges:** L/C/G badges next to every indicator in both Macro Market Indicators and Economic Data sections (colour: blue=Leading, amber=Coincident, pink=Lagging — matches the source-doc shading from `manuals/Macro Market Indicators Reference.docx`).
+- **Filter pipeline:** unified `applySidebarFilters()` evaluates four filters per item — search, market-data variant, L/C/G chips, country dropdown — and runs section-collapse logic so empty groups hide. Country dropdown is auto-populated from `MAIN_DATA.countries` (the registry, per §0 of forward_plan.md).
+- **Inline L/C/G legend** beneath the cycle-filter chips: `L = Leading · C = Coincident · G = Lagging`.
 
 #### Output Files
 
