@@ -510,6 +510,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .cycle-chip.G.active{
   color:#ff7eb6;background:#2d1727;border-color:#5c2547
 }
+.cycle-legend{
+  flex-basis:100%;font-size:9px;color:#6e7681;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  margin-top:2px;letter-spacing:0.2px
+}
 #country-select{
   flex:1;padding:4px 7px;border-radius:5px;
   border:1px solid #30363d;background:#0d1117;
@@ -879,6 +884,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       <button class="cycle-chip L active" data-cycle="L" title="Leading">L</button>
       <button class="cycle-chip C active" data-cycle="C" title="Coincident">C</button>
       <button class="cycle-chip G active" data-cycle="G" title="Lagging">G</button>
+      <span class="cycle-legend">L = Leading · C = Coincident · G = Lagging</span>
     </div>
     <div id="country-filter">
       <label>Country</label>
