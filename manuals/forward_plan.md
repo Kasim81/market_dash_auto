@@ -2,7 +2,7 @@
 
 > Last updated: 2026-04-28
 
-This is the project's forward-looking working doc. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need.
+This is the project's forward-looking working doc. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need.
 
 ---
 
@@ -78,7 +78,8 @@ PR2 (2026-04-26) added `INDIRLTLT01STM` directly to the `series_to_fetch` litera
 1. [Project Phase Summary](#1-project-phase-summary)
 2. [Resume Here — Priority Tasks](#2-resume-here--priority-tasks)
 3. [New Feature Development](#3-new-feature-development)
-4. [Multi-Frequency Pipeline (Phase 2)](#4-multi-frequency-pipeline-phase-2)
+4. [Project Chronology](#4-project-chronology)
+5. [Multi-Frequency Pipeline (Phase 2)](#5-multi-frequency-pipeline-phase-2)
 
 ---
 ## 1. Project Phase Summary
@@ -93,6 +94,7 @@ The project evolved from a single hardcoded pipeline into the current 6-phase ar
 | Phase E — Macro-Market Indicators | 92 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns (mostly absorbed into Phase E) | absorbed into `compute_macro_market.py` | Mostly Done |
 | Phase G — Sheets Export Audit | 7-tab inventory, protected-tab guards across all 4 writers, legacy-tab cleanup, pipeline.log auto-commit | `library_utils.py` `SHEETS_*` constants | Done |
+| Phase H — Daily Integrated Audit | Three-section daily audit (fetch outcomes / static checks / value-change staleness) running on the existing daily fetch's `pipeline.log`; perpetual GitHub-Issue notification with first-line `ALL CLEAN` / `N ISSUES` summary | `data_audit.py` + `.github/workflows/update_data.yml` (post-audit step) | Done |
 
 ### Phase-by-Phase Detail
 
@@ -132,7 +134,9 @@ Phase D's "Tier 3 FMP calendar" track was paywalled and rejected on 2026-04-23 �
 
 #### Phase E — Macro-Market Indicators — Production
 
-92 composite indicators computed from the unified `macro_economic_hist` (per §1 Phase ME) plus the comp-pipeline market data. Each indicator produces: raw value, 156-week (3-year) rolling z-score, regime classification, forward regime signal (`improving`/`stable`/`deteriorating`, with optional `[leading]` suffix), and z-score trend diagnostics (`intensifying` / `fading` / `reversing` / `stable`) against 1w, 4w, 13w lookbacks. A `cycle_timing` column (L/C/G) classifies each indicator's position in the business cycle (90 Leading, 2 Coincident, 0 Lagging — see §3.4). Metadata is a single source of truth in `data/macro_indicator_library.csv` — no hardcoded `INDICATOR_META` dict in Python. Currently the region-based group / sub-group hierarchy drives the three-level sidebar in `docs/indicator_explorer.html`; §2.5 will add a concept-based browse path that mirrors the unified macro-library taxonomy (Rates / Yields, Inflation, Labour, Credit / Spreads, Sentiment / Survey, etc.) so related indicators across regions can be viewed together. Outputs `macro_market` (snapshot) and `macro_market_hist` (weekly history). As of the 2026-04-26 supplemental refactor Phase E contains zero direct API contact — every series the calculators read is provisioned through the unified hist; PR3 (2026-04-26) cleared the build-phase `DataFrame is highly fragmented` warnings, and the 2026-04-27 fix-forward (this PR) cleared the remaining two output-phase ones plus the EU_Cr1 / `BAMLEC0A0RMEY` regression. EU_Cr1 (Euro IG spread) returns n/a until a free Euro IG corporate yield source is wired (see §1 Known Data Gaps); a new EU_Cr2 (Euro HY spread, reads `BAMLHE00EHYIOAS`) covers the Euro-HY regime as a separate indicator.
+92 composite indicators computed from the unified `macro_economic_hist` (per §1 Phase ME) plus the comp-pipeline market data. Each indicator produces: raw value, 156-week (3-year) rolling z-score, regime classification, forward regime signal (`improving`/`stable`/`deteriorating`, with optional `[leading]` suffix), and z-score trend diagnostics (`intensifying` / `fading` / `reversing` / `stable`) against 1w, 4w, 13w lookbacks. A `cycle_timing` column (L/C/G) classifies each indicator's position in the business cycle (90 Leading, 2 Coincident, 0 Lagging — see §3.4). Metadata is a single source of truth in `data/macro_indicator_library.csv` — no hardcoded `INDICATOR_META` dict in Python. The library carries `concept` + `subcategory` columns populated against a canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Cross-Asset, Volatility, Momentum, FX, Money / Liquidity, Housing, Manufacturing, External / Trade, Consumer); these surface in `macro_market.csv` and the explorer payload. Outputs `macro_market` (snapshot) and `macro_market_hist` (weekly history). As of the 2026-04-26 supplemental refactor Phase E contains zero direct API contact — every series the calculators read is provisioned through the unified hist; PR3 (2026-04-26) cleared the build-phase `DataFrame is highly fragmented` warnings, and the 2026-04-27 fix-forward cleared the output-phase ones plus the EU_Cr1 / `BAMLEC0A0RMEY` regression. EU_Cr1 (Euro IG spread) returns n/a until a free Euro IG corporate yield source is wired (see §1 Known Data Gaps); EU_Cr2 (Euro HY spread, reads `BAMLHE00EHYIOAS`) covers the Euro-HY regime as a separate indicator.
+
+`docs/indicator_explorer.html` (built by `docs/build_html.py`) renders the library through a three-section sidebar — **Macro Market Indicators** (Phase E composites, By Region ↔ By Concept toggle), **Economic Data** (every raw-macro source merged, By Country ↔ By Concept toggle), **Market Data** (yfinance comp pipeline, Local ↔ USD variant). Filter pipeline supports text search, market-data variant, L/C/G cycle-timing chips, and country dropdown. Country list is read from `data/macro_library_countries.csv` (no hardcoded JS literal — per §0).
 
 #### Phase F — Calculated Fields — Partial
 
@@ -167,9 +171,21 @@ Audit findings fixed on 2026-04-21 / 2026-04-23:
 - **Clear-range widened** from `A:Z` (26 cols) to `A:ZZ` (702 cols) on the macro writers to handle wider schemas.
 - **Pipeline log auto-commit** (PR1, 2026-04-25): the GitHub Actions workflow now pipes both Python steps through `tee pipeline.log` with `set -o pipefail` and commits `pipeline.log` to the repo on every run via an `if: always()` step. Useful for diagnosing failures without needing to download artifacts.
 
-Outstanding (low value): record Sheets GIDs for each active tab in `manuals/technical_manual.md` (covered by §2.2 below); build an automated "tab drift" audit that flags tabs in the Sheet but not in `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE`.
+Outstanding (low value): record Sheets GIDs for each active tab in `manuals/technical_manual.md`; build an automated "tab drift" audit that flags tabs in the Sheet but not in `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE`.
 
 Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the largest tab (`market_data_comp_hist`, ~9,000 rows) sits within the Sheets API's single-call payload limit at current column count, so no other writer has hit a batching need yet. Revisit if column count grows significantly.
+
+#### Phase H — Daily Integrated Audit — Done (2026-04-28)
+
+`data_audit.py` runs as the post-fetch / post-build step in the daily GitHub Actions workflow. Three sections produced into `data_audit.txt` (full report) + `audit_comment.md` (Markdown for the GitHub Issue comment):
+
+- **Section A — Fetch outcomes.** Scrapes `pipeline.log` for yfinance dead tickers (cross-checked against `market_data_comp_hist.csv` to filter transient warnings) and FRED final failures (only the `— skipping` suffix; retried-then-recovered errors are filtered out).
+- **Section B — Static checks.** Country-code orphans, indicator-id uniqueness, calculator registration, `_get_col(...)` column existence on the unified hist.
+- **Section C — Value-change staleness.** Walks every column of `macro_economic_hist.csv` and flags series whose last *value change* is older than the per-row tolerance. Tolerances come from `data/freshness_thresholds.csv` (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with a per-row `freshness_override_days` override on every `data/macro_library_*.csv`.
+
+A "Post daily audit to perpetual GitHub Issue" workflow step posts `audit_comment.md` to a `daily-audit`-labelled GitHub Issue every day. The first line of the comment is the one-sentence ISSUE/CLEAN summary; collapsible detail follows. GitHub's native notification email gives the daily heartbeat without any SMTP secrets.
+
+Acceptance findings from the first run (2026-04-28) are the open backlog at §3.1.
 
 ### Data-Layer Registry (single source of truth — per §0)
 
@@ -190,7 +206,7 @@ These 10 CSVs in `data/` are the single source of truth for everything the pipel
 
 **Read order in `fetch_macro_economic.py`:** `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`).
 
-**Library validity** is now covered by §2.6 (the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks during the existing fetch — no separate probe needed).
+**Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks during the existing fetch (no separate probe needed).
 
 ### Known Data Gaps (consolidated, 2026-04-26)
 
@@ -214,188 +230,9 @@ These are cases where a planned series is unavailable from any free source we ac
 
 ## 2. Resume Here — Priority Tasks
 
-This is the priority queue distilled from the 2026-04-22 → 2026-04-26 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup). Items are listed in execution order; each is self-contained with its own acceptance criteria.
+The 2026-04-22 → 2026-04-28 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup → concept/subcategory taxonomy → indicator-explorer restructure → daily integrated audit) has been delivered end-to-end; durable outcomes are documented in §1 Phase Summary and `manuals/technical_manual.md`.
 
-Completed work that previously lived in this section:
-
-- ~~§2.4 (old) — Eliminate `fetch_supplemental_fred()`~~ — done 2026-04-26 (commit `48c8c1c`); see §1 Phase E description.
-- ~~§2.2 (old) — Update technical manual~~ — was marked complete 2026-04-23 but has since gone stale; relisted as **§2.2 below** with a full review-and-update scope.
-- ~~§2.3 (old) — Phase D Rebuild — FMP Replacement Plan~~ — done 2026-04-23 (Phase D consolidated into Phase ME, FMP rejected); the BoJ Tankan follow-up was tracked at §2.8 then absorbed into the comprehensive surveys sub-project (currently §3.2) on 2026-04-28.
-- ~~§2.1 (old) — Generate dated chronology from git history~~ — relisted as **§2.7 below** at low priority.
-
-### 2.1 Verify the merged stack on the next nightly CI run
-
-**Priority:** Immediate (no work needed; just read tomorrow's `pipeline.log`).
-**Status:** Done 2026-04-27 — verified against the 06:09 UTC run; three regressions caught and fixed-forward in the same session (this PR). Outcome below.
-
-Four PRs merged in the 24h window 2026-04-25 → 2026-04-26 — the 2026-04-27 run was the first time they all executed together:
-
-| PR | Commit | Verifies |
-|---|---|---|
-| PR1 (pipeline.log capture + remove CHN_PPI) | `3a0957d` | ✅ The log itself is the artefact. |
-| PR2 (ECB endpoint + 3 FRED 400s) | `d183e9f` | ✅ ECB host migrated; `INDIRLTLT01STM` returns India 10Y data; old `IRLTLT01CNM156N` no longer attempted. ⚠ ECB YC date parser was using `format="%Y-%m"` against the daily `YYYY-MM-DD` returns → 0 obs parsed; fixed in this PR. |
-| (Old §2.4) supplemental refactor — CSV-ify supplementals | `48c8c1c` | ✅ 6 of 7 new FRED columns present in `macro_economic_hist.csv` (`JTSJOL`, `UNEMPLOY`, `MORTGAGE30US`, `BAMLHE00EHYIOAS`, `IND_GOVT_10Y`, `ITA_BTP_10Y`); 7 of 8 rewired calculators produce sensible values (`AS_CN_R1` stays NaN per the documented China-10Y gap). ⚠ `BAMLEC0A0RMEY` returns FRED HTTP 400 — series not in the FRED database; row removed in this PR (see §1 Known Data Gaps); EU_Cr1 now returns n/a (no HY fallback — Euro HY split into new indicator EU_Cr2). |
-| PR3 (DataFrame fragmentation refactor) | `9999e0d` | ✅ Build-phase warnings cleared. ⚠ Two residual warnings remained at the output-phase `df_hist.reset_index()` calls; cleared in this PR by adding `.copy()` after `pd.concat` in `build_hist_df()`. |
-
-**Outcome:** all three fix-forward items landed in this PR alongside the new EU_Cr2 indicator (Euro HY spread, reads `BAMLHE00EHYIOAS`). Verify the next nightly run shows zero `PerformanceWarning`s, no `BAMLEC0A0RMEY` in the log, ECB YC obs count > 0, EU_Cr2 produces sensible values, and EU_Cr1 reports n/a cleanly.
-
-### 2.2 Refresh `manuals/technical_manual.md` to current reality
-
-**Priority:** High — the technical manual is the canonical reference.
-**Status:** Done 2026-04-27 — section-by-section refresh landed in 8 commits on `claude/review-forward-plan-rQ2x9` (PR #98, merged 2026-04-28). Outcome below.
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1 | (audit only) | Stale-reference punch list |
-| 2 | `8cea51e` | §1-§4 architecture (Scope, Directory Structure, Execution Flow, Two Pipelines) |
-| 3 | `5a4017b` | §5-§7 data layer (Data Sources & APIs, Tab Map, CSV Inventory) |
-| 4 | `d49bc21` | §9 part A — retire stale module entries + add `fetch_macro_economic.py` and `sources/` package |
-| (interleaved) | `49bd676` | Schedule change 03:17 → 00:34 UTC |
-| 5 | `b947447` | §9 part B — refresh surviving module entries (line counts + drift) |
-| 6 | `b464402` | §10-§13 — Patterns, Env Setup, Known Issues restructure |
-| 7 | `6bcfc8b` | §14 + ToC + cross-ref pointer to `forward_plan.md` §0 + final grep |
-| 8 | `5faa679` | `file_del_candidates.md` at the repo root (audit-only, 6 candidates surfaced) |
-
-**Acceptance verified:** every grep against `technical_manual.md` for retired module names (`fetch_macro_us_fred.py`, `fetch_macro_international.py`, `fetch_macro_dbnomics.py`, `fetch_macro_ifo.py`), retired entry points (`run_phase_a`, `run_phase_c`, `run_hist`), and retired tabs (`macro_us[_hist]`, `macro_intl[_hist]`, `macro_dbnomics[_hist]`, `macro_ifo[_hist]`) returns only intentional historical-context hits in the retirement narratives. Indicator count (92) consistent across all 9 places it appears. All 14 ToC anchors valid. Tab inventory matches `library_utils.py::SHEETS_ACTIVE_TABS`; CSV inventory matches the §1 Data-Layer Registry.
-
-### 2.3 Rewrite `forward_plan.md` to be self-contained (drop external doc dependencies)
-
-**Priority:** High — collapses the active contributor doc set to three (`technical_manual.md`, `forward_plan.md`, `multifreq_plan.md`).
-**Status:** Done 2026-04-28 — landed in 4 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1 | (audit only) | External-doc reference punch list across `forward_plan.md` and `technical_manual.md` |
-| 2 | `09073ea` | Drop "Based on:" attribution line; replace with self-contained intro paragraph; reword §3.3 Phase F handover phrasing; verify §1 paragraphs are standalone |
-| 3 | `4e1e092` | Integrate `manuals/pipeline_review.md` content into new **§3.7.1 Per-Indicator Source Mapping** (12-row Phase D / FMP-rebuild table + 29-row partial-coverage / proxy table); delete the source file; rewire two §3.x cross-references |
-| 4 | this commit | Mark §2.2 + §2.3 Done in-place; final cross-reference grep + zero stale-reference verification |
-
-**Acceptance verified:**
-
-- Zero references in `forward_plan.md` to "Project Plan 260327", "MarketDashboard_ClaudeCode_Handover", "METADATA_REDUNDANCY_REVIEW", "indicator_groups_review_UPDATED.xlsx", "the original handover", or "the historic …" outside of this completion ledger.
-- `manuals/pipeline_review.md` deleted (commit `4e1e092`); durable content lives in §3.4.1 of this doc.
-- The active contributor doc set is now exactly three: `forward_plan.md`, `technical_manual.md`, `multifreq_plan.md`.
-- The §3.4.1 per-indicator source mapping supports the §3.2 comprehensive-surveys sub-project (BoJ Tankan, ONS, e-Stat, etc.) and any other future source-build work without needing to consult an external doc.
-
-### 2.4 Add `concept` (and `subcategory`) columns to `macro_indicator_library.csv`
-
-**Priority:** High — precondition for §2.5 (the indicator-explorer mirror) and structurally aligns the composite registry with the unified raw-series taxonomy.
-**Status:** Done 2026-04-28 — landed in 3 commits on `claude/review-forward-plan-rQ2x9`. Outcome below.
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1 | (audit only) | Survey existing per-source taxonomy; propose canonical 17-concept list (12 inherited from raw-source libraries + 5 new for indicator-level composites: Equity, Cross-Asset, Volatility, Momentum, FX); user signed off including the breakeven-inflation correction (US_R4 + UK_R2 → Inflation, not Rates / Yields) |
-| 2 | `d71e42d` | Add `concept` + `subcategory` columns to `data/macro_indicator_library.csv` between `sub_group` and `naturally_leading`; populate all 92 rows |
-| 3 | `9a48118` | Wire `compute_macro_market.py::_load_indicator_library()` (extend `INDICATOR_META` tuple to 6 elements); `build_snapshot_df()` emits two new columns in `macro_market.csv`; `docs/build_html.py::load_indicator_meta()` returns the new keys so the explorer JS payload's `meta` dict carries them per indicator |
-
-**Concept distribution across the 92 indicators** (14 of the 17 canonical concepts are in active use; Manufacturing / External-Trade / Consumer reserved for future indicators):
-
-| Concept | Count | Concept | Count |
-|---|---|---|---|
-| Equity | 20 | FX | 4 |
-| Sentiment / Survey | 14 | Labour | 3 |
-| Leading Indicators | 14 | Growth | 3 |
-| Rates / Yields | 8 | Inflation | 2 |
-| Credit / Spreads | 7 | Volatility | 2 |
-| Cross-Asset | 6 | Housing | 2 |
-| Momentum | 6 | Money / Liquidity | 1 |
-
-**Acceptance verified:**
-
-- Every row in `macro_indicator_library.csv` has a non-empty `concept` value (zero missing across all 92 rows).
-- Per `forward_plan.md` §0: zero Python literals contain a concept-string list — every concept value is in the CSV.
-- The single `INDICATOR_META` consumer (`build_snapshot_df`) is updated to the new 6-tuple shape.
-- `_load_indicator_library()` and `docs/build_html.py::load_indicator_meta()` both surface the new fields.
-- §2.5 is now unblocked — the data is in place; only the explorer-side rendering remains.
-
-### 2.5 Mirror the unified macro library structure in `docs/indicator_explorer.html`
-
-**Priority:** High — user-flagged. Absorbed the previously-pending "HTML Charting Tool Integration" item (a sub-section of the old §3.8 Cycle Timing Framework, since merged into the current §3.4 Indicator Coverage & Source Expansion).
-**Status:** Done 2026-04-28 — landed in 7 commits, then restructured in a follow-up 3-commit pass after merge feedback (the original v1 added a region/concept toggle within the existing source-based sidebar layout but didn't merge the three raw-macro sections; v2 collapses them into a single "Economic Data" section).
-
-**v1 — initial implementation:**
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1 | `d8d1e45` | Normalise concept values across raw-source libraries — `Labor Market` → `Labour` (8 rows), `Credit` → `Credit / Spreads` (11 rows), OECD CLI series `Growth` → `Leading Indicators` (1 row) |
-| 2 | `5fee5e8` | Server-side payload — new `INDICATOR_CONCEPT_ORDER` in `library_utils.py`; `build_macro_market` emits a parallel `groupsByConcept` tree alongside the existing region-based `groups` |
-| 3 | `ce796bd` | L/C/G cycle-timing badges in every macro section — `buildSimpleSection` now passes `cycle: meta.cycle_timing`; G colour palette adjusted from red to pink (`#ff7eb6`) to match the spec |
-| 4 | `cd84536` | View-mode toggle ("By Region" ↔ "By Concept") + alternate sidebar trees — covers Phase E composites (server-supplied `groupsByConcept`) and raw-macro sections (client-side regrouping via `meta.concept`/`subcategory`); checkbox state preserved across toggles |
-| 5 | `5758d57` | L/C/G filter chips + country dropdown — unified `applySidebarFilters()` evaluates search + variant + cycle + country in one pass; country dropdown auto-populated from data |
-| 6 | `c42d3ca` | Inline `L = Leading · C = Coincident · G = Lagging` legend beneath the cycle-filter chips |
-| 7 | `d8acb73` | Mark §2.5 Done; drop source-filter mention from spec (parked) |
-
-**v2 — restructure after merge feedback:**
-
-| Step | Commit | Scope |
-|---|---|---|
-| R1 | `529b7d6` | Server payload — new `load_countries()` reader (single source of truth: `data/macro_library_countries.csv`); new `build_macro_economic()` combiner spanning every raw-macro source |
-| R2 | `e38b619` | JS rework — replace 3 `buildSimpleSection` calls with 1 `buildEconomicDataSection`; By Region groups by Country (registry order via `MAIN_DATA.countries`), By Concept groups by concept → subcategory; drop the hardcoded `COUNTRY_CODES` JS literal (a §0 violation introduced by step 5); drop `build_macro_us` / `build_macro_intl` / `build_macro_survey` and `buildSimpleSection`; consolidate three legacy chart-rendering source dispatches into one `macro_economic` branch each |
-| R3 | this commit | Mark §2.5 v2 Done; record what changed |
-
-**Final sidebar layout (post v2):**
-1. **Macro Market Indicators** — Phase E composites; By Region / By Concept toggle.
-2. **Economic Data** — every raw-macro source merged (FRED + OECD + WB + IMF + DB.nomics + ifo); By Region groups by Country (12 codes from the registry), By Concept groups by concept → subcategory.
-3. **Market Data** — yfinance comp pipeline (unchanged).
-
-**Source filter parked.** The original spec mentioned a "source" filter (FRED / OECD / WB / IMF / DB.nomics / ifo) under the "By Concept" view. Parked during step 0 — Phase E composites read from multiple raw sources, making single-source attribution brittle. The L/C/G + country filters cover the most useful axes. If a future need surfaces, the per-series `meta.Source` is preserved and the filter is small to add.
-
-**Architecture-rule fix recorded:** v1 step 5 introduced a hardcoded `COUNTRY_CODES = ['AUS','CAN', ...]` JS literal — a §0 violation (registry duplicated in Python instead of read from the CSV). v2 step R2 replaced it with `MAIN_DATA.countries.map(c => c.code)` driven by `data/macro_library_countries.csv`.
-
-**Acceptance verified:** the explorer renders three top-level sections (Macro Market Indicators / Economic Data / Market Data); the "Economic Data" section's By Region view shows 12 country buckets in registry order; the By Concept view shows the canonical concepts (Rates / Inflation / Labour / etc.); cycle-timing and country filters work; existing region-based view of Macro Market Indicators is preserved.
-
-### 2.6 Daily integrated data audit (freshness + fetch outcomes + static checks)
-
-**Priority:** High — single-source-of-truth alerting for everything that can go wrong with the daily data fetch: stale series, dead tickers, broken FRED IDs, library-schema drift.
-**Status:** Done 2026-04-28 — v1 (freshness-only) shipped earlier; v2 (integrated three-section audit + GitHub Issue notification) shipped same day after rescope. Merges the previous §2.7 (`library_manager.py` validator) and §2.8 (yfinance ticker audit) by piggy-backing on the daily run rather than running independent API probes.
-
-**v1 — freshness-only (5 commits):**
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1 | `b900128` | `freshness_override_days` column on every per-source library (123 row updates). |
-| 1.5 | `f23263f` | `data/freshness_thresholds.csv` driving per-frequency default tolerances (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d). |
-| 2 | `25e445b` | `freshness_audit.py` — value-change detection on the unified hist. |
-| 3 | `8f5ed42` | CI step in `update_data.yml`. |
-| 4 | `a7539f3` | Mark v1 Done. |
-
-**v2 — integrated audit + GitHub Issue alerting (5 commits):**
-
-| Step | Commit | Scope |
-|---|---|---|
-| 1a | `4e4b416` | `data_audit.py` scaffold + Section C (port of v1 staleness logic). Two outputs: `data_audit.txt` (full report) + `audit_comment.md` (formatted for GitHub Issue comment with first-line `ALL CLEAN` / `N ISSUES` summary). |
-| 1b | `4579999` | Section A — `pipeline.log` scrape for fetch outcomes. yfinance dead-ticker detection cross-checked against `market_data_comp_hist.csv` to filter transient warnings. FRED retried-then-succeeded errors filtered out by only matching the `— skipping` suffix. |
-| 1c | `7ef3df2` | Section B — static checks (countries-orphan / indicator-id uniqueness / calculator registration / `_get_col` column existence). |
-| 2 | `d16a43a` | CI rewire: `data_audit.py` replaces `freshness_audit.py`; new "Post daily audit to perpetual GitHub Issue" step uses `gh` CLI (no SMTP secrets needed); commits `data_audit.txt` + `audit_comment.md`; deletes v1 `freshness_audit.py` + `.txt`. |
-| 3 | this commit | Mark v2 Done; merge §2.7 + §2.8 into §2.6; renumber §2.9 → §2.7. |
-
-**Why v1 → v2 rescope.** v1 ran a *separate* freshness probe; the originally-planned §2.7 would have *also* run separate per-source API probes for validity. Both duplicated work the daily fetch already does. v2 piggy-backs on the existing pipeline: the daily fetch's HTTP responses are already the validity check; we just capture the signal post-run via `pipeline.log` scrape. Result: **zero extra API calls**, single combined log, single notification channel.
-
-**Notification mechanism.** Workflow posts a comment on a perpetual `daily-audit`-labelled GitHub Issue every day. GitHub's native notification email gives the user the daily heartbeat without any SMTP setup. First line of the comment is the one-sentence ISSUE/CLEAN summary, e.g.:
-- `## Daily audit — 2026-04-28 — **ALL CLEAN**`
-- `## Daily audit — 2026-04-28 — **100 ISSUES** (24 fetch errors, 1 static-check failure, 75 stale series)`
-
-If the issue grows unwieldy, close it manually — the next daily run creates a fresh one. Self-healing.
-
-**Acceptance verified:** `BSCICP03USM665S` + `CSCICP03USM665S` flagged EXPIRED in Section C (`last_obs=2024-01-05, age=844d, tolerance=45d`); 22 truly-dead yfinance tickers in Section A (`^TX60`, `^TOPX`, `^SXEP` family, `^SP500V/G`, `^RMCCV/G`, `SENSEXBEES.NS`, `ISFA.L`, etc.) with cross-check filtering of 1 transient warning; 1 broken `_get_col(...,'CHN_GOVT_10Y')` reference in Section B (matches the documented China-10Y data gap). 0 false-positive FRED retries reported.
-
-**Follow-up not in §2.6 scope:**
-
-- The 27 EXPIRED Section-C series each need either a per-row `freshness_override_days` override (publisher genuinely lags), a reroute to an alternative source, or removal from the library. Fix-forward exercise.
-- The 22 dead yfinance tickers each need `validation_status` updated to `UNAVAILABLE` in `index_library.csv` or a replacement ticker. Fix-forward exercise (was the §2.8 scope).
-- `indicators_affected` reverse-lookup column was descoped — §3.4.1 per-indicator source mapping is markdown, not machine-readable. Future v3 could fold the mapping into a CSV.
-
-### 2.7 Generate a dated chronology from git history
-
-**Priority:** Low — useful project history but doesn't move the pipeline forward.
-**Status:** Not started; carried forward from the old §2.1.
-
-```bash
-git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
-```
-
-Filter to significant changes (feature additions, bug fixes, schema changes, new modules). Output as either a dated chronology section in `manuals/technical_manual.md` (preferred — keeps the manual self-contained) or a standalone `manuals/chronology.md`. Update periodically as new features land.
-
+**Active priority is §3.1** — act on the audit findings (29 EXPIRED series, 22 dead yfinance tickers, 1 broken `_get_col` reference). Until that backlog is worked down, the daily audit issue (§1 Phase H) will continue to surface the same flags.
 
 ---
 
@@ -403,7 +240,7 @@ Filter to significant changes (feature additions, bug fixes, schema changes, new
 
 ### 3.1 Act on audit findings — remediation backlog
 
-**Priority:** High — the §2.6 v2 daily audit now surfaces every broken / stale / dead-ticker case in a single committed log, but the audit *reports*; it doesn't *fix*. This section is the rolling remediation backlog. Until each finding is triaged, the audit comment on the perpetual `daily-audit` GitHub Issue will continue to flag the same failures.
+**Priority:** High — Phase H's daily integrated audit (see §1) now surfaces every broken / stale / dead-ticker case in a single committed log, but the audit *reports*; it doesn't *fix*. This section is the rolling remediation backlog. Until each finding is triaged, the audit comment on the perpetual `daily-audit` GitHub Issue will continue to flag the same failures.
 **Status:** Backlog open. First-run baseline captured 2026-04-28 — counts are the starting state.
 
 **First-run baseline (2026-04-28):**
@@ -456,7 +293,7 @@ Bulk pass — should be a single CSV-edit commit covering most rows. Likely over
 
 #### Sub-track 3 — `validation_status` write-back for `index_library.csv`
 
-Currently `data_audit.py` *reports* the 22 dead yfinance tickers but doesn't write back to the registry. Extend the audit (or a paired tool `library_writeback.py`) so dead tickers automatically get `validation_status = "UNAVAILABLE"` in `index_library.csv` after N consecutive days of failure. This was the residual item from the (now-superseded) §3.6 Library Manager Utility.
+Currently `data_audit.py` *reports* the 22 dead yfinance tickers but doesn't write back to the registry. Extend the audit (or a paired tool `library_writeback.py`) so dead tickers automatically get `validation_status = "UNAVAILABLE"` in `index_library.csv` after N consecutive days of failure. This was the residual item from the (now-removed) standalone library-manager utility plan, which was superseded by Phase H's daily audit.
 
 Design:
 - Track a per-ticker "consecutive-fail" counter in a small CSV `data/yfinance_failure_streaks.csv` (TBD design — could just be `(ticker, last_seen_date, consecutive_fail_days)`).
@@ -498,7 +335,7 @@ For each dead ticker: either find a replacement and update `index_library.csv`, 
 
 - Surveys are inherently a "find-the-best-available-source-per-region" problem rather than a single-API integration. Each country has different free data infrastructure (FRED OECD-mirror for one, Eurostat for another, scraping for a third).
 - We've already attempted partial coverage via FRED, DB.nomics, ifo Excel, and an Investing.com scraper PoC (rejected). Those attempts are recorded under "Prior attempts" — the lessons are durable; we don't want to re-relearn them.
-- The signal value is high enough that scraper infrastructure is justified if no API exists. Any scraper here lives in `sources/` and follows the existing fetcher pattern; the freshness audit (§2.6) gives us the safety net to detect when a scraped source breaks.
+- The signal value is high enough that scraper infrastructure is justified if no API exists. Any scraper here lives in `sources/` and follows the existing fetcher pattern; Phase H's daily audit gives us the safety net to detect when a scraped source breaks.
 - Target enumeration needs domain expertise — which surveys are worth carrying for each region. That conversation is best held offline (user + chat/cowork co-research), with the output of that work feeding the implementation queue here.
 
 #### Target survey list — TBD via a separate user-led research job
@@ -511,7 +348,7 @@ Worked example (US):
 - ISM Manufacturing New Orders ✓ (`ISM_MFG_NEWORD`, DB.nomics) — already wired
 - UMich Consumer Sentiment headline ✓ (`UMCSENT`, FRED) — already wired
 - UMich Consumer Sentiment sub-indices (Expectations / Current Conditions) — **proprietary**, no free path identified; investigate paid feeds vs scrape vs accept gap
-- Conference Board Consumer Confidence ✓ (`CSCICP03USM665S`, FRED OECD-mirror) — **CURRENTLY STALE** (frozen Jan 2024 per §2.6)
+- Conference Board Consumer Confidence ✓ (`CSCICP03USM665S`, FRED OECD-mirror) — **CURRENTLY STALE** (frozen Jan 2024 per the Phase H daily audit)
 - Conference Board CEO Confidence — proprietary
 - NFIB Small Business Optimism — TBD source check
 - Empire State + Philly Fed + Dallas Fed regional surveys ✓ (FRED) — already wired
@@ -533,7 +370,7 @@ Once the per-country target list exists:
 
 - **FMP economic calendar (Phase D Tier 3, 2026-04 PoC).** Rejected 2026-04-23 — endpoints paywalled (`/v3/economic_calendar` returns HTTP 403, `/stable/economic-calendar` returns HTTP 402) on the free tier. FMP module deleted. See §3.4 source verdicts.
 - **Investing.com scraper (Phase D, 2026-04 PoC).** Rejected — fragile anti-bot protections (Cloudflare, JS challenges), frequent HTML changes, rate limiting unsuitable for nightly CI. Lessons inform any future scraper: prefer official APIs; if scraping is unavoidable, target sites without aggressive bot mitigation.
-- **OECD / FRED OECD-mirror coverage.** Successfully wired ~9 country business-confidence series, but vintages frozen unpredictably — see the §2.6 freshness audit; `BSCICP03USM665S` and `CSCICP03USM665S` are confirmed examples where the OECD-mirror-via-FRED route silently went stale in Jan 2024.
+- **OECD / FRED OECD-mirror coverage.** Successfully wired ~9 country business-confidence series, but vintages frozen unpredictably — see Phase H's daily audit; `BSCICP03USM665S` and `CSCICP03USM665S` are confirmed examples where the OECD-mirror-via-FRED route silently went stale in Jan 2024.
 - **Eurostat via DB.nomics.** ~3 EZ surveys live (`EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`); reliable, monthly, well-maintained. Pattern to replicate where possible.
 - **ifo Institute Excel-workbook scrape.** Successful pattern for German business-survey data — 26 series live via `sources/ifo.py`. Reproducible for other workbook-only publishers.
 - **ZEW Mannheim sentiment (DE_ZEW1).** No free historical API — ZEW licences the archive. Confirmed proprietary 2026-04-23. Marked as a permanent gap unless a paid-feed decision is taken.
@@ -581,13 +418,13 @@ Several calculated fields proposed historically are not yet implemented. Some ma
 | Global yield curve | Average of US/DE/UK/JP 10Y-2Y spreads | Not yet implemented (US/DE/UK 10Y available; needs 2Y for DE/UK + full JP curve via §3.4 New Source Modules) |
 | % stocks above 200-day MA | Per-index breadth: fraction of constituents with close > 200-day SMA. Not exposed by yfinance as a field and no free FRED/OECD feed exists; StockCharts symbols (`$SPXA200R`, `$NYA200R`, `$NDXA200R`) are proprietary. Compute in-house from constituent daily closes. Candidate indices: S&P 500 (highest signal-to-cost), Nasdaq 100, Russell 1000, FTSE 100. Naming: `US_EQ_B1` / `US_EQ_B2` etc. ("Equity - Breadth"). Adds ~500-1000 extra daily yfinance pulls per index. | Not yet implemented |
 
-New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv` (with `concept` + `subcategory` per §2.4 + cycle-timing per below).
+New indicators follow the CSV-driven pattern: write a `_calc_*` function, add to `REGIME_RULES` and the relevant `_*_CALCULATORS` dict, add a row to `macro_indicator_library.csv` (with `concept` + `subcategory` per the canonical 17-concept taxonomy + cycle-timing per below).
 
 #### Cycle-timing classification (L/C/G)
 
 The `Macro Market Indicators Reference.docx` source doc catalogues 206 macro/market indicators across 6 regions (US / UK / Eurozone / Japan / China / Global), each classified by cycle timing: **Leading** (L, blue shading `#DCE7F2` — turns 3-12 months ahead of the cycle), **Coincident** (C, beige `#E8E4D9` — confirms current state), **Lagging** (G, pink `#EDE0E0` — confirms trends already in place; turns after the cycle). Colour codes were extracted programmatically from the Word document via `python-docx` and the full 206-row list lives at `data/reference_indicators.csv`.
 
-The `cycle_timing` column was added to `data/macro_indicator_library.csv` for all 92 Phase E indicators in Stage 2 (2026-04-23). Result: **90 Leading, 2 Coincident, 0 Lagging** — the library is overwhelmingly forward-looking by design; the two coincident components are `US_JOBS3` (labour composite blending L+C+G) and `US_G6` (IP + Retail Sales). The L/C/G badges + filter are surfaced in the explorer per §2.5.
+The `cycle_timing` column was added to `data/macro_indicator_library.csv` for all 92 Phase E indicators in Stage 2 (2026-04-23). Result: **90 Leading, 2 Coincident, 0 Lagging** — the library is overwhelmingly forward-looking by design; the two coincident components are `US_JOBS3` (labour composite blending L+C+G) and `US_G6` (IP + Retail Sales). The L/C/G badges + filter are surfaced in the explorer (per §1 Phase E).
 
 #### Source verdicts (binding)
 
@@ -773,25 +610,37 @@ These reference indicators have partial coverage today via adjacent / standardis
 | Global | Bloomberg Commodity Index | `DBC` ETF proxy | BCOM itself proprietary — keep DBC |
 | Global | Goldman Sachs FCI | `NFCI` (Chicago Fed) substitute | GS FCI proprietary — keep NFCI |
 
-### 3.5 Sheets Export Audit (Phase G)
+### 3.5 Community Datasets Review — Yahoo-compatible ticker catalogues
 
-**Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
+**Priority:** Medium — low-effort discovery exercise that could feed §3.1 Sub-track 4 (dead-ticker replacements), §3.3 (Instrument Expansion), and §1 Known Data Gaps in one pass.
+**Status:** Not started.
 
-**Remaining (low value):**
-- Record Sheets GIDs for each of the 9 active tabs in `technical_manual.md` (housekeeping; only useful if downstream consumers need stable GID links).
-- Build an automated drift check: compare the tab set in the Sheet against `SHEETS_ACTIVE_TABS ∪ SHEETS_LEGACY_TABS_TO_DELETE` and flag extras. Useful only if ad-hoc tabs are being created outside the pipeline.
+**Context.** Two community-maintained catalogues of yfinance-compatible tickers exist that might cover instruments / regions / proxies the current `data/index_library.csv` misses:
 
-### 3.6 Library Manager Utility — superseded by §2.6
+- **Kaggle — "Yahoo Finance Tickers"** (search Kaggle for the dataset of that title; the popular version contains 100,000+ symbols across global exchanges). CSV / database format.
+- **GitHub — `stockdatalab/YAHOO-FINANCE-SCREENER-SYMBOLS`** — categorised lists for 40+ countries.
 
-**Status:** Superseded 2026-04-28. The originally-planned standalone `library_manager.py` validator (which probed every API independently) was folded into §2.6's daily integrated audit instead — the daily fetch already calls every API, so we capture validity outcomes from `pipeline.log` rather than running duplicate probes. See §2.6 for the live tooling.
+**Recency caveat.** Tickers in either source can be delisted, renamed, or moved between exchanges. Any candidate ticker pulled from these catalogues must be probed via yfinance before being added to `index_library.csv` (the existing validation pattern at §3.3 Step 1 applies).
 
-The two specific arms originally listed here are now both covered by the daily audit:
-- yfinance ticker validity → §2.6 Section A (cross-checked against `market_data_comp_hist.csv` to filter transient warnings).
-- Per-source library schema integrity → §2.6 Section B (countries orphans, indicator-id uniqueness, calculator registration, `_get_col` column existence).
+**Plan:**
 
-The one residual item not yet automated is **auto-setting `validation_status = "UNAVAILABLE"`** on dead tickers in `index_library.csv` — the audit *reports* dead tickers but doesn't yet write back to the registry. Candidate for a small fix-forward PR; out of §2.6 v2 scope.
+1. **Pull both datasets** into a working directory (not committed). Note Kaggle dataset version / GitHub commit hash for reproducibility.
+2. **Cross-check against current dead-ticker list** (§3.1 Sub-track 4 — 22 dead tickers as of 2026-04-28). For each dead ticker, search both catalogues for a same-instrument / same-index successor (e.g. is there a live `^TX60` replacement? a viable `^TOPX` substitute? alternative listings for the SX*P STOXX 600 sector family?).
+3. **Cross-check against §1 Known Data Gaps.** Specific targets where a free yfinance instrument might serve as a proxy:
+    - Euro IG corporate effective yield (`EU_Cr1`) — does either catalogue list a Euro IG corp-bond ETF with usable distribution-yield history?
+    - China 10Y govt yield (`AS_CN_R1`) — any free yfinance proxy via a CN govt-bond ETF or futures contract?
+    - JP Tankan-equivalent instrument — unlikely yfinance has it, but worth a check before §3.2's BoJ source-build.
+4. **Cross-check against §3.3 Instrument Expansion buckets.** Europe sector ETFs (`.DE`, EUR-denominated), EM regional ETFs, UK style ETFs, Asia/Japan additional coverage — does either catalogue surface candidates that haven't already been considered?
+5. **Produce a short report** at `manuals/community_datasets_review.md` (one-shot, not a recurring artefact): per-target finding (resolved / partial / no replacement / proxy candidate), with the exact ticker symbol + currency + last-data check date.
+6. **Action the wins.** For each candidate that probes clean, add a row to `index_library.csv` with `validation_status = "CONFIRMED"` and the appropriate `base_currency`. Update `§3.1 Sub-track 4` outcomes accordingly. Where no replacement exists, the gap stays in §1 Known Data Gaps (or is accepted as `UNAVAILABLE`).
 
-### 3.7 Incremental Fetch Mode (fetch_hist.py)
+**Acceptance:**
+
+- The review report identifies, for each of the 22 dead yfinance tickers, whether the community catalogues offer a replacement.
+- At least one §1 Known Data Gap is either filled (corp-yield / CN 10Y / similar) or formally confirmed unavailable in the public-data universe.
+- Any added tickers ship as a single small commit to `index_library.csv` plus `validation_status` updates.
+
+### 3.6 Incremental Fetch Mode (fetch_hist.py)
 
 **Priority:** Medium — performance improvement.
 
@@ -803,7 +652,7 @@ Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run 
 
 This would reduce daily historical data runtime from ~10 minutes to seconds.
 
-### 3.8 PE Ratio Integration
+### 3.7 PE Ratio Integration
 
 **Priority:** Medium-high — valuation data is a core input for a macro-market dashboard.
 **Status:** Not started.
@@ -833,7 +682,7 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 **Action:** Investigate which free sources provide historical PE time series (not just snapshots). yfinance is already integrated but lacks history. FMP ratios endpoint should be tested alongside the calendar endpoint probe. Shiller CAPE dataset is a reliable free download. Design the integration path (new fetch module vs extension of existing comp pipeline) based on what source data is available.
 
-### 3.9 Retire the Simple Pipeline
+### 3.8 Retire the Simple Pipeline
 
 **Priority:** Medium — code-cleanliness and maintenance-burden reduction. The simple pipeline is currently frozen but still adds ~66 hardcoded instruments + a `sentiment_data` tab that the rest of the codebase no longer touches.
 **Status:** Not started. Blocked on confirming downstream consumer usage.
@@ -847,7 +696,7 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 3. **Decide on `sentiment_data`.** Audit downstream readers: nothing in this repo references it. Confirm with the owner that it's safe to drop — if so, mark it for deletion (move to `SHEETS_LEGACY_TABS_TO_DELETE`).
 4. **Delete the simple-pipeline code path.** Remove the 66-instrument hardcoded list (Fear & Greed, VIX term structure, FX majors, sector ETFs, FRED yields). Remove the simple-snapshot writer. `fetch_data.py` becomes a comp-pipeline-only module.
 5. **Update `library_utils.py`.** Drop `market_data` from `SHEETS_PROTECTED_TABS` if the tab is being retired (or keep protected if Step 2(b) facade is adopted). Remove `sentiment_data` from `SHEETS_PROTECTED_TABS` and add to `SHEETS_LEGACY_TABS_TO_DELETE`.
-6. **Update `manuals/technical_manual.md`** alongside §2.2 — drop the "Simple Pipeline" sub-section in §1 / §4 and the related tab descriptions.
+6. **Update `manuals/technical_manual.md`** — drop the "Simple Pipeline" sub-section in §1 / §4 and the related tab descriptions.
 
 **Acceptance:**
 
@@ -857,10 +706,10 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 - Daily run wall-clock time decreases by the simple-pipeline budget (~30-60 seconds of yfinance / FRED calls eliminated).
 - `trigger.py` continues to function (if still in use) or is acknowledged as retired.
 
-### 3.10 Regime-Based Indicator Labelling & ML-Driven Regime Identification
+### 3.9 Regime-Based Indicator Labelling & ML-Driven Regime Identification
 
 **Priority:** High strategic — unlocks the §3.10 back-test + portfolio work; once shipped, every macro_market indicator carries a regime label in addition to its cycle-timing label, giving us a per-indicator "what does this say about the current regime?" signal.
-**Status:** Not started. Multi-phase research project; depends on §3.3 (full coverage) and the §2.6 freshness audit (so the regime model isn't trained on stale inputs).
+**Status:** Not started. Multi-phase research project; depends on §3.3 (full coverage) and Phase H's daily audit (so the regime model isn't trained on stale inputs).
 
 **Goal:** define a small set of well-grounded macroeconomic regimes; tag each Phase E composite indicator with a "regime-identification reliability" score; assemble an ensemble of the most reliable indicators into a current-regime classifier; use the classifier output as the regime status that drives §3.10's portfolio tilts.
 
@@ -941,10 +790,10 @@ Each stage ends in a CSV / output that can be inspected and signed off before th
 - Per-indicator `regime_label` column appears in `macro_market.csv`; explorer surfaces it (small UI follow-up).
 - §3.10 back-test consumes `regime_status` directly without further data plumbing.
 
-### 3.11 Regime-Driven Back-Test & Portfolio Optimisation
+### 3.10 Regime-Driven Back-Test & Portfolio Optimisation
 
 **Priority:** High strategic — this is the project's end-state artefact: a historical performance record of a regime-tilted multi-asset portfolio vs benchmark, demonstrating whether the indicator library + regime framework actually generates positive excess return.
-**Status:** Not started. Hard prerequisite: §3.9 (regime status output). Soft prerequisite: §2.6 freshness audit + the broader §3 coverage work so the portfolio rules are tilted on clean data.
+**Status:** Not started. Hard prerequisite: §3.9 (regime status output). Soft prerequisite: Phase H daily audit + the broader §3 coverage work so the portfolio rules are tilted on clean data.
 
 **Goal:** define a multi-asset portfolio managed against a strategic benchmark; consume `regime_status` from §3.9 plus a small set of explicit tilt rules (which asset classes to over/underweight in each regime, by what amount); back-test the resulting time series of allocations against the benchmark over the longest sample where the data supports; produce a historical performance record that flags whether the system delivers positive excess return.
 
@@ -1010,7 +859,20 @@ A new top-level `backtest/` directory holds:
 
 ---
 
-## 4. Multi-Frequency Pipeline (Phase 2)
+## 4. Project Chronology
+
+**Priority:** Low — useful project history but doesn't move the pipeline forward.
+**Status:** Not started.
+
+```bash
+git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
+```
+
+Filter to significant changes (feature additions, bug fixes, schema changes, new modules). Output as either a dated chronology section in `manuals/technical_manual.md` (preferred — keeps the manual self-contained) or a standalone `manuals/chronology.md`. Update periodically as new features land.
+
+---
+
+## 5. Multi-Frequency Pipeline (Phase 2)
 
 **Priority:** High impact but large effort. Detailed implementation plan in [`manuals/multifreq_plan.md`](multifreq_plan.md).
 **Status:** Not started.
