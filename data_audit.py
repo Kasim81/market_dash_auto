@@ -350,6 +350,7 @@ def section_b_static_checks() -> dict:
         "duplicate_indicator_ids": _check_duplicate_indicator_ids(),
         "missing_calculators":    _check_missing_calculators(),
         "missing_columns":        _check_missing_get_col_columns(),
+        "registry_drift":         _check_registry_drift(),
     }
 
 
@@ -466,6 +467,53 @@ def _check_missing_get_col_columns() -> list[str]:
         f"_get_col(...,{col!r}) referenced in compute_macro_market.py but column "
         f"absent from macro_economic_hist.csv"
         for col in missing
+    ]
+
+
+def _check_registry_drift() -> list[str]:
+    """Every base ticker present in market_data_comp_hist.csv must appear in
+    index_library.csv as either ticker_yfinance_pr or ticker_yfinance_tr.
+
+    Reports orphans (hist column whose source-of-truth row was edited or
+    removed from the library) so library_sync.py can prune them. Sections of
+    forward_plan.md §0 / §3.1 require the library CSV to be the unambiguous
+    source of truth for the comp pipeline.
+    """
+    lib_path  = DATA / "index_library.csv"
+    hist_path = DATA / "market_data_comp_hist.csv"
+    if not (lib_path.exists() and hist_path.exists()):
+        return []
+
+    # Every per-row ticker field that can produce a hist column. yfinance PR/TR
+    # populate the equity columns; FRED fields populate the bond-yield/spread/
+    # duration columns interleaved by build_comp_market_meta_prefix().
+    TICKER_FIELDS = (
+        "ticker_yfinance_pr", "ticker_yfinance_tr",
+        "ticker_fred_tr", "ticker_fred_yield", "ticker_fred_oas",
+        "ticker_fred_spread", "ticker_fred_duration",
+    )
+    expected: set[str] = set()
+    with lib_path.open(newline="") as f:
+        for row in csv.DictReader(f):
+            for field in TICKER_FIELDS:
+                t = (row.get(field) or "").strip()
+                if t:
+                    expected.add(t)
+
+    # Row 1 of comp_hist is the "Ticker ID" metadata row; column 0 is empty,
+    # column 1 is the literal "Ticker ID", columns 2+ are the base tickers
+    # (each appears twice — once for _Local, once for _USD — but as a set
+    # we get distinct values).
+    with hist_path.open(newline="") as f:
+        first_row = next(csv.reader(f))
+    present = {c.strip() for c in first_row[2:] if c.strip()}
+
+    orphans = sorted(present - expected)
+    return [
+        f"hist column {t!r} present in market_data_comp_hist.csv but no "
+        f"matching ticker_yfinance_pr/tr in index_library.csv "
+        f"(run: python library_sync.py --confirm)"
+        for t in orphans
     ]
 
 
