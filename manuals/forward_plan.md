@@ -317,6 +317,14 @@ Some have known replacements:
 
 For each dead ticker: either find a replacement and update `index_library.csv`, or accept the gap and let sub-track 3 mark it UNAVAILABLE.
 
+**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. Schema: `date_removed, ticker, ticker_field (pr|tr|row), library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred), notes`. Removal rules (agreed 2026-04-28):
+
+- PR dead, TR working & correctly mapped → blank the PR field, keep the row, log `replacement_status=tr_retained`.
+- TR dead, PR working & correctly mapped → blank the TR field, keep the row, log `replacement_status=pr_retained`.
+- Both PR and TR dead → remove the entire row, log `replacement_status=none`. Any `_calc_*` indicator referencing the removed `name` is hashed out with a one-line `# DISABLED <date>: source ticker removed, see removed_tickers.csv` comment until a replacement is approved (proxies are NEVER auto-wired without explicit user approval).
+
+Hist-file column drops are handled by `library_sync.py` — the source-of-truth library CSV is the only file edited by hand; the sync utility prunes orphan columns from `data/market_data_comp_hist.csv` and archives them under `data/_archived_columns/`. `data_audit.py`'s static-checks section reports any `_hist.csv` columns that aren't present in their source-of-truth library CSV (registry drift).
+
 #### Acceptance
 
 - After one full triage pass on the EXPIRED list: every row classified and the audit's EXPIRED bucket reflects only series in active-fix or accepted-gap state.
