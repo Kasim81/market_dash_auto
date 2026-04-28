@@ -580,6 +580,33 @@ Cross-reference of every reference indicator from `Macro Market Indicators Refer
 - **China** has the most proprietary gaps (19) — NBS data has no free foreign API. Practical coverage is limited to FRED OECD mirrors (`CHN_BUS_CONF`, `CHN_CON_CONF`).
 - **Eurozone** is well-served by existing Eurostat / DB.nomics, with ECB SDW as the main new source needed.
 
+#### Prioritised FRED additions (zero-code — add rows to `macro_library_fred.csv`)
+
+These 20 indicators can be captured immediately by adding rows to the existing FRED library CSV. No code changes — `sources/fred.py` picks them up automatically.
+
+| Region | Indicator | FRED Series ID |
+|---|---|---|
+| US | Average Weekly Hours, Manufacturing | AWHMAN |
+| US | Non-Defence Capital Goods Orders ex-Air | NEWORDER (verify) |
+| US | Capacity Utilization | TCU |
+| US | Real Personal Income less Transfers | W875RX1 |
+| US | Real Personal Consumption Expenditures | PCEC96 |
+| US | Manufacturing & Trade Sales | CMRMTSPL |
+| US | Chicago Fed National Activity Index | CFNAI |
+| US | Unit Labour Costs | ULCNFB |
+| US | Average Duration of Unemployment | UEMPMEAN |
+| US | Commercial & Industrial Loans Outstanding | TOTCI |
+| US | Corporate Profits (NIPA) | CP or A053RC1Q027SBEA |
+| US | Retail Sales Control Group | RSFSXMV |
+| UK | Bank Rate (BoE) | BOEBRBS |
+| Eurozone | Germany Industrial Production | DEUPROINDMISMEI |
+| Eurozone | ECB Deposit Facility Rate | ECBDFR |
+| Eurozone | HICP Inflation | EA19CPALTT01GYM |
+| Japan | JPY REER (BIS) | RBJPBIS |
+| Japan | Industrial Production | JPNPROINDMISMEI |
+| Japan | BoJ Policy Rate | IRSTCB01JPM156N |
+| China | PPI Inflation | CHNPPIALLMINMEI |
+
 ### 3.4 Sheets Export Audit (Phase G)
 
 **Status (2026-04-21):** Most items completed — see Phase G details in section 1. The full audit found and fixed three issues: missing protected-tab guards in 3 of 4 writer modules, an inline `TABS_TO_DELETE` constant in `fetch_data.py` that drifted from the `PROTECTED_TABS` set in `fetch_hist.py`, and a narrow `A:Z` clear range in `fetch_macro_us_fred.py` that would leave stale data if the schema grew past column Z. All three fixed by consolidating the shared tab state into `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`) and wiring every writer to it.
