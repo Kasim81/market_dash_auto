@@ -288,11 +288,34 @@ Triage to be done in batches; each `data/macro_library_*.csv` edit + any `_get_c
 
 #### Sub-track 2 — STALE override pass
 
-The 46 STALE series (1×–2× tolerance) are mostly publishers genuinely lagging by one publication cycle. For each, decide: is this lag *normal* for this publisher? If yes, set `freshness_override_days` to absorb. The audit's STALE bucket then only contains genuinely-late publishers, not normal cadence.
+**Status:** Bulk pass shipped 2026-04-29 (claude/section-3-1-subtrack-2-stale-overrides). 48 library rows updated across `macro_library_fred.csv` (42), `macro_library_oecd.csv` (2), `macro_library_dbnomics.csv` (4) — `freshness_override_days` set per cluster.
 
-Bulk pass — should be a single CSV-edit commit covering most rows. Likely overrides:
-- Quarterly series (`ULCNFB`, `CP`, `EZ_EMPLOYMENT`): override 180d (publisher lag is typically 1 full quarter).
-- Monthly series at 53-81d age: override 75d (publisher 1.5-cycle lag is normal for many BLS / OECD / FRED-mirror series).
+Audit Section C before/after:
+- Before: FRESH 62, STALE 46, EXPIRED 29 (75 flagged)
+- After:  FRESH 110, STALE 6, EXPIRED 19 (25 flagged)
+
+The 25 remaining flagged series are intentional forcing functions:
+- 9 sub-track-1 EXPIRED defers (JPN_POLICY_RATE, CHN_POLICY_RATE, GBR_BANK_RATE, CHN_M2, EA_HICP, CHN_IND_PROD, DEU_IND_PROD, JPN_IND_PROD, EA_DEPOSIT_RATE)
+- 8 × 117d cluster (PERMIT, FEDFUNDS, CMRMTSPL, EU_ESI, EU_IND_CONF, EU_SVC_CONF, ISM_MFG_PMI, ISM_MFG_NEWORD) — left at base tolerance because 117d for monthly publishers is too long for normal lag; widening would mask a real fetch or publisher issue
+- ISM_SVC_PMI at 236d (override 60d applied per doc — series remains EXPIRED, forcing function intact)
+- BAMLC0A0CM 12d daily (defer per doc — verify next run)
+- 3 quarterly STALE (ULCNFB, CP, EZ_EMPLOYMENT) just over the 180d override — expected at end of normal quarterly cycle
+- 3 OECD unemployment STALE (GBR_UNEMPLOYMENT 145d, DEU_UNEMPLOYMENT 117d, FRA_UNEMPLOYMENT 117d) — share the OECD `UNEMPLOYMENT` library row whose override is set to 75d (canonical normal cadence); country-specific publisher anomalies stay surfaced as STALE
+
+Override schedule applied (per cluster, doc-aligned):
+
+| Cluster | Override | Affected source(s) | Count |
+|---|---|---|---|
+| Weekly OAS (12d age) | 14d | FRED (NFCI, TOTCI) | 2 |
+| Monthly 54d cluster (canonical 30-50d publisher cadence) | 75d | FRED + OECD | 32 |
+| Monthly 82d cluster (publisher cadence allows up to 2 cycles) | 90d | FRED + OECD | 9 |
+| Monthly 144d cluster (Eurostat / China trade publisher lag) | 150d | FRED + DB.nomics | 2 |
+| Monthly 235d ISM Services (DB.nomics mirror normal cadence) | 60d | DB.nomics | 1 |
+| Quarterly 208d cluster | 180d | FRED + DB.nomics | 3 |
+
+OECD multi-country fan-out conflicts resolved per-row:
+- `OECD UNEMPLOYMENT`: override 75d (canonical normal cadence; GBR/DEU/FRA at 117-145d stay surfaced as STALE forcing functions)
+- `OECD RATE_3M`: override 90d (covers EA19 at 82d and GBR at 54d)
 
 #### Sub-track 3 — `validation_status` write-back for `index_library.csv`
 
