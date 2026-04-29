@@ -318,7 +318,7 @@ ISFA.L · SENSEXBEES.NS · ^CNXSC · ^RMCCG · ^RMCCV · ^SP500-253020 · ^SP500
 - **2 TR-blanks (pr_retained)** — `ISFA.L` (TR for FTSE All-Share, PR `^FTAS` retained); `SENSEXBEES.NS` (TR for S&P BSE Sensex, PR `^BSESN` retained).
 - **3 row removals (none)** — `^SP500-253020`, `^SP500-351030`, `^SP500-601010`. No TR proxy was configured, and grep confirmed no Phase E indicator references them by name. No calculator hashing-out required.
 
-**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. Schema: `date_removed, ticker, ticker_field (pr|tr|row), library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred), notes`. Removal rules (agreed 2026-04-28):
+**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. The ledger is the single source of truth for *all* library changes (removals, reroutes, additions) — not just sub-track 4. Schema: `date_removed, action (removed|rerouted|added), ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred|n/a), target_identifier, notes`. Removal rules (agreed 2026-04-28):
 
 - PR dead, TR working & correctly mapped → blank the PR field, keep the row, log `replacement_status=tr_retained`.
 - TR dead, PR working & correctly mapped → blank the TR field, keep the row, log `replacement_status=pr_retained`.
