@@ -815,11 +815,30 @@ Runs as a CI step at the end of `update_data.yml`; never fails the build (warnin
 | `classify_age(age, threshold)` | FRESH / STALE / EXPIRED per the 1× / 2× tolerance bands |
 | `section_a_fetch_outcomes()` | Scrape `pipeline.log` + cross-check against `market_data_comp_hist.csv` |
 | `_yfinance_truly_dead(suspects)` | Filter yfinance suspects: keep only those without data in the latest comp-hist row |
-| `section_b_static_checks()` | Run the 4 sub-checks (orphan countries / duplicate ids / missing calculators / missing columns) |
+| `section_b_static_checks()` | Run the 5 sub-checks (orphan countries / duplicate ids / missing calculators / missing columns / registry drift) |
 | `section_c_staleness()` | Bucket every series into FRESH / STALE / EXPIRED |
 | `render_report(sections)` | Build the plaintext `data_audit.txt` |
 | `render_comment(sections)` | Build the GitHub Issue Markdown `audit_comment.md` with first-line summary |
 | `main()` | Orchestrate; always returns exit code 0 (warning channel) |
+
+#### `freshness_override_days` cluster reference (2026-04-29 bulk pass)
+
+48 library rows were updated in a single bulk pass (commit `ab08e5d`) to absorb normal publisher cadence. The cluster→override mapping below is the durable record of what value was chosen and why:
+
+| Cluster (audit age) | Override | Affected source(s) | Rows | Rationale |
+|---|---|---|---|---|
+| Weekly OAS (12d) | 14d | FRED (NFCI, TOTCI) | 2 | Slack over Friday-spine alignment |
+| Monthly 54d cluster | 75d | FRED + OECD | 32 | Canonical 30-50d publisher cadence + 1.5 cycles |
+| Monthly 82d cluster | 90d | FRED + OECD | 9 | Up to 2 normal cycles |
+| Monthly 144d (Eurostat / China trade) | 150d | FRED + DB.nomics | 2 | Real publisher lag absorbed |
+| Monthly 235d (ISM Services) | 60d | DB.nomics | 1 | DB.nomics mirror normal cadence; series stays EXPIRED at 235d as forcing function |
+| Quarterly 208d | 180d | FRED + DB.nomics | 3 | 1 full quarter slack on top of base 120d |
+
+OECD multi-country fan-out conflicts (one library row → many fanned-out columns) resolved per row:
+- `OECD UNEMPLOYMENT` → 75d (canonical normal cadence; GBR/DEU/FRA at 117–145d stay surfaced as STALE forcing functions)
+- `OECD RATE_3M` → 90d (covers EA19 at 82d and GBR at 54d)
+
+The 117d cluster (PERMIT, FEDFUNDS, CMRMTSPL, FRA/DEU_UNEMPLOYMENT, EU_ESI/IND/SVC_CONF, ISM_MFG_PMI/NEWORD) was deliberately **not** widened — 117d for monthly publishers is too long for normal lag; widening would mask a real fetch or publisher issue. Those 10 series remain EXPIRED as forcing functions.
 
 ### 9.9 `library_sync.py` (~363 lines)
 
