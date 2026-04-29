@@ -181,15 +181,15 @@ Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the lar
 
 - **Section A — Fetch outcomes.** Scrapes `pipeline.log` for yfinance dead tickers (cross-checked against `market_data_comp_hist.csv` to filter transient warnings) and FRED final failures (only the `— skipping` suffix; retried-then-recovered errors are filtered out).
 - **Section B — Static checks.** Country-code orphans, indicator-id uniqueness, calculator registration, `_get_col(...)` column existence on the unified hist, **and registry drift across all 3 hist↔library pairs** (comp / macro_economic / macro_market) — orphan column reports tell the operator to run `python library_sync.py --confirm`. The drift check imports `library_sync`'s expected/present helpers so column-derivation rules live in one place.
-- **Section C — Value-change staleness.** Walks every column of `macro_economic_hist.csv` and flags series whose last *value change* is older than the per-row tolerance. Tolerances come from `data/freshness_thresholds.csv` (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with a per-row `freshness_override_days` override on every `data/macro_library_*.csv` (48 rows widened in the §3.1 sub-track 2 bulk pass, 2026-04-29).
+- **Section C — Value-change staleness.** Walks every column of `macro_economic_hist.csv` and flags series whose last *value change* is older than the per-row tolerance. Tolerances come from `data/freshness_thresholds.csv` (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with a per-row `freshness_override_days` override on every `data/macro_library_*.csv` (48 rows widened in the 2026-04-29 bulk pass; cluster→override mapping in `manuals/technical_manual.md` §9.8).
 
-`audit_writeback.py` runs immediately after `data_audit.py` (§3.1 sub-track 3, added 2026-04-29). Parses Section A's `YFINANCE_DEAD` list, maintains `data/yfinance_failure_streaks.csv` (per-ticker dead-list streak counter), and flips `validation_status` from `CONFIRMED` to `UNAVAILABLE` on any row whose streak hits N=14 consecutive days. Manual override wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally. Appends a one-line summary to `audit_comment.md` so the GitHub Issue comment captures today's writeback actions.
+`audit_writeback.py` runs immediately after `data_audit.py` (added 2026-04-29). Parses Section A's `YFINANCE_DEAD` list, maintains `data/yfinance_failure_streaks.csv` (per-ticker dead-list streak counter), and flips `validation_status` from `CONFIRMED` to `UNAVAILABLE` on any row whose streak hits N=14 consecutive days. Manual override wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally. Appends a one-line summary to `audit_comment.md` so the GitHub Issue comment captures today's writeback actions.
 
 `library_sync.py` is the operator-gated companion to the registry-drift check — covers 3 hist↔library pairs, archives orphan columns to `data/_archived_columns/<hist_basename>__<column_id>__<date>.csv` before dropping them. Default mode is dry-run.
 
 A "Post daily audit to perpetual GitHub Issue" workflow step then posts `audit_comment.md` to a `daily-audit`-labelled GitHub Issue every day. The first line of the comment is the one-sentence ISSUE/CLEAN summary; collapsible detail follows. GitHub's native notification email gives the daily heartbeat without any SMTP secrets.
 
-§3.1's first-run baseline (2026-04-28: 75 stale + 22 dead + 1 schema issue) was fully worked down 2026-04-29 — see §3.1 for the disposition tables.
+The audit's first-run baseline (2026-04-28: 75 stale + 22 dead + 1 schema issue) was fully worked down 2026-04-29; durable outcomes are recorded in `manuals/technical_manual.md` (§7 / §9.8 / §13) with ongoing forcing-function gaps captured in §1 Known Data Gaps below.
 
 ### Data-Layer Registry (single source of truth — per §0)
 
@@ -226,8 +226,8 @@ These are cases where a planned series is unavailable from any free source we ac
 | **`CN_PMI2`** (Caixin China Manufacturing PMI) | Returns Insufficient Data. S&P Global proprietary. | Substitute: Chinese manufacturing is covered by `CN_PMI1` (OECD BCI for China). |
 | **OECD CLI for EA19 / CHE** | Not published by OECD. | `compute_macro_market.py` uses DEU+FRA equal-weight as the Eurozone CLI proxy. |
 | **`NAPMOI`** (FRED ISM new orders) | Retired by FRED in April 2026 (HTTP 400 from late April onwards). | `US_ISM1` reads `ISM_MFG_NEWORD` from DB.nomics via the unified hist (PR2, 2026-04-26). |
-| **9 stale FRED rows kept as forcing functions (2026-04-29)** | FRED OECD-mirror data has frozen for `JPN_POLICY_RATE` (2008-12), `CHN_POLICY_RATE` (2015-11), `GBR_BANK_RATE` (BOERUKM, 2016-08), `CHN_M2` (2019-08), `EA_HICP` (`EA19CPALTT01GYM`, 2023-01), `CHN_IND_PROD` (CHNPRINTO01IXPYM, 2023-11), `DEU_IND_PROD` (DEUPROINDMISMEI, 2024-03), `JPN_IND_PROD` (JPNPROINDMISMEI, 2024-03), `EA_DEPOSIT_RATE` (ECBDFR, 2025-06). Rows are kept in `macro_library_fred.csv` so the daily audit keeps them surfaced. None feed any Phase E indicator. | Each has a documented future replacement target via §3.2 (BoJ Tankan for JPN_POLICY_RATE) or §3.4 New Source Modules (PBoC LPR / BoE BOESD `IUDBEDR` / DB.nomics PBoC mirror / Eurostat HICP via DB.nomics / NBS / Bundesbank SDMX / e-Stat / ECB Data Portal direct). Defers per §3.1 sub-track 1 disposition. |
-| **10 stale series in the 117d cluster (2026-04-29)** | `PERMIT`, `FEDFUNDS`, `CMRMTSPL`, `FRA_UNEMPLOYMENT`, `DEU_UNEMPLOYMENT`, `EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`, `ISM_MFG_PMI`, `ISM_MFG_NEWORD` — all 117d old (last_obs 2026-01-02) at the 2026-04-28 audit. 117d for monthly publishers is too long for normal lag; suggests a real fetch or publisher issue, not benign cadence. | Deliberately **not** widened in the §3.1 sub-track 2 override pass — left at base 45d tolerance so the audit keeps surfacing them. Re-investigate when they show up on the next audit; if a specific publisher genuinely went silent, document here as a permanent gap. |
+| **9 stale FRED rows kept as forcing functions (2026-04-29)** | FRED OECD-mirror data has frozen for `JPN_POLICY_RATE` (2008-12), `CHN_POLICY_RATE` (2015-11), `GBR_BANK_RATE` (BOERUKM, 2016-08), `CHN_M2` (2019-08), `EA_HICP` (`EA19CPALTT01GYM`, 2023-01), `CHN_IND_PROD` (CHNPRINTO01IXPYM, 2023-11), `DEU_IND_PROD` (DEUPROINDMISMEI, 2024-03), `JPN_IND_PROD` (JPNPROINDMISMEI, 2024-03), `EA_DEPOSIT_RATE` (ECBDFR, 2025-06). Rows are kept in `macro_library_fred.csv` so the daily audit keeps them surfaced. None feed any Phase E indicator. | Each has a documented future replacement target via §3.2 (BoJ Tankan for JPN_POLICY_RATE) or §3.4 New Source Modules (PBoC LPR / BoE BOESD `IUDBEDR` / DB.nomics PBoC mirror / Eurostat HICP via DB.nomics / NBS / Bundesbank SDMX / e-Stat / ECB Data Portal direct). |
+| **10 stale series in the 117d cluster (2026-04-29)** | `PERMIT`, `FEDFUNDS`, `CMRMTSPL`, `FRA_UNEMPLOYMENT`, `DEU_UNEMPLOYMENT`, `EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`, `ISM_MFG_PMI`, `ISM_MFG_NEWORD` — all 117d old (last_obs 2026-01-02) at the 2026-04-28 audit. 117d for monthly publishers is too long for normal lag; suggests a real fetch or publisher issue, not benign cadence. | Deliberately **not** widened in the 2026-04-29 override pass — left at base 45d tolerance so the audit keeps surfacing them. Re-investigate when they show up on the next audit; if a specific publisher genuinely went silent, document here as a permanent gap. |
 | **Investing.com / Trading Economics / S&P Global direct / FMP economic calendar** | Evaluated and rejected: scraping fragility (Cloudflare), paid-only APIs, FMP endpoints paywalled August 2025. | Do not revisit. |
 
 
@@ -235,148 +235,20 @@ These are cases where a planned series is unavailable from any free source we ac
 
 ## 2. Resume Here — Priority Tasks
 
-The 2026-04-22 → 2026-04-28 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup → concept/subcategory taxonomy → indicator-explorer restructure → daily integrated audit) has been delivered end-to-end; durable outcomes are documented in §1 Phase Summary and `manuals/technical_manual.md`.
+**Active priority is open.** The §3.1 audit-remediation backlog (sub-tracks 1–4) closed 2026-04-29; durable outcomes live in `manuals/technical_manual.md` (§7, §9.8 cluster reference, §9.9 library_sync, §9.10 audit_writeback, §13 ticker dispositions, §14 daily flow) and ongoing forcing-function gaps live in §1 Known Data Gaps.
 
-**§3.1 fully closed (2026-04-29).** All four sub-tracks landed:
-
-- **Sub-track 1 (EXPIRED reroutes)** — 3 OECD-mirror confidence FRED rows removed; 9 deferred as forcing functions; 17 punted to sub-track 2.
-- **Sub-track 2 (STALE override pass)** — 48 library rows updated with `freshness_override_days`; audit's flagged count dropped from 75 → 25 (FRESH 62→110, STALE 46→6, EXPIRED 29→19). Acceptance met (STALE bucket <10).
-- **Sub-track 3 (validation_status writeback)** — `audit_writeback.py` wired into CI; tracks per-ticker dead-list streaks in `data/yfinance_failure_streaks.csv`; flips `validation_status` to `UNAVAILABLE` after 14 consecutive days. Manual override wins. Today's writeback is a no-op (0 dead tickers); value is preventive.
-- **Sub-track 4 (dead yfinance tickers)** — 22/22 triaged across 4 commit batches; 17 PR-blanks (TR ETF retained), 2 TR-blanks (PR retained), 3 full row removals. Per-ticker dispositions in `data/removed_tickers.csv`.
-
-Three new pieces of supporting infrastructure landed alongside §3.1:
-- `data/removed_tickers.csv` (single ledger for removals / reroutes / additions; 11-column schema).
-- `data/_archived_columns/` populated by `library_sync.py` — preserves historical observations when a library row is removed.
-- `data_audit.py` Section B `registry_drift` check covers all 3 hist↔library pairs (comp / macro_economic / macro_market). Drift today: 0.
-
-**Active priority is open** — pick from §3.5 Community Datasets Review (research-led), §3.4 New Source Modules (start with Bundesbank SDMX or e-Stat to revive a sub-track 1 defer), §3.6 Incremental Fetch Mode (perf), §3.7 PE Ratio Integration (small feature), or escalate to one of the larger §3.x items. The 25 audit forcing-function flags in §3.1 sub-track 1 / 2 are intentional and continue to surface as motivation for §3.2 / §3.4 work.
+Candidate next tracks:
+- **§3.5 Community Datasets Review** — research-led; could resurrect retired PR tickers or fill §1 Known Data Gaps.
+- **§3.4 New Source Modules** — start with Bundesbank SDMX (revives `DEU_IND_PROD`), e-Stat (revives `JPN_IND_PROD`), or BoE BOESD (revives `GBR_BANK_RATE`) — each clears a §1 Known Data Gaps row.
+- **§3.6 Incremental Fetch Mode** — performance work for `fetch_hist.py`.
+- **§3.7 PE Ratio Integration** — small contained feature add.
+- **§3.2 Surveys sub-project** — large; needs user-led research first.
+- **§3.8 Retire the Simple Pipeline** — deprecation track.
+- **§3.9 / §3.10 Regime work** — multi-stage research projects.
 
 ---
 
 ## 3. New Feature Development
-
-### 3.1 Act on audit findings — remediation backlog
-
-**Priority:** High — Phase H's daily integrated audit (see §1) now surfaces every broken / stale / dead-ticker case in a single committed log, but the audit *reports*; it doesn't *fix*. This section is the rolling remediation backlog. Until each finding is triaged, the audit comment on the perpetual `daily-audit` GitHub Issue will continue to flag the same failures.
-**Status:** Backlog open. First-run baseline captured 2026-04-28 — counts are the starting state.
-
-**First-run baseline (2026-04-28):**
-
-- Section A (fetch outcomes): **22 truly-dead yfinance tickers**, 0 persistent FRED HTTP errors, a handful of informational ECB/fallback notices.
-- Section B (static checks): **1 issue** — `_get_col(...,'CHN_GOVT_10Y')` referenced in `_calc_AS_CN_R1` but column absent from the unified hist (matches the documented China-10Y data gap in §1; not actionable until a free CN 10Y source is found).
-- Section C (value-change staleness): **29 EXPIRED** + **46 STALE** = 75 series flagged.
-
-#### Sub-track 1 — Triage the 29 EXPIRED series
-
-**Status:** Easy batch shipped 2026-04-29 (claude/macro-hist-column-archival): 3 OECD-mirror confidence FRED rows removed; 9 entries deferred as forcing functions; 17 punted to sub-track 2 (`freshness_override_days` bulk pass). After this batch and any `library_sync.py --confirm` run, the audit's `registry_drift` is 0 across all three hist↔library pairs.
-
-For each EXPIRED row, classify into one of four resolutions:
-
-| Resolution | When to apply | Action |
-|---|---|---|
-| **Reroute** | A working alternative source exists (e.g. `EA_HICP` from FRED OECD-mirror is dead, but `EA19CPALTT01GYM` is the live monthly version) | Update `data/macro_library_*.csv` to swap source IDs; update any `_get_col(...)` reference in `compute_macro_market.py`; remove the dead row. |
-| **Remove** | The publisher genuinely retired the series and no replacement is meaningful | Delete the row from the relevant `data/macro_library_*.csv`; if a Phase E indicator depended on it, accept the n/a and document in §1 Known Data Gaps. |
-| **Widen override** | The publisher genuinely lags but data is still arriving on a longer cadence | Set `freshness_override_days` on that row to a value that covers the actual cadence + a small margin. |
-| **Defer** | The series is in §1 Known Data Gaps and replacement work is in progress (e.g. China 10Y via DB.nomics) | No CSV edit; the audit continues to surface it as a forcing function. |
-
-The 29 EXPIRED series sorted by age (oldest first):
-
-| Age | Column | Source | Series ID | Last obs | Disposition (2026-04-29) |
-|---|---|---|---|---|---|
-| 6353d (~17y) | `JPN_POLICY_RATE` | FRED | `IRSTCB01JPM156N` | 2008-12 | **Defer** — replacement via §3.2 surveys sub-project (BoJ direct). Remains as forcing function. |
-| 3826d (~10y) | `CHN_POLICY_RATE` | FRED | `IRSTCB01CNM156N` | 2015-11 | **Defer** — replacement via §3.4 NSM (PBoC LPR series). |
-| 3553d (~9y) | `GBR_BANK_RATE` | FRED | `BOERUKM` | 2016-08 | **Defer** — replacement via §3.4 NSM (BoE BOESD `IUDBEDR`). |
-| 2461d (~6y) | `CHN_M2` | FRED | `MYAGM2CNM189N` | 2019-08 | **Defer** — replacement via DB.nomics PBoC mirror (§3.4 NSM). |
-| 1208d (~3y) | `EA_HICP` | FRED | `EA19CPALTT01GYM` | 2023-01 | **Defer** — needs cross-source migration (FRED OECD-mirror frozen; Eurostat HICP via DB.nomics is the path). |
-| 907d (~2.5y) | `CHN_IND_PROD` | FRED | `CHNPRINTO01IXPYM` | 2023-11 | **Defer** — replacement via NBS or DB.nomics (§3.4 NSM). |
-| 844d (~2y) | `CSCICP03USM665S` | FRED | `CSCICP03USM665S` | 2024-01 | **Removed 2026-04-29** — covered by `UMCSENT`; OECD-mirror not expected to revive. |
-| 844d | `BSCICP03USM665S` | FRED | `BSCICP03USM665S` | 2024-01 | **Removed 2026-04-29** — replacement via CB Business Confidence (§3.4 NSM) when built. |
-| 844d | `CONSUMER_CONF` | FRED | `CSCICP03EZM665S` | 2024-01 | **Removed 2026-04-29** — replacement via Eurostat consumer confidence (DB.nomics) when wired. |
-| 788d (~2y) | `DEU_IND_PROD` | FRED | `DEUPROINDMISMEI` | 2024-03 | **Defer** — replacement via Bundesbank SDMX (§3.4 NSM). |
-| 788d | `JPN_IND_PROD` | FRED | `JPNPROINDMISMEI` | 2024-03 | **Defer** — replacement via e-Stat (§3.4 NSM). |
-| 319d | `EA_DEPOSIT_RATE` | FRED | `ECBDFR` | 2025-06 | **Defer** — investigate ECB Data Portal direct in sub-track 2. |
-| 235d | `ISM_SVC_PMI` | DB.nomics | `ISM/nm-pmi/pm` | 2025-09 | **Sub-track 2** — DB.nomics mirror lag; widen `freshness_override_days` to 60d. |
-| 144d × 6 | `CHN_IMPORTS`, `CHN_EXPORTS`, `GBR_UNEMPLOYMENT`, `EZ_IND_PROD`, `EZ_RETAIL_VOL`, `Eurostat employment` | various | various | 2025-12 | **Sub-track 2** — publisher lag; widen override to ~150d. |
-| 116d × 10 | `PERMIT`, `FEDFUNDS`, `CMRMTSPL`, `FRA_UNEMPLOYMENT`, `DEU_UNEMPLOYMENT`, `EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`, `ISM_MFG_PMI`, `ISM_MFG_NEWORD` | various | various | 2026-01 | **Sub-track 2** — verify (some may be genuine fetch issues, not lag); widen override or reroute. |
-| 11d | `BAMLC0A0CM` | FRED | daily | 2026-04-17 | **Defer** — recent publisher pause; verify next run. |
-
-The 3 Removed rows had their hist columns archived to `data/_archived_columns/macro_economic_hist__<col>__2026-04-29.csv` via `library_sync.py --confirm`. None of the 12 EXPIRED FRED rows is referenced by any Phase E indicator (verified via grep against `compute_macro_market.py` and `macro_indicator_library.csv` 2026-04-29).
-
-Triage to be done in batches; each `data/macro_library_*.csv` edit + any `_get_col(...)` rewire ships as a separate small commit.
-
-#### Sub-track 2 — STALE override pass
-
-**Status:** Bulk pass shipped 2026-04-29 (claude/section-3-1-subtrack-2-stale-overrides). 48 library rows updated across `macro_library_fred.csv` (42), `macro_library_oecd.csv` (2), `macro_library_dbnomics.csv` (4) — `freshness_override_days` set per cluster.
-
-Audit Section C before/after:
-- Before: FRESH 62, STALE 46, EXPIRED 29 (75 flagged)
-- After:  FRESH 110, STALE 6, EXPIRED 19 (25 flagged)
-
-The 25 remaining flagged series are intentional forcing functions:
-- 9 sub-track-1 EXPIRED defers (JPN_POLICY_RATE, CHN_POLICY_RATE, GBR_BANK_RATE, CHN_M2, EA_HICP, CHN_IND_PROD, DEU_IND_PROD, JPN_IND_PROD, EA_DEPOSIT_RATE)
-- 8 × 117d cluster (PERMIT, FEDFUNDS, CMRMTSPL, EU_ESI, EU_IND_CONF, EU_SVC_CONF, ISM_MFG_PMI, ISM_MFG_NEWORD) — left at base tolerance because 117d for monthly publishers is too long for normal lag; widening would mask a real fetch or publisher issue
-- ISM_SVC_PMI at 236d (override 60d applied per doc — series remains EXPIRED, forcing function intact)
-- BAMLC0A0CM 12d daily (defer per doc — verify next run)
-- 3 quarterly STALE (ULCNFB, CP, EZ_EMPLOYMENT) just over the 180d override — expected at end of normal quarterly cycle
-- 3 OECD unemployment STALE (GBR_UNEMPLOYMENT 145d, DEU_UNEMPLOYMENT 117d, FRA_UNEMPLOYMENT 117d) — share the OECD `UNEMPLOYMENT` library row whose override is set to 75d (canonical normal cadence); country-specific publisher anomalies stay surfaced as STALE
-
-Override schedule applied (per cluster, doc-aligned):
-
-| Cluster | Override | Affected source(s) | Count |
-|---|---|---|---|
-| Weekly OAS (12d age) | 14d | FRED (NFCI, TOTCI) | 2 |
-| Monthly 54d cluster (canonical 30-50d publisher cadence) | 75d | FRED + OECD | 32 |
-| Monthly 82d cluster (publisher cadence allows up to 2 cycles) | 90d | FRED + OECD | 9 |
-| Monthly 144d cluster (Eurostat / China trade publisher lag) | 150d | FRED + DB.nomics | 2 |
-| Monthly 235d ISM Services (DB.nomics mirror normal cadence) | 60d | DB.nomics | 1 |
-| Quarterly 208d cluster | 180d | FRED + DB.nomics | 3 |
-
-OECD multi-country fan-out conflicts resolved per-row:
-- `OECD UNEMPLOYMENT`: override 75d (canonical normal cadence; GBR/DEU/FRA at 117-145d stay surfaced as STALE forcing functions)
-- `OECD RATE_3M`: override 90d (covers EA19 at 82d and GBR at 54d)
-
-#### Sub-track 3 — `validation_status` write-back for `index_library.csv`
-
-**Status:** Done 2026-04-29 (claude/section-3-1-subtrack-3-validation-writeback). New tool `audit_writeback.py` runs daily in CI after `data_audit.py`; tracks per-ticker dead-list streaks in `data/yfinance_failure_streaks.csv` (schema: `ticker, first_seen_dead, last_seen_dead, consecutive_fail_days`). After **N=14** consecutive days on the dead list AND when the row's current `validation_status` is `CONFIRMED`, the writeback flips it to `UNAVAILABLE`. Manual override wins — an operator can re-set `CONFIRMED` after a real fix and the streak restarts naturally.
-
-The writeback appends a one-line summary to `audit_comment.md` so the daily GitHub Issue comment captures any actions. CI step `Audit writeback (registry update)` runs between `Run data audit` and the Issue-comment post; the existing `Commit and push if changed` step now also `git add -f`s `data/yfinance_failure_streaks.csv` and `data/index_library.csv` so writeback edits land in the next commit.
-
-Verified end-to-end with a 15-run synthetic test (`^DJI` injected into `data_audit.txt` Section A): streak grew 1→14, day 14 flipped to `UNAVAILABLE`, day 15 saw `UNAVAILABLE` and dropped the streak entry. Current dead-ticker count is 0 after the §3.1 sub-track 4 work, so today's writeback is a no-op — value is preventive.
-
-#### Sub-track 4 — Replace dead yfinance tickers where alternatives exist
-
-**Status:** Done 2026-04-28 — all 22 dead tickers triaged. The next pipeline run will regenerate `pipeline.log` without these tickers and Section A of the daily audit will clean up automatically.
-
-The 22 dead tickers (first-run snapshot):
-
-```
-ISFA.L · SENSEXBEES.NS · ^CNXSC · ^RMCCG · ^RMCCV · ^SP500-253020 · ^SP500-351030
-^SP500-601010 · ^SP500G · ^SP500V · ^SX3P · ^SX4P · ^SX6P · ^SX7E · ^SX8P · ^SXDP
-^SXEP · ^SXKP · ^SXNP · ^TOPX · ^TSXV · ^TX60
-```
-
-**Disposition (per `data/removed_tickers.csv`):**
-
-- **17 PR-blanks (tr_retained)** — TR ETF proxy on the same row remained working in the audit, so the PR field was blanked and `data_source` flipped to `yfinance TR`. Covers all 9 STOXX 600 sectors (TR proxies `EXH1/3/4/9.DE`, `EXI5.DE`, `EXV1/2/3/4.DE`); ^SP500G→IVW, ^SP500V→IVE, ^RMCCG→IWP, ^RMCCV→IWS; ^TOPX→1306.T, ^TX60→XIU.TO, ^TSXV→XCS.TO; ^CNXSC→SMALLCAP.NS.
-- **2 TR-blanks (pr_retained)** — `ISFA.L` (TR for FTSE All-Share, PR `^FTAS` retained); `SENSEXBEES.NS` (TR for S&P BSE Sensex, PR `^BSESN` retained).
-- **3 row removals (none)** — `^SP500-253020`, `^SP500-351030`, `^SP500-601010`. No TR proxy was configured, and grep confirmed no Phase E indicator references them by name. No calculator hashing-out required.
-
-**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. The ledger is the single source of truth for *all* library changes (removals, reroutes, additions) — not just sub-track 4. Schema: `date_removed, action (removed|rerouted|added), ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred|n/a), target_identifier, notes`. Removal rules (agreed 2026-04-28):
-
-- PR dead, TR working & correctly mapped → blank the PR field, keep the row, log `replacement_status=tr_retained`.
-- TR dead, PR working & correctly mapped → blank the TR field, keep the row, log `replacement_status=pr_retained`.
-- Both PR and TR dead → remove the entire row, log `replacement_status=none`. Any `_calc_*` indicator referencing the removed `name` is hashed out with a one-line `# DISABLED <date>: source ticker removed, see removed_tickers.csv` comment until a replacement is approved (proxies are NEVER auto-wired without explicit user approval).
-
-Hist-file column drops are handled by `library_sync.py` — the source-of-truth library CSV is the only file edited by hand; the sync utility prunes orphan columns from `data/market_data_comp_hist.csv` and archives them under `data/_archived_columns/`. `data_audit.py`'s static-checks section reports any `_hist.csv` columns that aren't present in their source-of-truth library CSV (registry drift). Drift after the 2026-04-28 triage: 0.
-
-**Outstanding gaps (deferred — proxies require explicit approval per §3.5).** All 17 PR-blanked rows now rely solely on the TR ETF proxy; the underlying index PR series is gone from yfinance for the foreseeable future. Where a replacement PR ticker becomes available (e.g. via §3.5 Community Datasets Review) the row's `ticker_yfinance_pr` can be re-populated.
-
-#### Acceptance
-
-- After one full triage pass on the EXPIRED list: every row classified and the audit's EXPIRED bucket reflects only series in active-fix or accepted-gap state.
-- After the STALE override pass: the audit's STALE bucket is small (<10 series) and contains only genuine publisher misbehaviour.
-- `index_library.csv` `validation_status` reflects the audit's dead-ticker view (write-back live).
-- Daily audit comment routinely reads `**ALL CLEAN**` or contains only single-digit issue counts.
 
 ### 3.2 Comprehensive Business + Consumer Survey Data — sub-project
 
@@ -537,7 +409,7 @@ Cross-reference of every reference indicator from `Macro Market Indicators Refer
 
 #### Prioritised FRED additions (zero-code — add rows to `macro_library_fred.csv`)
 
-**Status (2026-04-29):** Cross-checked the original 20-row priority list against `macro_library_fred.csv`. **17 of 20 are already present** — the table below was largely stale documentation. Two genuinely net-new rows added 2026-04-29 (`RSFSXMV` for US Retail Sales Control Group; `CHNPIEATI01GYM` for China PPI — the original `CHNPPIALLMINMEI` listed below was an invalid copy-paste-typo ID; corrected and re-added in `claude/fix-chn-ppi-series-id`). The remaining 1 entry (`BOEBRBS` for UK BoE Bank Rate) is *entangled with §3.1 sub-track 1* — the existing `BOERUKM` row is on the EXPIRED list and needs a reroute decision (replace with `BOEBRBS`, or move to BoE BOESD per §3.4 New Source Modules); deferred to that backlog. The 5 EXPIRED reroutes that double as additions (`JPN_POLICY_RATE`/`IRSTCB01JPM156N`, `EA_HICP`/`EA19CPALTT01GYM`, `DEU_IND_PROD`/`DEUPROINDMISMEI`, `JPN_IND_PROD`/`JPNPROINDMISMEI`, `EA_DEPOSIT_RATE`/`ECBDFR`) are listed below as already-in-library and are tracked under §3.1 sub-track 1, not here.
+**Status (2026-04-29):** Cross-checked the original 20-row priority list against `macro_library_fred.csv`. **17 of 20 are already present** — the table below was largely stale documentation. Two genuinely net-new rows added 2026-04-29 (`RSFSXMV` for US Retail Sales Control Group; `CHNPIEATI01GYM` for China PPI — the original `CHNPPIALLMINMEI` listed below was an invalid copy-paste-typo ID; corrected and re-added in `claude/fix-chn-ppi-series-id`). The remaining 1 entry (`BOEBRBS` for UK BoE Bank Rate) is *entangled with §1 Known Data Gaps* — the existing `BOERUKM` row is on the forcing-function defer list and needs a reroute decision (replace with `BOEBRBS`, or move to BoE BOESD per the New Source Modules track below). The 5 EXPIRED reroutes that double as additions (`JPN_POLICY_RATE`/`IRSTCB01JPM156N`, `EA_HICP`/`EA19CPALTT01GYM`, `DEU_IND_PROD`/`DEUPROINDMISMEI`, `JPN_IND_PROD`/`JPNPROINDMISMEI`, `EA_DEPOSIT_RATE`/`ECBDFR`) are listed below as already-in-library and are tracked under §1 Known Data Gaps, not here.
 
 These 20 indicators were originally enumerated as zero-code additions. Status column reflects the 2026-04-29 audit:
 
@@ -555,13 +427,13 @@ These 20 indicators were originally enumerated as zero-code additions. Status co
 | US | Commercial & Industrial Loans Outstanding | TOTCI | already in library |
 | US | Corporate Profits (NIPA) | CP or A053RC1Q027SBEA | already in library |
 | US | Retail Sales Control Group | RSFSXMV | **added 2026-04-29** |
-| UK | Bank Rate (BoE) | BOEBRBS | deferred — entangled with §3.1 sub-track 1 (BOERUKM EXPIRED reroute) |
-| Eurozone | Germany Industrial Production | DEUPROINDMISMEI | already in library (EXPIRED — see §3.1) |
-| Eurozone | ECB Deposit Facility Rate | ECBDFR | already in library (EXPIRED — see §3.1) |
-| Eurozone | HICP Inflation | EA19CPALTT01GYM | already in library (EXPIRED — see §3.1) |
+| UK | Bank Rate (BoE) | BOEBRBS | deferred — entangled with §1 Known Data Gaps (BOERUKM forcing-function row) |
+| Eurozone | Germany Industrial Production | DEUPROINDMISMEI | already in library (EXPIRED — see §1 Known Data Gaps) |
+| Eurozone | ECB Deposit Facility Rate | ECBDFR | already in library (EXPIRED — see §1 Known Data Gaps) |
+| Eurozone | HICP Inflation | EA19CPALTT01GYM | already in library (EXPIRED — see §1 Known Data Gaps) |
 | Japan | JPY REER (BIS) | RBJPBIS | already in library |
-| Japan | Industrial Production | JPNPROINDMISMEI | already in library (EXPIRED — see §3.1) |
-| Japan | BoJ Policy Rate | IRSTCB01JPM156N | already in library (EXPIRED — see §3.1) |
+| Japan | Industrial Production | JPNPROINDMISMEI | already in library (EXPIRED — see §1 Known Data Gaps) |
+| Japan | BoJ Policy Rate | IRSTCB01JPM156N | already in library (EXPIRED — see §1 Known Data Gaps) |
 | China | PPI Inflation | ~~CHNPPIALLMINMEI~~ → CHNPIEATI01GYM | **added 2026-04-29; corrected 2026-04-29** (original ID was an invalid typo of `CHNCPIALLMINMEI`; replaced with the actual OECD MEI series for China PPI) |
 
 #### New source modules needed (ranked by indicator count)
@@ -668,7 +540,7 @@ These reference indicators have partial coverage today via adjacent / standardis
 
 ### 3.5 Community Datasets Review — Yahoo-compatible ticker catalogues
 
-**Priority:** Medium — low-effort discovery exercise that could feed §3.1 Sub-track 4 (dead-ticker replacements), §3.3 (Instrument Expansion), and §1 Known Data Gaps in one pass.
+**Priority:** Medium — low-effort discovery exercise that could feed retired-ticker replacements (see `manuals/technical_manual.md` §13), §3.3 (Instrument Expansion), and §1 Known Data Gaps in one pass.
 **Status:** Not started.
 
 **Context.** Two community-maintained catalogues of yfinance-compatible tickers exist that might cover instruments / regions / proxies the current `data/index_library.csv` misses:
@@ -681,14 +553,14 @@ These reference indicators have partial coverage today via adjacent / standardis
 **Plan:**
 
 1. **Pull both datasets** into a working directory (not committed). Note Kaggle dataset version / GitHub commit hash for reproducibility.
-2. **Cross-check against current dead-ticker list** (§3.1 Sub-track 4 — 22 dead tickers as of 2026-04-28). For each dead ticker, search both catalogues for a same-instrument / same-index successor (e.g. is there a live `^TX60` replacement? a viable `^TOPX` substitute? alternative listings for the SX*P STOXX 600 sector family?).
+2. **Cross-check against the 22 retired tickers** (per `data/removed_tickers.csv` and `manuals/technical_manual.md` §13). For each retired ticker, search both catalogues for a same-instrument / same-index successor (e.g. is there a live `^TX60` replacement? a viable `^TOPX` substitute? alternative listings for the SX*P STOXX 600 sector family?).
 3. **Cross-check against §1 Known Data Gaps.** Specific targets where a free yfinance instrument might serve as a proxy:
     - Euro IG corporate effective yield (`EU_Cr1`) — does either catalogue list a Euro IG corp-bond ETF with usable distribution-yield history?
     - China 10Y govt yield (`AS_CN_R1`) — any free yfinance proxy via a CN govt-bond ETF or futures contract?
     - JP Tankan-equivalent instrument — unlikely yfinance has it, but worth a check before §3.2's BoJ source-build.
 4. **Cross-check against §3.3 Instrument Expansion buckets.** Europe sector ETFs (`.DE`, EUR-denominated), EM regional ETFs, UK style ETFs, Asia/Japan additional coverage — does either catalogue surface candidates that haven't already been considered?
 5. **Produce a short report** at `manuals/community_datasets_review.md` (one-shot, not a recurring artefact): per-target finding (resolved / partial / no replacement / proxy candidate), with the exact ticker symbol + currency + last-data check date.
-6. **Action the wins.** For each candidate that probes clean, add a row to `index_library.csv` with `validation_status = "CONFIRMED"` and the appropriate `base_currency`. Update `§3.1 Sub-track 4` outcomes accordingly. Where no replacement exists, the gap stays in §1 Known Data Gaps (or is accepted as `UNAVAILABLE`).
+6. **Action the wins.** For each candidate that probes clean, add a row to `index_library.csv` with `validation_status = "CONFIRMED"` and the appropriate `base_currency`; log it as an `action=added` entry in `data/removed_tickers.csv`. Where no replacement exists, the gap stays in §1 Known Data Gaps (or is accepted as `UNAVAILABLE`).
 
 **Acceptance:**
 
