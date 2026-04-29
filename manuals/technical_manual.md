@@ -65,9 +65,11 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (733 lines)
 ├── compute_macro_market.py        # 92 macro-market composite indicators (2,103 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (347 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness (§2.6 v2; ~530 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift (§2.6 v2; ~666 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
+├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
+├── library_sync.py                # Operator-gated hist↔library prune utility — archives orphan columns then drops them; covers 3 pairs (comp / macro_economic / macro_market) (~363 lines)
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -100,8 +102,11 @@ market_dash_auto/
 │   ├── macro_indicator_library.csv    # 92 macro-market indicator definitions
 │   ├── reference_indicators.csv       # 206-row L/C/G cycle-timing cross-reference
 │   │
-│   ├── # Audit infrastructure (§2.6 v2):
+│   ├── # Audit infrastructure (§2.6 v2 + §3.1):
 │   ├── freshness_thresholds.csv       # Per-frequency staleness defaults (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d)
+│   ├── removed_tickers.csv            # Single-ledger record of every library change — removals (action=removed), reroutes (action=rerouted), additions (action=added). Schema: date_removed, action, ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status, target_identifier, notes
+│   ├── yfinance_failure_streaks.csv   # Per-ticker dead-list streak counter consumed by audit_writeback.py (forward_plan §3.1 sub-track 3). Schema: ticker, first_seen_dead, last_seen_dead, consecutive_fail_days
+│   ├── _archived_columns/             # Orphan-column archives produced by library_sync.py — preserves historical observations when a library row is removed. Filename: <hist_basename>__<column_id>__<YYYY-MM-DD>.csv
 │   │
 │   ├── # Pipeline outputs (regenerated each run, committed to git):
 │   ├── market_data.csv                # OUTPUT — simple-pipeline daily snapshot
@@ -775,7 +780,7 @@ Each indicator goes through:
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
-### 9.8 `data_audit.py` (630 lines)
+### 9.8 `data_audit.py` (~666 lines)
 
 **Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
 
@@ -786,7 +791,7 @@ Runs as a CI step at the end of `update_data.yml`; never fails the build (warnin
 | Section | Purpose | Mechanism |
 |---|---|---|
 | **A — Fetch outcomes** | Catch broken FRED IDs, dead yfinance tickers, persistent HTTP errors | Scrape `pipeline.log` post-run for known per-series patterns (`HTTP <code> on X — skipping`, `possibly delisted`, `Quote not found for symbol: X`, `Period 'max' is invalid`). Retried-then-recovered transients are filtered out by only matching the `— skipping` suffix. yfinance suspects are cross-checked against the latest non-empty row of `market_data_comp_hist.csv` to filter transient warnings. |
-| **B — Static checks** | Catch registry / code drift before it shows up at runtime | Local sanity checks: orphan country codes (every code referenced in `fred` / `oecd` / `dbnomics` / `ifo` libraries exists in `macro_library_countries.csv`); indicator-id uniqueness; calculator registration (every `id` in `macro_indicator_library.csv` is registered as `"<id>": _calc_…` in `compute_macro_market.py`); `_get_col(...)` column existence (every literal in the calculator code resolves to a column in `macro_economic_hist.csv`). |
+| **B — Static checks** | Catch registry / code drift before it shows up at runtime | Local sanity checks: orphan country codes (every code referenced in `fred` / `oecd` / `dbnomics` / `ifo` libraries exists in `macro_library_countries.csv`); indicator-id uniqueness; calculator registration (every `id` in `macro_indicator_library.csv` is registered as `"<id>": _calc_…` in `compute_macro_market.py`); `_get_col(...)` column existence (every literal in the calculator code resolves to a column in `macro_economic_hist.csv`); **registry drift across all 3 hist↔library pairs** — every column in `market_data_comp_hist.csv` / `macro_economic_hist.csv` / `macro_market_hist.csv` must trace back to a row in its source-of-truth library; orphans report `(run: python library_sync.py --confirm)` for the operator. The drift check imports the expected/present helpers from `library_sync.py` so column-derivation rules (PR/TR fields, OECD/WB/IMF country fan-outs, indicator suffixes) live in one place. |
 | **C — Value-change staleness** | Catch silent publisher freezes that the Friday-spine forward-fill would otherwise mask | For each column in the unified hist, find the last *value-change* date (not just last non-null cell — forward-fill makes that wrong). Compare age against per-frequency tolerance from `data/freshness_thresholds.csv` plus per-row `freshness_override_days` overrides. Classify FRESH / STALE (1×–2×) / EXPIRED (>2× or no obs). |
 
 #### Outputs
@@ -812,6 +817,57 @@ Runs as a CI step at the end of `update_data.yml`; never fails the build (warnin
 | `render_report(sections)` | Build the plaintext `data_audit.txt` |
 | `render_comment(sections)` | Build the GitHub Issue Markdown `audit_comment.md` with first-line summary |
 | `main()` | Orchestrate; always returns exit code 0 (warning channel) |
+
+### 9.9 `library_sync.py` (~363 lines)
+
+**Role:** Operator-gated companion to `data_audit.py`'s Section B `registry_drift` check (forward_plan §0 / §3.1). The library CSVs are the source of truth for what the pipeline fetches; this utility keeps the hist files aligned with them after a library row has been edited or removed.
+
+Default mode is dry-run; pass `--confirm` to apply. The `removed_tickers.csv` ledger is **not** updated by this script — that ledger records human edits to source-of-truth library CSVs; this script is the downstream sync action.
+
+#### Three hist↔library pairs
+
+| Pair | Source-of-truth | Hist file | Column-derivation rule |
+|---|---|---|---|
+| **comp** | `index_library.csv` (PR/TR + ticker_fred_* fields) | `market_data_comp_hist.csv` | row 0 ("Ticker ID") cols 2+; each base ticker appears twice (`_Local` + `_USD`) |
+| **macro_economic** | union of `macro_library_{fred,oecd,worldbank,imf,dbnomics,ifo}.csv` | `macro_economic_hist.csv` | FRED/DB.nomics/ifo: `col` (or `series_id` fallback); OECD: `f"{country}_{series_id}"` per `oecd_countries`; WB/IMF: `f"{country}_{col}"` × every code in `macro_library_countries.csv` |
+| **macro_market** | `macro_indicator_library.csv` (`id` column) | `macro_market_hist.csv` | each `id` produces 4 columns: `<id>_raw`, `<id>_zscore`, `<id>_regime`, `<id>_fwd_regime` |
+
+For each orphan column, the existing data is archived to `data/_archived_columns/<hist_basename>__<column_id>__<YYYY-MM-DD>.csv` (preserving full historical observations) before the column is dropped from the live hist file.
+
+#### Key functions
+
+| Function | Purpose |
+|---|---|
+| `sync_comp(confirm)`, `sync_macro_economic(confirm)`, `sync_macro_market(confirm)` | Per-pair drivers; return orphan count |
+| `_run_pair(...)` | Generic engine: read hist rows, compute orphan set, archive each orphan, drop columns, rewrite |
+| `_<pair>_expected()` | Compute the expected column-id set from the relevant library CSVs |
+| `_<pair>_present(rows)` | Extract the present column-id set from the hist rows |
+| `_<pair>_idxs_for_orphan(rows, id)` | Locate every CSV column index that belongs to the orphan id |
+| `_<pair>_archive(rows, id, idxs)` | Write the per-orphan archive file |
+
+### 9.10 `audit_writeback.py` (~230 lines)
+
+**Role:** Writeback half of the daily-audit loop (forward_plan §3.1 sub-track 3). `data_audit.py` *reports* dead yfinance tickers but does not edit `index_library.csv`; this utility maintains a per-ticker dead-list streak counter and flips `validation_status` from `CONFIRMED` to `UNAVAILABLE` after **N=14** consecutive days on the dead list.
+
+Runs as a CI step between `data_audit.py` and the GitHub Issue comment post, so the comment surfaces today's writeback actions.
+
+#### Inputs / outputs
+
+| File | Role |
+|---|---|
+| `data_audit.txt` (read) | Section A `YFINANCE_DEAD` list parsed via regex |
+| `data/index_library.csv` (read+write) | Current `validation_status` consulted; flipped when a streak crosses the threshold |
+| `data/yfinance_failure_streaks.csv` (read+write) | 4-column streak file: `ticker, first_seen_dead, last_seen_dead, consecutive_fail_days` |
+| `audit_comment.md` (append) | One-line summary appended so the daily Issue comment captures actions |
+
+#### Semantics
+
+- **Dead today + status=CONFIRMED** → streak++ (or =1 if new). At 14: flip to UNAVAILABLE, drop from streak file on next run.
+- **Dead today + status=UNAVAILABLE** → no-op (already flagged); drop any stray streak entry.
+- **Not dead today** → drop from streak file (streak broken).
+- **Manual override** (operator re-sets CONFIRMED on a previously-flagged row) → next dead-day starts a fresh streak from 1.
+
+Pass `--dry-run` for report-only.
 
 ---
 
