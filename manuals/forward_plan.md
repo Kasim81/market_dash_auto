@@ -318,7 +318,7 @@ ISFA.L · SENSEXBEES.NS · ^CNXSC · ^RMCCG · ^RMCCV · ^SP500-253020 · ^SP500
 - **2 TR-blanks (pr_retained)** — `ISFA.L` (TR for FTSE All-Share, PR `^FTAS` retained); `SENSEXBEES.NS` (TR for S&P BSE Sensex, PR `^BSESN` retained).
 - **3 row removals (none)** — `^SP500-253020`, `^SP500-351030`, `^SP500-601010`. No TR proxy was configured, and grep confirmed no Phase E indicator references them by name. No calculator hashing-out required.
 
-**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. Schema: `date_removed, ticker, ticker_field (pr|tr|row), library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred), notes`. Removal rules (agreed 2026-04-28):
+**Removal ledger.** Every ticker removed (or PR/TR field cleared) under this sub-track is logged to `data/removed_tickers.csv`. The ledger is the single source of truth for *all* library changes (removals, reroutes, additions) — not just sub-track 4. Schema: `date_removed, action (removed|rerouted|added), ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status (none|tr_retained|pr_retained|deferred|n/a), target_identifier, notes`. Removal rules (agreed 2026-04-28):
 
 - PR dead, TR working & correctly mapped → blank the PR field, keep the row, log `replacement_status=tr_retained`.
 - TR dead, PR working & correctly mapped → blank the TR field, keep the row, log `replacement_status=pr_retained`.
@@ -494,30 +494,32 @@ Cross-reference of every reference indicator from `Macro Market Indicators Refer
 
 #### Prioritised FRED additions (zero-code — add rows to `macro_library_fred.csv`)
 
-These 20 indicators can be captured immediately by adding rows to the existing FRED library CSV. No code changes — `sources/fred.py` picks them up automatically.
+**Status (2026-04-29):** Cross-checked the original 20-row priority list against `macro_library_fred.csv`. **17 of 20 are already present** — the table below was largely stale documentation. Two genuinely net-new rows added 2026-04-29 (`RSFSXMV` for US Retail Sales Control Group; `CHNPPIALLMINMEI` for China PPI). The remaining 1 entry (`BOEBRBS` for UK BoE Bank Rate) is *entangled with §3.1 sub-track 1* — the existing `BOERUKM` row is on the EXPIRED list and needs a reroute decision (replace with `BOEBRBS`, or move to BoE BOESD per §3.4 New Source Modules); deferred to that backlog. The 5 EXPIRED reroutes that double as additions (`JPN_POLICY_RATE`/`IRSTCB01JPM156N`, `EA_HICP`/`EA19CPALTT01GYM`, `DEU_IND_PROD`/`DEUPROINDMISMEI`, `JPN_IND_PROD`/`JPNPROINDMISMEI`, `EA_DEPOSIT_RATE`/`ECBDFR`) are listed below as already-in-library and are tracked under §3.1 sub-track 1, not here.
 
-| Region | Indicator | FRED Series ID |
-|---|---|---|
-| US | Average Weekly Hours, Manufacturing | AWHMAN |
-| US | Non-Defence Capital Goods Orders ex-Air | NEWORDER (verify) |
-| US | Capacity Utilization | TCU |
-| US | Real Personal Income less Transfers | W875RX1 |
-| US | Real Personal Consumption Expenditures | PCEC96 |
-| US | Manufacturing & Trade Sales | CMRMTSPL |
-| US | Chicago Fed National Activity Index | CFNAI |
-| US | Unit Labour Costs | ULCNFB |
-| US | Average Duration of Unemployment | UEMPMEAN |
-| US | Commercial & Industrial Loans Outstanding | TOTCI |
-| US | Corporate Profits (NIPA) | CP or A053RC1Q027SBEA |
-| US | Retail Sales Control Group | RSFSXMV |
-| UK | Bank Rate (BoE) | BOEBRBS |
-| Eurozone | Germany Industrial Production | DEUPROINDMISMEI |
-| Eurozone | ECB Deposit Facility Rate | ECBDFR |
-| Eurozone | HICP Inflation | EA19CPALTT01GYM |
-| Japan | JPY REER (BIS) | RBJPBIS |
-| Japan | Industrial Production | JPNPROINDMISMEI |
-| Japan | BoJ Policy Rate | IRSTCB01JPM156N |
-| China | PPI Inflation | CHNPPIALLMINMEI |
+These 20 indicators were originally enumerated as zero-code additions. Status column reflects the 2026-04-29 audit:
+
+| Region | Indicator | FRED Series ID | Status |
+|---|---|---|---|
+| US | Average Weekly Hours, Manufacturing | AWHMAN | already in library |
+| US | Non-Defence Capital Goods Orders ex-Air | NEWORDER (verify) | already in library |
+| US | Capacity Utilization | TCU | already in library |
+| US | Real Personal Income less Transfers | W875RX1 | already in library |
+| US | Real Personal Consumption Expenditures | PCEC96 | already in library |
+| US | Manufacturing & Trade Sales | CMRMTSPL | already in library |
+| US | Chicago Fed National Activity Index | CFNAI | already in library |
+| US | Unit Labour Costs | ULCNFB | already in library |
+| US | Average Duration of Unemployment | UEMPMEAN | already in library |
+| US | Commercial & Industrial Loans Outstanding | TOTCI | already in library |
+| US | Corporate Profits (NIPA) | CP or A053RC1Q027SBEA | already in library |
+| US | Retail Sales Control Group | RSFSXMV | **added 2026-04-29** |
+| UK | Bank Rate (BoE) | BOEBRBS | deferred — entangled with §3.1 sub-track 1 (BOERUKM EXPIRED reroute) |
+| Eurozone | Germany Industrial Production | DEUPROINDMISMEI | already in library (EXPIRED — see §3.1) |
+| Eurozone | ECB Deposit Facility Rate | ECBDFR | already in library (EXPIRED — see §3.1) |
+| Eurozone | HICP Inflation | EA19CPALTT01GYM | already in library (EXPIRED — see §3.1) |
+| Japan | JPY REER (BIS) | RBJPBIS | already in library |
+| Japan | Industrial Production | JPNPROINDMISMEI | already in library (EXPIRED — see §3.1) |
+| Japan | BoJ Policy Rate | IRSTCB01JPM156N | already in library (EXPIRED — see §3.1) |
+| China | PPI Inflation | CHNPPIALLMINMEI | **added 2026-04-29** |
 
 #### New source modules needed (ranked by indicator count)
 
