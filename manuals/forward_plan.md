@@ -175,17 +175,21 @@ Outstanding (low value): record Sheets GIDs for each active tab in `manuals/tech
 
 Batch writes (10k rows/call) are only implemented in `fetch_hist.py` — the largest tab (`market_data_comp_hist`, ~9,000 rows) sits within the Sheets API's single-call payload limit at current column count, so no other writer has hit a batching need yet. Revisit if column count grows significantly.
 
-#### Phase H — Daily Integrated Audit — Done (2026-04-28)
+#### Phase H — Daily Integrated Audit + Writeback — Done (2026-04-28; writeback added 2026-04-29)
 
 `data_audit.py` runs as the post-fetch / post-build step in the daily GitHub Actions workflow. Three sections produced into `data_audit.txt` (full report) + `audit_comment.md` (Markdown for the GitHub Issue comment):
 
 - **Section A — Fetch outcomes.** Scrapes `pipeline.log` for yfinance dead tickers (cross-checked against `market_data_comp_hist.csv` to filter transient warnings) and FRED final failures (only the `— skipping` suffix; retried-then-recovered errors are filtered out).
-- **Section B — Static checks.** Country-code orphans, indicator-id uniqueness, calculator registration, `_get_col(...)` column existence on the unified hist.
-- **Section C — Value-change staleness.** Walks every column of `macro_economic_hist.csv` and flags series whose last *value change* is older than the per-row tolerance. Tolerances come from `data/freshness_thresholds.csv` (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with a per-row `freshness_override_days` override on every `data/macro_library_*.csv`.
+- **Section B — Static checks.** Country-code orphans, indicator-id uniqueness, calculator registration, `_get_col(...)` column existence on the unified hist, **and registry drift across all 3 hist↔library pairs** (comp / macro_economic / macro_market) — orphan column reports tell the operator to run `python library_sync.py --confirm`. The drift check imports `library_sync`'s expected/present helpers so column-derivation rules live in one place.
+- **Section C — Value-change staleness.** Walks every column of `macro_economic_hist.csv` and flags series whose last *value change* is older than the per-row tolerance. Tolerances come from `data/freshness_thresholds.csv` (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) with a per-row `freshness_override_days` override on every `data/macro_library_*.csv` (48 rows widened in the §3.1 sub-track 2 bulk pass, 2026-04-29).
 
-A "Post daily audit to perpetual GitHub Issue" workflow step posts `audit_comment.md` to a `daily-audit`-labelled GitHub Issue every day. The first line of the comment is the one-sentence ISSUE/CLEAN summary; collapsible detail follows. GitHub's native notification email gives the daily heartbeat without any SMTP secrets.
+`audit_writeback.py` runs immediately after `data_audit.py` (§3.1 sub-track 3, added 2026-04-29). Parses Section A's `YFINANCE_DEAD` list, maintains `data/yfinance_failure_streaks.csv` (per-ticker dead-list streak counter), and flips `validation_status` from `CONFIRMED` to `UNAVAILABLE` on any row whose streak hits N=14 consecutive days. Manual override wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally. Appends a one-line summary to `audit_comment.md` so the GitHub Issue comment captures today's writeback actions.
 
-Acceptance findings from the first run (2026-04-28) are the open backlog at §3.1.
+`library_sync.py` is the operator-gated companion to the registry-drift check — covers 3 hist↔library pairs, archives orphan columns to `data/_archived_columns/<hist_basename>__<column_id>__<date>.csv` before dropping them. Default mode is dry-run.
+
+A "Post daily audit to perpetual GitHub Issue" workflow step then posts `audit_comment.md` to a `daily-audit`-labelled GitHub Issue every day. The first line of the comment is the one-sentence ISSUE/CLEAN summary; collapsible detail follows. GitHub's native notification email gives the daily heartbeat without any SMTP secrets.
+
+§3.1's first-run baseline (2026-04-28: 75 stale + 22 dead + 1 schema issue) was fully worked down 2026-04-29 — see §3.1 for the disposition tables.
 
 ### Data-Layer Registry (single source of truth — per §0)
 
@@ -193,15 +197,15 @@ These 10 CSVs in `data/` are the single source of truth for everything the pipel
 
 | File | Rows | Owner | Used by |
 |---|---|---|---|
-| `index_library.csv` | ~390 | Comp pipeline | `fetch_data.py`, `fetch_hist.py` |
+| `index_library.csv` | ~387 | Comp pipeline | `fetch_data.py`, `fetch_hist.py` |
 | `macro_library_countries.csv` | 12 | Phase ME | `sources/countries.py` (canonical / WB / IMF code mappings) |
-| `macro_library_fred.csv` | ~85 | Phase ME | `sources/fred.py` |
-| `macro_library_oecd.csv` | varies | Phase ME | `sources/oecd.py` |
-| `macro_library_worldbank.csv` | varies | Phase ME | `sources/worldbank.py` |
-| `macro_library_imf.csv` | varies | Phase ME | `sources/imf.py` |
+| `macro_library_fred.csv` | ~82 | Phase ME | `sources/fred.py` |
+| `macro_library_oecd.csv` | 3 | Phase ME | `sources/oecd.py` |
+| `macro_library_worldbank.csv` | 1 | Phase ME | `sources/worldbank.py` |
+| `macro_library_imf.csv` | 1 | Phase ME | `sources/imf.py` |
 | `macro_library_dbnomics.csv` | 9 | Phase ME | `sources/dbnomics.py` |
 | `macro_library_ifo.csv` | 26 | Phase ME | `sources/ifo.py` |
-| `macro_indicator_library.csv` | 91 | Phase E | `compute_macro_market.py` (composite indicator registry) |
+| `macro_indicator_library.csv` | 92 | Phase E | `compute_macro_market.py` (composite indicator registry) |
 | `reference_indicators.csv` | 206 | Reference (gap audit) | §3.4 cross-reference; not consumed by the runtime pipeline |
 
 **Read order in `fetch_macro_economic.py`:** `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`).
@@ -231,7 +235,19 @@ These are cases where a planned series is unavailable from any free source we ac
 
 The 2026-04-22 → 2026-04-28 work cluster (sources/ refactor → unified Phase ME → architecture-preference rules → supplemental-FRED CSV-ification → fragmentation cleanup → concept/subcategory taxonomy → indicator-explorer restructure → daily integrated audit) has been delivered end-to-end; durable outcomes are documented in §1 Phase Summary and `manuals/technical_manual.md`.
 
-**Active priority is §3.1** — act on the audit findings (29 EXPIRED series, 22 dead yfinance tickers, 1 broken `_get_col` reference). Until that backlog is worked down, the daily audit issue (§1 Phase H) will continue to surface the same flags.
+**§3.1 fully closed (2026-04-29).** All four sub-tracks landed:
+
+- **Sub-track 1 (EXPIRED reroutes)** — 3 OECD-mirror confidence FRED rows removed; 9 deferred as forcing functions; 17 punted to sub-track 2.
+- **Sub-track 2 (STALE override pass)** — 48 library rows updated with `freshness_override_days`; audit's flagged count dropped from 75 → 25 (FRESH 62→110, STALE 46→6, EXPIRED 29→19). Acceptance met (STALE bucket <10).
+- **Sub-track 3 (validation_status writeback)** — `audit_writeback.py` wired into CI; tracks per-ticker dead-list streaks in `data/yfinance_failure_streaks.csv`; flips `validation_status` to `UNAVAILABLE` after 14 consecutive days. Manual override wins. Today's writeback is a no-op (0 dead tickers); value is preventive.
+- **Sub-track 4 (dead yfinance tickers)** — 22/22 triaged across 4 commit batches; 17 PR-blanks (TR ETF retained), 2 TR-blanks (PR retained), 3 full row removals. Per-ticker dispositions in `data/removed_tickers.csv`.
+
+Three new pieces of supporting infrastructure landed alongside §3.1:
+- `data/removed_tickers.csv` (single ledger for removals / reroutes / additions; 11-column schema).
+- `data/_archived_columns/` populated by `library_sync.py` — preserves historical observations when a library row is removed.
+- `data_audit.py` Section B `registry_drift` check covers all 3 hist↔library pairs (comp / macro_economic / macro_market). Drift today: 0.
+
+**Active priority is open** — pick from §3.5 Community Datasets Review (research-led), §3.4 New Source Modules (start with Bundesbank SDMX or e-Stat to revive a sub-track 1 defer), §3.6 Incremental Fetch Mode (perf), §3.7 PE Ratio Integration (small feature), or escalate to one of the larger §3.x items. The 25 audit forcing-function flags in §3.1 sub-track 1 / 2 are intentional and continue to surface as motivation for §3.2 / §3.4 work.
 
 ---
 
