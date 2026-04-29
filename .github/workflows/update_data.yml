@@ -57,6 +57,17 @@ jobs:
         echo "" >> pipeline.log
         echo "" >> pipeline.log
         python data_audit.py 2>&1 | tee -a pipeline.log
+    - name: Audit writeback (registry update)
+      # §3.1 sub-track 3: track per-ticker dead-list streaks and flip
+      # validation_status from CONFIRMED to UNAVAILABLE after N=14
+      # consecutive days. Updates data/yfinance_failure_streaks.csv and
+      # data/index_library.csv when a streak crosses the threshold;
+      # appends a summary line to audit_comment.md so the daily Issue
+      # comment captures writeback actions.  Manual override wins —
+      # operators can re-set CONFIRMED on a row and the streak restarts.
+      if: always()
+      run: |
+        python audit_writeback.py 2>&1 | tee -a pipeline.log
     - name: Post daily audit to perpetual GitHub Issue
       # Posts a comment to the perpetual "Daily Audit Log" issue so the
       # user gets a GitHub notification email for the day's findings.
@@ -111,6 +122,9 @@ jobs:
         [ -f data/macro_market_hist.csv ] && git add -f data/macro_market_hist.csv || true
         [ -f data/macro_economic.csv ] && git add -f data/macro_economic.csv || true
         [ -f data/macro_economic_hist.csv ] && git add -f data/macro_economic_hist.csv || true
+        # §3.1 sub-track 3 — audit_writeback artefacts:
+        [ -f data/yfinance_failure_streaks.csv ] && git add -f data/yfinance_failure_streaks.csv || true
+        [ -f data/index_library.csv ] && git add -f data/index_library.csv || true
         # Retired in Stage 2 commit 13 — removals get committed on next run:
         [ -f data/macro_us.csv ] && git rm -f data/macro_us.csv || true
         [ -f data/macro_us_hist.csv ] && git rm -f data/macro_us_hist.csv || true
