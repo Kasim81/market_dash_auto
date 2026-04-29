@@ -1094,19 +1094,24 @@ The canonical record of series unavailable from any free source we accept (China
 
 ### Tickers Confirmed Unavailable via yfinance
 
-| Ticker | Instrument | Reason |
+**The 22 dead yfinance tickers from the 2026-04-28 audit baseline have been triaged** in §3.1 sub-track 4 (see `forward_plan.md`). Per-ticker dispositions are recorded in `data/removed_tickers.csv`. Three categories of action were applied: 17 PR-blanks where the row's TR ETF proxy was retained, 2 TR-blanks where the PR index ticker was retained, 3 full row removals where neither side was usable. The legacy table below is preserved as historical context — none of these tickers is on the live audit's dead list anymore.
+
+| Ticker | Instrument | Disposition (2026-04-28) |
 |---|---|---|
-| `^SXEP`, `^SXKP`, `^SX3P`, etc. | STOXX 600 sectors | yfinance doesn't serve STOXX sector index history |
-| `^IVX`, `^IGX` | S&P style indices | Not served via yfinance |
-| `^SML`, `^SP500-10`, `^SP500-20` | S&P size/sector | Not served via yfinance |
-| `^TX60` | S&P/TSX 60 | Not served via yfinance |
-| `^TOPX` | TOPIX (Japan) | Not served via yfinance |
+| `^SX3P` `^SX4P` `^SX6P` `^SX7E` `^SX8P` `^SXDP` `^SXEP` `^SXKP` `^SXNP` | STOXX 600 sectors | PR blanked; SPDR sector UCITS ETFs (`EXH1.DE`, `EXH3.DE`, `EXH4.DE`, `EXH9.DE`, `EXI5.DE`, `EXV1.DE`, `EXV2.DE`, `EXV3.DE`, `EXV4.DE`) retained as TR |
+| `^TX60`, `^TSXV`, `^TOPX` | S&P/TSX 60, S&P/TSX SmallCap, TOPIX | PR blanked; `XIU.TO`, `XCS.TO`, `1306.T` retained as TR |
+| `^SP500V`, `^SP500G`, `^RMCCV`, `^RMCCG` | S&P 500 Value/Growth, Russell Mid-Cap Value/Growth | PR blanked; `IVE`, `IVW`, `IWS`, `IWP` retained as TR |
+| `^CNXSC` | Nifty Smallcap 100 | PR blanked; `SMALLCAP.NS` retained as TR |
+| `ISFA.L`, `SENSEXBEES.NS` | FTSE All-Share TR, BSE Sensex TR | TR blanked; PR index tickers `^FTAS`, `^BSESN` retained |
+| `^SP500-253020`, `^SP500-351030`, `^SP500-601010` | S&P 500 sub-industry rows | Full row removal — no TR proxy and no calculator dependency |
+
+Going forward, the daily `audit_writeback.py` runs N=14 consecutive days of dead-list streaks before flipping `validation_status` to `UNAVAILABLE` automatically (forward_plan §3.1 sub-track 3). Manual override always wins — re-setting `CONFIRMED` after a real fix restarts the streak. Other historical-context items still relevant:
+
+| Ticker | Instrument | Notes |
+|---|---|---|
 | `IMOEX.ME`, `RTSI.ME` | Russian indices | Data through mid-2022/2024 only (sanctions) |
 | `CYB` | WisdomTree Chinese Yuan ETF | Delisted Dec 2023; `CNYB.L` is replacement |
 | `DX-Y.NYB` | US Dollar Index | Data only from 2008 |
-| `SENSEXBEES.NS`, `^TSXV`, `^SP500V`, `^SP500G`, `^RMCCV`, `^RMCCG` | Indian Sensex ETN, TSX-Venture, S&P 500 Value/Growth, Russell Mid-Cap Value/Growth | Logged on every run as `possibly delisted` / `Period 'max' is invalid`; no replacement identified yet |
-
-Each row in `index_library.csv` for the above carries `validation_status` other than `CONFIRMED` (or is filtered out by data-source convention) so the comp pipeline does not block on them.
 
 ### Metadata / Label Issues — currently clean
 
@@ -1168,21 +1173,23 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 - **Pipeline log capture (PR1, 2026-04-25):** the workflow pipes both Python steps through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits `pipeline.log` to the repo on every run alongside the data CSVs and explorer files. Useful for diagnosing failures without needing to download artefacts. The committed log is the artefact the §2.1 verification reads.
 - **Permissions:** the workflow has `contents: write` (for git push) plus `issues: write` (added 2026-04-28 for the §2.6 v2 audit-comment posting). No SMTP secrets are required — the daily audit notification uses GitHub's native issue-notification email.
 
-### Daily audit notification flow (§2.6 v2)
+### Daily audit notification flow (§2.6 v2 + §3.1 sub-track 3)
 
-The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. Mechanism:
+The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. The §3.1 sub-track 3 writeback adds a registry-update half between the audit and the post. Mechanism:
 
-- **Audit step.** `python data_audit.py` runs at the end of `update_data.yml` (after fetch + explorer rebuild). Three sections: fetch outcomes from `pipeline.log` scrape; static checks against the registry CSVs; value-change staleness against the unified hist. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Audit step.** `python data_audit.py` runs after fetch + explorer rebuild. Section A: fetch outcomes from `pipeline.log` scrape. Section B: static checks against the registry CSVs *plus registry drift across all 3 hist↔library pairs* (the drift check imports library_sync helpers — orphan column reports include `(run: python library_sync.py --confirm)`). Section C: value-change staleness against the unified hist. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Writeback step.** `python audit_writeback.py` runs immediately after the audit. Parses `data_audit.txt` Section A for `YFINANCE_DEAD` entries, updates `data/yfinance_failure_streaks.csv`, and flips `validation_status` to `UNAVAILABLE` on any row whose streak hits N=14. Appends a one-line summary to `audit_comment.md` so the Issue comment surfaces today's writeback actions. Manual override always wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally on the next FRESH cycle.
 - **Posting step.** Uses the pre-installed `gh` CLI:
   1. Ensure a `daily-audit` label exists (`gh label create daily-audit ...`, idempotent).
   2. Find the open issue with that label, or create it on first run with title "Daily Audit Log".
   3. Post `audit_comment.md` as a comment on the issue: `gh issue comment $ISSUE_NUM --body-file audit_comment.md`.
+- **Commit step.** The existing "Commit and push if changed" step (`if: always()`) explicitly `git add -f`s `pipeline.log`, `data_audit.txt`, `audit_comment.md`, all data CSVs, the explorer files, plus `data/yfinance_failure_streaks.csv` and `data/index_library.csv` so writeback edits land alongside the daily fetch outputs.
 - **User notification.** GitHub's native notification settings email watchers when an issue gains a comment — so the daily comment triggers the alert with no extra infrastructure.
 - **Self-healing on overgrowth.** If the comment thread becomes unwieldy, close the issue manually — the next daily run will create a fresh one and resume posting there.
 - **First-line summary format.** `audit_comment.md`'s first line is always one of:
   - `## Daily audit — YYYY-MM-DD — **ALL CLEAN**`
   - `## Daily audit — YYYY-MM-DD — **N ISSUES** (X fetch errors, Y static-check failures, Z stale series)`
-- **Build-gate behaviour.** The audit step is non-fatal (`exit 0` always); a stale series doesn't fail the workflow. The audit is purely a warning channel.
+- **Build-gate behaviour.** Both audit and writeback steps are non-fatal (`exit 0` always); a stale series doesn't fail the workflow. The pipeline is purely a warning channel.
 
 ### Google Sheets
 
