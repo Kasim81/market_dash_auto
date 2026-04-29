@@ -222,7 +222,6 @@ These are cases where a planned series is unavailable from any free source we ac
 | **`CN_PMI2`** (Caixin China Manufacturing PMI) | Returns Insufficient Data. S&P Global proprietary. | Substitute: Chinese manufacturing is covered by `CN_PMI1` (OECD BCI for China). |
 | **OECD CLI for EA19 / CHE** | Not published by OECD. | `compute_macro_market.py` uses DEU+FRA equal-weight as the Eurozone CLI proxy. |
 | **`NAPMOI`** (FRED ISM new orders) | Retired by FRED in April 2026 (HTTP 400 from late April onwards). | `US_ISM1` reads `ISM_MFG_NEWORD` from DB.nomics via the unified hist (PR2, 2026-04-26). |
-| **`CHN_PPI`** (FRED `CHNPPIALLMINMEI`) | Retired by FRED. | Removed from `macro_library_fred.csv` (PR1, 2026-04-25); no Phase E indicator currently depends on it. |
 | **Investing.com / Trading Economics / S&P Global direct / FMP economic calendar** | Evaluated and rejected: scraping fragility (Cloudflare), paid-only APIs, FMP endpoints paywalled August 2025. | Do not revisit. |
 
 
@@ -494,7 +493,7 @@ Cross-reference of every reference indicator from `Macro Market Indicators Refer
 
 #### Prioritised FRED additions (zero-code — add rows to `macro_library_fred.csv`)
 
-**Status (2026-04-29):** Cross-checked the original 20-row priority list against `macro_library_fred.csv`. **17 of 20 are already present** — the table below was largely stale documentation. Two genuinely net-new rows added 2026-04-29 (`RSFSXMV` for US Retail Sales Control Group; `CHNPPIALLMINMEI` for China PPI). The remaining 1 entry (`BOEBRBS` for UK BoE Bank Rate) is *entangled with §3.1 sub-track 1* — the existing `BOERUKM` row is on the EXPIRED list and needs a reroute decision (replace with `BOEBRBS`, or move to BoE BOESD per §3.4 New Source Modules); deferred to that backlog. The 5 EXPIRED reroutes that double as additions (`JPN_POLICY_RATE`/`IRSTCB01JPM156N`, `EA_HICP`/`EA19CPALTT01GYM`, `DEU_IND_PROD`/`DEUPROINDMISMEI`, `JPN_IND_PROD`/`JPNPROINDMISMEI`, `EA_DEPOSIT_RATE`/`ECBDFR`) are listed below as already-in-library and are tracked under §3.1 sub-track 1, not here.
+**Status (2026-04-29):** Cross-checked the original 20-row priority list against `macro_library_fred.csv`. **17 of 20 are already present** — the table below was largely stale documentation. Two genuinely net-new rows added 2026-04-29 (`RSFSXMV` for US Retail Sales Control Group; `CHNPIEATI01GYM` for China PPI — the original `CHNPPIALLMINMEI` listed below was an invalid copy-paste-typo ID; corrected and re-added in `claude/fix-chn-ppi-series-id`). The remaining 1 entry (`BOEBRBS` for UK BoE Bank Rate) is *entangled with §3.1 sub-track 1* — the existing `BOERUKM` row is on the EXPIRED list and needs a reroute decision (replace with `BOEBRBS`, or move to BoE BOESD per §3.4 New Source Modules); deferred to that backlog. The 5 EXPIRED reroutes that double as additions (`JPN_POLICY_RATE`/`IRSTCB01JPM156N`, `EA_HICP`/`EA19CPALTT01GYM`, `DEU_IND_PROD`/`DEUPROINDMISMEI`, `JPN_IND_PROD`/`JPNPROINDMISMEI`, `EA_DEPOSIT_RATE`/`ECBDFR`) are listed below as already-in-library and are tracked under §3.1 sub-track 1, not here.
 
 These 20 indicators were originally enumerated as zero-code additions. Status column reflects the 2026-04-29 audit:
 
@@ -519,7 +518,7 @@ These 20 indicators were originally enumerated as zero-code additions. Status co
 | Japan | JPY REER (BIS) | RBJPBIS | already in library |
 | Japan | Industrial Production | JPNPROINDMISMEI | already in library (EXPIRED — see §3.1) |
 | Japan | BoJ Policy Rate | IRSTCB01JPM156N | already in library (EXPIRED — see §3.1) |
-| China | PPI Inflation | CHNPPIALLMINMEI | **added 2026-04-29** |
+| China | PPI Inflation | ~~CHNPPIALLMINMEI~~ → CHNPIEATI01GYM | **added 2026-04-29; corrected 2026-04-29** (original ID was an invalid typo of `CHNCPIALLMINMEI`; replaced with the actual OECD MEI series for China PPI) |
 
 #### New source modules needed (ranked by indicator count)
 
