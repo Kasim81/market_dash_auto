@@ -174,7 +174,7 @@ China,28,Industrial Profits YoY YTD,Earnings / NBS,Corporate earnings proxy.,C,N
 China,29,Imports (USD YoY),Trade / Customs,Domestic demand barometer given commodity intensity.,C,Full,FRED: CHN_IMPORTS,FRED XTIMVA01CNM667S (monthly),Stage 2 — added 2026-04-23. Verified via FRED search.
 China,30,Exports (USD YoY),Trade / Customs,External demand gauge.,C,Full,FRED: CHN_EXPORTS,FRED XTEXVA01CNM667S (monthly),Stage 2 — added 2026-04-23. Verified via FRED search.
 China,31,CPI Inflation,Prices / NBS,Headline and core; food-weighted given pork cycle.,G,Full,FRED: CHN_CPI,FRED CHNCPIALLMINMEI (monthly). Upgrade from World Bank annual.,Stage 2 — upgraded from Partial
-China,32,PPI Inflation,Prices / NBS,Commodity-sensitive; leads CPI for goods but lags overall activity.,G,Full,FRED: CHN_PPI,FRED CHNPPIALLMINMEI (monthly),Stage 2 — added 2026-04-23
+China,32,PPI Inflation,Prices / NBS,Commodity-sensitive; leads CPI for goods but lags overall activity.,G,Full,FRED: CHN_PPI,FRED CHNPIEATI01GYM (monthly YoY%),Stage 2 — added 2026-04-23 with invalid ID; corrected to CHNPIEATI01GYM 2026-04-29
 China,33,Urban Surveyed Unemployment Rate,Labour / NBS,Incomplete coverage; slow-moving.,G,Partial,Phase C: OECD unemployment for CHN,OECD SDMX (already in pipeline),
 China,34,"Youth Unemployment (16–24, ex-students)",Labour / NBS,Politically sensitive; reporting methodology has changed.,G,None,,,"PROPRIETARY — NBS youth unemployment, no free API. Low reliability"
 China,35,Residential Property Prices (70-city),Housing / NBS,Primary market series; confirms cycle with lag.,G,None,,,PROPRIETARY — NBS 70-city property prices. CEIC/Wind only
