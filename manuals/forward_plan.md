@@ -250,6 +250,8 @@ The 2026-04-22 → 2026-04-28 work cluster (sources/ refactor → unified Phase 
 
 #### Sub-track 1 — Triage the 29 EXPIRED series
 
+**Status:** Easy batch shipped 2026-04-29 (claude/macro-hist-column-archival): 3 OECD-mirror confidence FRED rows removed; 9 entries deferred as forcing functions; 17 punted to sub-track 2 (`freshness_override_days` bulk pass). After this batch and any `library_sync.py --confirm` run, the audit's `registry_drift` is 0 across all three hist↔library pairs.
+
 For each EXPIRED row, classify into one of four resolutions:
 
 | Resolution | When to apply | Action |
@@ -261,24 +263,26 @@ For each EXPIRED row, classify into one of four resolutions:
 
 The 29 EXPIRED series sorted by age (oldest first):
 
-| Age | Column | Source | Series ID | Last obs | Likely resolution |
+| Age | Column | Source | Series ID | Last obs | Disposition (2026-04-29) |
 |---|---|---|---|---|---|
-| 6353d (~17y) | `JPN_POLICY_RATE` | FRED | `IRSTCB01JPM156N` | 2008-12 | Remove or reroute (BoJ direct via §3.2 surveys sub-project) |
-| 3826d (~10y) | `CHN_POLICY_RATE` | FRED | `IRSTCB01CNM156N` | 2015-11 | Remove or reroute (PBoC LPR series) |
-| 3553d (~9y) | `GBR_BANK_RATE` | FRED | `BOERUKM` | 2016-08 | Reroute to BoE BOESD `IUDBEDR` (via §3.4 New Source Modules) |
-| 2461d (~6y) | `CHN_M2` | FRED | `MYAGM2CNM189N` | 2019-08 | Reroute via DB.nomics PBoC mirror or remove |
-| 1208d (~3y) | `EA_HICP` | FRED | `EA19CPALTT01GYM` | 2023-01 | Reroute to live `EA19CPALTT01GYM` row (already in library; this row is the OECD-mirror duplicate) |
-| 907d (~2.5y) | `CHN_IND_PROD` | FRED | `CHNPRINTO01IXPYM` | 2023-11 | Reroute via NBS or remove |
-| 844d (~2y) | `CSCICP03USM665S` | FRED | `CSCICP03USM665S` | 2024-01 | Reroute to Conference Board direct or remove (already covered by `UMCSENT`) |
-| 844d | `BSCICP03USM665S` | FRED | `BSCICP03USM665S` | 2024-01 | Reroute via §3.4 New Source Modules (CB Business Confidence) |
-| 844d | `CONSUMER_CONF` | FRED | `CSCICP03EZM665S` | 2024-01 | Reroute or remove |
-| 788d (~2y) | `DEU_IND_PROD` | FRED | `DEUPROINDMISMEI` | 2024-03 | Reroute to Bundesbank SDMX (§3.4) |
-| 788d | `JPN_IND_PROD` | FRED | `JPNPROINDMISMEI` | 2024-03 | Reroute to e-Stat (§3.4) |
-| 319d | `EA_DEPOSIT_RATE` | FRED | `ECBDFR` | 2025-06 | Investigate — ECB may have published more recently (override or reroute to ECB Data Portal direct) |
-| 235d | `ISM_SVC_PMI` | DB.nomics | `ISM/nm-pmi/pm` | 2025-09 | DB.nomics mirror lag; widen override to 60d |
-| 144d × 6 | `CHN_IMPORTS`, `CHN_EXPORTS`, `GBR_UNEMPLOYMENT`, `EZ_IND_PROD`, `EZ_RETAIL_VOL`, `Eurostat employment` | various | various | 2025-12 | Publisher lag; widen override to ~150d |
-| 116d × 7 | `PERMIT`, `FEDFUNDS`, `CMRMTSPL`, `FRA_UNEMPLOYMENT`, `DEU_UNEMPLOYMENT`, `EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`, `ISM_MFG_PMI`, `ISM_MFG_NEWORD` | various | various | 2026-01 | Probably publisher lag at end-of-period; verify and widen override or reroute |
-| 11d | `BAMLC0A0CM` | FRED | daily | 2026-04-17 | 11d on a 5d daily threshold = recent publisher pause; verify next run |
+| 6353d (~17y) | `JPN_POLICY_RATE` | FRED | `IRSTCB01JPM156N` | 2008-12 | **Defer** — replacement via §3.2 surveys sub-project (BoJ direct). Remains as forcing function. |
+| 3826d (~10y) | `CHN_POLICY_RATE` | FRED | `IRSTCB01CNM156N` | 2015-11 | **Defer** — replacement via §3.4 NSM (PBoC LPR series). |
+| 3553d (~9y) | `GBR_BANK_RATE` | FRED | `BOERUKM` | 2016-08 | **Defer** — replacement via §3.4 NSM (BoE BOESD `IUDBEDR`). |
+| 2461d (~6y) | `CHN_M2` | FRED | `MYAGM2CNM189N` | 2019-08 | **Defer** — replacement via DB.nomics PBoC mirror (§3.4 NSM). |
+| 1208d (~3y) | `EA_HICP` | FRED | `EA19CPALTT01GYM` | 2023-01 | **Defer** — needs cross-source migration (FRED OECD-mirror frozen; Eurostat HICP via DB.nomics is the path). |
+| 907d (~2.5y) | `CHN_IND_PROD` | FRED | `CHNPRINTO01IXPYM` | 2023-11 | **Defer** — replacement via NBS or DB.nomics (§3.4 NSM). |
+| 844d (~2y) | `CSCICP03USM665S` | FRED | `CSCICP03USM665S` | 2024-01 | **Removed 2026-04-29** — covered by `UMCSENT`; OECD-mirror not expected to revive. |
+| 844d | `BSCICP03USM665S` | FRED | `BSCICP03USM665S` | 2024-01 | **Removed 2026-04-29** — replacement via CB Business Confidence (§3.4 NSM) when built. |
+| 844d | `CONSUMER_CONF` | FRED | `CSCICP03EZM665S` | 2024-01 | **Removed 2026-04-29** — replacement via Eurostat consumer confidence (DB.nomics) when wired. |
+| 788d (~2y) | `DEU_IND_PROD` | FRED | `DEUPROINDMISMEI` | 2024-03 | **Defer** — replacement via Bundesbank SDMX (§3.4 NSM). |
+| 788d | `JPN_IND_PROD` | FRED | `JPNPROINDMISMEI` | 2024-03 | **Defer** — replacement via e-Stat (§3.4 NSM). |
+| 319d | `EA_DEPOSIT_RATE` | FRED | `ECBDFR` | 2025-06 | **Defer** — investigate ECB Data Portal direct in sub-track 2. |
+| 235d | `ISM_SVC_PMI` | DB.nomics | `ISM/nm-pmi/pm` | 2025-09 | **Sub-track 2** — DB.nomics mirror lag; widen `freshness_override_days` to 60d. |
+| 144d × 6 | `CHN_IMPORTS`, `CHN_EXPORTS`, `GBR_UNEMPLOYMENT`, `EZ_IND_PROD`, `EZ_RETAIL_VOL`, `Eurostat employment` | various | various | 2025-12 | **Sub-track 2** — publisher lag; widen override to ~150d. |
+| 116d × 10 | `PERMIT`, `FEDFUNDS`, `CMRMTSPL`, `FRA_UNEMPLOYMENT`, `DEU_UNEMPLOYMENT`, `EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`, `ISM_MFG_PMI`, `ISM_MFG_NEWORD` | various | various | 2026-01 | **Sub-track 2** — verify (some may be genuine fetch issues, not lag); widen override or reroute. |
+| 11d | `BAMLC0A0CM` | FRED | daily | 2026-04-17 | **Defer** — recent publisher pause; verify next run. |
+
+The 3 Removed rows had their hist columns archived to `data/_archived_columns/macro_economic_hist__<col>__2026-04-29.csv` via `library_sync.py --confirm`. None of the 12 EXPIRED FRED rows is referenced by any Phase E indicator (verified via grep against `compute_macro_market.py` and `macro_indicator_library.csv` 2026-04-29).
 
 Triage to be done in batches; each `data/macro_library_*.csv` edit + any `_get_col(...)` rewire ships as a separate small commit.
 
