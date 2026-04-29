@@ -319,12 +319,11 @@ OECD multi-country fan-out conflicts resolved per-row:
 
 #### Sub-track 3 — `validation_status` write-back for `index_library.csv`
 
-Currently `data_audit.py` *reports* the 22 dead yfinance tickers but doesn't write back to the registry. Extend the audit (or a paired tool `library_writeback.py`) so dead tickers automatically get `validation_status = "UNAVAILABLE"` in `index_library.csv` after N consecutive days of failure. This was the residual item from the (now-removed) standalone library-manager utility plan, which was superseded by Phase H's daily audit.
+**Status:** Done 2026-04-29 (claude/section-3-1-subtrack-3-validation-writeback). New tool `audit_writeback.py` runs daily in CI after `data_audit.py`; tracks per-ticker dead-list streaks in `data/yfinance_failure_streaks.csv` (schema: `ticker, first_seen_dead, last_seen_dead, consecutive_fail_days`). After **N=14** consecutive days on the dead list AND when the row's current `validation_status` is `CONFIRMED`, the writeback flips it to `UNAVAILABLE`. Manual override wins — an operator can re-set `CONFIRMED` after a real fix and the streak restarts naturally.
 
-Design:
-- Track a per-ticker "consecutive-fail" counter in a small CSV `data/yfinance_failure_streaks.csv` (TBD design — could just be `(ticker, last_seen_date, consecutive_fail_days)`).
-- After N=14 consecutive days of being on the dead-ticker list, set `validation_status = "UNAVAILABLE"` in `index_library.csv` and post a one-line note in the audit comment.
-- Manual override always wins (operator can re-set `CONFIRMED` after a real fix).
+The writeback appends a one-line summary to `audit_comment.md` so the daily GitHub Issue comment captures any actions. CI step `Audit writeback (registry update)` runs between `Run data audit` and the Issue-comment post; the existing `Commit and push if changed` step now also `git add -f`s `data/yfinance_failure_streaks.csv` and `data/index_library.csv` so writeback edits land in the next commit.
+
+Verified end-to-end with a 15-run synthetic test (`^DJI` injected into `data_audit.txt` Section A): streak grew 1→14, day 14 flipped to `UNAVAILABLE`, day 15 saw `UNAVAILABLE` and dropped the streak entry. Current dead-ticker count is 0 after the §3.1 sub-track 4 work, so today's writeback is a no-op — value is preventive.
 
 #### Sub-track 4 — Replace dead yfinance tickers where alternatives exist
 
