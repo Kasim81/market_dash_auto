@@ -118,6 +118,119 @@ def sync_comp(confirm: bool) -> int:
 
 
 # =============================================================================
+# Pair 2 — macro_economic_hist ↔ 6 macro library CSVs
+# =============================================================================
+#
+# macro_economic_hist.csv layout:
+#   row 0  ("Column ID")  col 0 = "Column ID", cols 1+ = column IDs (T10Y2Y, USA_CLI, ...)
+#   rows 1-13             other metadata (Series ID, Source, Indicator, Country, ...)
+#   row 14 ("Date")       col 0 = "Date" (header label), cols 1+ = column IDs (same as row 0)
+#   rows 15+              data (col 0 = date string, cols 1+ = numeric)
+#
+# Column-name derivation per source:
+#   FRED, DB.nomics, ifo:  col_id = row['col'] or row['series_id']         (single)
+#   OECD:                  col_id = f"{country}_{series_id}" for each country in oecd_countries
+#   World Bank, IMF:       col_id = f"{country}_{col}" for each of the 12 countries
+
+MACRO_ECON_HIST = DATA / "macro_economic_hist.csv"
+MACRO_LIBS = {
+    "fred":      DATA / "macro_library_fred.csv",
+    "oecd":      DATA / "macro_library_oecd.csv",
+    "worldbank": DATA / "macro_library_worldbank.csv",
+    "imf":       DATA / "macro_library_imf.csv",
+    "dbnomics":  DATA / "macro_library_dbnomics.csv",
+    "ifo":       DATA / "macro_library_ifo.csv",
+}
+COUNTRIES_LIB = DATA / "macro_library_countries.csv"
+
+
+def _read_country_codes() -> list[str]:
+    if not COUNTRIES_LIB.exists():
+        return []
+    with COUNTRIES_LIB.open(newline="") as f:
+        return [r["code"].strip() for r in csv.DictReader(f) if r.get("code")]
+
+
+def _macro_econ_expected() -> set[str]:
+    out: set[str] = set()
+    country_codes = _read_country_codes()
+
+    # FRED, DB.nomics, ifo: col or series_id
+    for src in ("fred", "dbnomics", "ifo"):
+        path = MACRO_LIBS[src]
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            for r in csv.DictReader(f):
+                col = (r.get("col") or "").strip() or (r.get("series_id") or "").strip()
+                if col:
+                    out.add(col)
+
+    # OECD: per-row country fan-out via oecd_countries field
+    if MACRO_LIBS["oecd"].exists():
+        with MACRO_LIBS["oecd"].open(newline="") as f:
+            for r in csv.DictReader(f):
+                base = (r.get("series_id") or "").strip()
+                if not base:
+                    continue
+                countries_str = (r.get("oecd_countries") or "").strip()
+                for country in countries_str.split("+"):
+                    country = country.strip()
+                    if country:
+                        out.add(f"{country}_{base}")
+
+    # WB, IMF: every row × every country in macro_library_countries.csv
+    for src in ("worldbank", "imf"):
+        path = MACRO_LIBS[src]
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            for r in csv.DictReader(f):
+                col = (r.get("col") or "").strip() or (r.get("series_id") or "").strip()
+                if not col:
+                    continue
+                for country in country_codes:
+                    out.add(f"{country}_{col}")
+
+    return out
+
+
+def _macro_econ_present(rows: list[list[str]]) -> set[str]:
+    # Row 0 is "Column ID, T10Y2Y, T10Y3M, ..."; col 0 is the metadata-row label.
+    return {c.strip() for c in rows[0][1:] if c.strip()}
+
+
+def _macro_econ_idxs_for_orphan(rows: list[list[str]], col_id: str) -> list[int]:
+    return [i for i, c in enumerate(rows[0]) if c.strip() == col_id]
+
+
+def _macro_econ_archive(rows: list[list[str]], col_id: str, idxs: list[int]) -> Path:
+    ARCHIVE.mkdir(parents=True, exist_ok=True)
+    out_path = ARCHIVE / f"macro_economic_hist__{col_id}__{date.today().isoformat()}.csv"
+    keep_idxs = [0] + idxs           # col 0 holds dates from row 15 onwards
+    with out_path.open("w", newline="") as f:
+        w = csv.writer(f, lineterminator="\n")
+        # Header: use the row-0 (Column ID) values so the archive labels are
+        # readable; use literal "Date" for col 0.
+        w.writerow(["Date"] + [rows[0][i] for i in idxs])
+        for r in rows[15:]:
+            w.writerow([r[i] if i < len(r) else "" for i in keep_idxs])
+    return out_path
+
+
+def sync_macro_economic(confirm: bool) -> int:
+    return _run_pair(
+        name="macro_economic_hist.csv",
+        hist_path=MACRO_ECON_HIST,
+        expected=_macro_econ_expected(),
+        present_fn=_macro_econ_present,
+        idxs_fn=_macro_econ_idxs_for_orphan,
+        archive_fn=_macro_econ_archive,
+        confirm=confirm,
+    )
+
+
+# =============================================================================
 # Generic per-pair runner
 # =============================================================================
 
@@ -176,6 +289,7 @@ def main() -> int:
 
     total_orphans = 0
     total_orphans += sync_comp(confirm)
+    total_orphans += sync_macro_economic(confirm)
 
     if total_orphans and not confirm:
         print(f"\n(dry-run) {total_orphans} orphan id(s) total — re-run with --confirm to archive + drop.")
