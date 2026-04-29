@@ -342,18 +342,20 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 
 | File | Rows | Consumed By | Purpose |
 |---|---|---|---|
-| `index_library.csv` | ~390 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag |
+| `index_library.csv` | ~387 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag. 22 dead yfinance tickers retired across 4 batches in §3.1 sub-track 4 (2026-04-28); see `data/removed_tickers.csv` for the per-ticker disposition. |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
 | `macro_library_countries.csv` | 12 | sources/countries.py, docs/build_html.py | 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) + canonical / WB / IMF code mappings. Also drives the explorer's "Economic Data" By-Country sidebar grouping + country-filter dropdown (§2.5 v2). |
-| `macro_library_fred.csv` | ~85 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor; `BAMLEC0A0RMEY` removed 2026-04-27) |
-| `macro_library_oecd.csv` | varies | sources/oecd.py | OECD SDMX dataflow + dimension keys (CLI, unemployment, 3-month rate) |
-| `macro_library_worldbank.csv` | varies | sources/worldbank.py | World Bank WDI indicator codes (CPI YoY) |
-| `macro_library_imf.csv` | varies | sources/imf.py | IMF DataMapper indicator codes (real GDP growth) |
+| `macro_library_fred.csv` | ~82 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor). 2026-04-27: `BAMLEC0A0RMEY` removed. 2026-04-29: `RSFSXMV` + `CHNPIEATI01GYM` (CHN_PPI) added; bogus `CHNPPIALLMINMEI` corrected to `CHNPIEATI01GYM`; 3 OECD-mirror confidence rows removed (`CSCICP03USM665S` / `BSCICP03USM665S` / `CSCICP03EZM665S`). |
+| `macro_library_oecd.csv` | 3 | sources/oecd.py | OECD SDMX dataflow + dimension keys (CLI, unemployment, 3-month rate) |
+| `macro_library_worldbank.csv` | 1 | sources/worldbank.py | World Bank WDI indicator codes (CPI YoY) |
+| `macro_library_imf.csv` | 1 | sources/imf.py | IMF DataMapper indicator codes (real GDP growth) |
 | `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
 | `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4) — populated for all 92 indicators using the canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum). |
-| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.3 coverage analysis. |
-| `freshness_thresholds.csv` | 5 | `data_audit.py` | Per-frequency staleness tolerance (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) used by §2.6's daily integrated audit. Per-row override available via the `freshness_override_days` column on every `macro_library_*.csv` (added 2026-04-28). |
+| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.4 coverage analysis. |
+| `freshness_thresholds.csv` | 5 | `data_audit.py` | Per-frequency staleness tolerance (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) used by §2.6's daily integrated audit. Per-row override available via the `freshness_override_days` column on every `macro_library_*.csv` (added 2026-04-28). 48 rows widened in the §3.1 sub-track 2 bulk pass (2026-04-29). |
+| `removed_tickers.csv` | grows | Maintained by hand + `audit_writeback.py` | Single-source ledger of every library change — removals (`action=removed`), reroutes (`action=rerouted`), additions (`action=added`). Schema: `date_removed, action, ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status, target_identifier, notes`. Schema extended 2026-04-29 (`action` + `target_identifier` columns). |
+| `yfinance_failure_streaks.csv` | grows | `audit_writeback.py` | Per-ticker dead-list streak counter (forward_plan §3.1 sub-track 3). Schema: `ticker, first_seen_dead, last_seen_dead, consecutive_fail_days`. Tickers drop out when streak breaks; streaks ≥ 14 trigger `validation_status=UNAVAILABLE`. |
 
 ### Pipeline Outputs (generated daily by Python, committed to git)
 
@@ -367,8 +369,9 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_market.csv` | ~92 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `pipeline.log` | n/a | GitHub Actions | Captured stdout+stderr of the most recent run (committed by the `if: always()` step in `update_data.yml` — useful for diagnosing failures without needing to download artefacts) |
-| `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness). Regenerated each daily run. |
-| `audit_comment.md` | n/a | `data_audit.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. |
+| `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness + registry drift). Regenerated each daily run. |
+| `audit_comment.md` | n/a | `data_audit.py` + `audit_writeback.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. `audit_writeback.py` appends a one-line note when streaks are active or rows are flipped to UNAVAILABLE. |
+| `data/_archived_columns/*.csv` | per-orphan | `library_sync.py --confirm` | Per-orphan-column historical archives. Filename: `<hist_basename>__<column_id>__<YYYY-MM-DD>.csv`. Created when a row is removed from a library CSV and the operator runs `library_sync.py --confirm` to prune the now-orphan hist column. Preserves full historical observations for future reference. |
 
 ---
 
