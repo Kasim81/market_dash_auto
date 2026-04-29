@@ -231,6 +231,68 @@ def sync_macro_economic(confirm: bool) -> int:
 
 
 # =============================================================================
+# Pair 3 — macro_market_hist ↔ macro_indicator_library
+# =============================================================================
+#
+# macro_market_hist.csv layout (no metadata prefix):
+#   row 0 (data header)  col 0 = "Date", cols 1+ = "<id>_raw" / "<id>_zscore"
+#                        / "<id>_regime" / "<id>_fwd_regime"
+#   rows 1+              data
+#
+# Each indicator id from macro_indicator_library.csv produces 4 columns.
+
+MACRO_MKT_HIST = DATA / "macro_market_hist.csv"
+MACRO_IND_LIB  = DATA / "macro_indicator_library.csv"
+INDICATOR_SUFFIXES = ("_raw", "_zscore", "_regime", "_fwd_regime")
+
+
+def _macro_mkt_expected() -> set[str]:
+    out: set[str] = set()
+    if not MACRO_IND_LIB.exists():
+        return out
+    with MACRO_IND_LIB.open(newline="") as f:
+        for r in csv.DictReader(f):
+            ind_id = (r.get("id") or "").strip()
+            if ind_id:
+                for suf in INDICATOR_SUFFIXES:
+                    out.add(f"{ind_id}{suf}")
+    return out
+
+
+def _macro_mkt_present(rows: list[list[str]]) -> set[str]:
+    # Row 0 is the data header: "Date, US_G1_raw, US_G1_zscore, ..."
+    return {c.strip() for c in rows[0][1:] if c.strip()}
+
+
+def _macro_mkt_idxs_for_orphan(rows: list[list[str]], col_name: str) -> list[int]:
+    return [i for i, c in enumerate(rows[0]) if c.strip() == col_name]
+
+
+def _macro_mkt_archive(rows: list[list[str]], col_name: str, idxs: list[int]) -> Path:
+    ARCHIVE.mkdir(parents=True, exist_ok=True)
+    out_path = ARCHIVE / f"macro_market_hist__{col_name}__{date.today().isoformat()}.csv"
+    keep_idxs = [0] + idxs           # col 0 = Date
+    with out_path.open("w", newline="") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow([rows[0][i] for i in keep_idxs])
+        for r in rows[1:]:
+            w.writerow([r[i] if i < len(r) else "" for i in keep_idxs])
+    return out_path
+
+
+def sync_macro_market(confirm: bool) -> int:
+    return _run_pair(
+        name="macro_market_hist.csv",
+        hist_path=MACRO_MKT_HIST,
+        expected=_macro_mkt_expected(),
+        present_fn=_macro_mkt_present,
+        idxs_fn=_macro_mkt_idxs_for_orphan,
+        archive_fn=_macro_mkt_archive,
+        confirm=confirm,
+    )
+
+
+# =============================================================================
 # Generic per-pair runner
 # =============================================================================
 
@@ -290,6 +352,7 @@ def main() -> int:
     total_orphans = 0
     total_orphans += sync_comp(confirm)
     total_orphans += sync_macro_economic(confirm)
+    total_orphans += sync_macro_market(confirm)
 
     if total_orphans and not confirm:
         print(f"\n(dry-run) {total_orphans} orphan id(s) total — re-run with --confirm to archive + drop.")
