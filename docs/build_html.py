@@ -322,7 +322,7 @@ def build_macro_economic() -> dict:
     filterable metadata in `meta.Source`.
     """
     return _build_payload(lambda m: m.get("Source") in {
-        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo", "BoE", "ECB", "BoJ",
+        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo", "BoE", "ECB", "BoJ", "e-Stat",
     })
 
 
