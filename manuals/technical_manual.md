@@ -287,10 +287,38 @@ Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-L
 ### ECB Data Portal
 
 - **URL:** `https://data-api.ecb.europa.eu/service/data` (replaced retired `sdw-wsrest.ecb.europa.eu` host on PR2, 2026-04-26)
-- **Auth:** None required
-- **Used for:** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`. The series is too deeply nested to live in `macro_library_*.csv`, so the SDMX call is inline.
-- **Rate limit:** 2s delay between calls
-- **Status:** the ECB AAA govt-yield half is wired; the corresponding Euro IG corporate yield half is currently unsourced (see `forward_plan.md` §1 Known Data Gaps), so EU_Cr1 returns n/a until a free corp-yield source is found.
+- **Auth:** None required. SDMX 2.1 over REST.
+- **Used for (inline):** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`.
+- **Used for (registry-driven, via `sources/ecb.py`):** ECB Deposit Facility Rate (`EA_DEPOSIT_RATE` ← `FM/D.U2.EUR.4F.KR.DFR.LEV`), AAA euro yield curve points (`EZ_GOVT_2Y` ← `YC/...SR_2Y`, `EZ_GOVT_30Y` ← `YC/...SR_30Y`). Library: `data/macro_library_ecb.csv`.
+- **Rate limit:** 2s delay; 60s timeout; `lastNObservations=N` on snapshot calls to keep responses small.
+- **Fetcher:** `sources/ecb.py` (registry path) + inline call in `compute_macro_market.py` (legacy YC call — refactor TODO).
+
+### Bank of England — IADB
+
+- **URL:** `https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp` (with fallback to legacy `fromshowcolumns.asp`)
+- **Auth:** None required. CSV download with multi-row title preamble.
+- **Used for:** UK Bank Rate (`GBR_BANK_RATE` ← `IUDBEDR`), SONIA (`GBR_SONIA` ← `IUDSOIA`), gilt par/zero-coupon yields S/M/L (`GBR_GILT_S/M/L` ← `IUDSNPY/IUDMNPY/IUDLNPY`, `GBR_GILT_MZ/LZ` ← `IUDMNZC/IUDLNZC`). Library: `data/macro_library_boe.csv`.
+- **Quirks:** WAF blocks default `python-requests` User-Agent → module sends a Chrome-like UA; multi-line title preamble is dynamically skipped via "DATE" header detection.
+- **Known gap:** BoE IADB does not publish UK corporate bond yield indices — those have to come via ETF proxy (`SLXX.L` in `index_library.csv`) or a future Bundesbank module.
+- **Fetcher:** `sources/boe.py` (Stage D).
+
+### Bank of Japan — Time-Series Data Search
+
+- **URL:** `https://www.stat-search.boj.or.jp/api/v1/getDataCode?<params>` (programmatic API launched February 2026)
+- **Auth:** None required. Documentation: `manuals/BOJ_api_manual_en.pdf`.
+- **Used for:** BoJ Policy Rate (`JPN_POLICY_RATE` ← `FM01'STRDCLUCON`, T2 backup to DB.nomics IMF/IFS T1), Tankan Large Manufacturers Business Conditions DI (`JP_TANKAN1` ← `CO'TK99F1000601GCQ01000`). Library: `data/macro_library_boj.csv`.
+- **Series-code format:** the search-screen presents codes as `<DB>'<series_code>` (e.g. `FM01'STRDCLUCON`); the API takes them split — `_split_series_id` handles this internally.
+- **Response shape:** CSV with metadata preamble (STATUS / MESSAGEID / PARAMETER lines) + one row per observation with 8 columns (SERIES_CODE / NAME / UNIT / FREQUENCY / CATEGORY / LAST_UPDATE / SURVEY_DATES / VALUES). `parse_csv` finds the SERIES_CODE header dynamically and reads SURVEY_DATES (YYYYMMDD) + VALUES.
+- **Fetcher:** `sources/boj.py` (Stage D).
+
+### e-Stat — Statistics Bureau of Japan
+
+- **URL:** `https://api.e-stat.go.jp/rest/3.0/app/json/getStatsData`
+- **Auth:** Free App ID required (registered, exposed as `ESTAT_APP_ID` GitHub Secret)
+- **Used for:** METI Indices of Industrial Production (`JPN_IND_PROD` ← `statsDataId 0003446463`). 71 years of monthly data (1955→present). Library: `data/macro_library_estat.csv`.
+- **Series-id convention:** `<statsDataId>` for single-series tables; `<statsDataId>?cdCat01=XXX&cdCat02=YYY` for multi-dim tables — the part after `?` is appended verbatim as additional API parameters.
+- **Response shape:** deeply-nested JSON. `parse_response` extracts `GET_STATS_DATA → STATISTICAL_DATA → DATA_INF → VALUE` list of `{"@time": "YYYYMMDD", "$": "value"}`; `_parse_estat_time` handles the 10-digit period encoding (annual / monthly / daily).
+- **Fetcher:** `sources/estat.py` (Stage D).
 
 ---
 
