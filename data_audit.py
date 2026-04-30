@@ -674,10 +674,12 @@ def render_report(sections: dict) -> str:
 def render_comment(sections: dict) -> str:
     """Build audit_comment.md — the GitHub Issue comment body."""
     a = sections["a"]; b = sections["b"]; c = sections["c"]
+    d = sections.get("d", {"issues": [], "rows": []})
     n_a = sum(len(v) for v in a.values())
     n_b = sum(len(v) for v in b.values())
     n_stale = len(c["stale"]) + len(c["expired"])
-    total = n_a + n_b + n_stale
+    n_d = len(d["issues"])
+    total = n_a + n_b + n_stale + n_d
 
     lines: list[str] = []
     if total == 0:
@@ -690,6 +692,8 @@ def render_comment(sections: dict) -> str:
             parts.append(f"{n_stale} stale serie{'s' if n_stale != 1 else ''}")
         if n_b:
             parts.append(f"{n_b} static-check failure{'s' if n_b != 1 else ''}")
+        if n_d:
+            parts.append(f"{n_d} history-preservation issue{'s' if n_d != 1 else ''}")
         lines.append(
             f"## Daily audit — {TODAY.isoformat()} — **{total} ISSUE{'S' if total != 1 else ''}** "
             f"({', '.join(parts)})"
@@ -741,6 +745,28 @@ def render_comment(sections: dict) -> str:
                     lines.append(f"- {item}")
                 if len(items) > 30:
                     lines.append(f"- _… {len(items) - 30} more in `data_audit.txt`_")
+        lines.append("\n</details>\n")
+
+    # Section D — History preservation summary (forward_plan §3.1.1)
+    # Always emit the per-file row-count summary for visibility; emit ALERT
+    # bullets only when issues exist.
+    if d["rows"]:
+        lines.append("<details><summary>History preservation</summary>\n")
+        lines.append("\n| File | Live rows | Sister rows | Union | Live range | Sister range |")
+        lines.append("|---|---|---|---|---|---|")
+        for r in d["rows"]:
+            sister_rows = f"{r['sister_rows']:,}" if r["sister_exists"] else "—"
+            sister_range = (f"{r['sister_earliest']} → {r['sister_latest']}"
+                            if r["sister_exists"] else "—")
+            lines.append(
+                f"| `{r['name']}` | {r['live_rows']:,} | {sister_rows} | "
+                f"{r['union_rows']:,} | {r['live_earliest']} → {r['live_latest']} | "
+                f"{sister_range} |"
+            )
+        if n_d:
+            lines.append("\n**ALERTS** ({}):".format(n_d))
+            for issue in d["issues"]:
+                lines.append(f"- {issue}")
         lines.append("\n</details>\n")
 
     return "\n".join(lines) + "\n"

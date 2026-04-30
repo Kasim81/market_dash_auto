@@ -1,6 +1,6 @@
 ## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
 
-_Run: 2026-04-30 09:34 UTC_
+_Run: 2026-04-30 09:52 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -71,6 +71,17 @@ Full report attached as `data_audit.txt` in today's commit.
 
 **missing_columns** (1):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+
+</details>
+
+<details><summary>History preservation</summary>
+
+
+| File | Live rows | Sister rows | Union | Live range | Sister range |
+|---|---|---|---|---|---|
+| `market_data_comp_hist.csv` | 3,982 | 3,982 | 3,982 | 1950-01-06 → 2026-04-24 | 1950-01-06 → 2026-04-24 |
+| `macro_economic_hist.csv` | 4,140 | 4,140 | 4,140 | 1946-12-27 → 2026-04-24 | 1946-12-27 → 2026-04-24 |
+| `macro_market_hist.csv` | 1,374 | 1,374 | 1,374 | 2000-01-07 → 2026-05-01 | 2000-01-07 → 2026-05-01 |
 
 </details>
 
