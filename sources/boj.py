@@ -209,12 +209,19 @@ def parse_csv(text: str, series_id: str) -> list[tuple[date, float]]:
     if header_idx is None:
         print(f"    [BoJ] no TIME/DATE header row found for {series_id} "
               f"(first line: {lines[0][:80] if lines else '<empty>'!r})")
+        # Surface enough of the response to diagnose the format on next run.
+        for i, line in enumerate(lines[:15]):
+            print(f"      line {i}: {line[:120]!r}")
         return obs
 
     try:
         df = pd.read_csv(io.StringIO(text), skiprows=header_idx)
     except Exception as e:
         print(f"    [BoJ] CSV parse failed for {series_id}: {e}")
+        # Same diagnostic dump — the parse failure usually means the header
+        # row we picked has fewer fields than the data rows below it.
+        for i, line in enumerate(lines[:15]):
+            print(f"      line {i}: {line[:120]!r}")
         return obs
 
     if df.empty or df.shape[1] < 2:
