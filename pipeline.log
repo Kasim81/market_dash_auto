@@ -1,5 +1,5 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-04-30 18:09 UTC
+Market Dashboard Data Fetch — 2026-04-30 20:09 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5827 rows)
@@ -12,8 +12,8 @@ Fetching comprehensive FX rates...
   TWD (TWD=X): OK (5320 rows)
   CAD (USDCAD=X): OK (5883 rows)
   BRL (USDBRL=X): OK (5397 rows)
-  HKD (USDHKD=X): OK (6272 rows)
-  MXN (USDMXN=X): OK (5836 rows)
+  HKD (USDHKD=X): OK (6273 rows)
+  MXN (USDMXN=X): OK (5835 rows)
   IDR (USDIDR=X): OK (6269 rows)
   RUB (USDRUB=X): OK (5706 rows)
   SAR (USDSAR=X): OK (5810 rows)
@@ -97,6 +97,7 @@ Fetching comp library (66 instruments)...
 Fetching simple FRED series (4 rows)...
   IRLTLT01GBM156N (UK 10-Year Gilt Yield)...
   IRLTLT01DEM156N (Germany 10-Year Bund Yield)...
+  [FRED IRLTLT01DEM156N] attempt 1 failed: 500 Server Error: Internal Server Error for url: https://api.stlouisfed.org/fred/series/observations?series_id=IRLTLT01DEM156N&api_key=b203d276c6e5d6225d7735e62d4ea88e&file_type=json&sort_order=asc&observation_start=2000-01-01
   IRLTLT01JPM156N (Japan 10-Year JGB Yield)...
   DGS2 (US 2-Year Treasury Yield)...
 
@@ -196,12 +197,12 @@ Fetching comp library (315 instruments)...
   [Pr] ^SP500-2550 (S&P 500 Consumer Discretionary Distribut)...
   [Pr] ^SP500-3010 (S&P 500 Food & Staples Retailing)...
   [Pr] ^SP500-3020 (S&P 500 Food Beverage & Tobacco)...
-  [Pr] ^SP500-3030 (S&P 500 Household & Personal Products)...
+  [Pr] ^SP500-3030 (S&P 500 Household & Personal Products)...^SP500-151050: Period 'max' is invalid, must be one of: 1d, 5d
+
   [Pr] ^SP500-3510 (S&P 500 Health Care Equipment & Services)...
   [Pr] ^SP500-3520 (S&P 500 Pharma Biotech & Life Sciences)...
   [Pr] ^SP500-4010 (S&P 500 Banks)...
-  [Pr] ^SP500-4020 (S&P 500 Financial Services)...^SP500-151050: Period 'max' is invalid, must be one of: 1d, 5d
-
+  [Pr] ^SP500-4020 (S&P 500 Financial Services)...
   [Pr] ^SP500-4030 (S&P 500 Insurance)...
   [Pr] ^SP500-4510 (S&P 500 Software & Services)...
   [Pr] ^SP500-4520 (S&P 500 Technology Hardware & Equipment)...
@@ -490,7 +491,7 @@ Pushing data to Google Sheets...
   ✓ Written 337 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-30 18:14 UTC
+✓ Completed at 2026-04-30 20:14 UTC
 
 --- market_data asset class breakdown ---
 
@@ -519,10 +520,12 @@ Loaded 315 yfinance instruments, 19 FRED Rates series
     [9/19] BAMLC0A3CA (ICE BofA US A Corporate OAS)...
     [10/19] BAMLC0A2CAA (ICE BofA US AA Corporate OAS)...
     [11/19] BAMLC0A1CAAA (ICE BofA US AAA Corporate OAS)...
+  [FRED] HTTP 500 on BAMLC0A1CAAA — backoff 2s (attempt 1/5)
     [12/19] BAMLC0A4CBBB (ICE BofA US BBB Corporate OAS)...
     [13/19] BAMLHE00EHYITRIV (ICE BofA Euro High Yield Bond Index)...
-  [FRED] HTTP 500 on BAMLHE00EHYITRIV — backoff 2s (attempt 1/5)
     [14/19] BAMLHE00EHYIOAS (ICE BofA Euro High Yield OAS)...
+  [FRED] HTTP 500 on BAMLHE00EHYIOAS — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on BAMLHE00EHYIOAS — backoff 4s (attempt 2/5)
     [15/19] BAMLEMCBPIOAS (ICE BofA EM Corporate Plus OAS)...
     [16/19] BAMLEMHBHYCRPIOAS (ICE BofA EM High Yield Corporate OAS)...
     [17/19] BAMLEMRACRPIASIAOAS (ICE BofA EM Asia Corporate OAS)...
@@ -534,7 +537,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 670 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 93.3s
+Comp historical build completed in 91.7s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -602,7 +605,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/MICH]
   [FRED/FEDFUNDS]
   [FRED/DGS2]
-  [FRED] HTTP 500 on DGS2 — backoff 2s (attempt 1/5)
   [FRED/DGS10]
   [FRED/MORTGAGE30US]
   [FRED/DFII10]
@@ -615,13 +617,9 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/DRTSCLCC]
   [FRED/STDSOTHCONS]
   [FRED/SUBLPDRCSN]
-  [FRED] HTTP 500 on SUBLPDRCSN — backoff 2s (attempt 1/5)
   [FRED/UMCSENT]
-  [FRED] HTTP 500 on UMCSENT — backoff 2s (attempt 1/5)
   [FRED/GACDFSA066MSFRBPHI]
   [FRED/GACDISA066MSFRBNY]
-  [FRED] HTTP 500 on GACDISA066MSFRBNY — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on GACDISA066MSFRBNY — backoff 4s (attempt 2/5)
   [FRED/BACTUAMFRBDAL]
   [FRED/PIORECRUSDM]
   [FRED/AWHMAN]
@@ -629,7 +627,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/TCU]
   [FRED/W875RX1]
   [FRED/PCEC96]
-  [FRED] HTTP 500 on PCEC96 — backoff 2s (attempt 1/5)
   [FRED/CMRMTSPL]
   [FRED/CFNAI]
   [FRED/ULCNFB]
@@ -643,7 +640,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/DEU_BUS_CONF]
   [FRED/GBR_BUS_CONF]
   [FRED/FRA_BUS_CONF]
-  [FRED] HTTP 500 on FRED/FRA_BUS_CONF — backoff 2s (attempt 1/5)
   [FRED/ITA_BUS_CONF]
   [FRED/DEU_CON_CONF]
   [FRED/BAMLHE00EHYIOAS]
@@ -658,6 +654,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/EA_DEPOSIT_RATE]
   [FRED/JPN_REER]
   [FRED/JPN_IND_PROD]
+  [FRED] HTTP 500 on FRED/JPN_IND_PROD — backoff 2s (attempt 1/5)
   [FRED/JPN_CPI]
   [FRED/JPN_POLICY_RATE]
   [FRED/CHN_M2]
@@ -683,93 +680,57 @@ macro_economic — Unified Economic Data Coordinator
   Fetching IMF/GDP_GROWTH...
   [IMF/GDP_GROWTH] → 11 countries parsed from IMF
   [DB.nomics/EU_ESI]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — 4 attempts exhausted
   [DB.nomics/EU_IND_CONF]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20 — 4 attempts exhausted
   [DB.nomics/EU_SVC_CONF]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — 4 attempts exhausted
   [DB.nomics/ISM_MFG_PMI]
-    [DB.nomics timeout] ISM/pmi/pm — backing off 2s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 4s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 8s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 16s
-    [DB.nomics FAIL] ISM/pmi/pm — 4 attempts exhausted
   [DB.nomics/ISM_MFG_NEWORD]
-    [DB.nomics timeout] ISM/neword/in — backing off 2s
-    [DB.nomics timeout] ISM/neword/in — backing off 4s
-    [DB.nomics timeout] ISM/neword/in — backing off 8s
-    [DB.nomics timeout] ISM/neword/in — backing off 16s
-    [DB.nomics FAIL] ISM/neword/in — 4 attempts exhausted
   [DB.nomics/ISM_SVC_PMI]
-    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 2s
-    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 4s
-    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 8s
-    [DB.nomics timeout] ISM/nm-pmi/pm — backing off 16s
-    [DB.nomics FAIL] ISM/nm-pmi/pm — 4 attempts exhausted
   [DB.nomics/EZ_IND_PROD]
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — 4 attempts exhausted
   [DB.nomics/EZ_RETAIL_VOL]
-    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20 — 4 attempts exhausted
   [DB.nomics/EZ_EMPLOYMENT]
-    [DB.nomics timeout] Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20 — 4 attempts exhausted
   [DB.nomics/DEU_IND_PROD]
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE — backing off 2s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE — backing off 4s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE — backing off 8s
-    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE — backing off 16s
-    [DB.nomics FAIL] Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE — 4 attempts exhausted
   [DB.nomics/EA_HICP]
-    [DB.nomics timeout] Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20 — 4 attempts exhausted
   [DB.nomics/JPN_POLICY_RATE]
-    [DB.nomics timeout] IMF/IFS/M.JP.FPOLM_PA — backing off 2s
-    [DB.nomics timeout] IMF/IFS/M.JP.FPOLM_PA — backing off 4s
-    [DB.nomics timeout] IMF/IFS/M.JP.FPOLM_PA — backing off 8s
-    [DB.nomics timeout] IMF/IFS/M.JP.FPOLM_PA — backing off 16s
-    [DB.nomics FAIL] IMF/IFS/M.JP.FPOLM_PA — 4 attempts exhausted
   [DB.nomics/CHN_POLICY_RATE]
-    [DB.nomics timeout] IMF/IFS/M.CN.FPOLM_PA — backing off 2s
-    [DB.nomics timeout] IMF/IFS/M.CN.FPOLM_PA — backing off 4s
-    [DB.nomics timeout] IMF/IFS/M.CN.FPOLM_PA — backing off 8s
-    [DB.nomics timeout] IMF/IFS/M.CN.FPOLM_PA — backing off 16s
-    [DB.nomics FAIL] IMF/IFS/M.CN.FPOLM_PA — 4 attempts exhausted
   [BoE/GBR_BANK_RATE]
   [ECB/EA_DEPOSIT_RATE]
   [BoJ/JPN_POLICY_RATE]
     [BoJ] CSV parse failed for FM01'STRDCLUCON: Error tokenizing data. C error: Expected 3 fields in line 12, saw 8
 
+      line 0: 'STATUS,200'
+      line 1: 'MESSAGEID,M181000I'
+      line 2: 'MESSAGE,Successfully completed'
+      line 3: 'DATE,2026-05-01T05:17:59.466+09:00'
+      line 4: 'PARAMETER,FORMAT,CSV'
+      line 5: 'PARAMETER,LANG,EN'
+      line 6: 'PARAMETER,DB,FM01'
+      line 7: 'PARAMETER,STARTDATE,199001'
+      line 8: 'PARAMETER,ENDDATE,'
+      line 9: 'PARAMETER,STARTPOSITION,'
+      line 10: 'NEXTPOSITION,'
+      line 11: 'SERIES_CODE,NAME_OF_TIME_SERIES,UNIT,FREQUENCY,CATEGORY,LAST_UPDATE,SURVEY_DATES,VALUES'
+      line 12: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900101,'
+      line 13: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900102,'
+      line 14: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900103,'
   [BoJ/JP_TANKAN1]
     [BoJ] CSV parse failed for CO'TK99F1000601GCQ01000: Error tokenizing data. C error: Expected 3 fields in line 12, saw 8
 
+      line 0: 'STATUS,200'
+      line 1: 'MESSAGEID,M181000I'
+      line 2: 'MESSAGE,Successfully completed'
+      line 3: 'DATE,2026-05-01T05:18:01.031+09:00'
+      line 4: 'PARAMETER,FORMAT,CSV'
+      line 5: 'PARAMETER,LANG,EN'
+      line 6: 'PARAMETER,DB,CO'
+      line 7: 'PARAMETER,STARTDATE,199001'
+      line 8: 'PARAMETER,ENDDATE,'
+      line 9: 'PARAMETER,STARTPOSITION,'
+      line 10: 'NEXTPOSITION,'
+      line 11: 'SERIES_CODE,NAME_OF_TIME_SERIES,UNIT,FREQUENCY,CATEGORY,LAST_UPDATE,SURVEY_DATES,VALUES'
+      line 12: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
+      line 13: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
+      line 14: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
   [e-Stat/JPN_IND_PROD]
-    [e-Stat] no ESTAT_APP_ID env var — skipping 0003446463
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
   [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
   [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
@@ -802,8 +763,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/T5YIFR/hist]
   [FRED/MICH/hist]
   [FRED/FEDFUNDS/hist]
-  [FRED] HTTP 500 on FEDFUNDS — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on FEDFUNDS — backoff 4s (attempt 2/5)
   [FRED/DGS2/hist]
   [FRED/DGS10/hist]
   [FRED/MORTGAGE30US/hist]
@@ -840,8 +799,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/DEU_BUS_CONF/hist]
   [FRED/GBR_BUS_CONF/hist]
   [FRED/FRA_BUS_CONF/hist]
-  [FRED] HTTP 500 on BSCICP02FRM460S — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on BSCICP02FRM460S — backoff 4s (attempt 2/5)
   [FRED/ITA_BUS_CONF/hist]
   [FRED/DEU_CON_CONF/hist]
   [FRED/BAMLHE00EHYIOAS/hist]
@@ -881,18 +838,9 @@ macro_economic — Unified Economic Data Coordinator
   Fetching IMF/GDP_GROWTH...
   [IMF/GDP_GROWTH] → 11 countries parsed from IMF
   [DB.nomics/EU_ESI/hist]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 2s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 4s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 8s
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — backing off 16s
-    [DB.nomics FAIL] Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20 — 4 attempts exhausted
   [DB.nomics/EU_IND_CONF/hist]
   [DB.nomics/EU_SVC_CONF/hist]
-    [DB.nomics timeout] Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20 — backing off 2s
   [DB.nomics/ISM_MFG_PMI/hist]
-    [DB.nomics timeout] ISM/pmi/pm — backing off 2s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 4s
-    [DB.nomics timeout] ISM/pmi/pm — backing off 8s
   [DB.nomics/ISM_MFG_NEWORD/hist]
   [DB.nomics/ISM_SVC_PMI/hist]
   [DB.nomics/EZ_IND_PROD/hist]
@@ -938,16 +886,45 @@ macro_economic — Unified Economic Data Coordinator
   [BoJ/JPN_POLICY_RATE/hist]
     [BoJ] CSV parse failed for FM01'STRDCLUCON: Error tokenizing data. C error: Expected 3 fields in line 12, saw 8
 
+      line 0: 'STATUS,200'
+      line 1: 'MESSAGEID,M181000I'
+      line 2: 'MESSAGE,Successfully completed'
+      line 3: 'DATE,2026-05-01T05:20:00.268+09:00'
+      line 4: 'PARAMETER,FORMAT,CSV'
+      line 5: 'PARAMETER,LANG,EN'
+      line 6: 'PARAMETER,DB,FM01'
+      line 7: 'PARAMETER,STARTDATE,199001'
+      line 8: 'PARAMETER,ENDDATE,'
+      line 9: 'PARAMETER,STARTPOSITION,'
+      line 10: 'NEXTPOSITION,'
+      line 11: 'SERIES_CODE,NAME_OF_TIME_SERIES,UNIT,FREQUENCY,CATEGORY,LAST_UPDATE,SURVEY_DATES,VALUES'
+      line 12: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900101,'
+      line 13: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900102,'
+      line 14: 'STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900103,'
   [BoJ/JP_TANKAN1/hist]
     [BoJ] CSV parse failed for CO'TK99F1000601GCQ01000: Error tokenizing data. C error: Expected 3 fields in line 12, saw 8
 
+      line 0: 'STATUS,200'
+      line 1: 'MESSAGEID,M181000I'
+      line 2: 'MESSAGE,Successfully completed'
+      line 3: 'DATE,2026-05-01T05:20:01.919+09:00'
+      line 4: 'PARAMETER,FORMAT,CSV'
+      line 5: 'PARAMETER,LANG,EN'
+      line 6: 'PARAMETER,DB,CO'
+      line 7: 'PARAMETER,STARTDATE,199001'
+      line 8: 'PARAMETER,ENDDATE,'
+      line 9: 'PARAMETER,STARTPOSITION,'
+      line 10: 'NEXTPOSITION,'
+      line 11: 'SERIES_CODE,NAME_OF_TIME_SERIES,UNIT,FREQUENCY,CATEGORY,LAST_UPDATE,SURVEY_DATES,VALUES'
+      line 12: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
+      line 13: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
+      line 14: 'TK99F1000601GCQ01000,D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result,% points,QUARTERLY,TANKAN/Ju'
   [e-Stat/JPN_IND_PROD/hist]
-    [e-Stat] no ESTAT_APP_ID env var — skipping 0003446463
-  macro_economic_hist: 4140 rows × 161 data columns
+  macro_economic_hist: 4140 rows × 162 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 2582.1s
+  macro_economic run completed in 244.3s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
@@ -984,7 +961,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] UK_R2: raw=0.1482  z=-0.8  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] UK_Cr1: raw=-2.0949  z=1.43  regime='credit-appetite'  fwd='stable'  (2026-04-24)
   [compute] EU_G4: raw=-0.0391  z=-1.06  regime='EU-strain'  fwd='stable'  (2026-04-24)
-  [compute] AS_CN_G3: raw=-0.0495  z=0.66  regime='neutral'  fwd='stable'  (2026-05-01)
+  [compute] AS_CN_G3: raw=-0.053  z=0.63  regime='neutral'  fwd='stable'  (2026-05-01)
   [compute] AS_CN_G2: raw=0.9101  z=1.51  regime='China-outperform'  fwd='stable'  (2026-04-24)
   [compute] AS_IN_G1: raw=3.0394  z=-0.67  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] AS_CN_R1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
@@ -1087,12 +1064,11 @@ Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
---- Section B: Static checks (2 issues) ---
+--- Section B: Static checks (1 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'EU_ESI') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 124  STALE 21  EXPIRED 16) ---
-  EXPIRED (16):
+--- Section C: Value-change staleness (FRESH 124  STALE 21  EXPIRED 17) ---
+  EXPIRED (17):
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1245d     tolerance=45d
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=909d      tolerance=45d
@@ -1104,6 +1080,7 @@ Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
     Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=146d      tolerance=45d
     Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=118d      tolerance=45d
     Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
     Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
     Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
     Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=118d      tolerance=45d

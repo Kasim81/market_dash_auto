@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-30 — **40 ISSUES** (1 fetch error, 37 stale series, 2 static-check failures)
+## Daily audit — 2026-04-30 — **40 ISSUES** (1 fetch error, 38 stale series, 1 static-check failure)
 
-_Run: 2026-04-30 19:00 UTC_
+_Run: 2026-04-30 20:20 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,7 +15,7 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (16):
+**EXPIRED** (17):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -30,6 +30,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 146d | 45d |
 | `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 118d | 45d |
 | `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
+| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
@@ -67,9 +68,8 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (2):
+**missing_columns** (1):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-- _get_col(...,'EU_ESI') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
