@@ -7,16 +7,15 @@
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
   MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 97  STALE 21  EXPIRED 18) ---
-  EXPIRED (18):
-    Monthly     GBR_BANK_RATE                     src=BoE          series=IUDBEDR                   last_obs=2016-08-05  age=3555d     tolerance=200d*
+--- Section C: Value-change staleness (FRESH 98  STALE 21  EXPIRED 17) ---
+  EXPIRED (17):
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1245d     tolerance=45d
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=909d      tolerance=45d
     Monthly     JPN_IND_PROD                      src=FRED         series=JPNPROINDMISMEI           last_obs=2024-03-01  age=790d      tolerance=45d
     Monthly     JPN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.JP.FPOLM_PA     last_obs=2025-01-31  age=454d      tolerance=45d
     Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=328d      tolerance=45d
-    Daily       EA_DEPOSIT_RATE                   src=FRED         series=ECBDFR                    last_obs=2025-06-13  age=321d      tolerance=5d
+    Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=321d      tolerance=30d*
     Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=237d      tolerance=60d*
     Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=146d      tolerance=45d
     Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=118d      tolerance=45d

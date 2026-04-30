@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-30 — **42 ISSUES** (1 fetch error, 39 stale series, 2 static-check failures)
+## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 38 stale series, 2 static-check failures)
 
-_Run: 2026-04-30 14:12 UTC_
+_Run: 2026-04-30 14:31 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,18 +15,17 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (18):
+**EXPIRED** (17):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `GBR_BANK_RATE` | BoE | Monthly | 2016-08-05 | 3555d | 200d\* |
 | `CHN_M2` | FRED | Monthly | 2019-08-02 | 2463d | 45d |
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1245d | 45d |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 909d | 45d |
 | `JPN_IND_PROD` | FRED | Monthly | 2024-03-01 | 790d | 45d |
 | `JPN_POLICY_RATE` | DB.nomics | Monthly | 2025-01-31 | 454d | 45d |
 | `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 328d | 45d |
-| `EA_DEPOSIT_RATE` | FRED | Daily | 2025-06-13 | 321d | 5d |
+| `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 321d | 30d\* |
 | `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 237d | 60d\* |
 | `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 146d | 45d |
 | `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 118d | 45d |
