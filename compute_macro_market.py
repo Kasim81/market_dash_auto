@@ -73,6 +73,8 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 
+from library_utils import write_hist_with_archive
+
 # ---------------------------------------------------------------------------
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
@@ -2080,7 +2082,7 @@ def run_phase_e():
     df_snapshot.to_csv(SNAPSHOT_CSV, index=False)
     print(f"  Saved {SNAPSHOT_CSV}")
 
-    df_hist.reset_index().to_csv(HIST_CSV, index=False)
+    write_hist_with_archive(df_hist.reset_index(), HIST_CSV)
     print(f"  Saved {HIST_CSV}")
 
     # ------------------------------------------------------------------

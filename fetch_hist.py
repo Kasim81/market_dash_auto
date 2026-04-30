@@ -44,6 +44,7 @@ from library_utils import (
     COMP_FX_TICKERS,
     COMP_FCY_PER_USD,
     lib_sort_key as _comp_inst_sort_key,
+    write_hist_with_archive,
 )
 from sources.base import (
     get_sheets_service,
@@ -119,22 +120,28 @@ def save_csv(df: pd.DataFrame, path: str, label: str,
     If prefix_rows is provided, those rows are written before the header+data
     so metadata (Name, Region, etc.) appears at the top of the file.
     Read back with pd.read_csv(path, header=len(prefix_rows)) to skip them.
+
+    For *_hist.csv paths, routes through library_utils.write_hist_with_archive()
+    which preserves any rows that would otherwise be lost to source-side
+    floor advancement (per forward_plan §3.1.1).
     """
     if df.empty:
         print(f"  [{label}] Empty — skipping CSV write")
         return
 
-    os.makedirs("data", exist_ok=True)
-
-    if prefix_rows:
-        import csv, io
-        buf = io.StringIO()
-        csv.writer(buf, lineterminator="\n").writerows(prefix_rows)
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(buf.getvalue())
-            df.to_csv(f, index=False)
+    if path.endswith("_hist.csv"):
+        write_hist_with_archive(df, path, prefix_rows=prefix_rows)
     else:
-        df.to_csv(path, index=False)
+        os.makedirs("data", exist_ok=True)
+        if prefix_rows:
+            import csv, io
+            buf = io.StringIO()
+            csv.writer(buf, lineterminator="\n").writerows(prefix_rows)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(buf.getvalue())
+                df.to_csv(f, index=False)
+        else:
+            df.to_csv(path, index=False)
 
     n_meta = len(prefix_rows) if prefix_rows else 0
     print(f"  [{label}] Written {n_meta} metadata rows + {len(df):,} data rows "

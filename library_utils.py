@@ -345,3 +345,179 @@ SHEETS_LEGACY_TABS_TO_DELETE = frozenset({
     "macro_ifo",
     "macro_ifo_hist",
 })
+
+
+# ---------------------------------------------------------------------------
+# HISTORY PRESERVATION (forward_plan §3.1.1 — Stage A)
+# ---------------------------------------------------------------------------
+# Source-side history can shrink retroactively (e.g. April 2026 ICE Data demand
+# that FRED truncate ICE BofA series to a rolling 3-year window). For every
+# `*_hist.csv` we maintain, a sister `*_hist_x.csv` ("x" = "extended") preserves
+# any rows that would otherwise be lost. The sister is append-only.
+#
+# Detection is per-column floor advancement (not row-count change): a rolling
+# window keeps row count constant while the earliest date walks forward. For
+# each column where the new fetch's earliest non-null date is later than the
+# locally-stored earliest non-null date, the rows about to disappear are routed
+# to the sister CSV before the live CSV is overwritten.
+#
+# Read paths use load_hist_with_archive() to transparently union live + sister.
+
+import os as _hp_os
+import pandas as _hp_pd
+
+
+def _sister_path(path):
+    """Return the *_hist_x.csv sister path for a given *_hist.csv path."""
+    if not path.endswith("_hist.csv"):
+        raise ValueError(
+            f"{path!r} does not follow the *_hist.csv naming convention; "
+            "history-preservation helpers only operate on *_hist.csv files."
+        )
+    return path[: -len("_hist.csv")] + "_hist_x.csv"
+
+
+def _write_hist_payload(path, df, prefix_rows, date_col):
+    """Write `df` to `path`, prepending `prefix_rows` metadata if provided.
+
+    Mirrors the existing `fetch_hist.save_csv()` / `fetch_macro_economic.save_hist_csv()`
+    file shape: N prefix rows, then a single header row, then the data rows.
+    The Date column is formatted as YYYY-MM-DD strings.
+    """
+    _hp_os.makedirs(_hp_os.path.dirname(path) or ".", exist_ok=True)
+
+    out = df.copy()
+    if date_col in out.columns:
+        out[date_col] = _hp_pd.to_datetime(out[date_col]).dt.strftime("%Y-%m-%d")
+
+    if prefix_rows:
+        import csv as _csv
+        import io as _io
+        buf = _io.StringIO()
+        _csv.writer(buf, lineterminator="\n").writerows(prefix_rows)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(buf.getvalue())
+            out.to_csv(f, index=False)
+    else:
+        out.to_csv(path, index=False)
+
+
+def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col):
+    """Append rows to the sister CSV, deduplicating by `date_col` (existing wins)."""
+    n_prefix = len(prefix_rows) if prefix_rows else 0
+
+    if _hp_os.path.exists(sister_path):
+        existing = _hp_pd.read_csv(sister_path, skiprows=n_prefix, low_memory=False)
+        if date_col in existing.columns:
+            existing[date_col] = _hp_pd.to_datetime(existing[date_col], errors="coerce")
+            existing = existing[existing[date_col].notna()]
+        # Concat existing first so dedup keeps the older copy on overlap.
+        combined = _hp_pd.concat([existing, new_archive_df], ignore_index=True)
+    else:
+        combined = new_archive_df.copy()
+
+    combined = combined.drop_duplicates(subset=[date_col], keep="first")
+    combined = combined.sort_values(date_col).reset_index(drop=True)
+    _write_hist_payload(sister_path, combined, prefix_rows, date_col)
+
+
+def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
+    """Write a *_hist.csv preserving any rows that would otherwise be lost.
+
+    Per-column floor-advancement detection: for each column shared between the
+    new `df` and the existing live file, if `new.earliest_nonnull_date` > the
+    same column's `local.earliest_nonnull_date`, the rows in the live file with
+    `date < new.earliest_nonnull_date` AND that column non-null are appended to
+    the sister `<path>_x.csv` (deduplicated by date) before the live file is
+    rewritten with `df`.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        New data to write. Must carry `date_col` either as a column or as the
+        DatetimeIndex name.
+    path : str
+        Live destination path; must end in `_hist.csv`.
+    prefix_rows : list[list[str]] or None
+        Optional metadata prefix rows written before the header (matches the
+        existing fetch_hist.save_csv / fetch_macro_economic.save_hist_csv shape).
+    date_col : str
+        Date column name. Defaults to "Date".
+    """
+    # Normalise df → Date as a regular column.
+    if isinstance(df.index, _hp_pd.DatetimeIndex) and df.index.name == date_col:
+        new_df = df.reset_index()
+    else:
+        new_df = df.copy()
+    new_df[date_col] = _hp_pd.to_datetime(new_df[date_col], errors="coerce")
+    new_df = new_df[new_df[date_col].notna()]
+
+    n_prefix = len(prefix_rows) if prefix_rows else 0
+    sister = _sister_path(path)
+
+    # Read existing live for the shrinkage check.
+    if _hp_os.path.exists(path):
+        old_df = _hp_pd.read_csv(path, skiprows=n_prefix, low_memory=False)
+        if date_col in old_df.columns:
+            old_df[date_col] = _hp_pd.to_datetime(old_df[date_col], errors="coerce")
+            old_df = old_df[old_df[date_col].notna()].reset_index(drop=True)
+
+            # Per-column floor comparison.
+            archive_row_idx = set()
+            shared_cols = [c for c in new_df.columns
+                           if c in old_df.columns and c != date_col]
+            for col in shared_cols:
+                old_nn = old_df[old_df[col].notna()]
+                new_nn = new_df[new_df[col].notna()]
+                if old_nn.empty or new_nn.empty:
+                    continue
+                old_min = old_nn[date_col].min()
+                new_min = new_nn[date_col].min()
+                if new_min > old_min:
+                    # Old rows that will lose this column on the new write.
+                    mask = (old_df[date_col] < new_min) & old_df[col].notna()
+                    archive_row_idx.update(old_df.index[mask].tolist())
+
+            if archive_row_idx:
+                archive_df = old_df.loc[sorted(archive_row_idx)].copy()
+                _append_archive_rows(sister, archive_df, prefix_rows, date_col)
+
+    # Write the live file.
+    _write_hist_payload(path, new_df, prefix_rows, date_col)
+
+
+def load_hist_with_archive(path, **read_csv_kwargs):
+    """Load a *_hist.csv transparently unioned with its *_hist_x.csv sister.
+
+    Behaves as a drop-in replacement for `pd.read_csv(path, **kwargs)`. If a
+    sister file exists, its rows are unioned with the live rows; on overlap
+    of dates, the live row wins. Returns a single DataFrame with the same
+    schema as the live file.
+
+    Date axis detection: if the resulting DataFrame has a DatetimeIndex, dedup
+    on the index; otherwise dedup on a 'Date' column if present; otherwise
+    return the simple concat. Result is sorted ascending by date.
+    """
+    live = _hp_pd.read_csv(path, low_memory=False, **read_csv_kwargs)
+    sister = _sister_path(path)
+    if not _hp_os.path.exists(sister):
+        return live
+
+    try:
+        archive = _hp_pd.read_csv(sister, low_memory=False, **read_csv_kwargs)
+    except Exception as exc:
+        print(f"  [load_hist_with_archive] WARN reading sister {sister}: {exc}")
+        return live
+
+    combined = _hp_pd.concat([live, archive])
+
+    if isinstance(combined.index, _hp_pd.DatetimeIndex):
+        combined = combined[~combined.index.duplicated(keep="first")]
+        return combined.sort_index()
+    if "Date" in combined.columns:
+        return (combined
+                .drop_duplicates(subset=["Date"], keep="first")
+                .sort_values("Date")
+                .reset_index(drop=True))
+    return combined.drop_duplicates(keep="first").reset_index(drop=True)
+
