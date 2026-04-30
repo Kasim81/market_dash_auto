@@ -150,13 +150,20 @@ def fetch_series(
 # CSV PARSING
 # ---------------------------------------------------------------------------
 # IADB CSV shape (CSVF=TT):
+# The download includes a multi-line title/source preamble before the
+# actual data table:
+#     "Bank of England"
+#     "Bank of England Statistical Interactive Database"
+#     ""
+#     "Source code","IUDBEDR"
+#     "Description","Official Bank Rate"
+#     ""
 #     DATE,IUDBEDR
-#     01 Jan 1975,9.50
-#     02 Jan 1975,9.50
+#     01 Jan 1975,12.25
 #     ...
-# The header line uses the series code as the column name (matches the code
-# we requested via SeriesCodes). Some downloads include a leading title row;
-# pandas.read_csv handles that gracefully when we pin the column lookup.
+# We detect the header row dynamically by finding the first line whose
+# first comma-separated token (stripped of quotes) equals "DATE", then
+# pass that line index to pd.read_csv as `skiprows`.
 
 def parse_csv(text: str, series_code: str) -> list[tuple[date, float]]:
     """Parse IADB CSV response → list of (date, value) tuples (None values dropped)."""
@@ -164,14 +171,27 @@ def parse_csv(text: str, series_code: str) -> list[tuple[date, float]]:
     if not text or not text.strip():
         return obs
 
+    # Locate the data header row (line starting with "DATE,...")
+    lines = text.splitlines()
+    header_idx = None
+    for i, line in enumerate(lines):
+        first_token = line.split(",", 1)[0].strip().strip('"').upper()
+        if first_token == "DATE":
+            header_idx = i
+            break
+    if header_idx is None:
+        print(f"    [BoE] no DATE header row found in {series_code} response "
+              f"(first line: {lines[0][:80] if lines else '<empty>'!r})")
+        return obs
+
     try:
-        df = pd.read_csv(io.StringIO(text))
+        df = pd.read_csv(io.StringIO(text), skiprows=header_idx)
     except Exception as e:
         print(f"    [BoE] CSV parse failed for {series_code}: {e}")
         return obs
 
     # Normalise columns case-insensitively to find DATE + the series code col.
-    cols_lower = {c.lower(): c for c in df.columns}
+    cols_lower = {c.strip().lower(): c for c in df.columns}
     date_col = cols_lower.get("date")
     val_col = cols_lower.get(series_code.lower())
     if date_col is None or val_col is None:
@@ -179,16 +199,16 @@ def parse_csv(text: str, series_code: str) -> list[tuple[date, float]]:
         return obs
 
     for _, row in df.iterrows():
-        d_str = str(row[date_col]).strip()
+        d_str = str(row[date_col]).strip().strip('"')
         v_raw = row[val_col]
         if pd.isna(v_raw):
             continue
-        v_str = str(v_raw).strip()
+        v_str = str(v_raw).strip().strip('"')
         if not d_str or not v_str or v_str.lower() in ("nan", "n/a", ""):
             continue
         # IADB date format: "01 Jan 1975" or sometimes "01/01/1975"
         d = None
-        for fmt in ("%d %b %Y", "%d/%m/%Y", "%Y-%m-%d"):
+        for fmt in ("%d %b %Y", "%d/%m/%Y", "%Y-%m-%d", "%d-%b-%Y"):
             try:
                 d = datetime.strptime(d_str, fmt).date()
                 break
