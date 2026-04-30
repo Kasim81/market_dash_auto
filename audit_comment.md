@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
+## Daily audit — 2026-04-30 — **42 ISSUES** (1 fetch error, 39 stale series, 2 static-check failures)
 
-_Run: 2026-04-30 12:34 UTC_
+_Run: 2026-04-30 13:52 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,7 +15,7 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (19):
+**EXPIRED** (18):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -30,7 +30,6 @@ Full report attached as `data_audit.txt` in today's commit.
 | `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 237d | 60d\* |
 | `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 146d | 45d |
 | `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 118d | 45d |
-| `CMRMTSPL` | FRED | Monthly | 2026-01-02 | 118d | 45d |
 | `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
@@ -39,7 +38,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `BAMLC0A0CM` | FRED | Daily | 2026-04-17 | 13d | 5d |
 
-**STALE** (20):
+**STALE** (21):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -49,6 +48,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 146d | 75d\* |
 | `FRA_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 118d | 75d\* |
 | `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 118d | 75d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-02-06 | 83d | 45d |
 | `PERMIT` | FRED | Monthly | 2026-03-06 | 55d | 45d |
 | `T10Y2Y` | FRED | Daily | 2026-04-24 | 6d | 5d |
 | `T10Y3M` | FRED | Daily | 2026-04-24 | 6d | 5d |
@@ -69,8 +69,9 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (1):
+**missing_columns** (2):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
