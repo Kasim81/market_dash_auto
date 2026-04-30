@@ -8,7 +8,7 @@
 
 --- Section C: Value-change staleness (FRESH 123  STALE 20  EXPIRED 19) ---
   EXPIRED (19):
-    Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3555d     tolerance=45d
+    Monthly     GBR_BANK_RATE                     src=BoE          series=IUDBEDR                   last_obs=2016-08-05  age=3555d     tolerance=200d*
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1245d     tolerance=45d
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=909d      tolerance=45d

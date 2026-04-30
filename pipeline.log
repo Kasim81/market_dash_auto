@@ -1,11 +1,11 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-04-30 11:42 UTC
+Market Dashboard Data Fetch — 2026-04-30 12:22 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5827 rows)
   EUR (EURUSD=X): OK (5815 rows)
   AUD (AUDUSD=X): OK (5191 rows)
-  JPY (USDJPY=X): OK (7649 rows)
+  JPY (USDJPY=X): OK (7648 rows)
   CNY (CNY=X): OK (6217 rows)
   INR (INR=X): OK (5812 rows)
   KRW (KRW=X): OK (5813 rows)
@@ -17,7 +17,7 @@ Fetching comprehensive FX rates...
   IDR (USDIDR=X): OK (6269 rows)
   RUB (USDRUB=X): OK (5706 rows)
   SAR (USDSAR=X): OK (5810 rows)
-  ZAR (USDZAR=X): OK (5828 rows)
+  ZAR (USDZAR=X): OK (5829 rows)
   TRY (USDTRY=X): OK (5544 rows)
   ARS (USDARS=X): OK (5903 rows)
 
@@ -490,7 +490,7 @@ Pushing data to Google Sheets...
   ✓ Written 337 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-30 11:46 UTC
+✓ Completed at 2026-04-30 12:27 UTC
 
 --- market_data asset class breakdown ---
 
@@ -533,14 +533,14 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 670 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 108.1s
+Comp historical build completed in 85.7s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
 ============================================================
 
 ── macro_economic indicator index ─────────────────────────────────
-  total indicators: 126
+  total indicators: 127
   by source:
     FRED         82
     ifo          26
@@ -548,9 +548,10 @@ macro_economic — Unified Economic Data Coordinator
     OECD         3
     World Bank   1
     IMF          1
+    BoE          1
   by concept:
     Sentiment / Survey     46
-    Rates / Yields         19
+    Rates / Yields         20
     Inflation              14
     Credit / Spreads       12
     Labour                 10
@@ -564,8 +565,8 @@ macro_economic — Unified Economic Data Coordinator
   by cycle_timing:
     L          63
     C          42
-    G          21
-  single-country series:   121
+    G          22
+  single-country series:   122
   multi-country fan-outs:  5  (CLI, UNEMPLOYMENT, RATE_3M, CPI, GDP_GROWTH)
   countries referenced:    9  (CHN, DEU, EA19, FRA, GBR, IND, ITA, JPN, USA)
 ────────────────────────────────────────────────────────────────────
@@ -650,8 +651,10 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/JPN_POLICY_RATE]
   [FRED/CHN_M2]
   [FRED/CHN_POLICY_RATE]
+  [FRED] HTTP 500 on FRED/CHN_POLICY_RATE — backoff 2s (attempt 1/5)
   [FRED/CHN_CPI]
   [FRED/CHN_PPI]
+  [FRED] HTTP 500 on FRED/CHN_PPI — backoff 2s (attempt 1/5)
   [FRED/CHN_IND_PROD]
   [FRED/CHN_IMPORTS]
   [FRED/CHN_EXPORTS]
@@ -683,13 +686,15 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EA_HICP]
   [DB.nomics/JPN_POLICY_RATE]
   [DB.nomics/CHN_POLICY_RATE]
+  [BoE/GBR_BANK_RATE]
+    [BoE HTTP 403] IUDBEDR — skipping
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
   [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
   [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
   [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
   [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
-  Written 169 rows to data/macro_economic.csv
-  [macro_economic] Written 170 rows to 'macro_economic'
+  Written 170 rows to data/macro_economic.csv
+  [macro_economic] Written 171 rows to 'macro_economic'
 
 [History] Fetching full history ...
   [FRED/T10Y2Y/hist]
@@ -697,6 +702,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/M2SL/hist]
   [FRED/PERMIT/hist]
   [FRED/IC4WSA/hist]
+  [FRED] HTTP 500 on IC4WSA — backoff 2s (attempt 1/5)
   [FRED/PAYEMS/hist]
   [FRED/UNRATE/hist]
   [FRED/JTSJOL/hist]
@@ -742,6 +748,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/CFNAI/hist]
   [FRED/ULCNFB/hist]
   [FRED/UEMPMEAN/hist]
+  [FRED] HTTP 500 on UEMPMEAN — backoff 2s (attempt 1/5)
   [FRED/TOTCI/hist]
   [FRED/CP/hist]
   [FRED/GBR_GILT_10Y/hist]
@@ -759,6 +766,8 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/CHN_CON_CONF/hist]
   [FRED/CHN_BUS_CONF/hist]
   [FRED/GBR_CPI/hist]
+  [FRED] HTTP 500 on GBRCPIALLMINMEI — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on GBRCPIALLMINMEI — backoff 4s (attempt 2/5)
   [FRED/GBR_BANK_RATE/hist]
   [FRED/DEU_IND_PROD/hist]
   [FRED/EA_HICP/hist]
@@ -833,18 +842,20 @@ macro_economic — Unified Economic Data Coordinator
   [ifo/DE_IFO_CON_EXP/hist]
   [ifo/DE_IFO_UNC/hist]
   [ifo/DE_IFO_CYC/hist]
+  [BoE/GBR_BANK_RATE/hist]
+    [BoE HTTP 403] IUDBEDR — skipping
   macro_economic_hist: 4140 rows × 162 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 218.2s
+  macro_economic run completed in 276.3s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
   [load] comp_hist: 1373 rows × 668 cols (2000-01-07 → 2026-04-24)
   [load] macro_economic_hist: 1373 rows × 162 cols (2000-01-07 → 2026-04-24)
   Fetching Euro IG spread (ECB SDW + unified hist) …
-  [ECB] YC fetch error: HTTPSConnectionPool(host='data-api.ecb.europa.eu', port=443): Read timed out. (read timeout=25)
+  [ECB] AAA euro govt yield: 5533 obs
   [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
   Fetching FXI prices (yfinance) …
   [yfinance] Fetching FXI (China Large-Cap ETF)...
@@ -982,7 +993,7 @@ Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
 
 --- Section C: Value-change staleness (FRESH 123  STALE 20  EXPIRED 19) ---
   EXPIRED (19):
-    Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3555d     tolerance=45d
+    Monthly     GBR_BANK_RATE                     src=BoE          series=IUDBEDR                   last_obs=2016-08-05  age=3555d     tolerance=200d*
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1245d     tolerance=45d
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=909d      tolerance=45d

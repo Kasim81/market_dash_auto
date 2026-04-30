@@ -1,6 +1,6 @@
 ## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
 
-_Run: 2026-04-30 11:53 UTC_
+_Run: 2026-04-30 12:34 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -19,7 +19,7 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `GBR_BANK_RATE` | FRED | Monthly | 2016-08-05 | 3555d | 45d |
+| `GBR_BANK_RATE` | BoE | Monthly | 2016-08-05 | 3555d | 200d\* |
 | `CHN_M2` | FRED | Monthly | 2019-08-02 | 2463d | 45d |
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1245d | 45d |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 909d | 45d |
