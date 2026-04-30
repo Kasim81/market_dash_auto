@@ -108,3 +108,44 @@ These are direct rate series (macro_economic_hist), not market-data instruments.
 ## Probe utilities removed
 
 `stage_f_probe.py` and `.github/workflows/stage_f_probe.yml` are removed in the same commit set — one-shot tools, job done.
+
+## Follow-on: BoE IADB probe (2026-05-01)
+
+A second probe exercise targeted UK gilt yield curve points and UK corporate bond yield indices via BoE IADB. Same one-shot pattern as the BoJ + Stage F probes.
+
+### What worked
+
+| Code | Latest | Value | Interpretation |
+|---|---|---|---|
+| `IUDSOIA` | 2026-04-28 | 3.73% | SONIA (sterling overnight rate) |
+| `IUDSNPY` | 2026-04-28 | 4.48% | UK gilt par yield, short tenor |
+| `IUDMNPY` | 2026-04-28 | 4.95% | UK gilt par yield, medium tenor |
+| `IUDLNPY` | 2026-04-28 | 5.46% | UK gilt par yield, long tenor |
+| `IUDMNZC` | 2026-04-28 | 5.04% | UK gilt zero-coupon, medium tenor |
+| `IUDLNZC` | 2026-04-28 | 5.72% | UK gilt zero-coupon, long tenor |
+
+Added as rows in `data/macro_library_boe.csv` with column names `GBR_SONIA`, `GBR_GILT_S/M/L`, `GBR_GILT_MZ/LZ`. **Note**: exact tenor-mapping for the S/M/L buckets is BoE-internal; values are approximate proxies for ~5Y / ~10-15Y / ~25Y respectively. Specific 2Y / 10Y / 30Y per-tenor codes from the BoE yield-curve files (downloadable spreadsheets at `bankofengland.co.uk/statistics/yield-curves`) would give precise tenor breakdowns — left as a future enhancement; the S/M/L buckets are sufficient for regime work.
+
+### What didn't
+
+20 of 30 candidates returned no response, including all 10 candidate codes for UK corporate bond yield indices (IG and HY). After cross-referencing with the Market_Data_Free_API_Catalogue.docx — which lists only "gilts + breakevens + SONIA-OIS" for BoE — it's clear **BoE IADB doesn't publish UK corporate bond yield indices** under any naming convention I tested.
+
+### UK corporate bond yield — alternative path
+
+Since BoE IADB doesn't carry it, the practical free options for a UK credit-spread indicator are:
+
+1. **`SLXX.L` ETF total-return proxy** (already in `index_library.csv`) — iShares Core £ Corp Bond UCITS, tracks iBoxx £ Liquid Corporate. Total return, not yield-to-maturity, but functionally similar to a credit-conditions signal.
+2. **Bundesbank corporate yield indices** — would close the gap properly but requires a new `sources/bundesbank.py` T2 module (deferred to future Stage D extension if regime work demonstrates the need).
+3. **Markit/iBoxx direct** — paid only.
+
+Recommendation: defer to ETF proxy via `SLXX.L` for now; revisit if the regime model specifically needs a UK corporate yield series.
+
+## Follow-on: ECB MIR (Euro corporate borrowing rate)
+
+For the Euro IG credit spread side, a similar gap exists — ECB's `YC` dataset is sovereign-only (AAA + all-issuers, but "all-issuers" means all rated euro-area sovereigns, NOT corporates). The cleanest free ECB path for corporate borrowing cost is the **MIR (MFI Interest Rates) dataset** — specifically the "Composite Cost of Borrowing for Non-Financial Corporations" series. Series-code pattern needs further probing (the ECB MIR dataset has many dimensions and the canonical CCBI series ID isn't in the Market_Data catalogue).
+
+Recommendation: defer to a follow-on probe of ECB MIR if the regime model specifically needs corporate borrowing rates beyond the `IEAC.L` ETF proxy.
+
+### Probe utilities removed (BoE)
+
+`boe_probe.py` and `.github/workflows/boe_probe.yml` removed alongside the Stage F probe utilities — one-shot pattern, codes captured in this report and the registry.
