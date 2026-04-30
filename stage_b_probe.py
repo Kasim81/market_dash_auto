@@ -26,53 +26,111 @@ FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
 # Multiple candidates per row let us pick the freshest valid endpoint.
 PROBES = [
     ("JPN_POLICY_RATE", "FRED IRSTCB01JPM156N (frozen 2008-12)", [
+        # Round 1
         ("dbnomics", "OECD/MEI/JPN.IR3TIB.M"),
         ("dbnomics", "BIS/WS_LRPR_D/Q.JP"),
         ("dbnomics", "BIS/WS_LRPR_M/M.JP"),
         ("dbnomics", "BOJ/PR_2/PR01_TREND"),
+        # Round 2 — BIS canonical CBPOL dataflow (this is the "real" BIS policy rate dataset)
+        ("dbnomics", "BIS/WS_CBPOL_D/D.JP"),
+        ("dbnomics", "BIS/WS_CBPOL_M/M.JP"),
+        ("dbnomics", "BIS/WS_CBPOL/M.JP"),
+        # IMF IFS cross-aggregator
+        ("dbnomics", "IMF/IFS/M.JP.FPOLM_PA"),
+        ("dbnomics", "IMF/IFS/M.JP.FIDR_PA"),
+        # OECD KEI / financial indicators
+        ("dbnomics", "OECD/KEI/IRSTCB01.JPN.ST.M"),
     ]),
     ("CHN_POLICY_RATE", "FRED IRSTCB01CNM156N (frozen 2015-11)", [
+        # Round 1
         ("dbnomics", "OECD/MEI/CHN.IR3TIB.M"),
         ("dbnomics", "BIS/WS_LRPR_D/Q.CN"),
         ("dbnomics", "BIS/WS_LRPR_M/M.CN"),
+        # Round 2
+        ("dbnomics", "BIS/WS_CBPOL_D/D.CN"),
+        ("dbnomics", "BIS/WS_CBPOL_M/M.CN"),
+        ("dbnomics", "IMF/IFS/M.CN.FPOLM_PA"),
+        ("dbnomics", "IMF/IFS/M.CN.FIDR_PA"),
+        ("dbnomics", "OECD/KEI/IRSTCB01.CHN.ST.M"),
     ]),
     ("GBR_BANK_RATE", "FRED BOERUKM (frozen 2016-08)", [
+        # Round 1
         ("fred", "BOEBRBS"),
         ("fred", "INTGSTGBM193N"),
         ("dbnomics", "BIS/WS_LRPR_D/Q.GB"),
         ("dbnomics", "BIS/WS_LRPR_M/M.GB"),
+        # Round 2
+        ("fred", "IRSTCB01GBM156N"),  # OECD-mirror UK central bank rate (matches JP/CN pattern)
+        ("dbnomics", "BIS/WS_CBPOL_D/D.GB"),
+        ("dbnomics", "BIS/WS_CBPOL_M/M.GB"),
+        ("dbnomics", "IMF/IFS/M.GB.FPOLM_PA"),
+        ("dbnomics", "OECD/KEI/IRSTCB01.GBR.ST.M"),
+        # BoE direct via DB.nomics if mirrored
+        ("dbnomics", "BOE/IUDBEDR/B"),
+        ("dbnomics", "BOE/IUMABEDR/B"),
     ]),
     ("CHN_M2", "FRED MYAGM2CNM189N (frozen 2019-08)", [
+        # Round 1
         ("dbnomics", "OECD/KEI/MA.CHN.M.M.GY"),
         ("dbnomics", "OECD/MEI/CHN.MABMM301.GY.M"),
-        ("dbnomics", "OECD/KEI/MABMM301.CHN.GY.M"),
+        ("dbnomics", "OECD/KEI/MABMM301.CHN.GY.M"),  # works but 2018-12 stale
+        # Round 2
+        ("dbnomics", "IMF/IFS/M.CN.FMA_USD"),
+        ("dbnomics", "IMF/IFS/M.CN.FMB_USD"),
+        ("dbnomics", "IMF/IFS/M.CN.FASMB_PA"),
+        ("dbnomics", "WB/WDI/A.FM.LBL.BMNY.CN"),  # broad money level (annual; useful as fallback signal)
+        # Direct "China money supply" search candidates
+        ("dbnomics", "PBC/MS/MM2_GY"),
+        ("dbnomics", "CBC/MS/MM2_GY"),
     ]),
     ("EA_HICP", "FRED EA19CPALTT01GYM (frozen 2023-01)", [
-        ("dbnomics", "Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20"),
+        # Round 1 — three confirmed working
+        ("dbnomics", "Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20"),  # WIN: 2025-12 = 1.9
         ("dbnomics", "Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA"),
         ("dbnomics", "Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA19"),
-        ("dbnomics", "ECB/ICP/M.U2.N.000000.4.ANR"),
     ]),
     ("CHN_IND_PROD", "FRED CHNPRINTO01IXPYM (frozen 2023-11)", [
+        # Round 1
         ("dbnomics", "OECD/MEI/CHN.PRINTO01.IXOBSA.M"),
         ("dbnomics", "OECD/KEI/CHN.PRINTO01.GP.M"),
         ("dbnomics", "OECD/MEI/CHN.PRINTO01.GY.M"),
+        # Round 2
+        ("dbnomics", "IMF/IFS/M.CN.AIPMA_IX"),
+        ("dbnomics", "IMF/IFS/M.CN.AIPMA_PC_PP_PT"),
+        ("dbnomics", "OECD/STLABOUR/CHN.PROD.GY.M"),
+        ("dbnomics", "OECD/MEI/CHN.PRMNTO01.IXOBSA.M"),
+        ("dbnomics", "OECD/MEI/CHN.PRMNTO01.GY.M"),
+        ("dbnomics", "OECD/MEI/CHN.PRINTO01.IXNSA.M"),
     ]),
     ("DEU_IND_PROD", "FRED DEUPROINDMISMEI (frozen 2024-03)", [
+        # Round 1 — WIN identified
         ("dbnomics", "Eurostat/sts_inpr_m/M.PROD.B-D.SCA.I21.DE"),
-        ("dbnomics", "Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE"),
-        ("dbnomics", "OECD/MEI/DEU.PRINTO01.IXOBSA.M"),
-        ("dbnomics", "BBK/BBSTC.M.DE.Y.PRO_VOL.B0000.X.X.000.X"),
+        ("dbnomics", "Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE"),  # WIN: 2025-11 = 93.2
+        ("dbnomics", "OECD/MEI/DEU.PRINTO01.IXOBSA.M"),  # 2023-11 (no upgrade vs T0)
     ]),
     ("JPN_IND_PROD", "FRED JPNPROINDMISMEI (frozen 2024-03)", [
-        ("dbnomics", "OECD/MEI/JPN.PRINTO01.IXOBSA.M"),
+        # Round 1 — only stale candidate found
+        ("dbnomics", "OECD/MEI/JPN.PRINTO01.IXOBSA.M"),  # 2023-11
         ("dbnomics", "OECD/KEI/JPN.PRINTO01.GP.M"),
         ("dbnomics", "OECD/MEI/JPN.PRINTO01.GY.M"),
+        # Round 2
+        ("dbnomics", "IMF/IFS/M.JP.AIPMA_IX"),
+        ("dbnomics", "IMF/IFS/M.JP.AIPMA_PC_PP_PT"),
+        ("dbnomics", "OECD/MEI/JPN.PRMNTO01.IXOBSA.M"),
+        ("dbnomics", "OECD/MEI/JPN.PRMNTO01.GY.M"),
+        ("dbnomics", "OECD/STLABOUR/JPN.PROD.GY.M"),
+        # METI is JP IP but no DB.nomics provider known; e-Stat is Stage D
     ]),
     ("EA_DEPOSIT_RATE", "FRED ECBDFR (frozen 2025-06)", [
-        ("dbnomics", "ECB/FM/D.U2.EUR.4F.KR.DFR.LEV"),
-        ("dbnomics", "ECB/FM/B.U2.EUR.4F.KR.DFR.LEV"),
+        # Round 1 — endpoints exist but stale at 2025-02 (T0 fresher)
+        ("dbnomics", "ECB/FM/D.U2.EUR.4F.KR.DFR.LEV"),  # 2025-02
+        ("dbnomics", "ECB/FM/B.U2.EUR.4F.KR.DFR.LEV"),  # 2025-02
+        # Round 2 — alternative ECB dataflow paths
         ("dbnomics", "ECB/FM/M.U2.EUR.4F.KR.DFR.LEV"),
+        ("dbnomics", "ECB/MIR/M.U2.B.A2I.A.R.A.2240.EUR.N"),
+        ("dbnomics", "IMF/IFS/M.U2.FPOLM_PA"),
+        ("dbnomics", "BIS/WS_CBPOL_D/D.XM"),  # XM = Euro area in BIS country codes
+        ("dbnomics", "BIS/WS_CBPOL_M/M.XM"),
     ]),
 ]
 
