@@ -1,11 +1,11 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-04-30 04:22 UTC
+Market Dashboard Data Fetch — 2026-04-30 09:24 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5827 rows)
   EUR (EURUSD=X): OK (5815 rows)
   AUD (AUDUSD=X): OK (5191 rows)
-  JPY (USDJPY=X): OK (7648 rows)
+  JPY (USDJPY=X): OK (7649 rows)
   CNY (CNY=X): OK (6217 rows)
   INR (INR=X): OK (5812 rows)
   KRW (KRW=X): OK (5813 rows)
@@ -15,10 +15,10 @@ Fetching comprehensive FX rates...
   HKD (USDHKD=X): OK (6273 rows)
   MXN (USDMXN=X): OK (5836 rows)
   IDR (USDIDR=X): OK (6269 rows)
-  RUB (USDRUB=X): OK (5706 rows)
+  RUB (USDRUB=X): OK (5705 rows)
   SAR (USDSAR=X): OK (5810 rows)
-  ZAR (USDZAR=X): OK (5828 rows)
-  TRY (USDTRY=X): OK (5544 rows)
+  ZAR (USDZAR=X): OK (5829 rows)
+  TRY (USDTRY=X): OK (5543 rows)
   ARS (USDARS=X): OK (5903 rows)
 
 ============================================================
@@ -490,7 +490,7 @@ Pushing data to Google Sheets...
   ✓ Written 337 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-30 04:26 UTC
+✓ Completed at 2026-04-30 09:28 UTC
 
 --- market_data asset class breakdown ---
 
@@ -533,7 +533,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 670 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 77.9s
+Comp historical build completed in 78.6s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -596,6 +596,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/T5YIFR]
   [FRED/MICH]
   [FRED/FEDFUNDS]
+  [FRED] HTTP 502 on FEDFUNDS — backoff 2s (attempt 1/5)
   [FRED/DGS2]
   [FRED/DGS10]
   [FRED/MORTGAGE30US]
@@ -608,22 +609,33 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/DRTSCIS]
   [FRED/DRTSCLCC]
   [FRED/STDSOTHCONS]
+  [FRED] HTTP 500 on STDSOTHCONS — backoff 2s (attempt 1/5)
   [FRED/SUBLPDRCSN]
+  [FRED] HTTP 500 on SUBLPDRCSN — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on SUBLPDRCSN — backoff 4s (attempt 2/5)
   [FRED/UMCSENT]
   [FRED/GACDFSA066MSFRBPHI]
+  [FRED] HTTP 500 on GACDFSA066MSFRBPHI — backoff 2s (attempt 1/5)
   [FRED/GACDISA066MSFRBNY]
   [FRED/BACTUAMFRBDAL]
   [FRED/PIORECRUSDM]
   [FRED/AWHMAN]
   [FRED/NEWORDER]
+  [FRED] HTTP 500 on NEWORDER — backoff 2s (attempt 1/5)
   [FRED/TCU]
   [FRED/W875RX1]
   [FRED/PCEC96]
   [FRED/CMRMTSPL]
   [FRED/CFNAI]
   [FRED/ULCNFB]
+  [FRED] HTTP 500 on ULCNFB — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on ULCNFB — backoff 4s (attempt 2/5)
   [FRED/UEMPMEAN]
+  [FRED] HTTP 500 on UEMPMEAN — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on UEMPMEAN — backoff 4s (attempt 2/5)
   [FRED/TOTCI]
+  [FRED] HTTP 500 on TOTCI — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on TOTCI — backoff 4s (attempt 2/5)
   [FRED/CP]
   [FRED/GBR_GILT_10Y]
   [FRED/DEU_BUND_10Y]
@@ -701,6 +713,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/RSXFS/hist]
   [FRED/RSFSXMV/hist]
   [FRED/DRTSCILM/hist]
+  [FRED] HTTP 500 on DRTSCILM — backoff 2s (attempt 1/5)
   [FRED/NFCI/hist]
   [FRED/CPIAUCSL/hist]
   [FRED/CPILFESL/hist]
@@ -728,33 +741,23 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/GACDFSA066MSFRBPHI/hist]
   [FRED/GACDISA066MSFRBNY/hist]
   [FRED/BACTUAMFRBDAL/hist]
-  [FRED] HTTP 500 on BACTUAMFRBDAL — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on BACTUAMFRBDAL — backoff 4s (attempt 2/5)
   [FRED/PIORECRUSDM/hist]
-  [FRED] HTTP 500 on PIORECRUSDM — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on PIORECRUSDM — backoff 4s (attempt 2/5)
   [FRED/AWHMAN/hist]
   [FRED/NEWORDER/hist]
-  [FRED] HTTP 500 on NEWORDER — backoff 2s (attempt 1/5)
   [FRED/TCU/hist]
   [FRED/W875RX1/hist]
   [FRED/PCEC96/hist]
   [FRED/CMRMTSPL/hist]
-  [FRED] HTTP 500 on CMRMTSPL — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on CMRMTSPL — backoff 4s (attempt 2/5)
   [FRED/CFNAI/hist]
   [FRED/ULCNFB/hist]
   [FRED/UEMPMEAN/hist]
   [FRED/TOTCI/hist]
   [FRED/CP/hist]
-  [FRED] HTTP 500 on CP — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on CP — backoff 4s (attempt 2/5)
   [FRED/GBR_GILT_10Y/hist]
   [FRED/DEU_BUND_10Y/hist]
   [FRED/ITA_BTP_10Y/hist]
   [FRED/IND_GOVT_10Y/hist]
   [FRED/DEU_BUS_CONF/hist]
-  [FRED] HTTP 500 on BSCICP02DEM460S — backoff 2s (attempt 1/5)
   [FRED/GBR_BUS_CONF/hist]
   [FRED/FRA_BUS_CONF/hist]
   [FRED/ITA_BUS_CONF/hist]
@@ -839,7 +842,7 @@ macro_economic — Unified Economic Data Coordinator
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 283.4s
+  macro_economic run completed in 258.0s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
@@ -888,7 +891,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] US_R2: raw=0.53  z=1.0  regime='steep'  fwd='stable'  (2026-04-24)
   [compute] US_R5: raw=1.89  z=-0.16  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] US_R4: raw=2.42  z=1.46  regime='high-inflation-exp'  fwd='improving'  (2026-04-24)
-  [compute] UK_R1: raw=1.7955  z=-0.39  regime='neutral'  fwd='stable'  (2026-04-24)
+  [compute] UK_R1: raw=1.7955  z=-0.4  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] FX_CMD5: raw=107.5773  z=-0.22  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] FX_CMD4: raw=-6.6644  z=-1.27  regime='global-commodity-lead'  fwd='stable'  (2026-04-24)
   [compute] US_JOBS1: raw=-4.638  z=-1.14  regime='overheating'  fwd='stable'  (2026-04-24)
@@ -1024,6 +1027,11 @@ Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
     Daily       BAMLC0A0CMEY                      src=FRED         series=BAMLC0A0CMEY              last_obs=2026-04-24  age=6d        tolerance=5d
     Daily       BAMLCC0A0CMTRIV                   src=FRED         series=BAMLCC0A0CMTRIV           last_obs=2026-04-24  age=6d        tolerance=5d
     Daily       BAMLHE00EHYIOAS                   src=FRED         series=BAMLHE00EHYIOAS           last_obs=2026-04-24  age=6d        tolerance=5d
+
+--- Section D: History preservation (0 issues) ---
+  market_data_comp_hist.csv         live= 3982 rows (1950-01-06→2026-04-24)  sister= 3982 rows (1950-01-06→2026-04-24)  union= 3982
+  macro_economic_hist.csv           live= 4140 rows (1946-12-27→2026-04-24)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4140
+  macro_market_hist.csv             live= 1374 rows (2000-01-07→2026-05-01)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1374
 
 Footer:
   * = per-row override applied (freshness_override_days column)
