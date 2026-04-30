@@ -386,3 +386,17 @@ iShares India 50 ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,India,Blend,L
 iShares MSCI World Value Factor UCITS ETF,Equity,Equity,Price,Factor,Global,Global,Value,Broad,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,IWFV.L,,,,,,,2014-10-03,True
 iShares International Treasury Bond ETF,Fixed Income,Bonds,Price,Government,Global,Global,,,Broad,Investment Grade,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,IGOV,,,,,,,2009-01-22,True
 L&G All Commodities UCITS ETF,Commodity,Commodities,Price,Commodity,Global,Global,,,,,Broad,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,CMOD.L,,,,,,,2016-02-04,True
+iShares Core € Corp Bond UCITS ETF,Fixed Income,Bonds,Index,Corporate Bond,Europe,Europe,,,,Investment Grade,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IEAC.L,,,,,,,2003-03-19,False
+VanEck China AMC China Bond ETF,Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,China,,,,Government,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,CBON,,,,,,,2014-12-15,False
+iShares UK Dividend UCITS ETF,Equity,Equity,Index,Equity Dividend,UK,United Kingdom,Value,Broad,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,IUKD.L,,,,,,,2005-12-12,False
+iShares MSCI Brazil ETF,Equity,Equity,Index,Equity Broad,Latin America,Brazil,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EWZ,,,,,,,2000-07-10,False
+iShares MSCI Mexico ETF,Equity,Equity,Index,Equity Broad,Latin America,Mexico,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EWW,,,,,,,1996-03-12,False
+iShares MSCI India ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,India,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,INDA,,,,,,,2012-02-02,False
+iShares MSCI South Africa ETF,Equity,Equity,Index,Equity Broad,Middle East & Africa,South Africa,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EZA,,,,,,,2003-02-03,False
+iShares MSCI Turkey ETF,Equity,Equity,Index,Equity Broad,Middle East & Africa,Turkey,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,TUR,,,,,,,2008-03-26,False
+iShares MSCI Israel ETF,Equity,Equity,Index,Equity Broad,Middle East & Africa,Israel,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EIS,,,,,,,2008-03-26,False
+iShares MSCI China ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,China,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,MCHI,,,,,,,2011-03-29,False
+iShares China Large-Cap ETF (HK),Equity,Equity,Index,Equity Large Cap,Asia Pacific,China,Blend,Large,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,FXI,,,,,,,2004-10-05,False
+WisdomTree Japan Hedged Equity Fund,Equity,Equity,Index,Equity Broad,Japan,Japan,Blend,Broad,,,,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,DXJ,,,,,,,2006-06-16,False
+Vanguard UK Gilt UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,UK,United Kingdom,,,,Government,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,VGOV.L,,,,,,,2009-06-19,False
+iShares Eur Govt Bond 7-10yr UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,Europe,Europe,,,Long (7-10yr),Government,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IBGM.L,,,,,,,2006-04-26,False

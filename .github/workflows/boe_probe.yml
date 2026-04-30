@@ -1,13 +1,14 @@
-name: Stage F Probe
+name: BoE Probe
 
-# Manually-triggered probe of yfinance candidate tickers for §1 Known Data
-# Gaps and §3.6 Market Index Expansion buckets. One-shot utility for
-# forward_plan §3.1.8 Stage F. To remove after Stage F closes.
+# One-shot probe to identify canonical BoE IADB series codes for UK gilt
+# yield curve points (2Y/5Y/10Y/30Y) and UK corporate bond yields (for the
+# UK credit-spread indicator). Mirror of the BoJ + Stage F probe pattern.
 #
 # How to run:
-#   1. Actions tab → "Stage F Probe" → "Run workflow"
-#   2. After completion → click into the run → "probe" job → expand "Run probe"
-#      step OR view the rendered Job Summary (markdown code block).
+#   1. Actions tab → "BoE Probe" → "Run workflow"
+#   2. After completion → expand "Run probe" step OR view Job Summary.
+#
+# To remove after BoE corporate yield codes confirmed and wired.
 
 on:
   workflow_dispatch:
@@ -18,7 +19,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -35,13 +36,13 @@ jobs:
 
       - name: Run probe
         run: |
-          python3 stage_f_probe.py | tee /tmp/probe_output.txt
+          python3 boe_probe.py | tee /tmp/probe_output.txt
 
       - name: Render output to job summary
         if: always()
         run: |
           {
-            echo "# Stage F probe results"
+            echo "# BoE IADB probe results"
             echo ""
             echo '```'
             cat /tmp/probe_output.txt
