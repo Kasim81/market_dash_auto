@@ -318,7 +318,9 @@ ECB_DELAY = 0.6  # seconds between ECB Data Portal calls
 
 
 def _fetch_ecb_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = ecb_src.fetch_series_as_pandas(indic["source_id"])
+    # last_n=2 keeps the response small (latest + prior) so we don't need a
+    # 60s timeout window for the snapshot call. History pulls full series.
+    s = ecb_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
     time.sleep(ECB_DELAY)
     if s is None or s.empty:
         return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
