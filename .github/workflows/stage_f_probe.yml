@@ -1,0 +1,49 @@
+name: Stage F Probe
+
+# Manually-triggered probe of yfinance candidate tickers for §1 Known Data
+# Gaps and §3.6 Market Index Expansion buckets. One-shot utility for
+# forward_plan §3.1.8 Stage F. To remove after Stage F closes.
+#
+# How to run:
+#   1. Actions tab → "Stage F Probe" → "Run workflow"
+#   2. After completion → click into the run → "probe" job → expand "Run probe"
+#      step OR view the rendered Job Summary (markdown code block).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run probe
+        run: |
+          python3 stage_f_probe.py | tee /tmp/probe_output.txt
+
+      - name: Render output to job summary
+        if: always()
+        run: |
+          {
+            echo "# Stage F probe results"
+            echo ""
+            echo '```'
+            cat /tmp/probe_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

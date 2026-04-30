@@ -169,21 +169,29 @@ def fetch_series(
 # ---------------------------------------------------------------------------
 # CSV PARSING
 # ---------------------------------------------------------------------------
-# BoJ getDataCode CSV (lang=en, format=csv) shape per manual:
+# BoJ getDataCode CSV (lang=en, format=csv) — verified shape from a live
+# fetch (May 2026):
 #
-#     "DBNAME","CO"
-#     "TIMECODE","Q"
-#     "SERIESNAME","..."
-#     "SERIESCODE","..."
-#     ...
-#     ""
-#     "TIME","value"
-#     "1990/Q1","12.34"
-#     "1990/Q2","13.45"
-#     ...
+#   STATUS,200
+#   MESSAGEID,M181000I
+#   MESSAGE,Successfully completed
+#   DATE,2026-05-01T05:17:59.466+09:00
+#   PARAMETER,FORMAT,CSV
+#   PARAMETER,LANG,EN
+#   PARAMETER,DB,FM01
+#   PARAMETER,STARTDATE,199001
+#   PARAMETER,ENDDATE,
+#   PARAMETER,STARTPOSITION,
+#   NEXTPOSITION,
+#   SERIES_CODE,NAME_OF_TIME_SERIES,UNIT,FREQUENCY,CATEGORY,LAST_UPDATE,SURVEY_DATES,VALUES
+#   STRDCLUCON,"Call Rate, Uncollateralized Overnight, Average (Daily)",percent per annum,DAILY,Call Rate,20260430,19900101,
+#   ...
 #
-# We scan for the first line whose first token (case-insensitive, quotes
-# stripped) is "TIME", "DATE", or "日付" — that's the data section header.
+# Each observation is a single CSV row with 8 columns; columns 0-5 echo
+# the series metadata on every row, column 6 (SURVEY_DATES) is the date
+# in YYYYMMDD format, column 7 (VALUES) is the observation. We locate
+# the header row by matching first-token == "SERIES_CODE" and then parse
+# from there.
 
 def parse_csv(text: str, series_id: str) -> list[tuple[date, float]]:
     """Parse BoJ getDataCode CSV → list of (date, value) tuples (None values dropped)."""
@@ -194,22 +202,13 @@ def parse_csv(text: str, series_id: str) -> list[tuple[date, float]]:
     lines = text.splitlines()
     header_idx = None
     for i, line in enumerate(lines):
-        first_token = line.split(",", 1)[0].strip().strip('"').lower()
-        if first_token in ("time", "date", "日付", "timecode"):
-            # Some BoJ exports have "TIMECODE" early in metadata too — only
-            # accept it if there's a value column next (line has 2+ fields).
-            if first_token == "timecode":
-                if len(line.split(",")) < 2:
-                    continue
-                # Heuristic: skip the metadata TIMECODE line; the data block
-                # has TIME (or DATE) — keep scanning.
-                continue
+        first_token = line.split(",", 1)[0].strip().strip('"')
+        if first_token == "SERIES_CODE":
             header_idx = i
             break
     if header_idx is None:
-        print(f"    [BoJ] no TIME/DATE header row found for {series_id} "
+        print(f"    [BoJ] no SERIES_CODE header row found for {series_id} "
               f"(first line: {lines[0][:80] if lines else '<empty>'!r})")
-        # Surface enough of the response to diagnose the format on next run.
         for i, line in enumerate(lines[:15]):
             print(f"      line {i}: {line[:120]!r}")
         return obs
@@ -218,23 +217,21 @@ def parse_csv(text: str, series_id: str) -> list[tuple[date, float]]:
         df = pd.read_csv(io.StringIO(text), skiprows=header_idx)
     except Exception as e:
         print(f"    [BoJ] CSV parse failed for {series_id}: {e}")
-        # Same diagnostic dump — the parse failure usually means the header
-        # row we picked has fewer fields than the data rows below it.
         for i, line in enumerate(lines[:15]):
             print(f"      line {i}: {line[:120]!r}")
         return obs
 
-    if df.empty or df.shape[1] < 2:
+    # Required columns from the documented BoJ schema.
+    if "SURVEY_DATES" not in df.columns or "VALUES" not in df.columns:
+        print(f"    [BoJ] unexpected schema for {series_id}: {list(df.columns)[:8]}")
         return obs
 
-    date_col = df.columns[0]
-    val_col = df.columns[1]
-
     for _, row in df.iterrows():
-        d_str = str(row[date_col]).strip().strip('"')
-        v_raw = row[val_col]
-        if pd.isna(v_raw):
+        d_raw = row["SURVEY_DATES"]
+        v_raw = row["VALUES"]
+        if pd.isna(d_raw) or pd.isna(v_raw):
             continue
+        d_str = str(d_raw).strip()
         v_str = str(v_raw).strip().strip('"')
         if not d_str or not v_str or v_str.lower() in ("nan", "n/a", "", "-"):
             continue
@@ -251,49 +248,53 @@ def parse_csv(text: str, series_id: str) -> list[tuple[date, float]]:
 
 
 def _parse_period(p: str) -> date | None:
-    """Parse BoJ period strings — daily, monthly, quarterly, half-year, fiscal."""
-    p = p.strip()
+    """Parse BoJ SURVEY_DATES strings.
+
+    The most common form is YYYYMMDD (daily). Quarterly tables often use
+    YYYYQQ (e.g. 202003 for Q3 2020) and monthly tables YYYYMM. Half-year
+    encoded as YYYYHN. Falls through to ISO/slash variants for safety.
+    """
+    p = str(p).strip()
     if not p:
         return None
-    # Daily ISO / slash / dot
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"):
+    # YYYYMMDD daily (8 digits)
+    if p.isdigit() and len(p) == 8:
         try:
-            return datetime.strptime(p, fmt).date()
+            return datetime.strptime(p, "%Y%m%d").date()
         except ValueError:
-            continue
-    # Monthly: YYYY-MM, YYYY/MM, YYYYMM
-    for fmt in ("%Y-%m", "%Y/%m"):
-        try:
-            return datetime.strptime(p, fmt).date()
-        except ValueError:
-            continue
+            pass
+    # YYYYMM monthly (6 digits) or YYYYQQ quarterly (6 digits where last two
+    # are 03/06/09/12 — quarter-end month). Treat ambiguously: parse as
+    # month-start; for quarterly callers, this still gives a unique date
+    # per quarter.
     if p.isdigit() and len(p) == 6:
         try:
             return datetime.strptime(p + "01", "%Y%m%d").date()
         except ValueError:
             pass
-    # Quarterly: YYYY/Q1, YYYY-Q1, YYYYQ1
+    # YYYYHN half-year (5 digits — e.g. 20251 for H1)
+    if len(p) == 5 and p[:4].isdigit() and p[4] in ("1", "2"):
+        try:
+            yr = int(p[:4])
+            h = int(p[4])
+            return date(yr, 6 if h == 1 else 12, 30 if h == 1 else 31)
+        except ValueError:
+            pass
+    # ISO date / slash / quarter forms
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%Y-%m", "%Y/%m"):
+        try:
+            return datetime.strptime(p, fmt).date()
+        except ValueError:
+            continue
     for sep in ("/Q", "-Q", "Q"):
         if sep in p:
             try:
                 yr_part, q_part = p.split(sep, 1)
                 yr = int(yr_part.strip())
-                q = int(q_part.strip()[0])  # first char in case "Q1 2024" form
-                month = q * 3
-                return date(yr, month, 1)
+                q = int(q_part.strip()[0])
+                return date(yr, q * 3, 1)
             except (ValueError, IndexError):
                 pass
-    # Half-year: YYYYH1 / YYYY-H1
-    for sep in ("/H", "-H", "H"):
-        if sep in p:
-            try:
-                yr_part, h_part = p.split(sep, 1)
-                yr = int(yr_part.strip())
-                h = int(h_part.strip()[0])
-                return date(yr, 6 if h == 1 else 12, 30 if h == 1 else 31)
-            except (ValueError, IndexError):
-                pass
-    # Year only
     if len(p) == 4 and p.isdigit():
         return date(int(p), 12, 31)
     return None
