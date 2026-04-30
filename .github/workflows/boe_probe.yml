@@ -1,0 +1,50 @@
+name: BoE Probe
+
+# One-shot probe to identify canonical BoE IADB series codes for UK gilt
+# yield curve points (2Y/5Y/10Y/30Y) and UK corporate bond yields (for the
+# UK credit-spread indicator). Mirror of the BoJ + Stage F probe pattern.
+#
+# How to run:
+#   1. Actions tab → "BoE Probe" → "Run workflow"
+#   2. After completion → expand "Run probe" step OR view Job Summary.
+#
+# To remove after BoE corporate yield codes confirmed and wired.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run probe
+        run: |
+          python3 boe_probe.py | tee /tmp/probe_output.txt
+
+      - name: Render output to job summary
+        if: always()
+        run: |
+          {
+            echo "# BoE IADB probe results"
+            echo ""
+            echo '```'
+            cat /tmp/probe_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
