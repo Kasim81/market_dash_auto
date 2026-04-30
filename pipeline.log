@@ -1,5 +1,5 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-04-30 11:20 UTC
+Market Dashboard Data Fetch — 2026-04-30 11:42 UTC
 ============================================================
 Fetching comprehensive FX rates...
   GBP (GBPUSD=X): OK (5827 rows)
@@ -12,12 +12,12 @@ Fetching comprehensive FX rates...
   TWD (TWD=X): OK (5320 rows)
   CAD (USDCAD=X): OK (5883 rows)
   BRL (USDBRL=X): OK (5397 rows)
-  HKD (USDHKD=X): OK (6272 rows)
-  MXN (USDMXN=X): OK (5836 rows)
+  HKD (USDHKD=X): OK (6273 rows)
+  MXN (USDMXN=X): OK (5835 rows)
   IDR (USDIDR=X): OK (6269 rows)
   RUB (USDRUB=X): OK (5706 rows)
   SAR (USDSAR=X): OK (5810 rows)
-  ZAR (USDZAR=X): OK (5829 rows)
+  ZAR (USDZAR=X): OK (5828 rows)
   TRY (USDTRY=X): OK (5544 rows)
   ARS (USDARS=X): OK (5903 rows)
 
@@ -490,7 +490,7 @@ Pushing data to Google Sheets...
   ✓ Written 337 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-30 11:25 UTC
+✓ Completed at 2026-04-30 11:46 UTC
 
 --- market_data asset class breakdown ---
 
@@ -533,7 +533,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 670 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 75.4s
+Comp historical build completed in 108.1s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -578,7 +578,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/M2SL]
   [FRED/PERMIT]
   [FRED/IC4WSA]
-  [FRED] HTTP 500 on IC4WSA — backoff 2s (attempt 1/5)
   [FRED/PAYEMS]
   [FRED/UNRATE]
   [FRED/JTSJOL]
@@ -685,15 +684,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/JPN_POLICY_RATE]
   [DB.nomics/CHN_POLICY_RATE]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   Written 169 rows to data/macro_economic.csv
   [macro_economic] Written 170 rows to 'macro_economic'
 
@@ -810,15 +804,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/CHN_POLICY_RATE/hist]
   [ifo/DE_IFO/hist]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   [ifo/DE_IFO_SIT/hist]
   [ifo/DE_IFO_EXP/hist]
   [ifo/DE_IFO_BAL/hist]
@@ -844,11 +833,11 @@ macro_economic — Unified Economic Data Coordinator
   [ifo/DE_IFO_CON_EXP/hist]
   [ifo/DE_IFO_UNC/hist]
   [ifo/DE_IFO_CYC/hist]
-  macro_economic_hist: 4140 rows × 136 data columns
+  macro_economic_hist: 4140 rows × 162 data columns
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 205.8s
+  macro_economic run completed in 218.2s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
@@ -967,34 +956,20 @@ Loading indicator metadata...
 Loading countries registry...
 Building macro_market payload...
 Building macro_economic payload (merged: FRED + OECD + WB + IMF + DB.nomics + ifo)...
-Traceback (most recent call last):
-  File "/home/runner/work/market_dash_auto/market_dash_auto/docs/build_html.py", line 2687, in <module>
-    main()
-  File "/home/runner/work/market_dash_auto/market_dash_auto/docs/build_html.py", line 382, in main
-    macro_econ_data = build_macro_economic()
-                      ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/market_dash_auto/market_dash_auto/docs/build_html.py", line 293, in build_macro_economic
-    return _build_payload(lambda m: m.get("Source") in {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/market_dash_auto/market_dash_auto/docs/build_html.py", line 264, in _build_payload
-    df, meta = _load_unified_hist_once()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/market_dash_auto/market_dash_auto/docs/build_html.py", line 244, in _load_unified_hist_once
-    raw_vals = meta_raw.iloc[:, ci + 1].tolist()   # +1 to skip the label column
-               ~~~~~~~~~~~~~^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/pandas/core/indexing.py", line 1200, in __getitem__
-    return self._getitem_tuple(key)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/pandas/core/indexing.py", line 1711, in _getitem_tuple
-    tup = self._validate_tuple_indexer(tup)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/pandas/core/indexing.py", line 993, in _validate_tuple_indexer
-    self._validate_key(k, i)
-  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/pandas/core/indexing.py", line 1605, in _validate_key
-    self._validate_integer(key, axis)
-  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/site-packages/pandas/core/indexing.py", line 1706, in _validate_integer
-    raise IndexError("single positional indexer is out-of-bounds")
-IndexError: single positional indexer is out-of-bounds
+Building market_comp payload...
+
+Writing output files...
+  indicator_explorer.html  : 8.54 MB
+  indicator_explorer_mkt.js: 15.57 MB
+
+── Summary ──────────────────────────────────────────────────────
+macro_market   : 86 indicators across 7 groups
+macro_economic : 162 raw series (merged FRED + OECD + WB + IMF + DB.nomics + ifo)
+countries      : 12 codes from macro_library_countries.csv
+market_comp    : 668 series across 6 asset classes
+  asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators']
+
+Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
 
 
 === Data audit @ 2026-04-30 ===
@@ -1002,11 +977,10 @@ IndexError: single positional indexer is out-of-bounds
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
---- Section B: Static checks (2 issues) ---
+--- Section B: Static checks (1 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 97  STALE 20  EXPIRED 19) ---
+--- Section C: Value-change staleness (FRESH 123  STALE 20  EXPIRED 19) ---
   EXPIRED (19):
     Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3555d     tolerance=45d
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d

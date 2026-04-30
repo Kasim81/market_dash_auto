@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-30 — **42 ISSUES** (1 fetch error, 39 stale series, 2 static-check failures)
+## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
 
-_Run: 2026-04-30 11:30 UTC_
+_Run: 2026-04-30 11:53 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -69,9 +69,8 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (2):
+**missing_columns** (1):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 

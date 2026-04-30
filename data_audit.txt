@@ -3,11 +3,10 @@
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
---- Section B: Static checks (2 issues) ---
+--- Section B: Static checks (1 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 97  STALE 20  EXPIRED 19) ---
+--- Section C: Value-change staleness (FRESH 123  STALE 20  EXPIRED 19) ---
   EXPIRED (19):
     Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3555d     tolerance=45d
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
