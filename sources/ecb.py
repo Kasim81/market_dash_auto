@@ -79,19 +79,34 @@ def load_library() -> list[dict]:
 def fetch_series(
     series_id: str,
     start: str = DEFAULT_HIST_START,
-    timeout: int = 30,
+    timeout: int = 60,
     retries: int = 3,
+    last_n: int | None = None,
 ) -> str | None:
     """Fetch a single ECB series as raw CSV text.
 
     series_id: '<dataset>/<key>' format, e.g. 'FM/D.U2.EUR.4F.KR.DFR.LEV'.
+    last_n:    if set, append &lastNObservations=<n> to fetch only the latest
+               n observations (much faster — use for snapshot calls where
+               we only need the most-recent value + prior).
     Returns CSV body (UTF-8) or None on failure.
     """
     if "/" not in series_id:
         print(f"    [ECB] invalid series_id {series_id!r} (expected '<DATASET>/<KEY>')")
         return None
 
-    url = f"{ECB_BASE}/{series_id}?format=csvdata&startPeriod={start}&detail=dataonly"
+    # ECB SDMX accepts startPeriod in YYYY-MM-DD or YYYY-MM form. Use the
+    # narrower form by default — matches the working inline call shape in
+    # compute_macro_market.py and is unambiguous for monthly+ series.
+    start_param = start[:7] if len(start) >= 7 and start[4] == "-" else start
+    url_parts = [
+        f"{ECB_BASE}/{series_id}?format=csvdata",
+        f"startPeriod={start_param}",
+        "detail=dataonly",
+    ]
+    if last_n is not None and last_n > 0:
+        url_parts.append(f"lastNObservations={last_n}")
+    url = "&".join(url_parts)
     headers = {"Accept": "text/csv"}
 
     for attempt in range(retries):
@@ -194,9 +209,14 @@ def fetch_series_as_pandas(
     series_id: str,
     start: str = DEFAULT_HIST_START,
     col_name: str | None = None,
+    last_n: int | None = None,
 ) -> pd.Series | None:
-    """Fetch one series and return a date-indexed pd.Series, or None on failure."""
-    text = fetch_series(series_id, start=start)
+    """Fetch one series and return a date-indexed pd.Series, or None on failure.
+
+    last_n: forwarded to fetch_series — pass a small value (e.g. 2) for
+            snapshot calls to keep the response small and the timeout safe.
+    """
+    text = fetch_series(series_id, start=start, last_n=last_n)
     if text is None:
         return None
     obs = parse_csv(text, series_id)
