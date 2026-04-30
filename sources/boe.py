@@ -38,7 +38,19 @@ import requests
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_boe.csv"
-BOE_BASE = "https://www.bankofengland.co.uk/boeapps/database/fromshowcolumns.asp"
+
+# IADB endpoint URL. The BoE site has gone through several reorgs over the
+# years; we try the canonical paths in order:
+#   1. _iadb-fromshowcolumns.asp — listed in the G20 catalogue (April 2026).
+#   2. fromshowcolumns.asp        — historical path; often still works as a
+#                                   redirect target.
+# A bare URL hit returned HTML (the form page) rather than CSV from the
+# GitHub Actions runner, indicating the second path now serves the form.
+# We try the first; on HTML response we fall back to the second.
+BOE_URLS = [
+    "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp",
+    "https://www.bankofengland.co.uk/boeapps/database/fromshowcolumns.asp",
+]
 DEFAULT_HIST_START = "1975-01-01"
 
 # IADB returns HTTP 403 to default python-requests User-Agent (verified
@@ -123,26 +135,33 @@ def fetch_series(
     }
 
     for attempt in range(retries):
-        try:
-            resp = requests.get(BOE_BASE, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text:
+        for base in BOE_URLS:
+            try:
+                resp = requests.get(base, params=params, headers=_HEADERS, timeout=timeout)
+                if resp.status_code != 200 or not resp.text:
+                    if 500 <= resp.status_code < 600:
+                        print(f"    [BoE HTTP {resp.status_code}] {series_code} via {base.rsplit('/', 1)[-1]} — server error")
+                    else:
+                        print(f"    [BoE HTTP {resp.status_code}] {series_code} via {base.rsplit('/', 1)[-1]}")
+                    continue
+                # Reject HTML responses (form page) — try the next URL.
+                head = resp.text.lstrip()[:200].lower()
+                if head.startswith("<!doctype html") or head.startswith("<html"):
+                    print(f"    [BoE] {base.rsplit('/', 1)[-1]} returned HTML form (not CSV) — trying alt")
+                    continue
                 return resp.text
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [BoE HTTP {resp.status_code}] {series_code} — backing off {wait}s")
-                time.sleep(wait)
+            except requests.Timeout:
+                print(f"    [BoE timeout] {series_code} via {base.rsplit('/', 1)[-1]}")
                 continue
-            print(f"    [BoE HTTP {resp.status_code}] {series_code} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [BoE timeout] {series_code} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [BoE request error] {series_code}: {e} — skipping")
-            return None
+            except requests.RequestException as e:
+                print(f"    [BoE request error] {series_code} via {base.rsplit('/', 1)[-1]}: {e}")
+                continue
+        # All URLs failed for this attempt; back off before next attempt.
+        wait = 2 ** attempt
+        print(f"    [BoE] all URLs failed for {series_code} — backing off {wait}s")
+        time.sleep(wait)
 
-    print(f"    [BoE FAIL] {series_code} — {retries} attempts exhausted")
+    print(f"    [BoE FAIL] {series_code} — {retries} attempts × {len(BOE_URLS)} URLs exhausted")
     return None
 
 
