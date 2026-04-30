@@ -7,4 +7,4 @@ EA_HICP,fred,EA19CPALTT01GYM,dbnomics,Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20,e
 CHN_IND_PROD,fred,CHNPRINTO01IXPYM,,,nbs,(T3-accept),,,—,,No free programmatic source per G20 catalogue (NBS undocumented + IP-restricted). Accepted gap.
 DEU_IND_PROD,fred,DEUPROINDMISMEI,dbnomics,Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE,bundesbank,(planned-StageD),,,LIVE,2025-11,T0 frozen 2024-03-01; T1 wired 2026-04-30 via Eurostat teiis080 (same cube as EZ_IND_PROD with country code DE). T2 = sources/bundesbank.py (Stage D).
 JPN_IND_PROD,fred,JPNPROINDMISMEI,,,estat,(planned-StageD),,,—,,All aggregator paths (FRED/OECD/IMF) frozen at 2023-11 — same upstream freeze. T2 = sources/estat.py (Stage D).
-EA_DEPOSIT_RATE,fred,ECBDFR,,,ecb,(planned-StageD),,,—,,T1 candidates (ECB FM via DB.nomics) stale at 2025-02 — T0 fresher. T2 = sources/ecb.py extension to ECB Data Portal direct (Stage D).
+EA_DEPOSIT_RATE,fred,ECBDFR,,,ecb,FM/D.U2.EUR.4F.KR.DFR.LEV,,,—,,T2 LIVE. ECB Data Portal direct via sources/ecb.py (wired §3.1 Stage D.2 2026-04-30; T1 candidates via DB.nomics ECB-mirror stale at 2025-02; T2 direct should give same-day press-release values).
