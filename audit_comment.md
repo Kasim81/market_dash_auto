@@ -1,6 +1,6 @@
 ## Daily audit — 2026-04-30 — **42 ISSUES** (1 fetch error, 39 stale series, 2 static-check failures)
 
-_Run: 2026-04-30 13:52 UTC_
+_Run: 2026-04-30 14:12 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
