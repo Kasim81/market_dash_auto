@@ -1,6 +1,6 @@
-## Daily audit — 2026-04-30 — **40 ISSUES** (1 fetch error, 38 stale series, 1 static-check failure)
+## Daily audit — 2026-04-30 — **40 ISSUES** (1 fetch error, 37 stale series, 2 static-check failures)
 
-_Run: 2026-04-30 16:04 UTC_
+_Run: 2026-04-30 19:00 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,22 +15,21 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (17):
+**EXPIRED** (16):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
 | `CHN_M2` | FRED | Monthly | 2019-08-02 | 2463d | 45d |
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1245d | 45d |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 909d | 45d |
-| `JPN_IND_PROD` | FRED | Monthly | 2024-03-01 | 790d | 45d |
-| `JPN_POLICY_RATE` | DB.nomics | Monthly | 2025-01-31 | 454d | 45d |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2024-03-01 | 790d | 45d |
+| `JPN_POLICY_RATE` | BoJ | Daily | 2025-01-31 | 454d | 5d |
 | `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 328d | 45d |
 | `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 321d | 30d\* |
 | `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 237d | 60d\* |
 | `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 146d | 45d |
 | `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 118d | 45d |
 | `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
-| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
 | `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 118d | 45d |
@@ -68,8 +67,9 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (1):
+**missing_columns** (2):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'EU_ESI') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
