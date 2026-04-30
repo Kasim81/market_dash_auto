@@ -37,6 +37,7 @@ from sources import oecd as oecd_src
 from sources import worldbank as worldbank_src
 from sources import boe as boe_src
 from sources import ecb as ecb_src
+from sources import boj as boj_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -102,6 +103,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(ifo_src.load_library())
     indicators.extend(boe_src.load_library())
     indicators.extend(ecb_src.load_library())
+    indicators.extend(boj_src.load_library())
     return indicators
 
 
@@ -330,6 +332,26 @@ def _fetch_ecb_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
+# -- BoJ Time-Series Data Search snapshot --
+
+BOJ_DELAY = 0.6  # seconds between BoJ API calls
+
+
+def _fetch_boj_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = boj_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(BOJ_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
 # -- ifo snapshot (batch) --
 
 def _fetch_ifo_snapshot_batch(
@@ -392,6 +414,8 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_boe_snapshot(indic, fetched_at)
             elif src == "ECB":
                 got = _fetch_ecb_snapshot(indic, fetched_at)
+            elif src == "BoJ":
+                got = _fetch_boj_snapshot(indic, fetched_at)
             else:
                 print(f"  [WARN] Unknown source '{src}' — skipping")
                 continue
@@ -536,6 +560,16 @@ def _fetch_ecb_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
+# -- BoJ Time-Series Data Search --
+
+def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
+    s = boj_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BOJ_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
 # -- ifo (shares the workbook download with snapshot via module cache) --
 
 _IFO_MONTHLY_DF: pd.DataFrame | None = None
@@ -593,6 +627,8 @@ def _history_for_indicator(
         return _fetch_boe_history(indic)
     if src == "ECB":
         return _fetch_ecb_history(indic)
+    if src == "BoJ":
+        return _fetch_boj_history(indic)
     if src == "ifo":
         return _fetch_ifo_history(indic, ifo_indicators)
     print(f"  [WARN] Unknown source '{src}' in history fetch")
