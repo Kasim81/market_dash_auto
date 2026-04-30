@@ -1,0 +1,10 @@
+indicator_id,t0_source,t0_id,t1_source,t1_id,t2_source,t2_id,t3_source,t3_id,t1_status,t1_latest,notes
+JPN_POLICY_RATE,fred,IRSTCB01JPM156N,dbnomics,IMF/IFS/M.JP.FPOLM_PA,boj,(planned-StageD),,,LIVE,2025-07,T0 frozen 2008-12-05; T1 wired 2026-04-30 via IMF IFS BoJ policy rate. T2 = sources/boj.py (Stage D — also resolves JP_PMI1 Tankan).
+CHN_POLICY_RATE,fred,IRSTCB01CNM156N,dbnomics,IMF/IFS/M.CN.FPOLM_PA,pboc,(planned-StageD),,,LIVE,2025-06,T0 frozen 2015-11-06; T1 wired 2026-04-30 via IMF IFS PBoC policy rate. T2 = PBoC bulk Excel — likely T3-accept per G20 catalogue.
+GBR_BANK_RATE,fred,BOERUKM,,,boe,IUDBEDR,,,—,,T2 only. BoE IADB direct — series IUDBEDR. Build sources/boe.py (Stage D).
+CHN_M2,fred,MYAGM2CNM189N,,,pboc,(T3-accept),,,—,,No free programmatic source per G20 catalogue (PBoC bulk Excel/PDF only). Accepted gap.
+EA_HICP,fred,EA19CPALTT01GYM,dbnomics,Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20,ecb,(planned-StageD),,,LIVE,2025-12,T0 frozen 2023-01-06; T1 wired 2026-04-30 via Eurostat prc_hicp_manr direct. T2 = sources/ecb.py extension (Stage D).
+CHN_IND_PROD,fred,CHNPRINTO01IXPYM,,,nbs,(T3-accept),,,—,,No free programmatic source per G20 catalogue (NBS undocumented + IP-restricted). Accepted gap.
+DEU_IND_PROD,fred,DEUPROINDMISMEI,dbnomics,Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE,bundesbank,(planned-StageD),,,LIVE,2025-11,T0 frozen 2024-03-01; T1 wired 2026-04-30 via Eurostat teiis080 (same cube as EZ_IND_PROD with country code DE). T2 = sources/bundesbank.py (Stage D).
+JPN_IND_PROD,fred,JPNPROINDMISMEI,,,estat,(planned-StageD),,,—,,All aggregator paths (FRED/OECD/IMF) frozen at 2023-11 — same upstream freeze. T2 = sources/estat.py (Stage D).
+EA_DEPOSIT_RATE,fred,ECBDFR,,,ecb,(planned-StageD),,,—,,T1 candidates (ECB FM via DB.nomics) stale at 2025-02 — T0 fresher. T2 = sources/ecb.py extension to ECB Data Portal direct (Stage D).
