@@ -154,6 +154,53 @@ class HistArchiveTest(unittest.TestCase):
         df = load_hist_with_archive(self.path)
         self.assertEqual(len(df), 2)
 
+    def test_load_combine_first_when_live_has_null_sister_has_value(self):
+        """ICE BofA rolling case: live carries the date but the source has
+        dropped the cell (NaN); sister preserves the original value. The
+        union read must surface the sister value, not the live NaN."""
+        # T0: full data
+        write_hist_with_archive(
+            self._df(["2020-01-01", "2020-02-01", "2020-03-01", "2020-04-01"],
+                     ice=[1.0, 2.0, 3.0, 4.0], fred=[10, 11, 12, 13]),
+            self.path,
+        )
+        # T1: ICE column rolled forward — live still carries all 4 dates but
+        # ICE is NaN for the displaced ones; FRED unchanged.
+        write_hist_with_archive(
+            self._df(["2020-01-01", "2020-02-01", "2020-03-01", "2020-04-01"],
+                     ice=[None, None, 3.0, 4.0], fred=[10, 11, 12, 13]),
+            self.path,
+        )
+        unioned = load_hist_with_archive(self.path)
+        unioned = unioned.sort_values("Date").reset_index(drop=True)
+        # All four ICE values must be present after union (sister supplies the
+        # archived ones for dates where live's cell is now NaN).
+        self.assertEqual(unioned["ICE_HY"].tolist(), [1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(unioned["FRED_T10Y"].tolist(), [10, 11, 12, 13])
+
+    def test_load_with_index_col_date(self):
+        """Reader contract: index_col='Date' kwarg returns a DatetimeIndex-keyed
+        union of live + sister with no duplicate dates."""
+        write_hist_with_archive(
+            self._df(["2020-01-01", "2020-02-01", "2020-03-01", "2020-04-01"],
+                     ice=[1.0, 2.0, 3.0, 4.0]),
+            self.path,
+        )
+        write_hist_with_archive(
+            self._df(["2020-03-01", "2020-04-01", "2020-05-01"],
+                     ice=[3.0, 4.0, 5.0]),
+            self.path,
+        )
+        df = load_hist_with_archive(self.path, index_col="Date")
+        # Index should be unique (no duplicate dates after dedup) and sorted ascending.
+        self.assertEqual(df.index.is_unique, True)
+        self.assertEqual(df.index.is_monotonic_increasing, True)
+        # Convert index to ensure expected dates are present
+        idx_str = pd.to_datetime(df.index).strftime("%Y-%m-%d").tolist()
+        self.assertEqual(idx_str,
+                         ["2020-01-01", "2020-02-01", "2020-03-01",
+                          "2020-04-01", "2020-05-01"])
+
     def test_prefix_rows_preserved(self):
         prefix = [["MetaA", "alpha", "beta"], ["MetaB", "gamma", "delta"]]
         write_hist_with_archive(

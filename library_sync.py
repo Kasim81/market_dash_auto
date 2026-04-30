@@ -339,6 +339,17 @@ def _run_pair(
     _write_csv_rows(hist_path, new_rows)
     n_cols_after = len(new_rows[0]) if new_rows else 0
     print(f"  dropped {len(drop_idxs)} column(s); {n_cols_after} column(s) remain in {hist_path.relative_to(ROOT)}")
+
+    # Mirror the column drop on the *_hist_x.csv sister (per forward_plan §3.1.1):
+    # sister and live must share the same column schema or load_hist_with_archive's
+    # union semantics break.
+    sister_path = hist_path.with_name(hist_path.name.replace("_hist.csv", "_hist_x.csv"))
+    if sister_path.exists():
+        sister_rows = _read_csv_rows(sister_path)
+        sister_new = _drop_columns(sister_rows, drop_idxs)
+        _write_csv_rows(sister_path, sister_new)
+        print(f"  mirrored drop on sister: {sister_path.relative_to(ROOT)}")
+
     return len(orphans)
 
 

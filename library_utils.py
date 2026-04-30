@@ -509,15 +509,40 @@ def load_hist_with_archive(path, **read_csv_kwargs):
         print(f"  [load_hist_with_archive] WARN reading sister {sister}: {exc}")
         return live
 
-    combined = _hp_pd.concat([live, archive])
+    # Cell-level merge semantics (NOT row-level dedup): for any (date, column)
+    # cell, live wins if it has a non-null value; sister fills the cell only
+    # when live is NaN. This handles the rolling-window case where live carries
+    # the date but the source has dropped the value for that column at that
+    # date — sister supplies the preserved value. pd.DataFrame.combine_first
+    # implements exactly this rule.
+    #
+    # Date axis can live in three places depending on how the caller invoked
+    # pd.read_csv: (1) an explicit DatetimeIndex via parse_dates, (2) an
+    # index named "Date" via index_col="Date" (still object-typed at this
+    # point — pd.read_csv does not auto-parse), (3) a regular "Date" column.
 
-    if isinstance(combined.index, _hp_pd.DatetimeIndex):
-        combined = combined[~combined.index.duplicated(keep="first")]
+    if isinstance(live.index, _hp_pd.DatetimeIndex):
+        combined = live.combine_first(archive)
         return combined.sort_index()
-    if "Date" in combined.columns:
-        return (combined
-                .drop_duplicates(subset=["Date"], keep="first")
-                .sort_values("Date")
-                .reset_index(drop=True))
+    if live.index.name == "Date":
+        live = live.copy()
+        archive = archive.copy()
+        live.index = _hp_pd.to_datetime(live.index, errors="coerce")
+        archive.index = _hp_pd.to_datetime(archive.index, errors="coerce")
+        live = live[live.index.notna()]
+        archive = archive[archive.index.notna()]
+        combined = live.combine_first(archive)
+        return combined.sort_index()
+    if "Date" in live.columns:
+        live = live.copy()
+        archive = archive.copy()
+        live["Date"] = _hp_pd.to_datetime(live["Date"], errors="coerce")
+        archive["Date"] = _hp_pd.to_datetime(archive["Date"], errors="coerce")
+        live = live[live["Date"].notna()].set_index("Date")
+        archive = archive[archive["Date"].notna()].set_index("Date")
+        combined = live.combine_first(archive)
+        return combined.sort_index().reset_index()
+    # No identifiable date axis — fall back to plain concat + dedup.
+    combined = _hp_pd.concat([live, archive])
     return combined.drop_duplicates(keep="first").reset_index(drop=True)
 

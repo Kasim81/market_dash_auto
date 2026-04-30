@@ -30,6 +30,7 @@ from library_utils import (
     INDICATOR_GROUP_ORDER,
     INDICATOR_SUB_GROUP_ORDER,
     INDICATOR_CONCEPT_ORDER,
+    load_hist_with_archive,
 )
 
 MACRO_MKT       = DATA / "macro_market_hist.csv"
@@ -117,7 +118,7 @@ def load_indicator_meta() -> dict:
 # ── 2. macro_market_hist ──────────────────────────────────────────────────────
 
 def build_macro_market(ind_meta: dict) -> dict:
-    df = pd.read_csv(MACRO_MKT, low_memory=False)
+    df = load_hist_with_archive(str(MACRO_MKT))
     # drop row_id if present
     if "row_id" in df.columns:
         df = df.drop(columns=["row_id"])
@@ -230,8 +231,10 @@ def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]
     if _UNIFIED_DF is not None:
         return _UNIFIED_DF, _UNIFIED_META
 
+    # Metadata is identical between live and sister; read from live alone.
     meta_raw = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=14, low_memory=False)
-    df       = pd.read_csv(MACRO_ECONOMIC, skiprows=14, low_memory=False)
+    # Data is union of live + sister via the §3.1.1 helper.
+    df       = load_hist_with_archive(str(MACRO_ECONOMIC), skiprows=14)
 
     labels      = meta_raw.iloc[:, 0].tolist()        # ['Column ID', 'Series ID', ...]
     col_headers = df.columns.tolist()                  # ['Date', col_1, col_2, ...]
@@ -321,8 +324,9 @@ def load_countries() -> list[dict]:
 
 def build_market_comp() -> dict:
     # rows 0-10 = metadata, row 11 = headers, row 12+ = data
+    # Metadata identical between live and sister; data unioned via §3.1.1 helper.
     meta_raw = pd.read_csv(MKT_COMP, header=None, nrows=11, low_memory=False)
-    df       = pd.read_csv(MKT_COMP, skiprows=11, low_memory=False)
+    df       = load_hist_with_archive(str(MKT_COMP), skiprows=11)
     if "row_id" in df.columns:
         df = df.drop(columns=["row_id"])
 
