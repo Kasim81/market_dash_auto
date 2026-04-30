@@ -1,6 +1,6 @@
 ## Daily audit — 2026-04-30 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
 
-_Run: 2026-04-30 09:14 UTC_
+_Run: 2026-04-30 09:21 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -47,8 +47,8 @@ Full report attached as `data_audit.txt` in today's commit.
 | `CP` | FRED | Quarterly | 2025-10-03 | 209d | 180d\* |
 | `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 209d | 180d\* |
 | `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 146d | 75d\* |
-| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 118d | 75d\* |
 | `FRA_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 118d | 75d\* |
+| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 118d | 75d\* |
 | `PERMIT` | FRED | Monthly | 2026-03-06 | 55d | 45d |
 | `T10Y2Y` | FRED | Daily | 2026-04-24 | 6d | 5d |
 | `T10Y3M` | FRED | Daily | 2026-04-24 | 6d | 5d |

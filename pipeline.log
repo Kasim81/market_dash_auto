@@ -1,25 +1,25 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-04-29 14:05 UTC
+Market Dashboard Data Fetch — 2026-04-30 04:22 UTC
 ============================================================
 Fetching comprehensive FX rates...
-  GBP (GBPUSD=X): OK (5826 rows)
-  EUR (EURUSD=X): OK (5814 rows)
-  AUD (AUDUSD=X): OK (5190 rows)
+  GBP (GBPUSD=X): OK (5827 rows)
+  EUR (EURUSD=X): OK (5815 rows)
+  AUD (AUDUSD=X): OK (5191 rows)
   JPY (USDJPY=X): OK (7648 rows)
-  CNY (CNY=X): OK (6216 rows)
-  INR (INR=X): OK (5811 rows)
-  KRW (KRW=X): OK (5812 rows)
-  TWD (TWD=X): OK (5319 rows)
-  CAD (USDCAD=X): OK (5882 rows)
-  BRL (USDBRL=X): OK (5396 rows)
-  HKD (USDHKD=X): OK (6271 rows)
-  MXN (USDMXN=X): OK (5834 rows)
-  IDR (USDIDR=X): OK (6268 rows)
-  RUB (USDRUB=X): OK (5705 rows)
-  SAR (USDSAR=X): OK (5809 rows)
-  ZAR (USDZAR=X): OK (5827 rows)
-  TRY (USDTRY=X): OK (5543 rows)
-  ARS (USDARS=X): OK (5902 rows)
+  CNY (CNY=X): OK (6217 rows)
+  INR (INR=X): OK (5812 rows)
+  KRW (KRW=X): OK (5813 rows)
+  TWD (TWD=X): OK (5320 rows)
+  CAD (USDCAD=X): OK (5883 rows)
+  BRL (USDBRL=X): OK (5397 rows)
+  HKD (USDHKD=X): OK (6273 rows)
+  MXN (USDMXN=X): OK (5836 rows)
+  IDR (USDIDR=X): OK (6269 rows)
+  RUB (USDRUB=X): OK (5706 rows)
+  SAR (USDSAR=X): OK (5810 rows)
+  ZAR (USDZAR=X): OK (5828 rows)
+  TRY (USDTRY=X): OK (5544 rows)
+  ARS (USDARS=X): OK (5903 rows)
 
 ============================================================
 SIMPLE DASHBOARD (market_data)
@@ -98,8 +98,6 @@ Fetching simple FRED series (4 rows)...
   IRLTLT01GBM156N (UK 10-Year Gilt Yield)...
   IRLTLT01DEM156N (Germany 10-Year Bund Yield)...
   IRLTLT01JPM156N (Japan 10-Year JGB Yield)...
-  [FRED IRLTLT01JPM156N] attempt 1 failed: 500 Server Error: Internal Server Error for url: https://api.stlouisfed.org/fred/series/observations?series_id=IRLTLT01JPM156N&api_key=b203d276c6e5d6225d7735e62d4ea88e&file_type=json&sort_order=asc&observation_start=2000-01-01
-  [FRED IRLTLT01JPM156N] attempt 2 failed: 500 Server Error: Internal Server Error for url: https://api.stlouisfed.org/fred/series/observations?series_id=IRLTLT01JPM156N&api_key=b203d276c6e5d6225d7735e62d4ea88e&file_type=json&sort_order=asc&observation_start=2000-01-01
   DGS2 (US 2-Year Treasury Yield)...
 
 ✓ Saved data/market_data.csv — 70 instruments
@@ -193,8 +191,7 @@ Fetching comp library (315 instruments)...
   [Pr] ^SP500-2020 (S&P 500 Commercial & Professional Servic)...
   [Pr] ^SP500-2030 (S&P 500 Transportation)...
   [Pr] ^SP500-2510 (S&P 500 Automobiles & Components)...
-  [Pr] ^SP500-2520 (S&P 500 Consumer Durables & Apparel)...^SP500-151050: Period 'max' is invalid, must be one of: 1d, 5d
-
+  [Pr] ^SP500-2520 (S&P 500 Consumer Durables & Apparel)...
   [Pr] ^SP500-2530 (S&P 500 Consumer Services)...
   [Pr] ^SP500-2550 (S&P 500 Consumer Discretionary Distribut)...
   [Pr] ^SP500-3010 (S&P 500 Food & Staples Retailing)...
@@ -203,7 +200,8 @@ Fetching comp library (315 instruments)...
   [Pr] ^SP500-3510 (S&P 500 Health Care Equipment & Services)...
   [Pr] ^SP500-3520 (S&P 500 Pharma Biotech & Life Sciences)...
   [Pr] ^SP500-4010 (S&P 500 Banks)...
-  [Pr] ^SP500-4020 (S&P 500 Financial Services)...
+  [Pr] ^SP500-4020 (S&P 500 Financial Services)...^SP500-151050: Period 'max' is invalid, must be one of: 1d, 5d
+
   [Pr] ^SP500-4030 (S&P 500 Insurance)...
   [Pr] ^SP500-4510 (S&P 500 Software & Services)...
   [Pr] ^SP500-4520 (S&P 500 Technology Hardware & Equipment)...
@@ -433,7 +431,6 @@ Fetching comp FRED series (22 rows)...
   BAMLHYH0A0HYM2TRIV (ICE BofA Global High Yield Bond Index)...
   DFII10 (ICE BofA US Inflation-Linked Treasury Index ()...
   BAMLC0A0CM (ICE BofA US Corporate Index)...
-  [FRED BAMLC0A0CM] attempt 1 failed: 500 Server Error: Internal Server Error for url: https://api.stlouisfed.org/fred/series/observations?series_id=BAMLC0A0CM&api_key=b203d276c6e5d6225d7735e62d4ea88e&file_type=json&sort_order=asc&observation_start=2000-01-01
   BAMLC0A0CM (ICE BofA US Corporate IG OAS)...
   BAMLH0A0HYM2 (ICE BofA US High Yield Index)...
   BAMLH0A1HYBB (ICE BofA US BB High Yield OAS)...
@@ -493,7 +490,7 @@ Pushing data to Google Sheets...
   ✓ Written 337 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-04-29 14:09 UTC
+✓ Completed at 2026-04-30 04:26 UTC
 
 --- market_data asset class breakdown ---
 
@@ -514,37 +511,29 @@ Loaded 315 yfinance instruments, 19 FRED Rates series
     [1/19] BAMLCC0A0CMTRIV (ICE BofA Global Corporate Bond Index)...
     [2/19] BAMLHYH0A0HYM2TRIV (ICE BofA Global High Yield Bond Index)...
     [3/19] DFII10 (ICE BofA US Inflation-Linked Treasury Index (TIPS))...
-  [FRED] HTTP 500 on DFII10 — backoff 2s (attempt 1/5)
     [4/19] BAMLC0A0CM (ICE BofA US Corporate Index)...
     [5/19] BAMLH0A0HYM2 (ICE BofA US High Yield Index)...
     [6/19] BAMLH0A1HYBB (ICE BofA US BB High Yield OAS)...
     [7/19] BAMLH0A3HYC (ICE BofA US CCC & Lower HY OAS)...
     [8/19] BAMLH0A2HYB (ICE BofA US Single-B High Yield OAS)...
-  [FRED] HTTP 500 on BAMLH0A2HYB — backoff 2s (attempt 1/5)
     [9/19] BAMLC0A3CA (ICE BofA US A Corporate OAS)...
     [10/19] BAMLC0A2CAA (ICE BofA US AA Corporate OAS)...
-  [FRED] HTTP 500 on BAMLC0A2CAA — backoff 2s (attempt 1/5)
     [11/19] BAMLC0A1CAAA (ICE BofA US AAA Corporate OAS)...
-  [FRED] HTTP 500 on BAMLC0A1CAAA — backoff 2s (attempt 1/5)
     [12/19] BAMLC0A4CBBB (ICE BofA US BBB Corporate OAS)...
-  [FRED] HTTP 500 on BAMLC0A4CBBB — backoff 2s (attempt 1/5)
     [13/19] BAMLHE00EHYITRIV (ICE BofA Euro High Yield Bond Index)...
     [14/19] BAMLHE00EHYIOAS (ICE BofA Euro High Yield OAS)...
     [15/19] BAMLEMCBPIOAS (ICE BofA EM Corporate Plus OAS)...
     [16/19] BAMLEMHBHYCRPIOAS (ICE BofA EM High Yield Corporate OAS)...
-  [FRED] HTTP 500 on BAMLEMHBHYCRPIOAS — backoff 2s (attempt 1/5)
     [17/19] BAMLEMRACRPIASIAOAS (ICE BofA EM Asia Corporate OAS)...
     [18/19] BAMLEM2BRRBBBCRPIOAS (ICE BofA EM BBB Corporate OAS)...
-  [FRED] HTTP 500 on BAMLEM2BRRBBBCRPIOAS — backoff 2s (attempt 1/5)
     [19/19] PIORECRUSDM (Iron Ore (World Bank Price Index))...
-  [FRED] HTTP 500 on PIORECRUSDM — backoff 2s (attempt 1/5)
 
 Assembling market_data_comp_hist DataFrame...
   market_data_comp_hist: 3982 rows × 669 columns
   [market_data_comp_hist] Written 11 metadata rows + 3,982 data rows × 670 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3994 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 97.9s
+Comp historical build completed in 77.9s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -607,7 +596,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/T5YIFR]
   [FRED/MICH]
   [FRED/FEDFUNDS]
-  [FRED] HTTP 500 on FEDFUNDS — backoff 2s (attempt 1/5)
   [FRED/DGS2]
   [FRED/DGS10]
   [FRED/MORTGAGE30US]
@@ -635,10 +623,7 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/CFNAI]
   [FRED/ULCNFB]
   [FRED/UEMPMEAN]
-  [FRED] HTTP 500 on UEMPMEAN — backoff 2s (attempt 1/5)
   [FRED/TOTCI]
-  [FRED] HTTP 500 on TOTCI — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on TOTCI — backoff 4s (attempt 2/5)
   [FRED/CP]
   [FRED/GBR_GILT_10Y]
   [FRED/DEU_BUND_10Y]
@@ -649,8 +634,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/FRA_BUS_CONF]
   [FRED/ITA_BUS_CONF]
   [FRED/DEU_CON_CONF]
-  [FRED] HTTP 500 on FRED/DEU_CON_CONF — backoff 2s (attempt 1/5)
-  [FRED] HTTP 500 on FRED/DEU_CON_CONF — backoff 4s (attempt 2/5)
   [FRED/BAMLHE00EHYIOAS]
   [FRED/GBR_CON_CONF]
   [FRED/JPN_CON_CONF]
@@ -670,7 +653,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/CHN_CPI]
   [FRED/CHN_PPI]
   [FRED/CHN_IND_PROD]
-  [FRED] HTTP 500 on FRED/CHN_IND_PROD — backoff 2s (attempt 1/5)
   [FRED/CHN_IMPORTS]
   [FRED/CHN_EXPORTS]
   [OECD/CLI]
@@ -698,15 +680,10 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EZ_RETAIL_VOL]
   [DB.nomics/EZ_EMPLOYMENT]
   [ifo] Landing page returned HTML but no gsk-*.xlsx link; trying direct URL fallback.
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-01/gsk-e-202601.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx  (98,990 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   Written 165 rows to data/macro_economic.csv
   [macro_economic] Written 166 rows to 'macro_economic'
 
@@ -719,12 +696,10 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/PAYEMS/hist]
   [FRED/UNRATE/hist]
   [FRED/JTSJOL/hist]
-  [FRED] HTTP 500 on JTSJOL — backoff 2s (attempt 1/5)
   [FRED/UNEMPLOY/hist]
   [FRED/INDPRO/hist]
   [FRED/RSXFS/hist]
   [FRED/RSFSXMV/hist]
-  [FRED] HTTP 500 on RSFSXMV — backoff 2s (attempt 1/5)
   [FRED/DRTSCILM/hist]
   [FRED/NFCI/hist]
   [FRED/CPIAUCSL/hist]
@@ -743,11 +718,9 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/DFII5/hist]
   [FRED/BAMLH0A0HYM2/hist]
   [FRED/BAMLC0A0CM/hist]
-  [FRED] HTTP 500 on BAMLC0A0CM — backoff 2s (attempt 1/5)
   [FRED/BAMLC0A0CMEY/hist]
   [FRED/BAMLCC0A0CMTRIV/hist]
   [FRED/DRTSCIS/hist]
-  [FRED] HTTP 500 on DRTSCIS — backoff 2s (attempt 1/5)
   [FRED/DRTSCLCC/hist]
   [FRED/STDSOTHCONS/hist]
   [FRED/SUBLPDRCSN/hist]
@@ -755,24 +728,33 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/GACDFSA066MSFRBPHI/hist]
   [FRED/GACDISA066MSFRBNY/hist]
   [FRED/BACTUAMFRBDAL/hist]
+  [FRED] HTTP 500 on BACTUAMFRBDAL — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on BACTUAMFRBDAL — backoff 4s (attempt 2/5)
   [FRED/PIORECRUSDM/hist]
+  [FRED] HTTP 500 on PIORECRUSDM — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on PIORECRUSDM — backoff 4s (attempt 2/5)
   [FRED/AWHMAN/hist]
   [FRED/NEWORDER/hist]
+  [FRED] HTTP 500 on NEWORDER — backoff 2s (attempt 1/5)
   [FRED/TCU/hist]
   [FRED/W875RX1/hist]
   [FRED/PCEC96/hist]
   [FRED/CMRMTSPL/hist]
+  [FRED] HTTP 500 on CMRMTSPL — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on CMRMTSPL — backoff 4s (attempt 2/5)
   [FRED/CFNAI/hist]
   [FRED/ULCNFB/hist]
   [FRED/UEMPMEAN/hist]
   [FRED/TOTCI/hist]
   [FRED/CP/hist]
+  [FRED] HTTP 500 on CP — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on CP — backoff 4s (attempt 2/5)
   [FRED/GBR_GILT_10Y/hist]
   [FRED/DEU_BUND_10Y/hist]
   [FRED/ITA_BTP_10Y/hist]
   [FRED/IND_GOVT_10Y/hist]
   [FRED/DEU_BUS_CONF/hist]
-  [FRED] HTTP 502 on BSCICP02DEM460S — backoff 2s (attempt 1/5)
+  [FRED] HTTP 500 on BSCICP02DEM460S — backoff 2s (attempt 1/5)
   [FRED/GBR_BUS_CONF/hist]
   [FRED/FRA_BUS_CONF/hist]
   [FRED/ITA_BUS_CONF/hist]
@@ -857,7 +839,7 @@ macro_economic — Unified Economic Data Coordinator
   Written 4140 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4155 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 260.1s
+  macro_economic run completed in 283.4s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
@@ -873,7 +855,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] US_G1: raw=0.3549  z=0.93  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] US_G2: raw=0.5482  z=1.4  regime='risk-on'  fwd='stable'  (2026-04-24)
   [compute] US_EQ_F3: raw=-0.3452  z=0.21  regime='neutral'  fwd='stable'  (2026-04-24)
-  [compute] US_EQ_F1: raw=-0.7442  z=-0.42  regime='mixed'  fwd='stable'  (2026-04-24)
+  [compute] US_EQ_F1: raw=0.6421  z=-0.42  regime='mixed'  fwd='stable'  (2026-04-24)
   [compute] US_R1: raw=0.62  z=1.52  regime='early-cycle'  fwd='stable'  (2026-04-24)
   [compute] US_Cr2: raw=2.86  z=-0.84  regime='complacent'  fwd='stable'  (2026-04-24)
   [compute] GL_CA_I1: raw=0.2636  z=3.79  regime='reflation'  fwd='improving'  (2026-04-24)
@@ -894,7 +876,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] UK_R2: raw=0.1482  z=-0.8  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] UK_Cr1: raw=-2.0949  z=1.43  regime='credit-appetite'  fwd='stable'  (2026-04-24)
   [compute] EU_G4: raw=-0.0391  z=-1.06  regime='EU-strain'  fwd='stable'  (2026-04-24)
-  [compute] AS_CN_G3: raw=-0.0393  z=0.76  regime='neutral'  fwd='stable'  (2026-05-01)
+  [compute] AS_CN_G3: raw=-0.0407  z=0.74  regime='neutral'  fwd='stable'  (2026-05-01)
   [compute] AS_CN_G2: raw=0.9101  z=1.51  regime='China-outperform'  fwd='stable'  (2026-04-24)
   [compute] AS_IN_G1: raw=3.0394  z=-0.67  regime='neutral'  fwd='stable'  (2026-04-24)
   [compute] AS_CN_R1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
@@ -980,7 +962,7 @@ Building market_comp payload...
 
 Writing output files...
   indicator_explorer.html  : 8.54 MB
-  indicator_explorer_mkt.js: 15.58 MB
+  indicator_explorer_mkt.js: 15.57 MB
 
 ── Summary ──────────────────────────────────────────────────────
 macro_market   : 86 indicators across 7 groups
@@ -989,10 +971,10 @@ countries      : 12 codes from macro_library_countries.csv
 market_comp    : 668 series across 6 asset classes
   asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators']
 
-Total output: 24.12 MB  (8.54 MB HTML + 15.58 MB companion JS)
+Total output: 24.12 MB  (8.54 MB HTML + 15.57 MB companion JS)
 
 
-=== Data audit @ 2026-04-29 ===
+=== Data audit @ 2026-04-30 ===
 
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1000,35 +982,48 @@ Total output: 24.12 MB  (8.54 MB HTML + 15.58 MB companion JS)
 --- Section B: Static checks (1 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 136  STALE 7  EXPIRED 19) ---
+--- Section C: Value-change staleness (FRESH 123  STALE 20  EXPIRED 19) ---
   EXPIRED (19):
-    Monthly     JPN_POLICY_RATE                   src=FRED         series=IRSTCB01JPM156N           last_obs=2008-12-05  age=6354d     tolerance=45d
-    Monthly     CHN_POLICY_RATE                   src=FRED         series=IRSTCB01CNM156N           last_obs=2015-11-06  age=3827d     tolerance=45d
-    Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3554d     tolerance=45d
-    Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2462d     tolerance=45d
-    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1244d     tolerance=45d
-    Monthly     EA_HICP                           src=FRED         series=EA19CPALTT01GYM           last_obs=2023-01-06  age=1209d     tolerance=45d
-    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=908d      tolerance=45d
-    Monthly     DEU_IND_PROD                      src=FRED         series=DEUPROINDMISMEI           last_obs=2024-03-01  age=789d      tolerance=45d
-    Monthly     JPN_IND_PROD                      src=FRED         series=JPNPROINDMISMEI           last_obs=2024-03-01  age=789d      tolerance=45d
-    Daily       EA_DEPOSIT_RATE                   src=FRED         series=ECBDFR                    last_obs=2025-06-13  age=320d      tolerance=5d
-    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=236d      tolerance=60d*
-    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=117d      tolerance=45d
-    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=117d      tolerance=45d
-    Daily       BAMLC0A0CM                        src=FRED         series=BAMLC0A0CM                last_obs=2026-04-17  age=12d       tolerance=5d
-  STALE (7):
-    Quarterly   ULCNFB                            src=FRED         series=ULCNFB                    last_obs=2025-10-03  age=208d      tolerance=180d*
-    Quarterly   CP                                src=FRED         series=CP                        last_obs=2025-10-03  age=208d      tolerance=180d*
-    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=208d      tolerance=180d*
-    Monthly     GBR_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2025-12-05  age=145d      tolerance=75d*
-    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=117d      tolerance=75d*
-    Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=117d      tolerance=75d*
-    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=54d       tolerance=45d
+    Monthly     JPN_POLICY_RATE                   src=FRED         series=IRSTCB01JPM156N           last_obs=2008-12-05  age=6355d     tolerance=45d
+    Monthly     CHN_POLICY_RATE                   src=FRED         series=IRSTCB01CNM156N           last_obs=2015-11-06  age=3828d     tolerance=45d
+    Monthly     GBR_BANK_RATE                     src=FRED         series=BOERUKM                   last_obs=2016-08-05  age=3555d     tolerance=45d
+    Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2463d     tolerance=45d
+    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1245d     tolerance=45d
+    Monthly     EA_HICP                           src=FRED         series=EA19CPALTT01GYM           last_obs=2023-01-06  age=1210d     tolerance=45d
+    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=909d      tolerance=45d
+    Monthly     DEU_IND_PROD                      src=FRED         series=DEUPROINDMISMEI           last_obs=2024-03-01  age=790d      tolerance=45d
+    Monthly     JPN_IND_PROD                      src=FRED         series=JPNPROINDMISMEI           last_obs=2024-03-01  age=790d      tolerance=45d
+    Daily       EA_DEPOSIT_RATE                   src=FRED         series=ECBDFR                    last_obs=2025-06-13  age=321d      tolerance=5d
+    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=237d      tolerance=60d*
+    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=118d      tolerance=45d
+    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=118d      tolerance=45d
+    Daily       BAMLC0A0CM                        src=FRED         series=BAMLC0A0CM                last_obs=2026-04-17  age=13d       tolerance=5d
+  STALE (20):
+    Quarterly   ULCNFB                            src=FRED         series=ULCNFB                    last_obs=2025-10-03  age=209d      tolerance=180d*
+    Quarterly   CP                                src=FRED         series=CP                        last_obs=2025-10-03  age=209d      tolerance=180d*
+    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=209d      tolerance=180d*
+    Monthly     GBR_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2025-12-05  age=146d      tolerance=75d*
+    Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=118d      tolerance=75d*
+    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=118d      tolerance=75d*
+    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=55d       tolerance=45d
+    Daily       T10Y2Y                            src=FRED         series=T10Y2Y                    last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       T10Y3M                            src=FRED         series=T10Y3M                    last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       T5YIE                             src=FRED         series=T5YIE                     last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       T10YIE                            src=FRED         series=T10YIE                    last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       T5YIFR                            src=FRED         series=T5YIFR                    last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       DGS2                              src=FRED         series=DGS2                      last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       DGS10                             src=FRED         series=DGS10                     last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       DFII10                            src=FRED         series=DFII10                    last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       DFII5                             src=FRED         series=DFII5                     last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       BAMLH0A0HYM2                      src=FRED         series=BAMLH0A0HYM2              last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       BAMLC0A0CMEY                      src=FRED         series=BAMLC0A0CMEY              last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       BAMLCC0A0CMTRIV                   src=FRED         series=BAMLCC0A0CMTRIV           last_obs=2026-04-24  age=6d        tolerance=5d
+    Daily       BAMLHE00EHYIOAS                   src=FRED         series=BAMLHE00EHYIOAS           last_obs=2026-04-24  age=6d        tolerance=5d
 
 Footer:
   * = per-row override applied (freshness_override_days column)

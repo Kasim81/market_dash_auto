@@ -32,8 +32,8 @@
     Quarterly   CP                                src=FRED         series=CP                        last_obs=2025-10-03  age=209d      tolerance=180d*
     Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=209d      tolerance=180d*
     Monthly     GBR_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2025-12-05  age=146d      tolerance=75d*
-    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=118d      tolerance=75d*
     Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=118d      tolerance=75d*
+    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=118d      tolerance=75d*
     Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=55d       tolerance=45d
     Daily       T10Y2Y                            src=FRED         series=T10Y2Y                    last_obs=2026-04-24  age=6d        tolerance=5d
     Daily       T10Y3M                            src=FRED         series=T10Y3M                    last_obs=2026-04-24  age=6d        tolerance=5d
