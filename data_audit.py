@@ -60,6 +60,7 @@ SOURCE_BY_LIBRARY = {
     "dbnomics":  "DB.nomics",
     "ifo":       "ifo",
     "boe":       "BoE",
+    "ecb":       "ECB",
 }
 
 
@@ -366,7 +367,7 @@ def _check_orphan_country_codes() -> list[str]:
         valid = {row["code"].strip() for row in csv.DictReader(f) if row.get("code")}
 
     issues: list[str] = []
-    for lib_name in ("fred", "dbnomics", "ifo", "boe"):
+    for lib_name in ("fred", "dbnomics", "ifo", "boe", "ecb"):
         path = DATA / f"macro_library_{lib_name}.csv"
         if not path.exists():
             continue
