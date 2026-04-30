@@ -1,0 +1,2 @@
+series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,freshness_override_days
+IUDBEDR,GBR_BANK_RATE,Bank of England Bank Rate,Monetary Policy,Policy Rate,Percent,Monthly,GBR,T2 fallback for FRED BOERUKM (frozen 2016-08-05). BoE IADB direct CSV via _iadb-fromshowcolumns.asp; series IUDBEDR is the canonical Bank Rate. Wired §3.1 Stage D 2026-04-30.,452,Rates / Yields,G,200
