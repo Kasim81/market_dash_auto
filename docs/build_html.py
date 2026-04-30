@@ -226,30 +226,61 @@ _UNIFIED_META: dict[str, dict[str, str]] | None = None
 
 
 def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]]:
-    """Read macro_economic_hist.csv once per run; cache the parsed result."""
+    """Read macro_economic_hist.csv once per run; cache the parsed result.
+
+    The data section is unioned across live + sister via load_hist_with_archive
+    (per §3.1.1 history preservation). Sister can carry extra columns when a
+    source intermittently fails — e.g. ifo's anti-bot occasionally blocks the
+    workbook fetch, leaving today's live without DE_IFO* columns while sister
+    still has the historical values. We therefore read metadata from BOTH
+    prefixes and key it by column name, so any column that appears in df has
+    metadata regardless of which file it came from.
+    """
     global _UNIFIED_DF, _UNIFIED_META
     if _UNIFIED_DF is not None:
         return _UNIFIED_DF, _UNIFIED_META
 
-    # Metadata is identical between live and sister; read from live alone.
-    meta_raw = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=14, low_memory=False)
-    # Data is union of live + sister via the §3.1.1 helper.
-    df       = load_hist_with_archive(str(MACRO_ECONOMIC), skiprows=14)
+    # Live prefix
+    meta_live = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=14, low_memory=False)
+    # Sister prefix (may have extra columns vs live)
+    sister_path = MACRO_ECONOMIC.with_name(MACRO_ECONOMIC.name.replace("_hist.csv", "_hist_x.csv"))
+    meta_sister = None
+    if sister_path.exists():
+        try:
+            meta_sister = pd.read_csv(sister_path, header=None, nrows=14, low_memory=False)
+        except Exception as e:
+            print(f"  [build_html] WARN reading sister metadata {sister_path}: {e}")
 
-    labels      = meta_raw.iloc[:, 0].tolist()        # ['Column ID', 'Series ID', ...]
-    col_headers = df.columns.tolist()                  # ['Date', col_1, col_2, ...]
+    # Data — unioned live + sister via the §3.1.1 helper.
+    df = load_hist_with_archive(str(MACRO_ECONOMIC), skiprows=14)
+
+    labels = meta_live.iloc[:, 0].tolist()  # ['Column ID', 'Series ID', ...]
+
+    # Build per-column metadata dict, keyed by column name (Column ID label
+    # in row 0 of the prefix). Live wins on overlap; sister fills sister-only.
+    def _ingest(prefix_df, meta_dict):
+        if prefix_df is None or prefix_df.empty:
+            return
+        # Row 0 of prefix is "Column ID" label + column names; assume same
+        # label in row 0 across both prefixes.
+        for ci in range(1, prefix_df.shape[1]):
+            try:
+                col_name = str(prefix_df.iloc[0, ci]).strip()
+            except Exception:
+                continue
+            if not col_name or col_name == "nan":
+                continue
+            if col_name in meta_dict:
+                continue  # live already populated; preserve
+            raw_vals = prefix_df.iloc[:, ci].tolist()
+            m = {label: str(v).strip() for label, v in zip(labels, raw_vals)}
+            m["concept"]     = m.get("Concept", "")
+            m["subcategory"] = m.get("Subcategory", "")
+            meta_dict[col_name] = m
 
     meta: dict[str, dict[str, str]] = {}
-    for ci in range(len(col_headers) - 1):             # skip Date
-        raw_vals = meta_raw.iloc[:, ci + 1].tolist()   # +1 to skip the label column
-        m = {label: str(v).strip() for label, v in zip(labels, raw_vals)}
-        # Lowercase aliases so JS code can read meta.concept / meta.subcategory
-        # consistently across raw-macro and Phase E payloads (load_indicator_meta
-        # already uses lowercase keys).  The original capitalised keys are
-        # preserved for backwards compatibility with existing readers.
-        m["concept"]     = m.get("Concept", "")
-        m["subcategory"] = m.get("Subcategory", "")
-        meta[col_headers[ci + 1]] = m
+    _ingest(meta_live, meta)
+    _ingest(meta_sister, meta)
 
     _UNIFIED_DF = df
     _UNIFIED_META = meta
@@ -323,25 +354,61 @@ def load_countries() -> list[dict]:
 # ── 7. market_data_comp_hist ──────────────────────────────────────────────────
 
 def build_market_comp() -> dict:
-    # rows 0-10 = metadata, row 11 = headers, row 12+ = data
-    # Metadata identical between live and sister; data unioned via §3.1.1 helper.
-    meta_raw = pd.read_csv(MKT_COMP, header=None, nrows=11, low_memory=False)
-    df       = load_hist_with_archive(str(MKT_COMP), skiprows=11)
+    # rows 0-10 = metadata, row 11 = headers, row 12+ = data.
+    # Per §3.1.1: data is unioned with the sister; sister can contribute
+    # columns that today's live doesn't have (e.g. when a fetch failed).
+    # Read metadata from BOTH prefixes and key by column name to keep the
+    # lookup robust to schema mismatches.
+    meta_live = pd.read_csv(MKT_COMP, header=None, nrows=11, low_memory=False)
+    sister_path = MKT_COMP.with_name(MKT_COMP.name.replace("_hist.csv", "_hist_x.csv"))
+    meta_sister = None
+    if sister_path.exists():
+        try:
+            meta_sister = pd.read_csv(sister_path, header=None, nrows=11, low_memory=False)
+        except Exception as e:
+            print(f"  [build_html] WARN reading sister metadata {sister_path}: {e}")
+
+    df = load_hist_with_archive(str(MKT_COMP), skiprows=11)
     if "row_id" in df.columns:
         df = df.drop(columns=["row_id"])
 
-    meta_labels = meta_raw.iloc[:, 1].tolist()
+    meta_labels = meta_live.iloc[:, 1].tolist()
     # ['Ticker ID','Variant','Source','Name','Broad Asset Class','Region',
     #  'Sub-Category','Currency','Units','Frequency','Last Updated']
-    col_headers = df.columns.tolist()  # includes Date
 
-    series_meta = {}
-    n_data_cols = len(col_headers) - 1
-    for ci in range(n_data_cols):
-        raw_vals = meta_raw.iloc[:, ci + 2].tolist()
-        m = {label: str(v).strip() for label, v in zip(meta_labels, raw_vals)}
-        col_key = col_headers[ci + 1]   # e.g. "IWDA.L_Local"
-        series_meta[col_key] = m
+    series_meta: dict[str, dict[str, str]] = {}
+
+    def _ingest(prefix_df):
+        # market_data_comp prefix: column 0 = empty, column 1 = label, columns 2+ = data cols.
+        # Data df columns are Ticker_Variant compound keys (e.g. "IWDA.L_Local").
+        # Reconstruct the same key from prefix row 0 (Ticker ID) + row 1 (Variant).
+        if prefix_df is None or prefix_df.empty or prefix_df.shape[0] < 2 or prefix_df.shape[1] < 3:
+            return
+        for ci in range(2, prefix_df.shape[1]):
+            try:
+                ticker = str(prefix_df.iloc[0, ci]).strip()
+                variant = str(prefix_df.iloc[1, ci]).strip()
+            except Exception:
+                continue
+            if not ticker or ticker == "nan":
+                continue
+            col_key = (
+                f"{ticker}_{variant}"
+                if variant and variant != "nan"
+                else ticker
+            )
+            if col_key in series_meta:
+                continue
+            raw_vals = prefix_df.iloc[:, ci].tolist()
+            series_meta[col_key] = {
+                label: str(v).strip()
+                for label, v in zip(meta_labels, raw_vals)
+            }
+
+    _ingest(meta_live)
+    _ingest(meta_sister)
+
+    col_headers = df.columns.tolist()  # includes Date
 
     dates, df = _parse_date_col(df)
 
