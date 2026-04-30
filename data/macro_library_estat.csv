@@ -1,0 +1,2 @@
+series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,freshness_override_days
+0003446463,JPN_IND_PROD,Japan Industrial Production (METI Indices of Industrial Production),Growth,Real Activity,Index 2020=100 (SA),Monthly,JPN,T2 fallback for FRED JPNPROINDMISMEI (frozen 2024-03). All aggregator paths (FRED/OECD/IMF) frozen at 2023-11 — upstream OECD MEI freeze. e-Stat statsDataId 0003446463 is METI's IIP table. Wired §3.1 Stage D.4 2026-04-30. If the table has multiple slices we'll add cdCatNN filter in a follow-up.,462,Growth,C,
