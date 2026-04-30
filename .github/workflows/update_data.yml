@@ -30,6 +30,7 @@ jobs:
         FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+        ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
       run: |
         set -o pipefail
         git pull --rebase
