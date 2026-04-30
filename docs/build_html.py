@@ -315,14 +315,14 @@ def _build_payload(keep_column) -> dict:
 
 def build_macro_economic() -> dict:
     """Single merged payload spanning every raw-macro source — FRED (US +
-    intl), OECD, World Bank, IMF, DB.nomics, ifo.  Powers the unified
+    intl), OECD, World Bank, IMF, DB.nomics, ifo, BoE.  Powers the unified
     "Economic Data" sidebar section (§2.5 restructure) where the user
     browses all raw indicators by country (default By Region view) or by
     concept (By Concept view), with the per-source distinction kept only as
     filterable metadata in `meta.Source`.
     """
     return _build_payload(lambda m: m.get("Source") in {
-        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo",
+        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo", "BoE",
     })
 
 
