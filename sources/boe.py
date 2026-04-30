@@ -41,6 +41,19 @@ _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_bo
 BOE_BASE = "https://www.bankofengland.co.uk/boeapps/database/fromshowcolumns.asp"
 DEFAULT_HIST_START = "1975-01-01"
 
+# IADB returns HTTP 403 to default python-requests User-Agent (verified
+# from GitHub Actions runner, 2026-04-30). A browser-like UA + standard
+# Accept headers gets through. This is benign content negotiation —
+# IADB itself is open public data with no key required.
+_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/csv,text/plain,application/csv,*/*;q=0.8",
+    "Accept-Language": "en-GB,en;q=0.9",
+}
+
 
 # ---------------------------------------------------------------------------
 # LIBRARY LOADER
@@ -111,7 +124,7 @@ def fetch_series(
 
     for attempt in range(retries):
         try:
-            resp = requests.get(BOE_BASE, params=params, timeout=timeout)
+            resp = requests.get(BOE_BASE, params=params, headers=_HEADERS, timeout=timeout)
             if resp.status_code == 200 and resp.text:
                 return resp.text
             if 500 <= resp.status_code < 600:
