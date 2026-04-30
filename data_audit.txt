@@ -49,6 +49,11 @@
     Daily       BAMLCC0A0CMTRIV                   src=FRED         series=BAMLCC0A0CMTRIV           last_obs=2026-04-24  age=6d        tolerance=5d
     Daily       BAMLHE00EHYIOAS                   src=FRED         series=BAMLHE00EHYIOAS           last_obs=2026-04-24  age=6d        tolerance=5d
 
+--- Section D: History preservation (0 issues) ---
+  market_data_comp_hist.csv         live= 3982 rows (1950-01-06→2026-04-24)  sister= 3982 rows (1950-01-06→2026-04-24)  union= 3982
+  macro_economic_hist.csv           live= 4140 rows (1946-12-27→2026-04-24)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4140
+  macro_market_hist.csv             live= 1374 rows (2000-01-07→2026-05-01)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1374
+
 Footer:
   * = per-row override applied (freshness_override_days column)
   STALE   = age between 1x and 2x tolerance — investigate

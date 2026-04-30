@@ -73,6 +73,8 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 
+from library_utils import write_hist_with_archive, load_hist_with_archive
+
 # ---------------------------------------------------------------------------
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
@@ -707,7 +709,7 @@ def load_comp_hist() -> pd.DataFrame:
         raise FileNotFoundError(
             f"Missing {COMP_HIST_CSV} — run fetch_hist.py (run_comp_hist) first."
         )
-    df = pd.read_csv(COMP_HIST_CSV, skiprows=11, index_col="Date", low_memory=False)
+    df = load_hist_with_archive(COMP_HIST_CSV, skiprows=11, index_col="Date")
     df.index = pd.to_datetime(df.index, errors="coerce")
     df = df[df.index.notna()].sort_index()
     if "row_id" in df.columns:
@@ -744,11 +746,10 @@ def load_macro_economic_hist() -> pd.DataFrame:
             f"Missing {MACRO_ECONOMIC_HIST_CSV} — "
             "run fetch_macro_economic.py first."
         )
-    df = pd.read_csv(
+    df = load_hist_with_archive(
         MACRO_ECONOMIC_HIST_CSV,
         skiprows=14,
         index_col="Date",
-        low_memory=False,
     )
     df.index = pd.to_datetime(df.index, errors="coerce")
     df = df[df.index.notna()].sort_index()
@@ -2080,7 +2081,7 @@ def run_phase_e():
     df_snapshot.to_csv(SNAPSHOT_CSV, index=False)
     print(f"  Saved {SNAPSHOT_CSV}")
 
-    df_hist.reset_index().to_csv(HIST_CSV, index=False)
+    write_hist_with_archive(df_hist.reset_index(), HIST_CSV)
     print(f"  Saved {HIST_CSV}")
 
     # ------------------------------------------------------------------

@@ -37,6 +37,8 @@ from sources import oecd as oecd_src
 from sources import worldbank as worldbank_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
+from library_utils import write_hist_with_archive
+
 
 # ---------------------------------------------------------------------------
 # CONFIG
@@ -672,23 +674,16 @@ def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
     """
     Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
     then a header row (Date + column names), then one row per Friday.
-    """
-    os.makedirs("data", exist_ok=True)
 
+    Routes through library_utils.write_hist_with_archive() to preserve any
+    rows that would otherwise be lost to source-side floor advancement
+    (per forward_plan §3.1.1 — e.g. ICE BofA 3-yr rolling window).
+    """
     columns = list(df.columns)
     meta_rows = _build_hist_metadata_rows(columns, indicators)
-    header    = ["Date"] + columns
-
-    with open(HIST_CSV, "w", newline="") as f:
-        writer = _csv.writer(f)
-        writer.writerows(meta_rows)
 
     df_out = df.reset_index()
-    df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
-    df_out.to_csv(
-        HIST_CSV, mode="a", header=True, index=False,
-        float_format="%.4f", na_rep="",
-    )
+    write_hist_with_archive(df_out, HIST_CSV, prefix_rows=meta_rows)
     print(f"  Written {len(df)} rows + {len(meta_rows)} metadata rows to {HIST_CSV}")
 
 

@@ -506,6 +506,86 @@ def _check_registry_drift() -> list[str]:
 
 
 # =============================================================================
+# Section D: History-preservation audit (forward_plan §3.1.1)
+# =============================================================================
+# Each *_hist.csv has a sister *_hist_x.csv that holds rows displaced by
+# source-side floor advancement. Report per-file row counts (live + sister =
+# total union), date ranges, and flag any anomalies (sister rows duplicated in
+# live, sister missing for an ICE-BofA-bearing file, etc.).
+
+def _read_hist_dates(path: Path, skiprows: int) -> list[str]:
+    """Return the list of Date strings in the data section of a hist file."""
+    if not path.exists():
+        return []
+    with path.open(newline="") as f:
+        rows = list(csv.reader(f))
+    if len(rows) <= skiprows:
+        return []
+    header = rows[skiprows]
+    try:
+        date_idx = header.index("Date")
+    except ValueError:
+        return []
+    return [r[date_idx] for r in rows[skiprows + 1:] if len(r) > date_idx and r[date_idx]]
+
+
+def section_d_history_preservation() -> dict:
+    """Report live + sister row counts and date ranges per *_hist.csv pair."""
+    pairs = [
+        ("market_data_comp_hist.csv",  DATA / "market_data_comp_hist.csv",  11, True),
+        ("macro_economic_hist.csv",    DATA / "macro_economic_hist.csv",    14, True),
+        ("macro_market_hist.csv",      DATA / "macro_market_hist.csv",       0, False),
+    ]
+    issues: list[str] = []
+    rows: list[dict] = []
+
+    for name, live_path, skip, has_ice_bofa in pairs:
+        sister_path = live_path.with_name(live_path.name.replace("_hist.csv", "_hist_x.csv"))
+
+        live_dates = _read_hist_dates(live_path, skip)
+        sister_dates = _read_hist_dates(sister_path, skip) if sister_path.exists() else []
+
+        union_dates = set(live_dates) | set(sister_dates)
+        overlap = set(live_dates) & set(sister_dates)
+
+        rec = {
+            "name": name,
+            "live_rows": len(live_dates),
+            "sister_exists": sister_path.exists(),
+            "sister_rows": len(sister_dates),
+            "union_rows": len(union_dates),
+            "overlap_rows": len(overlap),
+            "live_earliest": min(live_dates) if live_dates else "—",
+            "live_latest": max(live_dates) if live_dates else "—",
+            "sister_earliest": min(sister_dates) if sister_dates else "—",
+            "sister_latest": max(sister_dates) if sister_dates else "—",
+        }
+        rows.append(rec)
+
+        if has_ice_bofa and not sister_path.exists():
+            issues.append(
+                f"{name}: ICE-BofA-bearing file has no sister *_hist_x.csv — "
+                "history-preservation safeguard not yet active for this file"
+            )
+        # Sister-row-count regression check: once the sister contains rows,
+        # it must never get smaller (it is append-only). Anomaly handled
+        # cross-run via per-file row-count history; here we only catch a
+        # logical impossibility — sister has fewer rows than live AND every
+        # sister date is already in live (ie. sister adds no extension).
+        # That state means sister was rewritten as a strict subset of live.
+        if (sister_path.exists() and sister_dates and
+                len(sister_dates) < len(live_dates) and
+                set(sister_dates).issubset(set(live_dates))):
+            issues.append(
+                f"{name}: sister rows are a strict subset of live "
+                f"({len(sister_dates)} ⊂ {len(live_dates)}) — sister "
+                "may have been rewritten incorrectly"
+            )
+
+    return {"issues": issues, "rows": rows}
+
+
+# =============================================================================
 # Report rendering
 # =============================================================================
 
@@ -559,6 +639,28 @@ def render_report(sections: dict) -> str:
                 f"age={age_str:8s}  tolerance={t_str}"
             )
     lines.append("")
+
+    # Section D — History preservation (forward_plan §3.1.1)
+    d = sections.get("d", {"issues": [], "rows": []})
+    n_d = len(d["issues"])
+    lines.append(f"--- Section D: History preservation ({n_d} issues) ---")
+    for r in d["rows"]:
+        sister_part = (
+            f"sister={r['sister_rows']:5d} rows ({r['sister_earliest']}→{r['sister_latest']})"
+            if r["sister_exists"]
+            else "sister=(none)"
+        )
+        lines.append(
+            f"  {r['name']:32s}  live={r['live_rows']:5d} rows "
+            f"({r['live_earliest']}→{r['live_latest']})  "
+            f"{sister_part}  union={r['union_rows']:5d}"
+        )
+    if n_d:
+        lines.append("")
+        for issue in d["issues"]:
+            lines.append(f"  ALERT  {issue}")
+    lines.append("")
+
     lines.append("Footer:")
     lines.append("  * = per-row override applied (freshness_override_days column)")
     lines.append("  STALE   = age between 1x and 2x tolerance — investigate")
@@ -651,6 +753,7 @@ def main() -> int:
         "a": section_a_fetch_outcomes(),
         "b": section_b_static_checks(),
         "c": section_c_staleness(),
+        "d": section_d_history_preservation(),
     }
 
     OUT_REPORT.write_text(render_report(sections))
