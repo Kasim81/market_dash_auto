@@ -101,6 +101,22 @@ jobs:
         else
           gh issue comment "$ISSUE_NUM" --body "Daily audit ran but produced no comment file."
         fi
+
+        # Retention: keep only the most recent 10 comments on the perpetual
+        # daily-audit issue.  Each new run's report supersedes earlier ones
+        # (every audit is a complete state snapshot, not a delta), so old
+        # comments accrete without value.  We delete the oldest ones rather
+        # than the newest so the issue's tail always shows recent history.
+        # `gh api --paginate` returns oldest-first; `head -n -10` keeps all
+        # but the last 10, which we then delete.  Failures are tolerated so
+        # the workflow never fails on cleanup alone.
+        gh api "repos/${{ github.repository }}/issues/$ISSUE_NUM/comments" \
+          --paginate --jq '.[].id' \
+          | head -n -10 \
+          | while read -r CID; do
+              [ -n "$CID" ] && gh api -X DELETE \
+                "repos/${{ github.repository }}/issues/comments/$CID" || true
+            done
     - name: Commit and push if changed
       # `if: always()` so even a crashed run still commits the
       # pipeline.log so we can diagnose without re-opening the GitHub
