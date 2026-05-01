@@ -195,24 +195,29 @@ The audit's first-run baseline (2026-04-28: 75 stale + 22 dead + 1 schema issue)
 
 ### Data-Layer Registry (single source of truth — per §0)
 
-These 10 CSVs in `data/` are the single source of truth for everything the pipeline fetches or computes. Adding / removing / renaming a series = edit the relevant CSV. Never a Python literal (per §0.1).
+These CSVs in `data/` are the single source of truth for everything the pipeline fetches or computes. Adding / removing / renaming a series = edit the relevant CSV. Never a Python literal (per §0.1).
 
 | File | Rows | Owner | Used by |
 |---|---|---|---|
-| `index_library.csv` | ~387 | Comp pipeline | `fetch_data.py`, `fetch_hist.py` |
+| `index_library.csv` | ~401 | Comp pipeline | `fetch_data.py`, `fetch_hist.py` |
 | `macro_library_countries.csv` | 12 | Phase ME | `sources/countries.py` (canonical / WB / IMF code mappings) |
 | `macro_library_fred.csv` | ~82 | Phase ME | `sources/fred.py` |
 | `macro_library_oecd.csv` | 3 | Phase ME | `sources/oecd.py` |
 | `macro_library_worldbank.csv` | 1 | Phase ME | `sources/worldbank.py` |
 | `macro_library_imf.csv` | 1 | Phase ME | `sources/imf.py` |
-| `macro_library_dbnomics.csv` | 9 | Phase ME | `sources/dbnomics.py` |
+| `macro_library_dbnomics.csv` | 13 | Phase ME | `sources/dbnomics.py` (incl. 4 Stage B T1 fallback rows) |
 | `macro_library_ifo.csv` | 26 | Phase ME | `sources/ifo.py` |
+| `macro_library_boe.csv` | 7 | Phase ME (Stage D, 2026-04-30) | `sources/boe.py` (BoE IADB — Bank Rate, SONIA, gilt par/zero-coupon S/M/L) |
+| `macro_library_ecb.csv` | 3 | Phase ME (Stage D, 2026-04-30) | `sources/ecb.py` (ECB Data Portal — Deposit Rate, AAA yield curve 2Y/30Y) |
+| `macro_library_boj.csv` | 2 | Phase ME (Stage D, 2026-04-30) | `sources/boj.py` (BoJ Time-Series — Policy Rate, Tankan Large Mfg DI) |
+| `macro_library_estat.csv` | 1 | Phase ME (Stage D, 2026-04-30) | `sources/estat.py` (e-Stat — METI IIP) |
+| `source_fallbacks.csv` | 9 | Phase ME (Stage B, 2026-04-30) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
 | `macro_indicator_library.csv` | 92 | Phase E | `compute_macro_market.py` (composite indicator registry) |
-| `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.5 cross-reference; not consumed by the runtime pipeline |
+| `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.1 cross-reference; not consumed by the runtime pipeline |
 
-**Read order in `fetch_macro_economic.py`:** `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`).
+**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
-**Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks during the existing fetch (no separate probe needed).
+**Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks + history-preservation row counts (Section D, added 2026-04-30) during the existing fetch (no separate probe needed).
 
 ### Known Data Gaps (consolidated, 2026-04-26)
 
@@ -269,6 +274,8 @@ Candidate next tracks:
 - `manuals/Macro Market Indicators Reference.docx` — demand: 206 indicators across 6 regions with L/C/G classification.
 - `manuals/G20_Free_API_Catalogue_v2.docx` — supply: aggregators + direct sources for macro statistics.
 - `manuals/Market_Data_Free_API_Catalogue.docx` — supply: market-data sources (yields, FX, commodities, ETF proxies).
+- `manuals/G20_PMI_Master_Table.docx` — supply: PMI / business-survey master reference for all G20 economies. 33 surveys catalogued with tier (◆ Strong / ◇ Proxy / ○ Limited), publisher, frequency, free URL, API access, and similarities/differences vs S&P Global PMI methodology. **Canonical demand-side guide for §3.1.2 Stage E (survey deep-dive).**
+- `manuals/BOJ_api_manual_en.pdf` + `manuals/BOJ_api_tool.xlsx` — BoJ Time-Series API spec (used to wire `sources/boj.py`).
 - `manuals/macro_market_indicators_coverage.xlsx` — current sourcing status per the 206-row demand baseline (post Stage F; refreshed 2026-05-01).
 - `data/reference_indicators.csv` — the 206-row ledger (match_status / matched_to / flags).
 
@@ -314,7 +321,7 @@ Stage definitions are in `manuals/technical_manual.md` §11 Pattern 9 (architect
 | B — T1 fallback chains | ✅ Shipped 2026-04-30 | — (4 of 9 forcing-function rows resolved at T1; the other 5 either fall through to Stage D T2 modules or are accepted gaps) |
 | **C — Reference-baseline close-out (regional roll-up)** | **Outstanding** | Close the 118 `Missing` rows in `reference_indicators.csv` where a free path exists. Priority: **UK growth (0/8 — ONS API)**, **Japan growth (3/7 → ~6/7 via e-Stat extension)**, China growth (mostly proprietary; accept). Mechanically: add rows to existing `data/macro_library_<source>.csv` files; new T2 modules only if no aggregator + no Stage-D-module path exists. |
 | D — On-demand T2 modules | ✅ Shipped 2026-04-30 | — (4 modules built: BoE / ECB / BoJ / e-Stat) |
-| **E — Survey deep-dive** | **Outstanding** | Per-country survey target list distilled from `Macro Market Indicators Reference.docx`; fill via T0/T1/T2 chains using existing modules. Largest open buckets: UK CBI / GfK / RICS (most proprietary — accept), JP Tankan sub-DIs (BoJ module exists; just add rows), CN NBS sub-data (proprietary — accept). Scraper infrastructure (`sources/scraper_base.py`) only as last resort. |
+| **E — Survey deep-dive** | **Outstanding** | Canonical demand-side guide is `manuals/G20_PMI_Master_Table.docx` — 33 G20 surveys with tier / publisher / frequency / free URL / API access / PMI-similarity assessment. Strategy: prioritise ◆ **Strong**-tier surveys with free API access not yet wired (BoK BSI via ECOS, IMEF via Banxico SIE, INEGI EMOE, TCMB EVDS, Argentina INDEC Open Data API, Indonesia BI API). ◇ Proxy-tier surveys covered by existing OECD BCI / Eurostat ESI / FRED routes where free; new T2 module only when the canonical source is meaningfully fresher. ○ Limited-tier surveys (Saudi headline-only, Russia post-2022) accepted as gaps. JP Tankan sub-DIs already accessible — just add rows to `macro_library_boj.csv`. UK CBI / GfK / RICS remain proprietary — accept. CN NBS sub-data proprietary — accept. Scraper infrastructure (`sources/scraper_base.py`) only as last resort. |
 | F — Community ticker catalogues | ✅ Shipped 2026-04-30 | — (14 ETFs added; report at `manuals/community_datasets_review.md`) |
 | **G — Closeout** | **Outstanding** | Refresh §1 Known Data Gaps, refresh `data/source_fallbacks.csv` per-indicator mapping, refresh `manuals/macro_market_indicators_coverage.xlsx`, archive working notes. Final commit when Stage C and E close. |
 
@@ -322,7 +329,7 @@ Stage definitions are in `manuals/technical_manual.md` §11 Pattern 9 (architect
 
 §3.5 regime work uses a Growth × Inflation 4-quadrant frame (Goldilocks / Reflation / Stagflation / Disinflation). The regime classifier needs per-region clean reads on each axis. Current state has well-known gaps on both:
 
-**Growth axis** — well-covered for US / EZ; thin for UK / JP / CN.
+**Growth axis** — well-covered for US / EZ; thin for UK / JP / CN. Note: the canonical demand-side guide for *survey-based* growth indicators (PMI, business confidence, sentiment surveys) is `manuals/G20_PMI_Master_Table.docx` — see Stage E above for the prioritisation strategy.
 
 | Region | Action | Specific targets |
 |---|---|---|
