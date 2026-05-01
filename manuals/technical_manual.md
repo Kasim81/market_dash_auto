@@ -287,10 +287,38 @@ Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-L
 ### ECB Data Portal
 
 - **URL:** `https://data-api.ecb.europa.eu/service/data` (replaced retired `sdw-wsrest.ecb.europa.eu` host on PR2, 2026-04-26)
-- **Auth:** None required
-- **Used for:** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`. The series is too deeply nested to live in `macro_library_*.csv`, so the SDMX call is inline.
-- **Rate limit:** 2s delay between calls
-- **Status:** the ECB AAA govt-yield half is wired; the corresponding Euro IG corporate yield half is currently unsourced (see `forward_plan.md` §1 Known Data Gaps), so EU_Cr1 returns n/a until a free corp-yield source is found.
+- **Auth:** None required. SDMX 2.1 over REST.
+- **Used for (inline):** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`.
+- **Used for (registry-driven, via `sources/ecb.py`):** ECB Deposit Facility Rate (`EA_DEPOSIT_RATE` ← `FM/D.U2.EUR.4F.KR.DFR.LEV`), AAA euro yield curve points (`EZ_GOVT_2Y` ← `YC/...SR_2Y`, `EZ_GOVT_30Y` ← `YC/...SR_30Y`). Library: `data/macro_library_ecb.csv`.
+- **Rate limit:** 2s delay; 60s timeout; `lastNObservations=N` on snapshot calls to keep responses small.
+- **Fetcher:** `sources/ecb.py` (registry path) + inline call in `compute_macro_market.py` (legacy YC call — refactor TODO).
+
+### Bank of England — IADB
+
+- **URL:** `https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp` (with fallback to legacy `fromshowcolumns.asp`)
+- **Auth:** None required. CSV download with multi-row title preamble.
+- **Used for:** UK Bank Rate (`GBR_BANK_RATE` ← `IUDBEDR`), SONIA (`GBR_SONIA` ← `IUDSOIA`), gilt par/zero-coupon yields S/M/L (`GBR_GILT_S/M/L` ← `IUDSNPY/IUDMNPY/IUDLNPY`, `GBR_GILT_MZ/LZ` ← `IUDMNZC/IUDLNZC`). Library: `data/macro_library_boe.csv`.
+- **Quirks:** WAF blocks default `python-requests` User-Agent → module sends a Chrome-like UA; multi-line title preamble is dynamically skipped via "DATE" header detection.
+- **Known gap:** BoE IADB does not publish UK corporate bond yield indices — those have to come via ETF proxy (`SLXX.L` in `index_library.csv`) or a future Bundesbank module.
+- **Fetcher:** `sources/boe.py` (Stage D).
+
+### Bank of Japan — Time-Series Data Search
+
+- **URL:** `https://www.stat-search.boj.or.jp/api/v1/getDataCode?<params>` (programmatic API launched February 2026)
+- **Auth:** None required. Documentation: `manuals/BOJ_api_manual_en.pdf`.
+- **Used for:** BoJ Policy Rate (`JPN_POLICY_RATE` ← `FM01'STRDCLUCON`, T2 backup to DB.nomics IMF/IFS T1), Tankan Large Manufacturers Business Conditions DI (`JP_TANKAN1` ← `CO'TK99F1000601GCQ01000`). Library: `data/macro_library_boj.csv`.
+- **Series-code format:** the search-screen presents codes as `<DB>'<series_code>` (e.g. `FM01'STRDCLUCON`); the API takes them split — `_split_series_id` handles this internally.
+- **Response shape:** CSV with metadata preamble (STATUS / MESSAGEID / PARAMETER lines) + one row per observation with 8 columns (SERIES_CODE / NAME / UNIT / FREQUENCY / CATEGORY / LAST_UPDATE / SURVEY_DATES / VALUES). `parse_csv` finds the SERIES_CODE header dynamically and reads SURVEY_DATES (YYYYMMDD) + VALUES.
+- **Fetcher:** `sources/boj.py` (Stage D).
+
+### e-Stat — Statistics Bureau of Japan
+
+- **URL:** `https://api.e-stat.go.jp/rest/3.0/app/json/getStatsData`
+- **Auth:** Free App ID required (registered, exposed as `ESTAT_APP_ID` GitHub Secret)
+- **Used for:** METI Indices of Industrial Production (`JPN_IND_PROD` ← `statsDataId 0003446463`). 71 years of monthly data (1955→present). Library: `data/macro_library_estat.csv`.
+- **Series-id convention:** `<statsDataId>` for single-series tables; `<statsDataId>?cdCat01=XXX&cdCat02=YYY` for multi-dim tables — the part after `?` is appended verbatim as additional API parameters.
+- **Response shape:** deeply-nested JSON. `parse_response` extracts `GET_STATS_DATA → STATISTICAL_DATA → DATA_INF → VALUE` list of `{"@time": "YYYYMMDD", "$": "value"}`; `_parse_estat_time` handles the 10-digit period encoding (annual / monthly / daily).
+- **Fetcher:** `sources/estat.py` (Stage D).
 
 ---
 
@@ -342,17 +370,22 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 
 | File | Rows | Consumed By | Purpose |
 |---|---|---|---|
-| `index_library.csv` | ~387 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag. 22 dead yfinance tickers retired across 4 batches in §3.1 sub-track 4 (2026-04-28); see `data/removed_tickers.csv` for the per-ticker disposition. |
+| `index_library.csv` | ~401 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag. 22 dead yfinance tickers retired across 4 batches in §3.1 sub-track 4 (2026-04-28); see `data/removed_tickers.csv` for the per-ticker disposition. **Stage F (2026-05-01) added 14 instruments:** 5 fixed-income (IEAC.L Euro IG corp, CBON CN govt bond, IUKD.L UK Dividend, VGOV.L UK Gilt, IBGM.L Eur Govt 7-10yr) + 9 equity (EWZ/EWW/INDA/EZA/TUR/EIS/MCHI/FXI/DXJ — EM regional + Japan hedged). |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
 | `macro_library_countries.csv` | 12 | sources/countries.py, docs/build_html.py | 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) + canonical / WB / IMF code mappings. Also drives the explorer's "Economic Data" By-Country sidebar grouping + country-filter dropdown (§2.5 v2). |
 | `macro_library_fred.csv` | ~82 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor). 2026-04-27: `BAMLEC0A0RMEY` removed. 2026-04-29: `RSFSXMV` + `CHNPIEATI01GYM` (CHN_PPI) added; bogus `CHNPPIALLMINMEI` corrected to `CHNPIEATI01GYM`; 3 OECD-mirror confidence rows removed (`CSCICP03USM665S` / `BSCICP03USM665S` / `CSCICP03EZM665S`). |
 | `macro_library_oecd.csv` | 3 | sources/oecd.py | OECD SDMX dataflow + dimension keys (CLI, unemployment, 3-month rate) |
 | `macro_library_worldbank.csv` | 1 | sources/worldbank.py | World Bank WDI indicator codes (CPI YoY) |
 | `macro_library_imf.csv` | 1 | sources/imf.py | IMF DataMapper indicator codes (real GDP growth) |
-| `macro_library_dbnomics.csv` | 9 | sources/dbnomics.py | DB.nomics series paths (Eurostat ESI/ICI/SCI, ISM PMIs, EZ IP/Retail/Employment) |
+| `macro_library_dbnomics.csv` | 13 | sources/dbnomics.py | DB.nomics series paths. **Stage B (2026-04-30) added 4 T1 fallback rows** for the 9 forcing-function FRED rows: `IMF/IFS/M.JP.FPOLM_PA` (JPN_POLICY_RATE), `IMF/IFS/M.CN.FPOLM_PA` (CHN_POLICY_RATE), `Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20` (EA_HICP), `Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE` (DEU_IND_PROD). Existing 9: 3 Eurostat surveys, 3 ISM PMIs, 3 Eurostat real-economy. |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
+| `macro_library_boe.csv` | 7 | sources/boe.py | **NEW 2026-04-30 (Stage D + Stage F follow-on).** BoE IADB series codes for UK rates: `IUDBEDR` Bank Rate, `IUDSOIA` SONIA, `IUDSNPY` / `IUDMNPY` / `IUDLNPY` gilt par yield S/M/L, `IUDMNZC` / `IUDLNZC` zero-coupon M/L. |
+| `macro_library_ecb.csv` | 3 | sources/ecb.py | **NEW 2026-04-30 (Stage D + Stage F follow-on).** ECB Data Portal direct (registry path, distinct from the inline YC call in `compute_macro_market.py`): `FM/D.U2.EUR.4F.KR.DFR.LEV` (EA_DEPOSIT_RATE), `YC/...SR_2Y` (EZ_GOVT_2Y), `YC/...SR_30Y` (EZ_GOVT_30Y). |
+| `macro_library_boj.csv` | 2 | sources/boj.py | **NEW 2026-04-30 (Stage D).** BoJ Time-Series codes (search-screen format with `<DB>'<code>` apostrophe separator): `FM01'STRDCLUCON` (JPN_POLICY_RATE T2 backup), `CO'TK99F1000601GCQ01000` (JP_TANKAN1 — Tankan Large Mfg Business Conditions DI). |
+| `macro_library_estat.csv` | 1 | sources/estat.py | **NEW 2026-04-30 (Stage D).** e-Stat statsDataIds: `0003446463` (JPN_IND_PROD — METI Indices of Industrial Production, 71 yrs of monthly data 1955→present). |
+| `source_fallbacks.csv` | 9 | (documentation only — runtime walker not yet built) | **NEW 2026-04-30 (Stage B).** Canonical record of the §3.1.2 architectural fallback chain per indicator. Columns: `indicator_id, t0_source, t0_id, t1_source, t1_id, t2_source, t2_id, t3_source, t3_id, t1_status, t1_latest, notes`. v1 is a documentation artefact + future hook for explicit chain-walking logic; today the fallback effect is achieved implicitly via `_collect_all_indicators` ordering (later sources overwrite earlier sources at the column level). |
 | `macro_indicator_library.csv` | 92 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4) — populated for all 92 indicators using the canonical 17-concept taxonomy (Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum). |
-| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.4 coverage analysis. |
+| `reference_indicators.csv` | 206 | Reference only (gap audit) | Cross-reference of 206 macro/market indicators from `Macro Market Indicators Reference.docx` with L/C/G cycle timing, match status, and source flags. Not consumed by the runtime pipeline — used to drive `forward_plan.md` §3.1 coverage analysis. Detail mirror at `manuals/macro_market_indicators_coverage.xlsx`. |
 | `freshness_thresholds.csv` | 5 | `data_audit.py` | Per-frequency staleness tolerance (Daily 5d / Weekly 10d / Monthly 45d / Quarterly 120d / Annual 540d) used by §2.6's daily integrated audit. Per-row override available via the `freshness_override_days` column on every `macro_library_*.csv` (added 2026-04-28). 48 rows widened in the §3.1 sub-track 2 bulk pass (2026-04-29). |
 | `removed_tickers.csv` | grows | Maintained by hand + `audit_writeback.py` | Single-source ledger of every library change — removals (`action=removed`), reroutes (`action=rerouted`), additions (`action=added`). Schema: `date_removed, action, ticker, ticker_field, library_name, source_csv, reason, audit_run_date, replacement_status, target_identifier, notes`. Schema extended 2026-04-29 (`action` + `target_identifier` columns). |
 | `yfinance_failure_streaks.csv` | grows | `audit_writeback.py` | Per-ticker dead-list streak counter (forward_plan §3.1 sub-track 3). Schema: `ticker, first_seen_dead, last_seen_dead, consecutive_fail_days`. Tickers drop out when streak breaks; streaks ≥ 14 trigger `validation_status=UNAVAILABLE`. |
@@ -372,6 +405,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness + registry drift). Regenerated each daily run. |
 | `audit_comment.md` | n/a | `data_audit.py` + `audit_writeback.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. `audit_writeback.py` appends a one-line note when streaks are active or rows are flipped to UNAVAILABLE. |
 | `data/_archived_columns/*.csv` | per-orphan | `library_sync.py --confirm` | Per-orphan-column historical archives. Filename: `<hist_basename>__<column_id>__<YYYY-MM-DD>.csv`. Created when a row is removed from a library CSV and the operator runs `library_sync.py --confirm` to prune the now-orphan hist column. Preserves full historical observations for future reference. |
+| `*_hist_x.csv` (sister files) | per-`_hist.csv` | `library_utils.write_hist_with_archive()` | **NEW 2026-04-30 (Stage A).** "Extended" sister to every `*_hist.csv` writer-output. Captures rows that would otherwise be lost when source-side history truncates retroactively (e.g. ICE BofA on FRED becoming a rolling 3-yr window from April 2026). Append-only; never shrinks. Read paths transparently union `*_hist.csv` ∪ `*_hist_x.csv` via `load_hist_with_archive()`. See §11 Pattern 9. |
 
 ---
 
@@ -463,6 +497,8 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `SHEETS_PROTECTED_TABS` | frozenset | Tabs that no writer is allowed to overwrite (`market_data`, `sentiment_data`). All four writer modules check this before writing. |
 | `SHEETS_ACTIVE_TABS` | frozenset | The 7 tabs the pipeline actively writes today (`market_data`, `market_data_comp`, `market_data_comp_hist`, `macro_economic`, `macro_economic_hist`, `macro_market`, `macro_market_hist`). |
 | `SHEETS_LEGACY_TABS_TO_DELETE` | frozenset | The 12 retired tab titles swept on every run (4 pre-Stage-2 simple-pipeline tabs + 8 Stage-2-retired macro tabs). |
+| `write_hist_with_archive(df, path, prefix_rows=None, date_col="Date")` | function | **NEW 2026-04-30 (Stage A).** History-preservation writer. Per-column floor-advancement detection: for each column where the new fetch's earliest non-null date is later than the locally-stored earliest non-null date, the rows about to disappear are appended to `<path>_x.csv` (sister, deduped by date) before the live file is rewritten with the new (truncated) window. Used by every `*_hist.csv` writer (`fetch_data.py`, `fetch_hist.py`, `fetch_macro_economic.py`, `compute_macro_market.py`). See §11 Pattern 9. |
+| `load_hist_with_archive(path, **read_csv_kwargs)` | function | **NEW 2026-04-30 (Stage A).** History-preservation reader. Drop-in replacement for `pd.read_csv(path, ...)` that transparently unions live + sister via `combine_first` semantics — live wins on cells where it has a non-null value, sister fills cells where live is NaN. Used by `compute_macro_market.py` Phase E calculators and `docs/build_html.py` payload builders. |
 
 ### 9.2 `fetch_data.py` (888 lines)
 
@@ -566,9 +602,9 @@ The module loads every indicator definition from the per-source CSVs at import t
 
 Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema.
 
-### 9.5 `sources/` package (8 modules, ~1,705 lines total)
+### 9.5 `sources/` package (12 modules, ~2,500 lines total)
 
-**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`.
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 newest modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added in Stage D of `forward_plan.md` §3.1 (2026-04-30) following the same pattern as the older modules.
 
 #### 9.5.1 `sources/base.py` (220 lines)
 
@@ -657,6 +693,63 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `_try_download_xlsx(session, url)` | Download + magic-byte validate the workbook (`PK\\x03\\x04` zip header) |
 | `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition with retry across candidate URLs |
 | `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
+
+#### 9.5.9 `sources/boe.py` (~210 lines, Stage D)
+
+Bank of England Interactive Statistical Database (IADB) fetcher. Direct CSV download with multi-line title preamble.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_boe.csv` |
+| `fetch_series(series_code, start, ...)` | GET against `_iadb-fromshowcolumns.asp` (with fallback to legacy `fromshowcolumns.asp`); HTML form responses rejected |
+| `parse_csv(text, series_code)` | Detect "DATE" header row dynamically (skips the title preamble) and parse `(date, value)` tuples; multi-format date parser |
+| `fetch_series_as_pandas(series_code, ...)` | Convenience wrapper returning a date-indexed `pd.Series` |
+
+Uses a Chrome-like User-Agent — IADB's WAF blocks the default `python-requests` UA.
+
+#### 9.5.10 `sources/ecb.py` (~210 lines, Stage D)
+
+ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB call in `compute_macro_market.py::fetch_ecb_euro_ig_spread()` (which is not yet refactored through this module).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_ecb.csv` |
+| `fetch_series(series_id, start, ..., last_n=None)` | GET against `https://data-api.ecb.europa.eu/service/data`. `series_id` is `<DATASET>/<KEY>`. `last_n` optionally appends `&lastNObservations=N` for fast snapshot calls (used at snapshot time to avoid timeout on cold ECB cache). |
+| `parse_csv(text, series_id)` | Read TIME_PERIOD + OBS_VALUE columns; dimension columns ignored |
+| `_parse_period(p)` | Daily / monthly / quarterly / annual ECB period parser |
+| `fetch_series_as_pandas(series_id, ..., last_n=None)` | Convenience wrapper |
+
+60s default timeout (FM dataset is sometimes slow on first hit).
+
+#### 9.5.11 `sources/boj.py` (~270 lines, Stage D)
+
+Bank of Japan Time-Series Data Search fetcher. Programmatic API launched February 2026.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_boj.csv` |
+| `_split_series_id(series_id)` | Split search-screen format `<DB>'<series_code>` into (db, code) per the BoJ API requirement |
+| `fetch_series(series_id, ...)` | GET against `https://www.stat-search.boj.or.jp/api/v1/getDataCode` with split db + code |
+| `parse_csv(text, series_id)` | Detect SERIES_CODE header row; read SURVEY_DATES + VALUES columns |
+| `_parse_period(p)` | Handles BoJ's YYYYMMDD daily / YYYYMM monthly / YYYYQQ quarterly / YYYYHN half-year encodings |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+Diagnostic dump on parse failure logs the first 15 lines of response — surfaces schema changes proactively.
+
+#### 9.5.12 `sources/estat.py` (~250 lines, Stage D)
+
+Statistics Bureau of Japan e-Stat fetcher. JSON REST API; reads `ESTAT_APP_ID` from env (GitHub Secret).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_estat.csv` |
+| `_split_series_id(series_id)` | Parse `<statsDataId>?cdCat01=XX&cdCat02=YY` form into (stats_data_id, extras_dict) for multi-dim tables |
+| `fetch_series(series_id, ...)` | GET against `https://api.e-stat.go.jp/rest/3.0/app/json/getStatsData`; injects `appId`; checks `RESULT.STATUS` in the JSON for API-side errors |
+| `parse_response(doc, series_id)` | Walk `GET_STATS_DATA → STATISTICAL_DATA → DATA_INF → VALUE`; dedup overlapping (date, value) tuples |
+| `_parse_estat_time(t)` | Parse e-Stat's 10-digit `@time` encoding (trailing zeros indicate period type: annual / monthly / daily) |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+Falls back gracefully if `ESTAT_APP_ID` env var is missing.
 
 ### 9.6 `compute_macro_market.py` (2,103 lines)
 
@@ -817,6 +910,7 @@ Runs as a CI step at the end of `update_data.yml`; never fails the build (warnin
 | `_yfinance_truly_dead(suspects)` | Filter yfinance suspects: keep only those without data in the latest comp-hist row |
 | `section_b_static_checks()` | Run the 5 sub-checks (orphan countries / duplicate ids / missing calculators / missing columns / registry drift) |
 | `section_c_staleness()` | Bucket every series into FRESH / STALE / EXPIRED |
+| `section_d_history_preservation()` | **NEW 2026-04-30 (Stage A).** Per-`*_hist.csv` row counts for live + sister + union, plus date ranges. ALERTs on (a) ICE-BofA-bearing file with no sister, (b) sister rows being a strict subset of live (writer regression). Surfaced in `audit_comment.md` so anomalies appear in the daily GitHub Issue notification. |
 | `render_report(sections)` | Build the plaintext `data_audit.txt` |
 | `render_comment(sections)` | Build the GitHub Issue Markdown `audit_comment.md` with first-line summary |
 | `main()` | Orchestrate; always returns exit code 0 (warning channel) |
@@ -1037,7 +1131,32 @@ All API calls include configurable delays and exponential backoff on 429/5xx:
 | OECD | 4s | 2s, 4s, 8s, 16s, 32s | 5 |
 | World Bank | 1s | 2s, 4s, 8s, 16s, 32s | 5 |
 | IMF | 1s | 2s, 4s, 8s, 16s, 32s | 5 |
-| ECB | 2s | 2s, 4s, 8s, 16s, 32s | 5 |
+| ECB | 0.6s | 2s, 4s, 8s, 16s | 3 |
+| BoE | 0.6s | 2s, 4s, 8s, 16s | 3 |
+| BoJ | 0.6s | 2s, 4s, 8s, 16s | 3 |
+| e-Stat | 0.6s | 2s, 4s, 8s, 16s | 3 |
+
+### Pattern 9: History Preservation Under Source Truncation (Stage A, 2026-04-30)
+
+Source-side history can shrink retroactively — for example, ICE Data demanded that FRED truncate redistributed ICE BofA series (`BAMLH0A0HYM2`, `BAMLC0A0CM`, `BAMLHE00EHYIOAS`, etc.) to a rolling 3-year window from April 2026, irreversibly losing 20+ years of pre-2023 spread data on FRED's side. Without intervention, the next nightly fetch would overwrite local history with the truncated window.
+
+**Architecture (per `forward_plan.md` §3.1.1):**
+
+For every `data/<file>_hist.csv` the pipeline writes, there is a sister `data/<file>_hist_x.csv` that captures any rows that pre-date the current source-side window. The sister is append-only — once a row enters, it stays.
+
+**Detection logic (per series within a file)**: per-column floor advancement, NOT row-count change. A rolling-window source can keep row count constant while the earliest non-null date walks forward each cycle. For each column shared between the new fetch and the existing live file, if `new.earliest_nonnull_date > local.earliest_nonnull_date`, the rows in `[local_earliest, new_earliest)` with that column non-null are appended to the sister CSV (deduplicated against any rows already there) before the live CSV is rewritten.
+
+**Read-back semantics**: `library_utils.load_hist_with_archive()` is a drop-in replacement for `pd.read_csv` that transparently unions live + sister via `pd.combine_first`. Live wins on cells where it has a non-null value; sister fills cells where live is NaN. This gives Phase E indicator calculators (`compute_macro_market.py`) and the dashboard payload (`docs/build_html.py`) the full historical depth even when the source has truncated.
+
+**Writer migration**: every `*_hist.csv` writer goes through `library_utils.write_hist_with_archive()`:
+
+- `compute_macro_market.py` (Phase E hist writer)
+- `fetch_hist.py` (`save_csv()` routes `*_hist.csv` paths through the helper)
+- `fetch_macro_economic.py` (`save_hist_csv()`)
+
+**Audit hook**: `data_audit.py::section_d_history_preservation()` surfaces per-file row counts (live + sister + union) and date ranges in the daily audit, with ALERTs for (a) ICE-BofA-bearing file missing a sister, (b) sister rows being a strict subset of live (writer regression).
+
+**Out of scope**: this rule preserves history we already have. It does not back-fill history we never captured (a separate research task — would require paid ICE Data or alternative archive).
 
 ---
 
@@ -1109,7 +1228,19 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 
 ### Data Gaps — see `forward_plan.md` §1
 
-The canonical record of series unavailable from any free source we accept (China 10Y, Euro IG corporate yield, OECD CLI for EA19/CHE, ZEW, JP_PMI1 [au Jibun Bank PMI], CN_PMI2 [Caixin], NAPMOI, CHN_PPI, plus rejected paid sources) lives in **`forward_plan.md` §1 "Known Data Gaps"**. That table is the single source of truth — do not duplicate here. `compute_macro_market.py` calculators silently degrade to `n/a` for any indicator whose underlying series is in the gap list (currently `EU_Cr1`, `AS_CN_R1`, `DE_ZEW1`, `JP_PMI1`, `CN_PMI2`).
+The canonical record of series unavailable from any free source we accept lives in **`forward_plan.md` §1 "Known Data Gaps"**. That table is the single source of truth — do not duplicate here.
+
+**Material movement post-Stage-B + Stage-D (2026-04-30)**:
+
+- ✅ `JPN_POLICY_RATE`, `CHN_POLICY_RATE`, `EA_HICP`, `DEU_IND_PROD` — Stage B T1 fallbacks wired (DB.nomics IMF/IFS + Eurostat). FRED forcing-function rows kept as audit alarms; T1 carries the data.
+- ✅ `GBR_BANK_RATE`, `EA_DEPOSIT_RATE`, `JPN_IND_PROD`, `JP_TANKAN1` — Stage D T2 modules built (BoE IADB, ECB Data Portal, e-Stat, BoJ Time-Series). 51-71 yrs of fresh data flowing.
+- ✅ ICE BofA truncation (April 2026) — handled architecturally via Stage A history-preservation safeguard (§11 Pattern 9). Pre-truncation history preserved in `*_hist_x.csv` sister files.
+- ✅ DE 2Y bund yield — closed via ECB YC `EZ_GOVT_2Y` (Stage F follow-on).
+- ⏸ `EU_Cr1` (Euro IG corporate yield) — partial: ETF proxy `IEAC.L` added to `index_library.csv`. True yield series still unsourced; ECB MIR / Bundesbank corporate yield indices remain candidates for follow-on probe.
+- ⏸ `AS_CN_R1` (China 10Y govt yield) — partial: ETF proxy `CBON` added. Yield itself still proprietary.
+- ❌ `CHN_M2`, `CHN_IND_PROD` (and other NBS/PBoC sub-series), `JP_PMI1` source replacement (now functionally covered by `JP_TANKAN1`), `DE_ZEW1`, `CN_PMI2` — accepted gaps (no free programmatic source).
+
+`compute_macro_market.py` calculators silently degrade to `n/a` for any indicator whose underlying series is in the gap list. The `data/source_fallbacks.csv` registry documents the canonical chain per indicator including planned T2 modules where the chain is open.
 
 ### Tickers Confirmed Unavailable via yfinance
 
