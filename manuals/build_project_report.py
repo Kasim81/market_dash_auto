@@ -1809,6 +1809,617 @@ def add_section_8(doc):
 
 
 # ════════════════════════════════════════════════════════════════════════
+#         SECTION 9 — THE INDICATOR EXPLORER & 17-CONCEPT TAXONOMY
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_9(doc):
+    add_section_heading(doc, 9, "The Indicator Explorer & Concept Taxonomy")
+
+    add_paragraph(doc,
+        "The CSV outputs are the canonical record of what the pipeline "
+        "produced on any given day. They are not, however, the artefact "
+        "from which a human analyst typically reads the data. That role "
+        "is filled by the Indicator Explorer — a self-contained HTML "
+        "page rebuilt nightly from the freshly-written CSVs and "
+        "committed to git alongside them, additionally published to "
+        "GitHub Pages so any browser can load it without authentication."
+    )
+
+    add_subsection_heading(doc, "9.1", "Layout")
+
+    add_paragraph(doc,
+        "The explorer is organised around a three-section sidebar. The "
+        "first section, Macro Market Indicators, lists the ninety-two "
+        "Phase E composites. The second, Economic Data, surfaces every "
+        "raw macro series across the ten data sources in a single "
+        "merged tree. The third, Market Data, exposes the comp-pipeline "
+        "price series with a Local-currency / USD variant toggle."
+    )
+
+    add_paragraph(doc,
+        "Each of the first two sections supports two grouping modes: "
+        "By Region (the indicator's regional bucket — US, UK, Europe, "
+        "Japan, Asia, Global, FX & Commodities) and By Concept (against "
+        "the seventeen-concept taxonomy described below). Mode "
+        "switching preserves the user's checked-state for plotted "
+        "series, so the analyst can move between an asset-class "
+        "lens and a thematic lens without losing position."
+    )
+
+    add_subsection_heading(doc, "9.2", "The 17-concept taxonomy")
+
+    add_paragraph(doc,
+        "The taxonomy was developed on 2026-04-28 to give the "
+        "indicator library a thematic grouping orthogonal to its "
+        "regional one. It applies uniformly across both the Phase E "
+        "composites and the raw macro series — the same concept "
+        "labels appear in both sidebar trees."
+    )
+
+    rows = [
+        ("Equity",                "Cyclicals, defensives, factor / size / sector rotation"),
+        ("Rates / Yields",        "Yield-curve slopes, real rates, policy paths"),
+        ("Credit / Spreads",      "IG OAS, HY OAS, sovereign spreads, BTP-Bund"),
+        ("Inflation",             "CPI, PPI, breakevens, inflation expectations"),
+        ("Sentiment / Survey",    "PMIs, OECD CLI/BCI/CCI, ifo, Tankan, ZEW"),
+        ("Leading Indicators",    "OECD CLI composites, Conference Board LEI"),
+        ("Growth",                "GDP, industrial production, retail volumes"),
+        ("Labour",                "Unemployment, jobless claims, JOLTS, payrolls"),
+        ("Consumer",              "Consumer confidence, retail sales, dispositions"),
+        ("Housing",               "Building permits, mortgage spread, NAHB"),
+        ("Manufacturing",         "ISM Manufacturing, IIP, capacity utilisation"),
+        ("External / Trade",      "Trade balances, current account, FX reserves"),
+        ("Money / Liquidity",     "M2, financial conditions, NFCI"),
+        ("Cross-Asset",           "SPY/GOVT, ACWI/AGG, copper/gold cross signals"),
+        ("FX",                    "Dollar index, EM currency baskets, single-pair"),
+        ("Volatility",            "VIX, VIX term structure, MOVE, MOVE/VIX ratio"),
+        ("Momentum",              "Trend-following, breadth, dual momentum"),
+    ]
+    add_shaded_table(doc,
+        headers=["Concept", "Coverage"],
+        rows=rows,
+        col_widths=[Inches(1.6), Inches(4.6)],
+    )
+
+    add_subsection_heading(doc, "9.3", "Filtering and visualisation")
+
+    add_paragraph(doc,
+        "The explorer carries four orthogonal filters that compose "
+        "freely: a free-text search box, the market-data variant "
+        "toggle (Local / USD), an L/C/G chip filter on cycle-timing, "
+        "and a country dropdown that surfaces the twelve canonical "
+        "country codes. Empty groups collapse automatically when "
+        "filters reduce them to zero rows. The country dropdown is "
+        "populated from macro_library_countries.csv at build time, "
+        "so additions to the country registry propagate to the "
+        "explorer with no JavaScript edit."
+    )
+
+    add_paragraph(doc,
+        "Each indicator panel renders three things together: the raw "
+        "series as a line, the rolling z-score as a secondary axis, "
+        "and a coloured regime strip running along the time axis. "
+        "Four colours encode the regime palette: green for the "
+        "positive regime, red for the negative, gold for amber / "
+        "transitional regimes, and grey for neutral. The forward-"
+        "regime label appears as a coloured badge alongside the "
+        "current regime; an L, C, or G badge marks the indicator's "
+        "cycle-timing tag."
+    )
+
+    add_paragraph(doc,
+        "A custom PNG snapshot button composites the chart title, "
+        "the Plotly chart image, the legend entries, and the regime "
+        "colour key onto a single canvas — useful for pasting an "
+        "indicator's current state into a research note without a "
+        "screenshot tool."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#                  SECTION 10 — OUTPUTS & INTEGRATION
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_10(doc):
+    add_section_heading(doc, 10, "Outputs & Integration Points")
+
+    add_paragraph(doc,
+        "The pipeline emits five categories of artefact each day. "
+        "Three are data products consumed by humans or downstream "
+        "code; two are operational artefacts consumed by the audit "
+        "subsystem and the GitHub Issue notification channel."
+    )
+
+    rows = [
+        ("Google Sheets workspace",
+         "Seven active tabs in a single spreadsheet (ID 12nKIUGHz5...). "
+         "Authoritative human-readable surface for the daily snapshot, "
+         "history, and indicator outputs."),
+        ("Version-controlled CSVs in data/",
+         "One CSV per Sheets tab, plus the audit and ledger files. "
+         "Programmatic consumption surface; every output is pinned to "
+         "a Git commit with date-stamped message."),
+        ("Indicator Explorer (HTML)",
+         "Self-contained HTML + JavaScript bundle, committed to "
+         "docs/indicator_explorer.html and published to GitHub Pages. "
+         "Reads the freshly-written CSVs for every rebuild."),
+        ("Pipeline log (pipeline.log)",
+         "Captured stdout and stderr of the daily Python run, "
+         "committed to the repo for diagnostic recovery without "
+         "needing to download workflow artefacts."),
+        ("Daily audit (data_audit.txt + audit_comment.md)",
+         "Plaintext report committed to the repo, plus Markdown body "
+         "posted as a comment to the perpetual daily-audit GitHub "
+         "Issue. First line is the one-sentence ALL CLEAN / N ISSUES "
+         "summary; GitHub native notifications email the operator on "
+         "every comment."),
+    ]
+    add_shaded_table(doc,
+        headers=["Artefact", "Purpose"],
+        rows=rows,
+        col_widths=[Inches(2.0), Inches(4.5)],
+    )
+
+    add_subsection_heading(doc, "10.1", "Downstream consumers")
+
+    add_paragraph(doc,
+        "One known downstream consumer reads the pipeline output today: "
+        "a separate Windows-local script (trigger.py) running on a "
+        "06:15 London cron, which reads the market_data tab via Google "
+        "Sheets CSV export. Because trigger.py is the project's only "
+        "production-critical reader of the simple-pipeline output, the "
+        "market_data tab is included in the SHEETS_PROTECTED_TABS "
+        "frozenset and is verified untouched by every writer in the "
+        "pipeline."
+    )
+
+    add_paragraph(doc,
+        "Beyond trigger.py, the data layer is designed to be a generic "
+        "integration surface. Any downstream workflow — manual analysis "
+        "in Sheets, ad-hoc Python notebooks against the committed CSVs, "
+        "the planned regime-allocation back-test tooling, or research "
+        "notes — consumes the same artefacts on the same schedule "
+        "without coordination with the pipeline. The architectural "
+        "rule is that downstream code reads but never writes; "
+        "operational state lives only in the registry CSVs and the "
+        "audit ledger files."
+    )
+
+    add_callout(doc,
+        "Integration contract",
+        "Every output file is fully regenerated each daily run; "
+        "downstream code should read by date column and not by row "
+        "index. Metadata prefix rows on history files (10 rows on the "
+        "comp history, 14 on the macro history) must be skipped "
+        "explicitly. The committed CSVs are the only stable contract "
+        "— Sheets tab GIDs are stable but their column ordering is "
+        "not strictly guaranteed across schema changes."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#               SECTION 11 — COVERAGE VS REFERENCE BASELINE
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_11(doc):
+    add_section_heading(doc, 11, "Coverage Today vs Reference Baseline")
+
+    add_paragraph(doc,
+        "A standalone reference document — Macro Market Indicators "
+        "Reference.docx — enumerates 206 macro and market indicators "
+        "across six regions with explicit Leading / Coincident / "
+        "Lagging classifications. That document is the demand-side "
+        "specification against which the pipeline's coverage is "
+        "evaluated. The current state, refreshed 1 May 2026 after "
+        "Stage F community-ticker additions, is recorded below."
+    )
+
+    add_subsection_heading(doc, "11.1", "Per-region coverage")
+
+    add_paragraph(doc,
+        "Captured rows are those for which a free programmatic "
+        "source is wired and producing a clean weekly observation. "
+        "Partial captures use a proxy series (an ETF total-return "
+        "instead of a yield, for example, or a sub-component instead "
+        "of the headline). Missing rows are awaiting either a free "
+        "source or an architectural decision."
+    )
+
+    rows = [
+        ("US",        "37",  "28", "2",  "7",  "78%"),
+        ("UK",        "36",  "3",  "2",  "31", "11%"),
+        ("Eurozone",  "36",  "12", "8",  "16", "44%"),
+        ("Japan",     "35",  "6",  "3",  "26", "21%"),
+        ("China",     "36",  "8",  "4",  "24", "28%"),
+        ("Global",    "26",  "9",  "3",  "14", "40%"),
+        ("Total",     "206", "66", "22", "118","37%"),
+    ]
+    fills = [None, COLOR_PINK, None, None, None, None, COLOR_HEADER]
+    add_shaded_table(doc,
+        headers=["Region", "Total", "Full", "Partial", "Missing", "% Captured"],
+        rows=rows,
+        row_fills=fills,
+        col_widths=[Inches(1.4), Inches(0.8), Inches(0.8), Inches(0.9),
+                    Inches(0.9), Inches(1.2)],
+    )
+
+    add_subsection_heading(doc, "11.2", "Coverage by concept × region")
+
+    add_paragraph(doc,
+        "Cell entries below are ‘full / total’ counts. Concepts "
+        "selected are those most material to the regime-classification "
+        "axes (growth, inflation, rates, credit, sentiment, labour). "
+        "Two regional standouts deserve explicit attention: the United "
+        "Kingdom is the largest single-region coverage gap at eleven "
+        "per cent, with growth at zero out of eight rows wired; and "
+        "the Phase E inflation indicator family is sparse — only two "
+        "of the ninety-two composites carry the Inflation concept "
+        "tag — which constrains any future regime classifier that "
+        "uses inflation as an axis."
+    )
+
+    rows = [
+        ("Inflation",     "2/2", "1/1", "1/1", "1/3", "2/2", "0/0", "7/9"),
+        ("Growth",        "6/6", "0/8", "6/6", "3/7", "3/9", "0/1", "18/37"),
+        ("Rates / Yields","3/3", "2/2", "3/3", "1/2", "2/2", "—",   "11/12"),
+        ("Credit / Spread","4/5","0/4", "0/4", "0/1", "0/4", "1/3", "5/21"),
+        ("Sentiment",     "2/6", "1/9", "7/11","1/9", "1/7", "1/2", "13/44"),
+        ("Labour",        "6/6", "0/6", "2/5", "1/3", "1/2", "—",   "10/22"),
+    ]
+    add_shaded_table(doc,
+        headers=["Concept", "US", "UK", "EZ", "JP", "CN", "Global", "Total"],
+        rows=rows,
+        col_widths=[Inches(1.4), Inches(0.6), Inches(0.6), Inches(0.6),
+                    Inches(0.6), Inches(0.6), Inches(0.6), Inches(0.7)],
+    )
+
+    add_subsection_heading(doc, "11.3", "Source-fallback realisation")
+
+    add_paragraph(doc,
+        "Of nine FRED series carrying internationally-mirrored macro "
+        "data that have stopped updating (forcing-function rows "
+        "documented in Section 4.5), seven have been resolved through "
+        "fallback chains — four at the tier-one level via DB.nomics "
+        "IMF/IFS and Eurostat, and three at the tier-two level via "
+        "the BoE IADB, the ECB Data Portal, the BoJ Time-Series API, "
+        "and e-Stat. The remaining two — Chinese M2 and Chinese "
+        "industrial production — are accepted gaps because the People's "
+        "Bank of China and the National Bureau of Statistics publish "
+        "no free programmatic interface. The forcing-function FRED "
+        "rows are deliberately retained in the registry so the daily "
+        "audit continues to surface them as expired; the actual data "
+        "now flows through the fallback sources."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#               SECTION 12 — KNOWN LIMITATIONS & ACCEPTED GAPS
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_12(doc):
+    add_section_heading(doc, 12, "Known Limitations & Accepted Gaps")
+
+    add_paragraph(doc,
+        "The free-data constraint imposes hard limits. Where a "
+        "limitation has been investigated and judged irreducible, "
+        "it is recorded as an accepted gap rather than an open "
+        "task. The rationale is durable: ‘this gap exists because "
+        "the source is paywalled / scraping is fragile / no free "
+        "API exists’ is a stable conclusion, and recording it once "
+        "saves repeated investigation."
+    )
+
+    add_subsection_heading(doc, "12.1", "Data gaps")
+
+    rows = [
+        ("China 10-year govt yield",
+         "Proprietary",
+         "ETF proxy via CBON (VanEck China AMC China Bond) for "
+         "regime use; direct yield series remains unsourced."),
+        ("Euro IG corporate effective yield",
+         "FRED series 400s; no free aggregator",
+         "ETF proxy via IEAC.L (iShares Core EUR IG Corp Bond) for "
+         "regime use; EU_Cr1 returns n/a until a corp-yield series "
+         "is wired. EU_Cr2 (Euro HY) covered separately."),
+        ("Caixin China Manufacturing PMI",
+         "S&P Global proprietary",
+         "Substitute via CN_PMI1 (OECD BCI for China)."),
+        ("ZEW Economic Sentiment",
+         "ZEW Mannheim licences the archive",
+         "Substitute via DE_IFO1 + DEU_BUS_CONF."),
+        ("au Jibun Bank Japan Manufacturing PMI",
+         "S&P Global proprietary",
+         "Functionally resolved via JP_TANKAN1 (BoJ Tankan Large "
+         "Mfg DI) wired through sources/boj.py."),
+        ("OECD CLI for EA19 / CHE",
+         "Not published by OECD",
+         "Eurozone CLI proxied as DEU+FRA equal-weight average."),
+        ("Atlanta Fed GDPNow",
+         "Web scrape only — no clean API",
+         "Excluded; tracked in forward planning as a future "
+         "Stage-C extension."),
+        ("ICE BofA pre-2023 history on FRED",
+         "ICE Data licence change April 2026 — rolling 3-year window",
+         "Architectural mitigation via per-column floor-advancement "
+         "detection and append-only sister files (Section 5.9)."),
+    ]
+    add_shaded_table(doc,
+        headers=["Gap", "Reason", "Resolution / proxy"],
+        rows=rows,
+        col_widths=[Inches(1.6), Inches(1.7), Inches(3.2)],
+    )
+
+    add_subsection_heading(doc, "12.2", "Permanently unavailable instruments")
+
+    add_paragraph(doc,
+        "A small number of instruments are permanently unavailable "
+        "via yfinance and have been removed from the comp-pipeline "
+        "library. Russian instruments — IMOEX.ME and RTSI.ME — return "
+        "data only through mid-2022 / mid-2024, owing to sanctions; "
+        "their later history is not retrievable. WisdomTree's Chinese "
+        "Yuan ETF (CYB) was delisted in December 2023 and has been "
+        "replaced by CNYB.L. The US Dollar Index (DX-Y.NYB) returns "
+        "data only from 2008 via yfinance and FRED's DTWEXBGS is used "
+        "for longer histories where required by an indicator "
+        "calculator."
+    )
+
+    add_subsection_heading(doc, "12.3", "Excluded sources")
+
+    add_paragraph(doc,
+        "Several candidate sources have been investigated and "
+        "deliberately excluded. Investing.com and Trading Economics "
+        "are protected by Cloudflare and explicitly forbid scraping "
+        "in their terms of service. The Financial Modeling Prep API "
+        "moved its economic-calendar endpoint behind a paywall in "
+        "August 2025. The S&P Global PMI series and any series "
+        "originating from a JP Morgan or Goldman Sachs proprietary "
+        "index are licence-only. Bloomberg-terminal-only series — "
+        "the canonical Goldman Sachs Financial Conditions Index, "
+        "the Bloomberg Commodity Index sub-components — are excluded "
+        "for the same reason. Where a free proxy exists (the Chicago "
+        "Fed NFCI for the Goldman FCI; the equal-weight Global PMI "
+        "composite for JP Morgan's), it is used. Where no proxy "
+        "exists, the indicator is recorded as an accepted gap and not "
+        "re-investigated."
+    )
+
+    add_subsection_heading(doc, "12.4", "Methodological caveats")
+
+    add_paragraph(doc,
+        "Two methodological caveats apply to every output of the "
+        "system and merit explicit statement:"
+    )
+
+    add_bullet(doc,
+        "Forward-fill into Friday slots is a deliberate choice that "
+        "supports cross-series alignment but obscures intra-month "
+        "publisher behaviour. The value-change staleness audit "
+        "addresses the silent-freeze failure mode but cannot recover "
+        "intra-month timing detail that a native-frequency store "
+        "would carry. A multi-frequency rebuild is on the forward "
+        "plan but is not in scope for this report.")
+    add_bullet(doc,
+        "Z-score thresholds at ±1 are convenient and broadly "
+        "calibrated against the academic and practitioner literature "
+        "for each indicator family, but they are not optimised "
+        "against any specific objective function. A regime-aware "
+        "threshold tuning step is on the forward plan; until it "
+        "lands, the current thresholds are heuristic conventions "
+        "rather than statistically derived cut-points.")
+
+
+# ════════════════════════════════════════════════════════════════════════
+#                       SECTION 13 — SUMMARY OF STATUS
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_13(doc):
+    add_section_heading(doc, 13, "Summary of Status")
+
+    add_paragraph(doc,
+        "The system as it stands is in production. The daily run has "
+        "executed cleanly on every market-day since the unified "
+        "macro-economic coordinator landed on 23 April 2026. The "
+        "ten-source data layer is comprehensive against the free-"
+        "source ceiling, with seven of the nine identified "
+        "forcing-function gaps closed through tier-one and tier-two "
+        "fallback chains and the remainder accepted as residual "
+        "limits of free programmatic data. The composite-indicator "
+        "layer of ninety-two indicators is feature-complete — z-score, "
+        "regime, forward-regime, trajectory, and cycle-timing labels "
+        "all surface in the daily snapshot — and the operational "
+        "scaffolding around it is mature: a four-section integrated "
+        "audit, an automated writeback for dead tickers, an "
+        "operator-gated library-sync utility, and a perpetual "
+        "GitHub Issue thread for the daily heartbeat."
+    )
+
+    add_paragraph(doc,
+        "The substrate is documented across three working "
+        "documents: technical_manual.md (the authoritative record "
+        "of the current code state, ~1,360 lines), forward_plan.md "
+        "(the architectural rules, the project chronology, and the "
+        "outstanding work queue, ~810 lines), and indicator_manual.md "
+        "(the indicator-by-indicator reference with economic "
+        "rationale and academic citations, ~1,850 lines). This "
+        "report is a self-contained synthesis of the substrate and "
+        "the design decisions behind it."
+    )
+
+    add_paragraph(doc,
+        "The scope of this report is strictly retrospective. The "
+        "regime-based asset allocation work that the present "
+        "infrastructure is intended to support is out of scope by "
+        "design — it is the subject of subsequent work, not of "
+        "this record."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#                APPENDIX A — MATHEMATICAL NOTATION REFERENCE
+# ════════════════════════════════════════════════════════════════════════
+
+def add_appendix_a(doc):
+    doc.add_page_break()
+    h = doc.add_heading("Appendix A.  Mathematical Notation Reference", level=1)
+    h.paragraph_format.space_before = Pt(0)
+    h.paragraph_format.space_after  = Pt(8)
+
+    add_paragraph(doc,
+        "This appendix consolidates the symbols and conventions used "
+        "in the equations of Sections 4 through 8. Equation labels "
+        "are reproduced as cross-references to their first appearance "
+        "in the body."
+    )
+
+    add_subsection_heading(doc, "A.1", "Symbol conventions")
+
+    rows = [
+        ("t",                       "Time index, weekly (Friday close) unless noted otherwise"),
+        ("τ",                       "Reference time strictly less than or equal to t"),
+        ("x_t, y_t, a_t, b_t",      "Generic series values at time t"),
+        ("r_local, r_FX, r_USD",    "Local-currency, FX, and USD-adjusted returns"),
+        ("z_t",                     "Z-score at time t (3-year rolling)"),
+        ("μ_W(t), σ_W(t)",          "Window mean and standard deviation over the trailing W observations"),
+        ("W",                       "Z-score window length (W = 156 weeks)"),
+        ("β",                       "Eight-week z-score slope (forward-regime regressor)"),
+        ("I_t",                     "Composite indicator value at time t"),
+        ("N_t, D_t",                "Numerator and denominator series for log-ratio indicators"),
+        ("S^F_t",                   "Friday-spine value of series S at time t"),
+        ("L_+, L_0, L_-",           "Indicator-specific positive / neutral / negative regime labels"),
+        ("T",                       "Per-frequency staleness tolerance (days)"),
+        ("age(s)",                  "Days since the last value-change of series s"),
+    ]
+    add_shaded_table(doc,
+        headers=["Symbol", "Meaning"],
+        rows=rows,
+        col_widths=[Inches(1.6), Inches(4.5)],
+    )
+
+    add_subsection_heading(doc, "A.2", "Typographic conventions")
+
+    add_paragraph(doc,
+        "Single letter symbols (r, x, t, z, β) are typeset italic. "
+        "Multi-letter labels denoting categorical content (USD, local, "
+        "FX, ticker codes such as XLY and XLP, instrument labels, "
+        "regime labels) are typeset upright. Function names (log, sgn, "
+        "max) are typeset upright. Operators ( =, +, −, <, >, ≤, ≥, "
+        "∧, ∨, ≠) use Word's default mathematical typography. Angle "
+        "brackets and the floor / ceiling notation are not used "
+        "anywhere in the report."
+    )
+
+    add_subsection_heading(doc, "A.3", "Equation index")
+
+    rows = [
+        ("4.1", "USD-adjusted return identity",        "Section 4.4"),
+        ("4.2", "LSE pence correction",                 "Section 4.4"),
+        ("5.1", "Friday-spine alignment",               "Section 5.3"),
+        ("6.1", "Rolling z-score",                      "Section 6.2"),
+        ("6.2", "Window mean μ_W with W = 156",         "Section 6.2"),
+        ("6.3", "Log-ratio template",                   "Section 6.3"),
+        ("6.4", "Composite log-ratio template",         "Section 6.3"),
+        ("6.5", "Arithmetic-difference template",       "Section 6.3"),
+        ("6.6", "Year-on-year monthly transform",       "Section 6.3"),
+        ("7.1", "Three-bucket regime classifier",       "Section 7.1"),
+        ("7.2", "Forward-regime slope β",                "Section 7.3"),
+        ("7.3", "Forward-regime classification",        "Section 7.3"),
+        ("7.4", "Trajectory: intensifying",             "Section 7.4"),
+        ("7.5", "Trajectory: fading",                   "Section 7.4"),
+        ("7.6", "Trajectory: reversing",                "Section 7.4"),
+        ("8.1", "Staleness age",                        "Section 8.4"),
+        ("8.2", "Staleness band classification",        "Section 8.4"),
+    ]
+    add_shaded_table(doc,
+        headers=["Eq.", "Description", "First reference"],
+        rows=rows,
+        col_widths=[Inches(0.6), Inches(3.7), Inches(1.7)],
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#                          APPENDIX B — REFERENCES
+# ════════════════════════════════════════════════════════════════════════
+
+def add_appendix_b(doc):
+    doc.add_page_break()
+    h = doc.add_heading("Appendix B.  References", level=1)
+    h.paragraph_format.space_before = Pt(0)
+    h.paragraph_format.space_after  = Pt(8)
+
+    add_paragraph(doc,
+        "Academic and practitioner references cited in the body of "
+        "the report. Where multiple citations exist for a single "
+        "concept, the most authoritative or earliest is selected."
+    )
+
+    refs = [
+        ("Altman (1968)",
+         "Altman, E. I. (1968). Financial ratios, discriminant "
+         "analysis and the prediction of corporate bankruptcy. "
+         "Journal of Finance, 23(4), 589–609."),
+        ("Borio & Lowe (2002)",
+         "Borio, C. & Lowe, P. (2002). Asset prices, financial and "
+         "monetary stability: exploring the nexus. BIS Working Paper "
+         "No. 114."),
+        ("Carr & Wu (2006)",
+         "Carr, P. & Wu, L. (2006). A tale of two indices. Journal "
+         "of Derivatives, 13(3), 13–29."),
+        ("Duffie & Singleton (1999)",
+         "Duffie, D. & Singleton, K. J. (1999). Modeling term "
+         "structures of defaultable bonds. Review of Financial "
+         "Studies, 12(4), 687–720."),
+        ("Erb & Harvey (2006)",
+         "Erb, C. B. & Harvey, C. R. (2006). The strategic and "
+         "tactical value of commodity futures. Financial Analysts "
+         "Journal, 62(2), 69–97."),
+        ("Estrella & Mishkin (1996)",
+         "Estrella, A. & Mishkin, F. S. (1996). The yield curve as "
+         "a predictor of US recessions. NBER Working Paper No. 5379. "
+         "Current Issues in Economics and Finance, 2(7)."),
+        ("Faber (2007)",
+         "Faber, M. T. (2007). A quantitative approach to tactical "
+         "asset allocation. Journal of Wealth Management, 9(4), 69–79."),
+        ("Fama & French (1989)",
+         "Fama, E. F. & French, K. R. (1989). Business conditions "
+         "and expected returns on stocks and bonds. Journal of "
+         "Financial Economics, 25(1), 23–49."),
+        ("Friedman (1957)",
+         "Friedman, M. (1957). A Theory of the Consumption Function. "
+         "Princeton University Press."),
+        ("Marquette (1992)",
+         "Marquette, J. F. (1992). Forecasting with the NAPM "
+         "Manufacturing Survey. Business Economics, 27(4)."),
+        ("Merton (1974)",
+         "Merton, R. C. (1974). On the pricing of corporate debt: "
+         "the risk structure of interest rates. Journal of Finance, "
+         "29(2), 449–470."),
+        ("Whaley (2009)",
+         "Whaley, R. E. (2009). Understanding the VIX. Journal of "
+         "Portfolio Management, 35(3), 98–105."),
+        ("OECD CLI methodology",
+         "OECD (2012). OECD System of Composite Leading Indicators. "
+         "OECD Publishing — methodological reference for "
+         "equal-weight z-score aggregation."),
+        ("NY Fed Recession Probability Model",
+         "Federal Reserve Bank of New York, Economic Indicators "
+         "Calendar — ongoing publication of the recession-probability "
+         "model based on the 10Y–3M term spread."),
+    ]
+
+    for short, full in refs:
+        p = doc.add_paragraph()
+        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.left_indent = Inches(0.4)
+        p.paragraph_format.first_line_indent = Inches(-0.4)
+        r1 = p.add_run(f"{short}.  ")
+        r1.bold = True
+        r1.font.size = Pt(10)
+        r2 = p.add_run(full)
+        r2.font.size = Pt(10)
+
+
+# ════════════════════════════════════════════════════════════════════════
 #               STEP 2 PROBE (kept at tail until Step 6 polish)
 # ════════════════════════════════════════════════════════════════════════
 
@@ -1869,6 +2480,15 @@ def main():
     add_section_6(doc)
     add_section_7(doc)
     add_section_8(doc)
+    add_section_9(doc)
+    add_section_10(doc)
+    add_section_11(doc)
+    add_section_12(doc)
+    add_section_13(doc)
+
+    # Appendices
+    add_appendix_a(doc)
+    add_appendix_b(doc)
 
     # Interim equation probe (removed in Step 6)
     add_step2_probe(doc)
