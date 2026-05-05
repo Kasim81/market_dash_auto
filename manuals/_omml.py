@@ -141,6 +141,41 @@ def func(name, arg, plain_name=True):
     )
 
 
+def eqArr(*rows):
+    """Vertically stacked equation array — each row is bare OMML."""
+    body = "".join(f'<m:e>{r}</m:e>' for r in rows)
+    return (
+        '<m:eqArr>'
+        '<m:eqArrPr><m:baseJc m:val="center"/></m:eqArrPr>'
+        f'{body}'
+        '</m:eqArr>'
+    )
+
+
+def cases(*rows):
+    """{ stacked rows } — Word's piecewise / cases construction.
+
+    Open brace, no closing delimiter. Each row is bare OMML.
+    """
+    return paren(eqArr(*rows), left="{", right="")
+
+
+def space(width="med"):
+    """Explicit math spacing run.
+
+    width ∈ {"thin", "med", "thick"} — currently rendered as one or two
+    no-break spaces; OMML auto-spacing handles operator gaps so this
+    helper is only needed inside textual case-row separators etc.
+    """
+    if width == "thin":
+        s = " "          # thin space
+    elif width == "thick":
+        s = "  "    # two no-break spaces
+    else:
+        s = " "          # no-break space
+    return f'<m:r><m:t xml:space="preserve">{s}</m:t></m:r>'
+
+
 def oMath(*parts):
     """Inline math container."""
     return '<m:oMath>' + ''.join(parts) + '</m:oMath>'
