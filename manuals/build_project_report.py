@@ -284,6 +284,99 @@ def add_eq_display(doc, builder, *, eq_number=None):
     doc.add_paragraph()
 
 
+# ── indicator-card helper (§6 worked examples) ──────────────────────────
+
+def _card_label_cell(t, ri, text):
+    """Left cell — label (small caps, bold)."""
+    c = t.cell(ri, 0)
+    shade_cell(c, COLOR_CALLOUT)
+    p = c.paragraphs[0]
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after  = Pt(2)
+    r = p.add_run(text)
+    r.bold = True
+    r.font.size = Pt(9.5)
+
+
+def _card_text_cell(t, ri, text, *, italic=False, size=9.5):
+    c = t.cell(ri, 1)
+    p = c.paragraphs[0]
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after  = Pt(2)
+    r = p.add_run(text)
+    r.italic = italic
+    r.font.size = Pt(size)
+
+
+def _card_regime_cell(t, ri, regime_rows):
+    """Right cell rendering condition → label pairs as separate lines."""
+    c = t.cell(ri, 1)
+    first = True
+    for cond, label in regime_rows:
+        p = c.paragraphs[0] if first else c.add_paragraph()
+        first = False
+        p.paragraph_format.space_before = Pt(1)
+        p.paragraph_format.space_after  = Pt(1)
+        r1 = p.add_run(cond)
+        r1.font.size = Pt(9.5)
+        r1.bold = True
+        r2 = p.add_run("   →   ")
+        r2.font.size = Pt(9.5)
+        r3 = p.add_run(label)
+        r3.font.size = Pt(9.5)
+
+
+def _card_formula_cell(t, ri, eq_builder):
+    """Right cell containing a centred display equation."""
+    c = t.cell(ri, 1)
+    p = c.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after  = Pt(2)
+    M.add_display_equation(p, eq_builder())
+
+
+def add_indicator_card(doc, *, ind_id, full_name, eq_builder, data,
+                       lookback, regime_rows, interpretation, references):
+    """Render one indicator worked-example as a structured card."""
+    rows = 7   # title + 6 field rows
+    t = doc.add_table(rows=rows, cols=2)
+    t.style = "Table Grid"
+    t.autofit = False
+    t.columns[0].width = Inches(1.1)
+    t.columns[1].width = Inches(5.4)
+
+    # Title row (merged across both columns, slate-blue header)
+    title = t.cell(0, 0).merge(t.cell(0, 1))
+    shade_cell(title, COLOR_HEADER)
+    p = title.paragraphs[0]
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after  = Pt(2)
+    r = p.add_run(f"{ind_id}  —  {full_name}")
+    r.bold = True
+    r.font.size = Pt(11)
+
+    _card_label_cell(t, 1, "Formula")
+    _card_formula_cell(t, 1, eq_builder)
+
+    _card_label_cell(t, 2, "Data")
+    _card_text_cell(t, 2, data)
+
+    _card_label_cell(t, 3, "Lookback")
+    _card_text_cell(t, 3, lookback)
+
+    _card_label_cell(t, 4, "Regime")
+    _card_regime_cell(t, 4, regime_rows)
+
+    _card_label_cell(t, 5, "Interpretation")
+    _card_text_cell(t, 5, interpretation)
+
+    _card_label_cell(t, 6, "References")
+    _card_text_cell(t, 6, references, italic=True, size=9)
+
+    doc.add_paragraph()
+
+
 # ════════════════════════════════════════════════════════════════════════
 #                       SECTION 1 — EXECUTIVE SUMMARY
 # ════════════════════════════════════════════════════════════════════════
@@ -1044,6 +1137,678 @@ def add_section_5(doc):
 
 
 # ════════════════════════════════════════════════════════════════════════
+#                SECTION 6 — THE COMPOSITE-INDICATOR LAYER
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_6(doc):
+    add_section_heading(doc, 6, "The Composite-Indicator Layer (Phase E)")
+
+    add_paragraph(doc,
+        "Phase E is the analytical heart of the project. It consumes the "
+        "unified macro-economic history and the comp-pipeline price "
+        "history, applies a small library of standard transforms, and "
+        "produces ninety-two composite indicators. Each indicator emits, "
+        "for every Friday in its history, a raw value, a rolling z-score, "
+        "a regime classification, a forward-regime signal, and a z-score "
+        "trajectory diagnostic. The indicator is the unit on which all "
+        "downstream interpretation is built."
+    )
+
+    add_subsection_heading(doc, "6.1", "Computation flow per indicator")
+
+    add_paragraph(doc,
+        "Every indicator passes through the same five-stage pipeline. "
+        "The first three stages are purely mechanical and identical "
+        "across indicators; the last two stages are where economic "
+        "judgement enters."
+    )
+
+    rows = [
+        ("1", "Calculator function",
+         "A registered Python function (e.g. _calc_US_G1) reads its "
+         "inputs from the unified macro hist or the comp-pipeline price "
+         "history, applies the indicator-specific transform, and "
+         "returns a weekly Series."),
+        ("2", "Rolling z-score",
+         "A 156-week (three-year) rolling z-score is computed against "
+         "the indicator's own history, with a 52-week minimum warm-up "
+         "before the first z-value is emitted."),
+        ("3", "Regime classification",
+         "A registered classifier function (a lambda keyed by indicator "
+         "id in REGIME_RULES) maps the (raw, z) pair to a discrete "
+         "regime label."),
+        ("4", "Forward regime",
+         "The slope of the z-score over the trailing eight weeks is "
+         "classified as improving / stable / deteriorating, with a "
+         "[leading] suffix where the indicator is naturally leading."),
+        ("5", "Z-score trajectory",
+         "Sampled at 1-, 4-, and 13-week lags, the z-score's recent "
+         "trajectory is classified as intensifying, fading, reversing, "
+         "or stable. This is purely diagnostic — it does not feed the "
+         "regime call."),
+    ]
+    add_shaded_table(doc,
+        headers=["#", "Stage", "Description"],
+        rows=rows,
+        col_widths=[Inches(0.4), Inches(1.6), Inches(4.5)],
+    )
+
+    add_subsection_heading(doc, "6.2", "The rolling z-score")
+
+    add_paragraph(doc,
+        "The rolling z-score is the single normalisation that makes "
+        "ninety-two indicators of heterogeneous units comparable. For "
+        "an indicator series, the z-score at time t is:"
+    )
+
+    add_eq_display(doc, EQ.rolling_zscore, eq_number="6.1")
+
+    add_paragraph(doc,
+        "where the window mean and standard deviation are computed "
+        "over the trailing W observations:"
+    )
+
+    add_eq_display(doc, EQ.zscore_window, eq_number="6.2")
+
+    add_paragraph(doc,
+        "The choice of W = 156 weeks corresponds to three calendar "
+        "years. Three years is long enough to span the typical short "
+        "business cycle while remaining short enough that the window "
+        "tracks regime shifts rather than averaging across them. The "
+        "minimum-periods threshold of 52 weeks ensures that no "
+        "indicator emits a z-score until it has accumulated at least "
+        "one year of context, so that early-history values are not "
+        "computed against a degenerate sample."
+    )
+
+    add_callout(doc,
+        "Why z-scores rather than absolute thresholds?",
+        "The economic meaning of a credit spread of 500 basis points "
+        "in 1995 is materially different from its meaning in 2025. "
+        "Spreads have structurally tightened. The same is true of "
+        "implied volatility, the yield curve, and most spread relations "
+        "in the indicator library. A rolling z-score adapts to the "
+        "indicator's own recent regime and answers the only question "
+        "that matters in practice: is this reading unusual relative "
+        "to the recent history? Where structural levels do matter — "
+        "the credit spread above 800 basis points, the inverted yield "
+        "curve, the inverted VIX term structure — the regime classifier "
+        "applies a level override, as discussed in Section 7."
+    )
+
+    add_subsection_heading(doc, "6.3", "Indicator formula templates")
+
+    add_paragraph(doc,
+        "Every calculator in the library is a thin wrapper around one of "
+        "four standard transforms, plus a small set of derived "
+        "operations. The transforms are:"
+    )
+
+    add_paragraph(doc, "Log-ratio. Used wherever two prices or two "
+                  "yield-class series are compared:", bold=True,
+                  size=10.5, space_after=2)
+    add_eq_display(doc, EQ.log_ratio, eq_number="6.3")
+
+    add_paragraph(doc, "Composite log-ratio. Used to average several "
+                  "log-ratios into a single composite signal:",
+                  bold=True, size=10.5, space_after=2)
+    add_eq_display(doc, EQ.sum_log_ratio, eq_number="6.4")
+
+    add_paragraph(doc, "Arithmetic difference. Used for yield-curve "
+                  "and spread differences:",
+                  bold=True, size=10.5, space_after=2)
+    add_eq_display(doc, EQ.arith_diff, eq_number="6.5")
+
+    add_paragraph(doc, "Year-on-year change. Used for monthly "
+                  "macro-economic series whose level is not directly "
+                  "comparable across regimes:",
+                  bold=True, size=10.5, space_after=2)
+    add_eq_display(doc, EQ.yoy_monthly, eq_number="6.6")
+
+    add_subsection_heading(doc, "6.4", "Indicator families")
+
+    add_paragraph(doc,
+        "The ninety-two indicators are organised across regions and "
+        "concept families:"
+    )
+
+    rows = [
+        ("US",                    "34", "Equity rotation, credit, rates, "
+                                        "volatility, momentum, macro / survey"),
+        ("Europe / UK",           "11", "European cyclicals, EU IG/HY credit, "
+                                        "BTP-Bund, gilts, breakeven, GBP credit"),
+        ("Japan",                 "1",  "Japan vs global equities"),
+        ("Asia (China / India)",  "6",  "Size, growth, rates"),
+        ("Global",                "8",  "Risk appetite, EM vs DM, CLI "
+                                        "differentials and breadth"),
+        ("FX & Commodities",      "9",  "Copper/gold, dollar, iron ore, "
+                                        "commodity and FX momentum"),
+        ("Survey composites",     "23", "Country-level OECD CLI / business / "
+                                        "consumer confidence, ISM, PMI"),
+    ]
+    add_shaded_table(doc,
+        headers=["Family", "Count", "Coverage"],
+        rows=rows,
+        col_widths=[Inches(2.0), Inches(0.6), Inches(3.9)],
+    )
+
+    add_subsection_heading(doc, "6.5", "Six worked examples")
+
+    add_paragraph(doc,
+        "The six examples that follow span the full breadth of the "
+        "library: an equity-rotation log-ratio, a credit-spread "
+        "level-and-z hybrid, a yield-curve arithmetic difference, an "
+        "equity-volatility term-structure spread, a cross-commodity "
+        "log-ratio, and a multi-country survey composite. Each card "
+        "lists the formula, the data sources, the regime thresholds, "
+        "an interpretation, and the supporting academic references."
+    )
+
+    # ── 1. US_G1 ────────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="US_G1",
+        full_name="Cyclicals vs Defensives (Discretionary / Staples)",
+        eq_builder=EQ.eq_us_g1,
+        data="SPDR Consumer Discretionary ETF (XLY) and SPDR Consumer "
+             "Staples ETF (XLP), yfinance total-return.",
+        lookback="156-week rolling z-score of the log-ratio.",
+        regime_rows=[
+            ("z > +1",        "pro-growth — OW discretionary, HY credit, cyclicals"),
+            ("|z| ≤ 1",       "neutral — balanced allocation"),
+            ("z < −1",        "defensive — OW staples, IG, defensive sectors"),
+        ],
+        interpretation="Households purchase discretionaries when they "
+            "feel financially secure and curtail them in stress; staples "
+            "spending is near-inelastic. The ratio therefore distils "
+            "aggregate consumer confidence and tends to peak three to "
+            "six months ahead of the economic cycle.",
+        references="Friedman (1957) permanent-income hypothesis; "
+            "Fama & French (1989) on cyclicals leading staples around "
+            "cycle turns; Conference Board LEI methodology.",
+    )
+
+    # ── 2. US_Cr2 ───────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="US_Cr2",
+        full_name="US High-Yield Credit Spread (5-regime)",
+        eq_builder=EQ.eq_us_cr2_regime,
+        data="ICE BofA US High Yield OAS (FRED: BAMLH0A0HYM2) and the "
+             "10-year Treasury yield (FRED: DGS10) for context.",
+        lookback="Regime is a level / z-score hybrid; z computed on a "
+                 "156-week window.",
+        regime_rows=[
+            ("Spread > 800 bps   ∨   z > +2",            "opportunity"),
+            ("Spread > 500 bps   ∧   z > +1",            "stress"),
+            ("400 ≤ spread ≤ 600   ∧   |z| < 1",        "normal"),
+            ("Spread < 400 bps   ∧   z < −0.5",         "complacent"),
+            ("Spread < 300 bps   ∧   z < −1",           "frothy"),
+        ],
+        interpretation="The HY spread is the most sensitive real-time "
+            "measure of credit conditions. Five regimes are required "
+            "because at the extremes, structural levels (the 800 bps "
+            "contrarian buy zone, the 300 bps frothy zone) carry signal "
+            "that pure z-score normalisation would lose by adapting to "
+            "regime drift.",
+        references="Altman (1968) Z-score / default-probability "
+            "framework; Merton (1974) structural credit model; "
+            "Duffie & Singleton (1999); T. Rowe Price post-crisis "
+            "recovery study (CFA Institute analysis).",
+    )
+
+    # ── 3. US_R1 ────────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="US_R1",
+        full_name="Yield-Curve Slope 10Y − 3M",
+        eq_builder=EQ.eq_us_r1,
+        data="Federal Reserve H.15 release via FRED (T10Y3M = DGS10 − DGS3MO), "
+             "in percentage points.",
+        lookback="Level-based regime with z-score modulation; z computed "
+                 "on 156 weeks.",
+        regime_rows=[
+            ("Spread < 0",                       "recession-watch"),
+            ("Spread > 0   ∧   z > +1",          "early-cycle"),
+            ("Spread > 0   ∧   |z| ≤ 1",         "mid-cycle"),
+            ("Spread > 0   ∧   z < −1",          "late-cycle"),
+        ],
+        interpretation="The most empirically validated recession "
+            "predictor in macroeconomics. The 3-month yield tracks the "
+            "current Fed Funds Rate; the 10-year blends future-rate "
+            "expectations with the term premium. Inversion implies the "
+            "market expects the Fed will need to cut rates materially — "
+            "which only happens in recessions.",
+        references="Estrella & Mishkin (1996, NBER) — the curve "
+            "outperforms all single recession indicators 4–6 quarters "
+            "ahead. NY Fed publishes an ongoing recession-probability "
+            "model based solely on this spread.",
+    )
+
+    # ── 4. US_V1 ────────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="US_V1",
+        full_name="VIX Term Structure (3-month minus 1-month)",
+        eq_builder=EQ.eq_us_v1,
+        data="CBOE 3-Month VIX (^VIX3M) and CBOE VIX (^VIX), yfinance.",
+        lookback="Level-based regime with z-modulation in the positive "
+                 "regime; z over 156 weeks.",
+        regime_rows=[
+            ("VIX3M − VIX < 0   (inversion)",   "stress"),
+            ("Spread > 0   ∧   z < −1",          "complacency"),
+            ("Spread > 0   ∧   |z| ≤ 1",         "normal"),
+        ],
+        interpretation="Implied volatility term structures are normally "
+            "in contango — three-month vol exceeds one-month vol because "
+            "uncertainty grows with horizon. Inversion is a hallmark of "
+            "acute stress; investors are paying premium prices for "
+            "immediate hedges. Inversion has preceded most major market "
+            "dislocations of the last two decades.",
+        references="Whaley (2009, JFM) on VIX term structure as a "
+            "real-time fear gauge; Carr & Wu (2006) on the variance "
+            "risk premium in inversions.",
+    )
+
+    # ── 5. FX_CMD1 ──────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="FX_CMD1",
+        full_name="Copper / Gold (Global Growth Barometer)",
+        eq_builder=EQ.eq_fx_cmd1,
+        data="Copper futures (HG=F) and gold futures (GC=F), yfinance.",
+        lookback="156-week rolling z-score of the log-ratio.",
+        regime_rows=[
+            ("z > +1",        "pro-growth — OW cyclicals, EM commodities"),
+            ("|z| ≤ 1",       "neutral"),
+            ("z < −1",        "growth-scare — OW gold, defensive duration"),
+        ],
+        interpretation="Copper is the industrial bellwether (about 60% "
+            "of demand from construction, electrical, machinery); gold "
+            "is the safe-haven. The ratio answers a single question: is "
+            "the marginal capital seeking productive investment or "
+            "protecting itself? The ratio leads the 10-year Treasury "
+            "yield by six to twelve months.",
+        references="Erb & Harvey (2006, FAJ) on copper-PMI linkage; "
+            "Gundlach (DoubleLine commentary) popularising the ratio "
+            "as a 10-year-yield leading indicator.",
+    )
+
+    # ── 6. GL_PMI1 ──────────────────────────────────────────────────────
+    add_indicator_card(doc,
+        ind_id="GL_PMI1",
+        full_name="Equal-weight Global Manufacturing Survey Composite",
+        eq_builder=EQ.eq_gl_pmi1,
+        data="ISM Manufacturing PMI (DB.nomics), Eurostat Industrial "
+             "Confidence (DB.nomics), UK Business Confidence (FRED OECD "
+             "mirror), German ifo Industry composite (ifo direct), and "
+             "Japan Tankan Large Manufacturer DI (BoJ Time-Series).",
+        lookback="Each component independently z-scored against its own "
+                 "156-week window; the composite is the equal-weight "
+                 "average of available z-scores.",
+        regime_rows=[
+            ("z > +1",        "global-expansion — broad survey-led growth"),
+            ("|z| ≤ 1",       "neutral"),
+            ("z < −1",        "global-contraction — broad survey-led decline"),
+        ],
+        interpretation="A free-data substitute for the proprietary "
+            "JP Morgan Global Manufacturing PMI. The composite "
+            "degrades gracefully when individual components are "
+            "missing — only the available z-scores are averaged — "
+            "so the indicator continues to compute through "
+            "publisher-side outages of any single component.",
+        references="Marquette (1992) on ISM new orders leading "
+            "industrial production; methodological convention "
+            "follows the OECD Composite Leading Indicator framework "
+            "of equal-weight z-score aggregation.",
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#         SECTION 7 — REGIME, FORWARD-REGIME & TRAJECTORY CLASSIFICATION
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_7(doc):
+    add_section_heading(doc, 7,
+        "Regime, Forward-Regime & Z-Score Trajectory Classification")
+
+    add_paragraph(doc,
+        "Each indicator emits four classification labels alongside its "
+        "raw and z-scored values: a current regime, a forward regime, "
+        "a z-score trajectory diagnostic, and a cycle-timing tag. "
+        "Together these labels carry the analytical interpretation of "
+        "the indicator at every time step. This section documents how "
+        "each label is computed."
+    )
+
+    add_subsection_heading(doc, "7.1", "Regime classification")
+
+    add_paragraph(doc,
+        "The default regime classifier is a three-bucket helper "
+        "applied to the z-score:"
+    )
+
+    add_eq_display(doc, EQ.regime_3bucket, eq_number="7.1")
+
+    add_paragraph(doc,
+        "Each indicator supplies its own labels for L₊, L₀, and L₋. "
+        "For US_G1 these are pro-growth / neutral / defensive; for "
+        "FX_CMD1 they are pro-growth / neutral / growth-scare; for "
+        "US_M2 they are abundant-liquidity / neutral / tight-liquidity. "
+        "The labels are not comparable across indicators — they are "
+        "interpretation aids rather than universal categories — but "
+        "the underlying ±1 z-threshold convention is uniform."
+    )
+
+    add_subsection_heading(doc, "7.2", "Indicator-specific overrides")
+
+    add_paragraph(doc,
+        "A minority of indicators apply a level override to the "
+        "default classifier. The overrides exist for two reasons: "
+        "structural levels carry signal that a rolling z-score would "
+        "lose by adapting to regime drift, and certain economic "
+        "conditions (yield-curve inversion, vol-curve inversion, "
+        "credit spread above 800 basis points) are absolute states "
+        "that should not be relativised."
+    )
+
+    add_paragraph(doc,
+        "Three patterns recur: yield-curve inversion (US_R1, US_R2, "
+        "US_R3) — any negative spread overrides the z-score to "
+        "recession-watch; volatility-curve inversion (US_V1) — any "
+        "negative VIX3M − VIX overrides to stress; and the five-regime "
+        "credit-spread classifier (US_Cr2) which couples raw basis-"
+        "point levels with z-score thresholds across five distinct "
+        "regimes."
+    )
+
+    add_subsection_heading(doc, "7.3", "Forward regime")
+
+    add_paragraph(doc,
+        "The forward regime captures the indicator's recent trajectory "
+        "rather than its current level. It is computed from the slope "
+        "of the z-score over the trailing eight weeks:"
+    )
+
+    add_eq_display(doc, EQ.fwd_slope, eq_number="7.2")
+
+    add_paragraph(doc,
+        "and classified using ±0.15 thresholds:"
+    )
+
+    add_eq_display(doc, EQ.fwd_regime, eq_number="7.3")
+
+    add_paragraph(doc,
+        "The eight-week window is short enough to capture genuine "
+        "trajectory shifts and long enough to dampen weekly noise. "
+        "The 0.15 threshold corresponds to a z-score change of about "
+        "1.2 over the eight weeks — small enough to register typical "
+        "regime transitions and large enough to filter out random walks. "
+        "Indicators flagged as naturally leading in the registry receive "
+        "a [leading] suffix on their forward-regime label, marking that "
+        "their trajectory is itself a forward-looking signal rather "
+        "than a coincident one."
+    )
+
+    add_subsection_heading(doc, "7.4", "Z-score trajectory diagnostic")
+
+    add_paragraph(doc,
+        "A separate diagnostic classifies the recent z-score trajectory "
+        "against three lookbacks (1, 4, and 13 weeks) and the trailing "
+        "13-week peak in absolute z-score. Four classes are recognised."
+    )
+
+    add_paragraph(doc,
+        "Intensifying — z is rising in magnitude vs both 1- and 4-week "
+        "lags, and is near the 13-week peak in absolute value:",
+        size=10.5, space_after=2)
+    add_eq_display(doc, EQ.trend_intensifying, eq_number="7.4")
+
+    add_paragraph(doc,
+        "Fading — current absolute z is meaningfully below its 4-week "
+        "lag:",
+        size=10.5, space_after=2)
+    add_eq_display(doc, EQ.trend_fading, eq_number="7.5")
+
+    add_paragraph(doc,
+        "Reversing — z has changed sign vs the 4-week lag, from a "
+        "previous reading already meaningful in magnitude:",
+        size=10.5, space_after=2)
+    add_eq_display(doc, EQ.trend_reversing, eq_number="7.6")
+
+    add_paragraph(doc,
+        "Stable — none of the above. The trajectory is purely diagnostic; "
+        "it does not feed the regime call. Its purpose is to give a "
+        "reader of the snapshot output a one-glance read on whether "
+        "an indicator's signal is strengthening, weakening, or "
+        "turning over without re-examining the raw z-score history. "
+        "The four supplementary z-score samples (one, four, and "
+        "thirteen weeks ago, plus the thirteen-week peak in absolute "
+        "value) are also exposed in the snapshot CSV so a reader can "
+        "verify the classification."
+    )
+
+    add_subsection_heading(doc, "7.5", "Cycle-timing classification")
+
+    add_paragraph(doc,
+        "Each indicator carries a cycle-timing tag of Leading, "
+        "Coincident, or Lagging in the indicator-library CSV. The "
+        "tag is determined editorially against academic and "
+        "practitioner literature for that indicator's referent — "
+        "yield-curve inversion is Leading by approximately twelve "
+        "months, ISM new orders is Leading by approximately six "
+        "weeks, NBER recession dates are Lagging. Of the ninety-two "
+        "indicators currently in the library, ninety are Leading, "
+        "two are Coincident, and none are Lagging — a deliberate "
+        "skew, since the project's analytical purpose is "
+        "forward-looking and the indicator selection has been biased "
+        "accordingly."
+    )
+
+    add_callout(doc,
+        "The four labels read together",
+        "A high-conviction regime call combines all four signals: "
+        "the current regime is on the right side of the bucket "
+        "boundary, the forward regime carries [leading] and reads "
+        "improving, the z-score trajectory is intensifying, and the "
+        "cycle-timing tag is Leading. The opposite — current regime "
+        "deep in one bucket while the forward regime contradicts and "
+        "the trajectory is reversing — is the early-warning state "
+        "that a regime transition is in progress. Regime-based asset "
+        "allocation work depends on this multi-signal reading."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
+#                  SECTION 8 — OPERATIONAL SCAFFOLDING
+# ════════════════════════════════════════════════════════════════════════
+
+def add_section_8(doc):
+    add_section_heading(doc, 8, "Operational Scaffolding")
+
+    add_paragraph(doc,
+        "Daily operation of a multi-source data pipeline produces a "
+        "non-trivial volume of failure modes: HTTP errors, dead "
+        "tickers, schema drift between code and registry, silent "
+        "publisher freezes that the Friday-spine forward-fill would "
+        "otherwise mask, and retroactive source-side history "
+        "truncation. An integrated audit subsystem detects all of "
+        "these in a single daily report and surfaces them through a "
+        "perpetual GitHub Issue thread. A writeback step automates "
+        "the most common remediation (retiring persistently dead "
+        "tickers). A separate operator-gated utility synchronises "
+        "history files with their source-of-truth registries when "
+        "rows are deliberately removed."
+    )
+
+    add_subsection_heading(doc, "8.1", "The daily integrated audit")
+
+    add_paragraph(doc,
+        "The audit runs as the post-fetch, post-explorer step of the "
+        "GitHub Actions workflow. It produces two artefacts: a full "
+        "plaintext report (data_audit.txt) committed alongside the "
+        "data CSVs, and a Markdown body (audit_comment.md) posted as "
+        "a comment to the perpetual daily-audit GitHub Issue. The "
+        "first line of the comment is always one of:"
+    )
+
+    add_bullet(doc, "## Daily audit — YYYY-MM-DD — ALL CLEAN")
+    add_bullet(doc,
+        "## Daily audit — YYYY-MM-DD — N ISSUES "
+        "(X fetch errors, Y static-check failures, Z stale series, …)")
+
+    add_paragraph(doc,
+        "Detail follows in collapsible Markdown sections; row counts "
+        "per category are capped for readability with full detail in "
+        "the plaintext report. The audit is a strict warning channel — "
+        "it always exits cleanly, never failing the workflow."
+    )
+
+    add_subsection_heading(doc, "8.2", "Section A — fetch outcomes")
+
+    add_paragraph(doc,
+        "Section A scrapes the freshly-captured pipeline.log for known "
+        "failure patterns: HTTP 4xx/5xx errors that survived the "
+        "exponential backoff, yfinance ‘possibly delisted’ warnings, "
+        "and ‘Quote not found for symbol’ messages. yfinance suspects "
+        "are cross-checked against the latest non-empty row of the "
+        "comp-pipeline history file to filter transient warnings — a "
+        "ticker that returned no data for one fetch but shows up in "
+        "the latest history row was clearly a transient failure, not "
+        "a delisting. Retried-then-recovered transients are filtered "
+        "out by matching only the ‘— skipping’ suffix in the log line."
+    )
+
+    add_subsection_heading(doc, "8.3", "Section B — static checks")
+
+    add_paragraph(doc,
+        "Section B runs a battery of consistency checks against the "
+        "registry CSVs and the code that consumes them. Each is a "
+        "local operation requiring no network access:"
+    )
+
+    add_bullet(doc,
+        "Country-code orphans: every code referenced in the per-source "
+        "libraries must exist in macro_library_countries.csv.")
+    add_bullet(doc,
+        "Indicator-id uniqueness: no two rows in "
+        "macro_indicator_library.csv share an id.")
+    add_bullet(doc,
+        "Calculator registration: every id in the indicator library "
+        "must be registered as a calculator in compute_macro_market.py.")
+    add_bullet(doc,
+        "Column-existence: every literal passed to _get_col(...) by a "
+        "calculator must resolve to a column in the unified macro hist.")
+    add_bullet(doc,
+        "Registry drift across all three history-vs-library pairs "
+        "(comp / macro_economic / macro_market): every column in each "
+        "history file must trace back to a row in its source-of-truth "
+        "library. Orphan columns are reported with the recommended "
+        "remediation: ‘run python library_sync.py --confirm’.")
+
+    add_subsection_heading(doc, "8.4", "Section C — value-change staleness")
+
+    add_paragraph(doc,
+        "Section C addresses the failure mode that the Friday-spine "
+        "forward-fill would otherwise mask: a publisher silently "
+        "stopping its updates while the most-recent observation continues "
+        "to populate every Friday slot via forward-fill. The audit "
+        "walks every column of the unified macro hist, finds the last "
+        "date on which the value actually changed (rather than the "
+        "last non-null cell), and computes the age in days:"
+    )
+
+    add_eq_display(doc, EQ.staleness_age, eq_number="8.1")
+
+    add_paragraph(doc,
+        "This age is then bucketed against a per-frequency tolerance T "
+        "loaded from data/freshness_thresholds.csv (5 days for daily "
+        "series, 10 for weekly, 45 for monthly, 120 for quarterly, "
+        "540 for annual). Per-row overrides on the per-source library "
+        "files allow individual series with longer-than-normal "
+        "publisher lag to be calibrated upward. The classification is:"
+    )
+
+    add_eq_display(doc, EQ.staleness_classification, eq_number="8.2")
+
+    add_paragraph(doc,
+        "FRESH series are silent in the audit. STALE series receive "
+        "a one-line note. EXPIRED series are surfaced in the headline "
+        "issue count and listed individually in the report. A 2026-04-29 "
+        "bulk pass widened tolerances on 48 rows where the 30-50 day "
+        "publisher cadence on monthly series was producing benign STALE "
+        "noise; the cluster-to-override mapping is recorded in "
+        "technical_manual.md §9.8 as the durable record of what was "
+        "chosen and why."
+    )
+
+    add_subsection_heading(doc, "8.5", "Section D — history preservation")
+
+    add_paragraph(doc,
+        "Section D, added 30 April 2026 in response to the ICE BofA "
+        "truncation event, reports per-history-file row counts (live "
+        "file, sister x-file, and union) and the date range of each. "
+        "Two specific alerts fire: (a) any ICE-BofA-bearing live file "
+        "with no sister x-file, and (b) sister rows being a strict "
+        "subset of live rows, which would indicate a regression in "
+        "the history-preservation writer. The mechanics of the "
+        "preservation rule are documented in §5.9; Section D is the "
+        "monitoring channel for it."
+    )
+
+    add_subsection_heading(doc, "8.6", "Library writeback")
+
+    add_paragraph(doc,
+        "audit_writeback.py runs immediately after the audit. It "
+        "parses Section A's yfinance-dead list, maintains a "
+        "per-ticker dead-streak counter in "
+        "data/yfinance_failure_streaks.csv, and flips a row's "
+        "validation_status from CONFIRMED to UNAVAILABLE once its "
+        "streak reaches fourteen consecutive days. A single-line "
+        "summary of any flips is appended to audit_comment.md so "
+        "the daily GitHub-Issue notification surfaces them."
+    )
+
+    add_paragraph(doc,
+        "The fourteen-day threshold is an operationally-tuned "
+        "compromise. It is long enough that genuine transient outages "
+        "(a weekend yfinance throttle, a one-day FRED maintenance "
+        "window) do not trigger spurious retirement, and short enough "
+        "that a permanently delisted ticker is removed from the "
+        "fetch budget within a fortnight. Manual override always "
+        "wins — re-setting validation_status to CONFIRMED after a "
+        "real fix restarts the streak at zero on the next day's run."
+    )
+
+    add_subsection_heading(doc, "8.7", "Library-sync utility")
+
+    add_paragraph(doc,
+        "library_sync.py is the operator-gated companion to the "
+        "registry-drift static check. When a row is deliberately "
+        "removed from a registry CSV, the corresponding column in "
+        "the relevant history file becomes orphaned. The utility "
+        "covers three history-versus-library pairs: the comp pipeline "
+        "(index_library.csv against market_data_comp_hist.csv), the "
+        "macro-economic layer (the union of seven library CSVs against "
+        "macro_economic_hist.csv), and the macro-market layer "
+        "(macro_indicator_library.csv against macro_market_hist.csv "
+        "with each indicator id producing four columns). For each "
+        "orphan column, the existing data is archived to "
+        "data/_archived_columns/ before the column is dropped from "
+        "the live history file. Default mode is dry-run; the operator "
+        "passes --confirm to apply."
+    )
+
+    add_callout(doc,
+        "Why archive rather than delete?",
+        "An orphan column is the result of a deliberate operator "
+        "edit to the registry — a series being retired, a ticker "
+        "being replaced with a proxy. Archiving preserves the "
+        "historical data so that subsequent analytical work, or a "
+        "reversal of the decision, can recover it without a "
+        "round-trip to the original publisher. The archived files "
+        "are tiny and version-controlled; the storage cost is "
+        "negligible against the analytical cost of irreversible "
+        "loss."
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════
 #               STEP 2 PROBE (kept at tail until Step 6 polish)
 # ════════════════════════════════════════════════════════════════════════
 
@@ -1101,6 +1866,9 @@ def main():
     add_section_3(doc)
     add_section_4(doc)
     add_section_5(doc)
+    add_section_6(doc)
+    add_section_7(doc)
+    add_section_8(doc)
 
     # Interim equation probe (removed in Step 6)
     add_step2_probe(doc)
