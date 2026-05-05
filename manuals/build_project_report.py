@@ -1,14 +1,19 @@
 """
 Build `Data_Pipeline_Project_Report.docx`.
 
-Each numbered build step adds content. Step 3 (current scope) authors
-Sections 1–5 of the report body: Executive Summary, Problem Statement,
-System Overview, Data Architecture & Source Catalogue, and Pipeline
-Design Principles. The Step 2 equation-library probe remains appended
-at the document's tail for reviewer typography sign-off; it is removed
-in Step 6.
+This is the final assembled report. Sections 1–13, Appendices A–B,
+title page, table of contents, page header, page numbers in the
+footer, and document metadata. The interim equation-library probe
+appendix, present from Steps 2 through 5 for typography review, has
+been removed; every equation lives in its final position in the body.
 
-Subsequent steps add Sections 6–13, the appendices, and final polish.
+Build steps (chronological — for repository history reference):
+  1. Skeleton + OMML helper module                     [committed]
+  2. Equation library (25 equations) + probe page      [committed]
+  3. Sections 1–5 (overview / architecture / patterns) [committed]
+  4. Sections 6–8 (Phase E / regime / ops scaffolding) [committed]
+  5. Sections 9–13 + Appendices A–B                    [committed]
+  6. TOC + headers / footers + remove probe            [this commit]
 
 Usage
 -----
@@ -81,6 +86,121 @@ def add_title_page(doc):
     r = meta.add_run(f"Report dated {REPORT_DATE}")
     r.italic = True
     r.font.size = Pt(11)
+
+    doc.add_page_break()
+
+
+# ── document metadata ───────────────────────────────────────────────────
+
+def set_document_properties(doc):
+    """Set Word document core properties (title, subject, author, etc.)."""
+    props = doc.core_properties
+    props.title    = "Market Dashboard Auto — Project Report"
+    props.subject  = ("Data pipeline, composite-indicator layer, "
+                      "and operational scaffolding")
+    props.author   = "Market Dashboard Auto"
+    props.keywords = ("macro market indicators; regime classification; "
+                      "z-score; FRED; OECD; Phase E; library-driven")
+
+
+# ── header / footer / TOC ───────────────────────────────────────────────
+
+def _add_page_field(run, instr_text):
+    """Append a Word field expression to a run.
+
+    Used to inject auto-updating fields like PAGE and TOC. The
+    runtime sequence is: fldChar(begin) → instrText → fldChar(separate)
+    → placeholder text → fldChar(end). Word evaluates the field on
+    open and replaces the placeholder.
+    """
+    fld_begin = OxmlElement("w:fldChar")
+    fld_begin.set(qn("w:fldCharType"), "begin")
+
+    fld_instr = OxmlElement("w:instrText")
+    fld_instr.set(qn("xml:space"), "preserve")
+    fld_instr.text = instr_text
+
+    fld_end = OxmlElement("w:fldChar")
+    fld_end.set(qn("w:fldCharType"), "end")
+
+    run._r.append(fld_begin)
+    run._r.append(fld_instr)
+    run._r.append(fld_end)
+
+
+def _add_toc_field(paragraph, instr_text, placeholder):
+    """Inject a TOC field with a placeholder (Word populates on open)."""
+    run = paragraph.add_run()
+
+    fld_begin = OxmlElement("w:fldChar")
+    fld_begin.set(qn("w:fldCharType"), "begin")
+
+    fld_instr = OxmlElement("w:instrText")
+    fld_instr.set(qn("xml:space"), "preserve")
+    fld_instr.text = instr_text
+
+    fld_sep = OxmlElement("w:fldChar")
+    fld_sep.set(qn("w:fldCharType"), "separate")
+
+    fld_text = OxmlElement("w:t")
+    fld_text.text = placeholder
+
+    fld_end = OxmlElement("w:fldChar")
+    fld_end.set(qn("w:fldCharType"), "end")
+
+    run._r.append(fld_begin)
+    run._r.append(fld_instr)
+    run._r.append(fld_sep)
+    run._r.append(fld_text)
+    run._r.append(fld_end)
+
+
+def configure_header_footer(doc):
+    """Add a page header on every page after the first, plus a centred
+    page-number footer. The first page (title page) is left clean.
+    """
+    section = doc.sections[0]
+    section.different_first_page_header_footer = True
+
+    # Header on body pages: small italic title flush right
+    header = section.header
+    hp = header.paragraphs[0]
+    hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    r = hp.add_run("Market Dashboard Auto — Project Report")
+    r.italic = True
+    r.font.size = Pt(9)
+
+    # Footer on body pages: centred ‘Page X’
+    footer = section.footer
+    fp = footer.paragraphs[0]
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    pre = fp.add_run("Page ")
+    pre.font.size = Pt(9)
+    page_run = fp.add_run()
+    page_run.font.size = Pt(9)
+    _add_page_field(page_run, "PAGE")
+
+
+def add_table_of_contents(doc):
+    """Insert a TOC field on its own page, after the title page.
+
+    The TOC is generated lazily by Word: on first open Word evaluates
+    the field expression and populates the page. The user is prompted
+    to update fields if Word's settings require it.
+    """
+    h = doc.add_heading("Table of Contents", level=1)
+    h.paragraph_format.space_before = Pt(0)
+    h.paragraph_format.space_after  = Pt(8)
+
+    p = doc.add_paragraph()
+    _add_toc_field(
+        p,
+        instr_text='TOC \\o "1-2" \\h \\z \\u',
+        placeholder=(
+            "Right-click here and choose ‘Update Field’ (or press F9) "
+            "to populate the table of contents."
+        ),
+    )
 
     doc.add_page_break()
 
@@ -2419,59 +2539,22 @@ def add_appendix_b(doc):
         r2.font.size = Pt(10)
 
 
-# ════════════════════════════════════════════════════════════════════════
-#               STEP 2 PROBE (kept at tail until Step 6 polish)
-# ════════════════════════════════════════════════════════════════════════
-
-def add_step2_probe(doc):
-    """Equation typography sign-off — every catalogued equation, in order."""
-    doc.add_page_break()
-    doc.add_heading("Appendix Z — Equation library probe (interim)", level=1)
-
-    add_paragraph(doc,
-        "This appendix renders every equation in the report's library as a "
-        "centred display equation, for typography review. It will be "
-        "removed in Step 6 once equations have been individually signed "
-        "off in their final positions in the body. Reviewer to confirm "
-        "italic-symbol / upright-label conventions, piecewise legibility, "
-        "and operator spacing.",
-        italic=True,
-    )
-
-    p = doc.add_paragraph()
-    r = p.add_run(f"Equation count: {len(EQ.CATALOGUE)}.")
-    r.italic = True
-
-    for label, builder, description in EQ.CATALOGUE:
-        p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(10)
-        p.paragraph_format.space_after  = Pt(2)
-        r = p.add_run(label)
-        r.bold = True
-        r.font.size = Pt(11)
-
-        if description:
-            p = doc.add_paragraph()
-            p.paragraph_format.space_after = Pt(4)
-            r = p.add_run(description)
-            r.italic = True
-            r.font.size = Pt(9.5)
-
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_before = Pt(2)
-        p.paragraph_format.space_after  = Pt(8)
-        M.add_display_equation(p, builder())
-
-
 # ── orchestration ───────────────────────────────────────────────────────
 
 def main():
     doc = Document()
+    set_document_properties(doc)
     setup_document(doc)
+    configure_header_footer(doc)
+
+    # Title page (first page — no header / footer applied due to
+    # different-first-page setting in configure_header_footer).
     add_title_page(doc)
 
-    # Body — sections authored to date
+    # Table of contents (Word populates on first open).
+    add_table_of_contents(doc)
+
+    # Report body
     add_section_1(doc)
     add_section_2(doc)
     add_section_3(doc)
@@ -2490,8 +2573,8 @@ def main():
     add_appendix_a(doc)
     add_appendix_b(doc)
 
-    # Interim equation probe (removed in Step 6)
-    add_step2_probe(doc)
+    # Interim probe removed in Step 6 — every equation now lives in
+    # its final position within the body of the report.
 
     out_dir  = os.path.dirname(os.path.abspath(__file__))
     out_path = os.path.join(out_dir, OUT_FILENAME)
