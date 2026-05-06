@@ -1,6 +1,6 @@
-## Daily audit — 2026-05-01 — **26 ISSUES** (1 fetch error, 22 stale series, 1 static-check failure, 2 history-preservation issues)
+## Daily audit — 2026-05-06 — **32 ISSUES** (1 fetch error, 26 stale series, 2 static-check failures, 3 history-preservation issues)
 
-_Run: 2026-05-01 04:49 UTC_
+_Run: 2026-05-06 04:36 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,45 +15,50 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (15):
+**EXPIRED** (16):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_M2` | FRED | Monthly | 2019-08-02 | 2464d | 45d |
-| `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1246d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 910d | 45d |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2024-03-01 | 791d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 329d | 45d |
-| `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 322d | 30d\* |
-| `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 238d | 60d\* |
-| `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 147d | 45d |
-| `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 119d | 45d |
-| `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
-| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
-| `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
-| `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
-| `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
-| `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 119d | 45d |
+| `CHN_M2` | FRED | Monthly | 2019-08-02 | 2469d | 45d |
+| `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1251d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 915d | 45d |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2024-03-01 | 796d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 334d | 45d |
+| `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 327d | 30d\* |
+| `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 243d | 60d\* |
+| `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 152d | 45d |
+| `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 152d | 75d\* |
+| `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 124d | 45d |
+| `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
+| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
+| `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
+| `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
+| `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
+| `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 124d | 45d |
 
-**STALE** (7):
+**STALE** (10):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `ULCNFB` | FRED | Quarterly | 2025-10-03 | 210d | 180d\* |
-| `CP` | FRED | Quarterly | 2025-10-03 | 210d | 180d\* |
-| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 210d | 180d\* |
-| `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 147d | 75d\* |
-| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 119d | 75d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-02-06 | 84d | 45d |
-| `PERMIT` | FRED | Monthly | 2026-03-06 | 56d | 45d |
+| `ULCNFB` | FRED | Quarterly | 2025-10-03 | 215d | 180d\* |
+| `CP` | FRED | Quarterly | 2025-10-03 | 215d | 180d\* |
+| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 215d | 180d\* |
+| `CHN_IMPORTS` | FRED | Monthly | 2025-12-05 | 152d | 150d\* |
+| `CHN_EXPORTS` | FRED | Monthly | 2025-12-05 | 152d | 150d\* |
+| `EZ_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 152d | 150d\* |
+| `EZ_RETAIL_VOL` | DB.nomics | Monthly | 2025-12-05 | 152d | 150d\* |
+| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 124d | 75d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-02-06 | 89d | 45d |
+| `PERMIT` | FRED | Monthly | 2026-03-06 | 61d | 45d |
 
 </details>
 
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (1):
+**missing_columns** (2):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
@@ -64,11 +69,12 @@ Full report attached as `data_audit.txt` in today's commit.
 |---|---|---|---|---|---|
 | `market_data_comp_hist.csv` | 3,983 | 3,982 | 3,983 | 1950-01-06 → 2026-05-01 | 1950-01-06 → 2026-04-24 |
 | `macro_economic_hist.csv` | 4,141 | 4,140 | 4,141 | 1946-12-27 → 2026-05-01 | 1946-12-27 → 2026-04-24 |
-| `macro_market_hist.csv` | 1,374 | 1,374 | 1,374 | 2000-01-07 → 2026-05-01 | 2000-01-07 → 2026-05-01 |
+| `macro_market_hist.csv` | 1,375 | 1,374 | 1,375 | 2000-01-07 → 2026-05-08 | 2000-01-07 → 2026-05-01 |
 
-**ALERTS** (2):
+**ALERTS** (3):
 - market_data_comp_hist.csv: sister rows are a strict subset of live (3982 ⊂ 3983) — sister may have been rewritten incorrectly
 - macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4141) — sister may have been rewritten incorrectly
+- macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1375) — sister may have been rewritten incorrectly
 
 </details>
 
