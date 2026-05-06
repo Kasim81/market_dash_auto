@@ -148,54 +148,66 @@ def build_macro_market(ind_meta: dict) -> dict:
         entry["last_date"]  = last
         indicators[ind_id] = entry
 
-    # build groups and sub_groups from CSV metadata, sorted by library_utils order
-    raw_groups: dict[str, dict[str, list]] = {}  # group → sub_group → [ids]
+    # Default tree (3-level): group → sub_group → subcategory → [ids].
+    # `subcategory` is the leaf-level distinction added per §2.5 to give the
+    # By Region view three browsable tiers; sub_group was cleaned up in
+    # macro_indicator_library.csv so the second/third tiers no longer
+    # encode the same information.
+    raw_groups: dict[str, dict[str, dict[str, list]]] = {}
     ungrouped = set(present_ids)
     for ind_id in present_ids:
         m = ind_meta.get(ind_id, {})
         g  = m.get("group", "")
         sg = m.get("sub_group", "")
+        sc = m.get("subcategory", "") or "—"
         if g:
-            raw_groups.setdefault(g, {}).setdefault(sg, []).append(ind_id)
+            raw_groups.setdefault(g, {}).setdefault(sg, {}).setdefault(sc, []).append(ind_id)
             ungrouped.discard(ind_id)
 
-    # sort groups by INDICATOR_GROUP_ORDER, sub_groups by INDICATOR_SUB_GROUP_ORDER
-    groups = {}
+    groups: dict[str, dict[str, dict[str, list]]] = {}
     for g in sorted(raw_groups,
                     key=lambda g: INDICATOR_GROUP_ORDER.get(g, 99)):
-        sub_groups = {}
+        sub_groups: dict[str, dict[str, list]] = {}
         for sg in sorted(raw_groups[g],
                          key=lambda sg: INDICATOR_SUB_GROUP_ORDER.get(sg, 99)):
-            sub_groups[sg] = sorted(raw_groups[g][sg])
+            subcats: dict[str, list] = {}
+            for sc in sorted(raw_groups[g][sg]):
+                subcats[sc] = sorted(raw_groups[g][sg][sc])
+            sub_groups[sg] = subcats
         groups[g] = sub_groups
 
     if ungrouped:
-        groups["Other"] = {"Ungrouped": sorted(ungrouped)}
+        groups["Other"] = {"Ungrouped": {"—": sorted(ungrouped)}}
 
-    # Parallel "By Concept" tree (§2.5): concept → subcategory → [ids].
-    # Drives the alternate sidebar view; built from the per-indicator concept
-    # and subcategory fields populated in macro_indicator_library.csv (§2.4).
-    raw_concepts: dict[str, dict[str, list]] = {}
+    # By Concept tree (3-level): concept → subcategory → group → [ids].
+    # The third tier surfaces the geographic/asset-class flavour of each
+    # indicator under its conceptual home.
+    raw_concepts: dict[str, dict[str, dict[str, list]]] = {}
     unconcepted = set()
     for ind_id in present_ids:
         m = ind_meta.get(ind_id, {})
-        c   = m.get("concept", "")
-        sc  = m.get("subcategory", "")
+        c  = m.get("concept", "")
+        sc = m.get("subcategory", "") or "—"
+        g  = m.get("group", "") or "—"
         if c:
-            raw_concepts.setdefault(c, {}).setdefault(sc or "—", []).append(ind_id)
+            raw_concepts.setdefault(c, {}).setdefault(sc, {}).setdefault(g, []).append(ind_id)
         else:
             unconcepted.add(ind_id)
 
-    groups_by_concept: dict[str, dict[str, list]] = {}
+    groups_by_concept: dict[str, dict[str, dict[str, list]]] = {}
     for c in sorted(raw_concepts,
                     key=lambda c: INDICATOR_CONCEPT_ORDER.get(c, 99)):
-        sub: dict[str, list] = {}
+        subcats: dict[str, dict[str, list]] = {}
         for sc in sorted(raw_concepts[c]):
-            sub[sc] = sorted(raw_concepts[c][sc])
-        groups_by_concept[c] = sub
+            by_group: dict[str, list] = {}
+            for g in sorted(raw_concepts[c][sc],
+                            key=lambda g: INDICATOR_GROUP_ORDER.get(g, 99)):
+                by_group[g] = sorted(raw_concepts[c][sc][g])
+            subcats[sc] = by_group
+        groups_by_concept[c] = subcats
 
     if unconcepted:
-        groups_by_concept["Uncategorised"] = {"—": sorted(unconcepted)}
+        groups_by_concept["Uncategorised"] = {"—": {"—": sorted(unconcepted)}}
 
     return {
         "dates": dates,
@@ -412,17 +424,25 @@ def build_market_comp() -> dict:
 
     dates, df = _parse_date_col(df)
 
-    # Build groups by Broad Asset Class
-    groups: dict[str, list] = {}
+    # Build the Default 3-level tree: Broad Asset Class → Region → Currency
+    # → [keys]. Region/currency get a small priority list so the most-used
+    # buckets surface first; everything else falls to alphabetical.
     series: dict = {}
+    raw_three: dict[str, dict[str, dict[str, list]]] = {}
 
     for col in df.columns:
         col_s = str(col).strip()
         m     = series_meta.get(col_s, {})
         vals  = _series_to_list(df[col])
         first, last = _date_range(dates, vals)
-        asset_class = m.get("Broad Asset Class", "Other")
-        groups.setdefault(asset_class, []).append(col_s)
+        asset_class = m.get("Broad Asset Class", "Other") or "Other"
+        region      = m.get("Region", "") or "Other"
+        if region.lower() == "nan":
+            region = "Other"
+        currency = m.get("Currency", "") or "Other"
+        if currency.lower() == "nan":
+            currency = "Other"
+        raw_three.setdefault(asset_class, {}).setdefault(region, {}).setdefault(currency, []).append(col_s)
         series[col_s] = {
             "meta":       m,
             "values":     vals,
@@ -430,7 +450,47 @@ def build_market_comp() -> dict:
             "last_date":  last,
         }
 
-    return {"dates": dates, "series": series, "groups": groups}
+    # Sort orderings.  Asset class / region get curated priorities; currency
+    # surfaces USD/EUR/GBP/JPY first then alphabetical so the table for any
+    # given (asset class, region) cell stays readable.
+    asset_class_order = {
+        "Equity": 1, "Bonds": 2, "Commodities": 3, "FX": 4,
+        "Crypto": 5, "Macro-Market Indicators": 6, "Other": 99,
+    }
+    region_order = {
+        "Global": 1, "North America": 2, "UK": 3, "Europe": 4,
+        "Japan": 5, "Asia Pacific": 6, "Asia ex Japan": 7,
+        "Emerging Markets": 8, "Latin America": 9,
+        "Middle East & Africa": 10, "Other": 99,
+    }
+    currency_order = {
+        "USD": 1, "EUR": 2, "GBP": 3, "JPY": 4, "Other": 99,
+    }
+
+    def _sorted_keys(d, order):
+        return sorted(d, key=lambda k: (order.get(k, 50), k))
+
+    groups_three: dict[str, dict[str, dict[str, list]]] = {}
+    flat_groups: dict[str, list] = {}
+    for ac in _sorted_keys(raw_three, asset_class_order):
+        per_region: dict[str, dict[str, list]] = {}
+        flat: list = []
+        for reg in _sorted_keys(raw_three[ac], region_order):
+            per_currency: dict[str, list] = {}
+            for ccy in _sorted_keys(raw_three[ac][reg], currency_order):
+                keys = sorted(raw_three[ac][reg][ccy])
+                per_currency[ccy] = keys
+                flat.extend(keys)
+            per_region[reg] = per_currency
+        groups_three[ac] = per_region
+        flat_groups[ac] = flat
+
+    return {
+        "dates":       dates,
+        "series":      series,
+        "groups":      flat_groups,   # legacy flat form (asset_class → [keys])
+        "groupsThree": groups_three,  # 3-level (asset_class → region → currency → [keys])
+    }
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -642,7 +702,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .grp-body{display:none}
 .grp-body.open{display:block}
 
-/* ── sub-group sections (third tier, inside macro-market groups) ── */
+/* ── sub-group sections (third tier) ── */
 .sgrp-section{padding-left:0}
 .sgrp-header{
   display:flex;align-items:center;gap:6px;
@@ -656,22 +716,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .sgrp-count{font-size:9px;color:#484f58;flex-shrink:0}
 .sgrp-body{display:none}
 .sgrp-body.open{display:block}
-.sgrp-body .series-item{padding-left:48px}
 
-/* ── asset class sections (second tier, inside market data) ── */
-.ac-section{}
-.ac-header{
+/* ── leaf folder sections (fourth tier — innermost grouping) ── */
+.lf-section{padding-left:0}
+.lf-header{
   display:flex;align-items:center;gap:6px;
-  padding:5px 14px 5px 22px;cursor:pointer;user-select:none
+  padding:3px 14px 3px 50px;cursor:pointer;user-select:none
 }
-.ac-header:hover{background:#1c2128}
-.ac-arrow{font-size:9px;color:#484f58;transition:transform .15s;flex-shrink:0}
-.ac-arrow.open{transform:rotate(90deg)}
-.ac-title{font-size:11px;font-weight:600;color:#8b949e;flex:1;
-  text-transform:uppercase;letter-spacing:.05em}
-.ac-count{font-size:10px;color:#484f58;flex-shrink:0}
-.ac-body{display:none}
-.ac-body.open{display:block}
+.lf-header:hover{background:#1c2128}
+.lf-arrow{font-size:8px;color:#484f58;transition:transform .15s;flex-shrink:0}
+.lf-arrow.open{transform:rotate(90deg)}
+.lf-title{font-size:10px;font-weight:400;color:#6e7681;flex:1;
+  letter-spacing:.02em;font-style:italic}
+.lf-count{font-size:9px;color:#484f58;flex-shrink:0}
+.lf-body{display:none}
+.lf-body.open{display:block}
+.lf-body .series-item{padding-left:62px}
+
+/* ── market-data "By Concept" placeholder ── */
+.market-concept-placeholder{
+  margin:8px 14px 4px 22px;padding:10px 12px;
+  border:1px dashed #30363d;border-radius:6px;
+  background:#0d1117;color:#8b949e;
+  font-size:11px;line-height:1.45;font-style:italic
+}
 
 /* ── variant toggle (Local / USD) ── */
 .variant-toggle{
@@ -959,7 +1027,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   </div>
   <div id="view-mode-controls">
     <label>View</label>
-    <button class="view-mode-btn active" data-view="region">By Region</button>
+    <button class="view-mode-btn active" data-view="region">Default</button>
     <button class="view-mode-btn" data-view="concept">By Concept</button>
   </div>
   <div id="filter-controls">
@@ -1127,26 +1195,28 @@ function buildSidebar(){
 }
 
 // ── Macro Market section ───────────────────────────────────────────────────
+//
+// Three-level browsable tree.  Server (build_macro_market) provides both
+// shapes:
+//   mm.groups          — Default:    group   → sub_group   → subcategory → [ids]
+//   mm.groupsByConcept — By Concept: concept → subcategory → group       → [ids]
 function buildMacroMarketSection(){
   const mm = MAIN_DATA.macro_market;
   const total = Object.keys(mm.indicators).length;
 
   const wrap = el('div','src-section');
   const hdr  = el('div','src-header');
-  const arr  = makeArrow('src-arrow open');
+  const arr  = makeArrow('src-arrow');
   const ttl  = el('span','src-title','Macro Market Indicators');
   const cnt  = el('span','src-count', total);
   hdr.append(arr, ttl, cnt);
   wrap.appendChild(hdr);
 
-  const body = el('div','src-body open');
+  const body = el('div','src-body');
 
-  // §2.5: pick the tree based on viewMode.  Server provides both:
-  //   mm.groups          — region → sub_group → [ids]   (default)
-  //   mm.groupsByConcept — concept → subcategory → [ids]
   const tree = STATE.viewMode === 'concept' ? mm.groupsByConcept : mm.groups;
-  Object.entries(tree).forEach(([groupName, subGroups]) => {
-    body.appendChild(buildGroupSection(groupName, subGroups, mm.indicators));
+  Object.entries(tree).forEach(([groupName, level2]) => {
+    body.appendChild(buildGroupSection(groupName, level2, mm.indicators));
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1154,25 +1224,34 @@ function buildMacroMarketSection(){
   return wrap;
 }
 
-// `rawMacroOpts` (optional, §2.5): when present, render items from a raw-macro
-// seriesMap (the merged macro_economic payload) instead of the Phase E
-// `indicators` dict.  Shape: { source: 'macro_economic', seriesMap, nameFn }.
-function buildGroupSection(groupName, subGroups, indicators, rawMacroOpts){
-  // subGroups = { sub_group_name: [indicator_ids], ... }
-  const totalIds = Object.values(subGroups).reduce((n, ids) => n + ids.length, 0);
+// `rawMacroOpts` (optional): when present, leaf ids resolve against a
+// raw-macro seriesMap (the merged macro_economic / market_comp payload)
+// instead of the Phase E `indicators` dict. Shape:
+//   { source, seriesMap, nameFn, extraDataset? }
+// `extraDataset` lets the caller stamp additional dataset attributes on
+// each item (used by the market-data variant filter).
+//
+// `level2` is a 3-level dict of shape
+//   { sub_group: { leaf_label: [ids] } }
+// — i.e. the 2nd and 3rd tiers nested under this group.
+function buildGroupSection(groupName, level2, indicators, rawMacroOpts){
+  const totalIds = Object.values(level2).reduce(
+    (n, leaves) => n + Object.values(leaves).reduce((m, ids) => m + ids.length, 0),
+    0,
+  );
 
   const wrap = el('div','grp-section');
   const hdr  = el('div','grp-header');
-  const arr  = makeArrow('grp-arrow open');
+  const arr  = makeArrow('grp-arrow');
   const ttl  = el('span','grp-title', groupName);
   const cnt  = el('span','grp-count', totalIds);
   hdr.append(arr, ttl, cnt);
   wrap.appendChild(hdr);
 
-  const body = el('div','grp-body open');
+  const body = el('div','grp-body');
 
-  Object.entries(subGroups).forEach(([sgName, ids]) => {
-    body.appendChild(buildSubGroupSection(sgName, ids, indicators, rawMacroOpts));
+  Object.entries(level2).forEach(([sgName, leaves]) => {
+    body.appendChild(buildSubGroupSection(sgName, leaves, indicators, rawMacroOpts));
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1180,43 +1259,56 @@ function buildGroupSection(groupName, subGroups, indicators, rawMacroOpts){
   return wrap;
 }
 
-function buildSubGroupSection(sgName, ids, indicators, rawMacroOpts){
+// Middle tier: holds a dict of `{ leaf_label: [ids] }`.  When a sub-group
+// has only a single, unnamed leaf bucket (key '—'), we collapse the leaf
+// folder and render the items directly so the user doesn't have to click
+// through a redundant tier.
+function buildSubGroupSection(sgName, leaves, indicators, rawMacroOpts){
+  const totalIds = Object.values(leaves).reduce((n, ids) => n + ids.length, 0);
+
   const wrap = el('div','sgrp-section');
   const hdr  = el('div','sgrp-header');
-  const arr  = makeArrow('sgrp-arrow open');
+  const arr  = makeArrow('sgrp-arrow');
   const ttl  = el('span','sgrp-title', sgName);
-  const cnt  = el('span','sgrp-count', ids.length);
+  const cnt  = el('span','sgrp-count', totalIds);
   hdr.append(arr, ttl, cnt);
   wrap.appendChild(hdr);
 
-  const body = el('div','sgrp-body open');
+  const body = el('div','sgrp-body');
+
+  const leafEntries = Object.entries(leaves);
+  const collapseLeaf = leafEntries.length === 1 && leafEntries[0][0] === '—';
+  if(collapseLeaf){
+    leafEntries[0][1].forEach(itemKey => {
+      const item = renderSeriesLeafItem(itemKey, indicators, rawMacroOpts);
+      if(item) body.appendChild(item);
+    });
+  } else {
+    leafEntries.forEach(([leafName, ids]) => {
+      body.appendChild(buildLeafFolder(leafName, ids, indicators, rawMacroOpts));
+    });
+  }
+
+  hdr.addEventListener('click', () => toggleSection(arr, body));
+  wrap.appendChild(body);
+  return wrap;
+}
+
+// Innermost tier (4th if you count the src section): a flat list of items
+// under a labelled folder.
+function buildLeafFolder(leafName, ids, indicators, rawMacroOpts){
+  const wrap = el('div','lf-section');
+  const hdr  = el('div','lf-header');
+  const arr  = makeArrow('lf-arrow');
+  const ttl  = el('span','lf-title', leafName);
+  const cnt  = el('span','lf-count', ids.length);
+  hdr.append(arr, ttl, cnt);
+  wrap.appendChild(hdr);
+
+  const body = el('div','lf-body');
   ids.forEach(itemKey => {
-    if(rawMacroOpts){
-      // Raw-macro by-concept path: itemKey is a column id in seriesMap
-      const s = rawMacroOpts.seriesMap[itemKey];
-      if(!s) return;
-      const meta = s.meta || {};
-      body.appendChild(makeSeriesItem({
-        source: rawMacroOpts.source,
-        key:    itemKey,
-        id:     itemKey,
-        name:   rawMacroOpts.nameFn(meta),
-        cycle:  meta.cycle_timing || '',
-      }));
-    } else {
-      // Phase E composites: itemKey is an indicator id in indicators
-      const ind = indicators[itemKey];
-      if(!ind) return;
-      const meta = ind.meta || {};
-      const shortName = meta.category || itemKey;
-      body.appendChild(makeSeriesItem({
-        source: 'macro_market',
-        key:    itemKey,
-        id:     itemKey,
-        name:   shortName,
-        cycle:  meta.cycle_timing || '',
-      }));
-    }
+    const item = renderSeriesLeafItem(itemKey, indicators, rawMacroOpts);
+    if(item) body.appendChild(item);
   });
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
@@ -1224,11 +1316,47 @@ function buildSubGroupSection(sgName, ids, indicators, rawMacroOpts){
   return wrap;
 }
 
-// ── Simple (FRED / intl) section ───────────────────────────────────────────
-// ── Economic Data section (§2.5 restructure) ──────────────────────────────
+// Helper used by both the leaf folder and the single-bucket collapse path
+// in buildSubGroupSection. Resolves a leaf id against either rawMacroOpts
+// or the Phase E composites map and returns a ready-to-append .series-item.
+function renderSeriesLeafItem(itemKey, indicators, rawMacroOpts){
+  if(rawMacroOpts){
+    const s = rawMacroOpts.seriesMap[itemKey];
+    if(!s) return null;
+    const meta = s.meta || {};
+    const v = rawMacroOpts.includeVariant ? (meta['Variant'] || '').trim() : '';
+    const item = makeSeriesItem({
+      source:  rawMacroOpts.source,
+      key:     itemKey,
+      id:      itemKey,
+      name:    rawMacroOpts.nameFn(meta),
+      cycle:   meta.cycle_timing || '',
+      variant: v || undefined,
+    });
+    if(rawMacroOpts.includeVariant && v && v !== STATE.mktVariant){
+      item.classList.add('hidden');
+    }
+    return item;
+  }
+  const ind = indicators ? indicators[itemKey] : null;
+  if(!ind) return null;
+  const meta = ind.meta || {};
+  const shortName = meta.category || itemKey;
+  return makeSeriesItem({
+    source: 'macro_market',
+    key:    itemKey,
+    id:     itemKey,
+    name:   shortName,
+    cycle:  meta.cycle_timing || '',
+  });
+}
+
+// ── Economic Data section ────────────────────────────────────────────────
 // Single merged sidebar section spanning every raw-macro source (FRED, OECD,
-// WB, IMF, DB.nomics, ifo).  By Region view groups by country (registry order
-// from MAIN_DATA.countries); By Concept view groups by concept → subcategory.
+// WB, IMF, DB.nomics, ifo, BoE, ECB, BoJ, e-Stat). 3-level browsable tree
+// in both view modes:
+//   Default:    Country → Category    → Subcategory → series
+//   By Concept: concept → subcategory → Country     → series
 function buildEconomicDataSection(){
   const econ    = MAIN_DATA.macro_economic;
   const seriesMap = econ.series;
@@ -1244,61 +1372,78 @@ function buildEconomicDataSection(){
 
   const body = el('div','src-body');
 
-  // Per-series display name for the merged section.  Most rows already have
-  // `Indicator` in their metadata; prefix with country code where present
-  // and fall back to `Name` (FRED-flavour) or the column id as last resort.
+  // Per-series display name.  Most rows already have `Indicator` in their
+  // metadata; prefix with country code where present and fall back to
+  // `Name` (FRED-flavour) or the column id as last resort.
   const nameFn = m => {
     const country = m['Country'] || '';
     const ind = m['Indicator'] || m['Name'] || m['Column ID'] || '';
     return country ? `${country} — ${ind}` : ind;
   };
 
+  const tree = {};
   if(STATE.viewMode === 'concept'){
-    // Group by concept → subcategory.  Uses the lowercase aliases
-    // m.concept / m.subcategory added by _load_unified_hist_once.
-    const tree = {};
+    // concept → subcategory → Country → [keys]
     keys.forEach(key => {
-      const m = seriesMap[key].meta || {};
+      const m  = seriesMap[key].meta || {};
       const c  = m.concept     || 'Uncategorised';
       const sc = m.subcategory || '—';
+      const cy = m['Country']  || 'Other';
       tree[c] = tree[c] || {};
-      tree[c][sc] = tree[c][sc] || [];
-      tree[c][sc].push(key);
+      tree[c][sc] = tree[c][sc] || {};
+      tree[c][sc][cy] = tree[c][sc][cy] || [];
+      tree[c][sc][cy].push(key);
     });
-    const ordered = Object.keys(tree).sort((a, b) => {
-      return (CONCEPT_ORDER[a] || 99) - (CONCEPT_ORDER[b] || 99);
-    });
-    ordered.forEach(concept => {
-      const subGroups = {};
-      Object.keys(tree[concept]).sort().forEach(sc => {
-        subGroups[sc] = tree[concept][sc].sort();
+    const registryOrder = (MAIN_DATA.countries || []).map(c => c.code);
+    const sortCountries = (a, b) => {
+      const ai = registryOrder.indexOf(a), bi = registryOrder.indexOf(b);
+      if(ai === -1 && bi === -1) return a.localeCompare(b);
+      if(ai === -1) return 1;
+      if(bi === -1) return -1;
+      return ai - bi;
+    };
+    Object.keys(tree)
+      .sort((a, b) => (CONCEPT_ORDER[a] || 99) - (CONCEPT_ORDER[b] || 99))
+      .forEach(concept => {
+        const level2 = {};
+        Object.keys(tree[concept]).sort().forEach(sc => {
+          const leaves = {};
+          Object.keys(tree[concept][sc]).sort(sortCountries).forEach(cy => {
+            leaves[cy] = tree[concept][sc][cy].sort();
+          });
+          level2[sc] = leaves;
+        });
+        body.appendChild(buildGroupSection(concept, level2, null, {
+          source: 'macro_economic', seriesMap, nameFn,
+        }));
       });
-      body.appendChild(buildGroupSection(concept, subGroups, null, {
-        source: 'macro_economic', seriesMap, nameFn,
-      }));
-    });
   } else {
-    // By Region: group by Country.  Order driven by MAIN_DATA.countries
-    // (the registry from data/macro_library_countries.csv per §0).  Items
-    // without a country tag fall under "Other".
-    const tree = {};
+    // Country → Category → Subcategory → [keys]
     keys.forEach(key => {
-      const m = seriesMap[key].meta || {};
-      const country = m['Country'] || 'Other';
-      tree[country] = tree[country] || [];
-      tree[country].push(key);
+      const m  = seriesMap[key].meta || {};
+      const cy = m['Country']      || 'Other';
+      const ca = m['Category']     || 'Other';
+      const sc = m['Subcategory']  || '—';
+      tree[cy] = tree[cy] || {};
+      tree[cy][ca] = tree[cy][ca] || {};
+      tree[cy][ca][sc] = tree[cy][ca][sc] || [];
+      tree[cy][ca][sc].push(key);
     });
     const registryOrder = (MAIN_DATA.countries || []).map(c => c.code);
     const orderedCountries = [
       ...registryOrder.filter(c => tree[c]),
       ...Object.keys(tree).filter(c => !registryOrder.includes(c)).sort(),
     ];
-    // By-Country view is naturally single-level (country → items), so we
-    // skip the buildGroupSection wrapper and render each country directly
-    // as an .sgrp-section.  applySidebarFilters' collapse-empty logic for
-    // .sgrp-body still applies.
     orderedCountries.forEach(country => {
-      body.appendChild(buildSubGroupSection(country, tree[country].sort(), null, {
+      const level2 = {};
+      Object.keys(tree[country]).sort().forEach(category => {
+        const leaves = {};
+        Object.keys(tree[country][category]).sort().forEach(subcat => {
+          leaves[subcat] = tree[country][category][subcat].sort();
+        });
+        level2[category] = leaves;
+      });
+      body.appendChild(buildGroupSection(country, level2, null, {
         source: 'macro_economic', seriesMap, nameFn,
       }));
     });
@@ -1310,6 +1455,12 @@ function buildEconomicDataSection(){
 }
 
 // ── Market Data section ────────────────────────────────────────────────────
+//
+// Default view: 3-level tree from server (groupsThree):
+//   Broad Asset Class → Region → Currency → ticker
+// By Concept view: deferred — surfaces a placeholder until the upstream
+// market-data registry gains a Concept column (see dropdown_review_vKZ.xlsx
+// Tab 2 spec for the planned re-tagging of Sub-Category).
 function buildMarketSection(){
   const mkt   = MKT_DATA;
   const total = Object.keys(mkt.series).length;
@@ -1339,46 +1490,27 @@ function buildMarketSection(){
   });
   body.appendChild(toggle);
 
-  // asset class sub-groups
-  Object.entries(mkt.groups).forEach(([acName, keys]) => {
-    body.appendChild(buildAssetClassSection(acName, keys, mkt.series));
-  });
-
-  hdr.addEventListener('click', () => toggleSection(arr, body));
-  wrap.appendChild(body);
-  return wrap;
-}
-
-function buildAssetClassSection(acName, allKeys, seriesMap){
-  const wrap = el('div','ac-section');
-  const hdr  = el('div','ac-header');
-  const arr  = makeArrow('ac-arrow');
-  const ttl  = el('span','ac-title', acName);
-  // count shown = depends on variant, but just show total/2 since 50/50
-  const cnt  = el('span','ac-count', Math.ceil(allKeys.length / 2));
-  hdr.append(arr, ttl, cnt);
-  wrap.appendChild(hdr);
-
-  const body = el('div','ac-body');
-  body.dataset.acname = acName;
-
-  allKeys.forEach(key => {
-    const s = seriesMap[key];
-    if(!s) return;
-    const meta  = s.meta || {};
-    const variant = (meta['Variant'] || '').trim();
-    const item = makeSeriesItem({
-      source:  'market_comp',
-      key,
-      id:      key,
-      name:    meta['Name'] || key,
-      variant,
+  if(STATE.viewMode === 'concept'){
+    const placeholder = el('div','market-concept-placeholder');
+    placeholder.textContent =
+      'By Concept view requires Sub-Category metadata enrichment ' +
+      '(planned in a follow-up branch). Switch to the Default view ' +
+      'to browse Market Data.';
+    body.appendChild(placeholder);
+  } else {
+    const tree = mkt.groupsThree || {};
+    const nameFn = m => m['Name'] || '';
+    Object.entries(tree).forEach(([acName, byRegion]) => {
+      // Asset class → Region → Currency → tickers maps onto our generic
+      // group → sub_group → leaf renderer.
+      body.appendChild(buildGroupSection(acName, byRegion, null, {
+        source: 'market_comp',
+        seriesMap: mkt.series,
+        nameFn,
+        includeVariant: true,
+      }));
     });
-    item.dataset.variant = variant;
-    // show/hide based on current variant state
-    if(variant && variant !== STATE.mktVariant) item.classList.add('hidden');
-    body.appendChild(item);
-  });
+  }
 
   hdr.addEventListener('click', () => toggleSection(arr, body));
   wrap.appendChild(body);
@@ -1530,6 +1662,13 @@ function applySidebarFilters(){
     item.classList.toggle('hidden', hide);
   });
 
+  // Hide empty leaf-folder sections (innermost tier — no visible children)
+  document.querySelectorAll('.lf-body').forEach(body => {
+    const anyVisible = Array.from(body.querySelectorAll('.series-item'))
+      .some(i => !i.classList.contains('hidden'));
+    body.closest('.lf-section').style.display = anyVisible ? '' : 'none';
+  });
+
   // Hide empty sub-group sections (no visible children)
   document.querySelectorAll('.sgrp-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
@@ -1537,28 +1676,42 @@ function applySidebarFilters(){
     body.closest('.sgrp-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // Hide empty group / asset-class bodies (no visible children)
-  document.querySelectorAll('.grp-body,.ac-body').forEach(body => {
+  // Hide empty group bodies (no visible children)
+  document.querySelectorAll('.grp-body').forEach(body => {
     const anyVisible = Array.from(body.querySelectorAll('.series-item'))
       .some(i => !i.classList.contains('hidden'));
-    body.closest('.grp-section,.ac-section').style.display = anyVisible ? '' : 'none';
+    body.closest('.grp-section').style.display = anyVisible ? '' : 'none';
   });
 
-  // Auto-open src sections that have matches when search is active; restore
-  // collapsed sections when no narrowing filter is in effect.
+  // When a narrowing filter is active, auto-open every ancestor body of a
+  // visible item so the user actually sees the matches.  Sidebar starts
+  // fully collapsed otherwise.
   const filtersActive = q || cycleOn.size < 3 || countryOn;
   if(filtersActive){
-    document.querySelectorAll('.src-body').forEach(body => {
-      const anyVisible = Array.from(body.querySelectorAll('.series-item'))
-        .some(i => !i.classList.contains('hidden'));
-      if(anyVisible){
-        body.classList.add('open');
-        body.previousElementSibling.querySelector('.src-arrow').classList.add('open');
+    const visible = document.querySelectorAll('.series-item:not(.hidden)');
+    visible.forEach(item => {
+      let cur = item.parentElement;
+      while(cur){
+        if(cur.classList && (
+            cur.classList.contains('lf-body') ||
+            cur.classList.contains('sgrp-body') ||
+            cur.classList.contains('grp-body') ||
+            cur.classList.contains('src-body'))){
+          if(!cur.classList.contains('open')){
+            cur.classList.add('open');
+            const hdr = cur.previousElementSibling;
+            if(hdr){
+              const arrow = hdr.querySelector('.lf-arrow,.sgrp-arrow,.grp-arrow,.src-arrow');
+              if(arrow) arrow.classList.add('open');
+            }
+          }
+        }
+        cur = cur.parentElement;
       }
     });
   }
   if(!filtersActive){
-    document.querySelectorAll('.grp-section,.sgrp-section,.ac-section')
+    document.querySelectorAll('.grp-section,.sgrp-section,.lf-section')
       .forEach(s => s.style.display = '');
   }
 }

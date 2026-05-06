@@ -140,40 +140,22 @@ INDICATOR_GROUP_ORDER = {
 }
 
 INDICATOR_SUB_GROUP_ORDER = {
-    # ── US ──
-    "Equity - Growth":          1,
-    "Equity - Factor (Style)":  2,
-    "Equity - Factor (Size)":   3,
-    "CrossAsset - Growth":      4,
-    "CrossAsset - Inflation":   5,
-    "Credit":                   6,
-    "Rates - Growth":           7,
-    "Rates - Inflation":        8,
-    "Rates":                    9,
-    "Volatility":              10,
-    "Macro":                   11,
-    "Macro - Survey":          12,
-    "Mmtm - Equity":           13,
-    "Mmtm - CrossAsset":       14,
-    "Mmtm - Credit":           15,
-    "Mmtm - Volatility":       16,
-    # ── UK ──  (shared labels reuse the same sort key above)
-    # ── Europe ──
-    "CLI":                     17,
-    # ── Asia ──
-    "China - Equity (Growth)":        18,
-    "China - Equity - Factor (Size)": 19,
-    "China - Rates":                  20,
-    "India - Equity - Factor (Size)": 21,
-    "India - Rates":                  22,
-    # ── FX & Commodities ──
-    "China - FX Mmtm":         23,
-    "India - FX Mmtm":         24,
-    "Japan - FX Mmtm":         25,
-    "Growth (China infra)":    26,
-    "Growth (China broad)":    27,
-    "Growth Mmtm":             28,
-    "Inflation":               29,
+    # Asset-class lenses
+    "Equity":         1,
+    "Equity Factor":  2,
+    "Cross-Asset":    3,
+    "Credit":         4,
+    "Rates":          5,
+    "Volatility":     6,
+    # Real-economy / survey
+    "Macro":          7,
+    "Survey":         8,
+    "CLI":            9,
+    "Growth":        10,
+    "Inflation":     11,
+    # Signal-construction
+    "FX":            12,
+    "Momentum":      13,
 }
 
 # Sort order for the new "By Concept" sidebar view (§2.5).  Mirrors the canonical
