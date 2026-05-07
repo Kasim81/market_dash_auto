@@ -1,8 +1,10 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-06
 
-This is the project's forward-looking working doc. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need.
+This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
+
+> **Scope boundary (set 2026-05-06):** This document governs the data pipeline infrastructure only — its workflow, charting / explorer functionality, data sources, data series, multi-frequency rebuild, and operational scaffolding. It does **not** govern regime-based asset allocation work. All regime identification, indicator validation, regime-conditional portfolio construction, three-framework client implementations, backtest, and related agentic build phases live in the master plan: `../regime_AA_master_plan.docx`. If a future change touches both — e.g. the data pipeline needs to add a new source to feed a regime indicator — record the data-side work here and the regime-side work in the master plan, with a cross-reference. See `../_master_plan_drafts/responsibilities_boundary.md` for the durable record of the boundary.
 
 ---
 
@@ -250,12 +252,14 @@ These are cases where a planned series is unavailable from any free source we ac
 **Active priority is open.** The audit-remediation backlog (sub-tracks 1–4) closed 2026-04-29; durable outcomes live in `manuals/technical_manual.md` (§7, §9.8 cluster reference, §9.9 library_sync, §9.10 audit_writeback, §13 ticker dispositions, §14 daily flow) and ongoing forcing-function gaps live in §1 Known Data Gaps.
 
 Candidate next tracks:
-- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), Growth + Inflation focus (§3.1.3), GDP Now wiring (§3.1.4), and **Stage G** closeout.
+- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), Growth + Inflation focus (§3.1.3), GDP Now wiring (§3.1.4), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
 - **§3.3 PE Ratio Integration** — small contained feature add.
 - **§3.4 Market Index Expansion** — broadens market coverage; CSV-only additions to `index_library.csv`.
-- **§3.5 / §3.7 Regime work** — multi-stage research projects.
 - **§3.6 Incremental Fetch Mode** — performance work for `fetch_hist.py`.
+- **§3.8 Weekly Retirement Review Workflow** — closes the auto-remediation gap left by the daily audit.
+
+> **Note: §3.5 and §3.7 are MOVED.** Regime-based indicator labelling, ML-driven regime identification, and the regime-driven back-test / portfolio optimiser have been moved out of this document into `../regime_AA_master_plan.docx`. The stub sections at §3.5 and §3.7 below record the move and direct readers to the relevant master-plan sections.
 
 ---
 
@@ -263,7 +267,7 @@ Candidate next tracks:
 
 ### 3.1 Macro & Market Coverage Expansion
 
-**Priority:** High — provides the macro + market data foundation for the regime work in §3.5 and §3.7. Most architecture is now shipped (Stages A / B / D / F per `manuals/technical_manual.md`); §3.1 below tracks only what's outstanding.
+**Priority:** High — provides the macro + market data foundation for the regime work owned by `../regime_AA_master_plan.docx`. Most architecture is now shipped (Stages A / B / D / F per `manuals/technical_manual.md`); §3.1 below tracks only what's outstanding.
 
 **Status:** Active. Stages A (history-preservation safeguard), B (T1 fallback chains for 4 of 9 forcing-function rows), D (4 T2 source modules — BoE / ECB / BoJ / e-Stat), F (community-ticker review + 14 ETFs added) shipped. **Outstanding: Stages C / E / G + targeted growth/inflation expansion + GDP Now wiring.**
 
@@ -332,7 +336,7 @@ Stage definitions are in `manuals/technical_manual.md` §11 Pattern 9 (architect
 
 #### 3.1.3 Growth + Inflation focus for regime prep
 
-§3.5 regime work uses a Growth × Inflation 4-quadrant frame (Goldilocks / Reflation / Stagflation / Disinflation). The regime classifier needs per-region clean reads on each axis. Current state has well-known gaps on both:
+The regime work (now owned by `../regime_AA_master_plan.docx`) uses a per-region Growth × Inflation 4-quadrant frame. The regime classifier needs per-region clean reads on each axis, and the master plan's Phase 0 data-availability test will identify which regions can be supported. Current state has well-known gaps on both axes:
 
 **Growth axis** — well-covered for US / EZ; thin for UK / JP / CN. Note: the canonical demand-side guide for *survey-based* growth indicators (PMI, business confidence, sentiment surveys) is `manuals/G20_PMI_Master_Table.docx` — see Stage E above for the prioritisation strategy.
 
@@ -389,7 +393,7 @@ These are pure-derived Phase E composites — implementation is a `_calc_*` func
 
 **On the Eurocoin question:** if we don't want to maintain a CPB-style monthly download, the home-built EZ composite (item 4) is functionally equivalent for regime work. Decision deferred to implementation — start with the home-built composite (zero new dependencies); add Eurocoin later only if the composite proves noisy.
 
-**Acceptance for §3.1.4:** all 4 nowcast composites (`US_GDPNOW1`, `US_NOWCAST1`, `UK_NOWCAST1`, `EU_NOWCAST1`, `JP_NOWCAST1`) appear in `macro_market.csv` with a clean weekly time series feeding the §3.5 regime classifier's Growth axis.
+**Acceptance for §3.1.4:** all 4 nowcast composites (`US_GDPNOW1`, `US_NOWCAST1`, `UK_NOWCAST1`, `EU_NOWCAST1`, `JP_NOWCAST1`) appear in `macro_market.csv` with a clean weekly time series available to the regime classifier's Growth axis (consumer-side work in `../regime_AA_master_plan.docx`).
 
 #### 3.1.5 Outstanding calculated fields
 
@@ -407,12 +411,12 @@ Each of these has a clear path forward but isn't a Stage C/E/G blocker. Pulled o
 | Item | Why deferred | When to revisit |
 |---|---|---|
 | **ECB MIR — Composite Cost of Borrowing for NFCs** | Closes the Euro corporate borrowing-rate gap (proxy for `EU_Cr1` corp-yield half). ECB MIR series-code pattern needs probing — multi-dimensional dataset; canonical CCBI series ID isn't in either G20 or Market_Data catalogue. | When regime model wants explicit Euro corp credit spread vs the `IEAC.L` ETF total-return proxy that's currently doing the job. |
-| **BoE per-tenor gilt yields (2Y / 5Y / 10Y / 30Y)** | Today we have S/M/L par-yield buckets (`GBR_GILT_S/M/L`) and zero-coupon M/L from BoE IADB. Specific tenor breakdowns require fetching the BoE yield-curve spreadsheet files (separate fetcher; spreadsheet parsing). | If §3.5 regime work specifically needs UK 10Y-2Y slope rather than the S/M/L proxy. |
+| **BoE per-tenor gilt yields (2Y / 5Y / 10Y / 30Y)** | Today we have S/M/L par-yield buckets (`GBR_GILT_S/M/L`) and zero-coupon M/L from BoE IADB. Specific tenor breakdowns require fetching the BoE yield-curve spreadsheet files (separate fetcher; spreadsheet parsing). | If the master plan's regime work specifically needs UK 10Y-2Y slope rather than the S/M/L proxy. |
 | **`sources/bundesbank.py`** | Germany Bundesbank publishes corporate bond yield indices by rating — closes the Euro IG corp yield gap properly. New T2 module (~80-100 lines, SDMX 2.1). | When ECB MIR proves insufficient and / or regime work needs true bond yields rather than borrowing rates. |
 | **iShares STOXX Europe 600 sector ETF naming verification** | 19 sector ETFs (`EXV1`-`EXV9`, `EXH1`-`EXH9`, `EXSI`) all probed live in Stage F but cross-reference revealed the 7 already in `index_library.csv` have inconsistent ticker→sector labels (e.g. `EXH1.DE` labelled "Energy" in our library but listed as "Automobiles" by iShares). Without authoritative mapping I risk mislabelling new rows. | One-off Chrome lookup against ishares.com/de to confirm the 11-sector breakdown, then bulk-add. |
 | **Refactor `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`** | Legacy inline ECB call (precedes `sources/ecb.py`). Functional but architecturally inconsistent — should route through the new module so all ECB calls share one code path. | Low-priority hygiene — schedule for Stage G closeout. |
-| **22 retired yfinance tickers** | The original §3.1 plan envisioned a community-catalogue cross-check for these. Most were retired because the underlying instrument disappeared (`^TX60` etc.); community catalogues unlikely to surface live replacements for instruments that no longer trade. | Defer permanently unless §3.5 regime work specifically flags a need for a retired instrument's exposure. |
-| **Kaggle "Yahoo Finance Tickers" catalogue (100k+ tickers)** | Mostly individual equities; out of scope for our index/ETF/aggregate focus. Account/API-key required. | If §3.5 regime work flags a need for individual-stock data — unlikely given the macro focus. |
+| **22 retired yfinance tickers** | The original §3.1 plan envisioned a community-catalogue cross-check for these. Most were retired because the underlying instrument disappeared (`^TX60` etc.); community catalogues unlikely to surface live replacements for instruments that no longer trade. | Defer permanently unless the master plan's regime work specifically flags a need for a retired instrument's exposure. |
+| **Kaggle "Yahoo Finance Tickers" catalogue (100k+ tickers)** | Mostly individual equities; out of scope for our index/ETF/aggregate focus. Account/API-key required. | If the master plan's regime work flags a need for individual-stock data — unlikely given the macro focus. |
 
 #### 3.1.7 Acceptance
 
@@ -501,89 +505,23 @@ Add rows to `index_library.csv` — no new Python modules needed. For each new i
 4. For `.L` tickers: pence correction is automatic (no code change needed)
 5. For new currencies: add to `COMP_FX_TICKERS` and `COMP_FCY_PER_USD` in `library_utils.py`
 
-### 3.5 Regime-Based Indicator Labelling & ML-Driven Regime Identification
+### 3.5 Regime-Based Indicator Labelling & ML-Driven Regime Identification — MOVED
 
-**Priority:** High strategic — unlocks the §3.7 back-test + portfolio work; once shipped, every macro_market indicator carries a regime label in addition to its cycle-timing label, giving us a per-indicator "what does this say about the current regime?" signal.
-**Status:** Not started. Multi-phase research project; depends on §3.1 (full coverage) and Phase H's daily audit (so the regime model isn't trained on stale inputs).
+> **Moved 2026-05-06 to `../regime_AA_master_plan.docx` Section 8B (Indicator Validation Framework) and Section 17 Phase 1 / Phase 2 of the Master Forward Plan.**
+>
+> This section previously held the work plan for: (a) historical regime label production, (b) per-indicator regime-identification reliability scoring across the Phase E indicator library, (c) the ML-driven regime classifier producing the live regime status output. All of that work now lives in the regime AA master plan, which treats the data pipeline (raw layer + Phase E composites) as one of several candidate inputs to a per-region regime engine — alongside the structured indicator library in Section 5 of the master plan.
+>
+> What this means for the data pipeline:
+>
+> - The data pipeline's job is to keep producing the inputs (raw macro series, market data, the 92 composite indicators with their z-scores, regime classifications, forward-regime signals, and L/C/G tags) on its current daily cadence. Quality, freshness, and registry hygiene remain in scope here.
+> - The regime engine that *consumes* those inputs and produces a per-region regime call is owned by the master plan. So is the validation methodology that decides which candidate indicators (the 92 Phase E composites among them) earn a place in the production engine.
+> - The `macro_market.csv` snapshot already carries each indicator's own per-indicator regime classification (the literature-derived discrete label). That stays. The new "regime-identification reliability score" and the ensemble production regime call are downstream artefacts owned by the master plan.
+> - If the master plan's validation work surfaces a need for a new raw input or a new composite that the pipeline should produce, the request comes back here as a §3 entry — but the analytical decision on what to add lives in the master plan.
+>
+> See `../_master_plan_drafts/responsibilities_boundary.md` for the durable scope record.
 
-**Goal:** define a small set of well-grounded macroeconomic regimes; tag each Phase E composite indicator with a "regime-identification reliability" score; assemble an ensemble of the most reliable indicators into a current-regime classifier; use the classifier output as the regime status that drives §3.7's portfolio tilts.
-
-#### Framework choice — hybrid 4-quadrant Growth × Inflation, supported by L/C/G
-
-**Primary axis: 4-quadrant Growth × Inflation.** Four regime states defined by direction of macro growth (rising / falling) crossed with direction of inflation (rising / falling):
-
-| | Inflation rising | Inflation falling |
-|---|---|---|
-| **Growth rising** | Reflation / Overheating | Goldilocks |
-| **Growth falling** | Stagflation | Disinflation / Recession |
-
-This framework is well-established in academic + sell-side regime research (Bridgewater All Weather, Goldman Sachs cycle, BCA "Monetary Cycle" frame, Fidelity "business cycle approach"). It maps cleanly onto our existing concept taxonomy (Growth indicators feed the x-axis; Inflation indicators feed the y-axis), and the 4 states are tractable for portfolio rules in §3.7.
-
-**Supporting axis: L/C/G cycle-timing.** The cycle-timing labels (Leading / Coincident / Lagging) already attached to every Phase E indicator give us a confidence dimension on top of the quadrant. A regime call confirmed by Leading + Coincident + Lagging indicators all pointing the same way is high-conviction; a call where Leading indicators have flipped but Coincident + Lagging haven't is the early-turn / regime-transition signal that's most actionable for portfolio tilts.
-
-Combined output per timestamp: `(quadrant, leading_alignment, coincident_alignment, lagging_alignment)` — e.g. `(Goldilocks, +0.7, +0.4, -0.1)` reads as "Goldilocks regime with high-conviction Leading confirmation, moderate Coincident confirmation, Lagging indicators still partly in the prior regime — a transition into Goldilocks is in progress."
-
-#### History-sufficiency problem & proxy-series strategy
-
-The Phase E indicator library has a coverage / history mismatch that the regime work has to work around: the 156-week z-score window plus library start dates (some indicators only go back to 2000 or later) is too short for reliable regime training and validation. We need at least 4-5 full business cycles of labelled data to fit a regime classifier with any confidence — that's ~30+ years.
-
-**Proxy-series strategy.** Train regime identification on a small set of long-history market series that are well-known proxies for our broader concepts, then "graduate" Phase E indicators into the live ensemble based on how well they correlate with the labelled regimes from the proxy training. Candidate proxy panel (all back to ≥1990, mostly to ≥1970):
-
-| Proxy | Concept | Source | History |
-|---|---|---|---|
-| S&P 500 (price + 12m return) | Equity / Growth | yfinance / FRED `SP500` | 1928+ |
-| US 10-Year Treasury yield | Rates | FRED `DGS10` | 1962+ |
-| US 3-Month Treasury yield | Rates / Policy | FRED `DGS3MO` | 1981+ (use `TB3MS` for monthly back to 1934) |
-| 10Y-3M slope | Yield Curve | derived | 1981+ |
-| Gold | Inflation hedge / Risk-off | yfinance `GC=F` (modern); LBMA / FRED for older | 1968+ |
-| Copper | Growth | yfinance `HG=F` | 1989+ |
-| US Dollar Index (DXY) | FX | yfinance `DX-Y.NYB` (2008+); use FRED `DTWEXBGS` for older | 1973+ |
-| MOVE (or constructed bond-vol proxy) | Volatility | yfinance `^MOVE` (1988+); reconstruct from rates if older needed | 1988+ |
-| VIX (or constructed equity-vol proxy) | Volatility | yfinance `^VIX` (1990+); use realised SPX vol pre-1990 | 1990+ |
-| US CPI (headline, YoY) | Inflation | FRED `CPIAUCSL` | 1947+ |
-| US INDPRO (YoY) | Growth | FRED `INDPRO` | 1919+ |
-| US UNRATE | Labour | FRED `UNRATE` | 1948+ |
-| NBER recession indicator | Cycle-state ground truth | FRED `USREC` | 1854+ |
-
-Steps:
-1. **Label history with regime quadrants** using the long-history proxies. NBER recession dates anchor "growth falling"; CPI YoY direction anchors "inflation rising/falling"; INDPRO trend anchors "growth rising/falling" outside recessions. Output: `data/regime_history.csv` — monthly regime labels back to 1947.
-2. **Test each Phase E indicator's regime-identification reliability** by computing its predictive power against the labelled regime over its available history. Output: `data/regime_indicator_scores.csv` — per-indicator AUC / hit-rate / lead-time / regime-state-conditional means.
-3. **Graduate top-N indicators into the live ensemble** based on a reliability threshold (TBD at implementation — likely AUC > some cutoff plus minimum cycles-of-history).
-4. **For ungraduated indicators with too-short history**, look up similar-concept proxy indicators in the long-history panel and use the proxy's regime-conditional behaviour to define provisional thresholds (with help from ML — see below). Where no good proxy exists, lean on academic-paper findings (e.g. Carhart factor regime work for equity styles, Naik–Yadav for bond regimes, Cochrane–Piazzesi for term-structure regimes).
-
-#### ML approach (open — locked in at implementation)
-
-User has flagged this as their first genuine ML project; methods will be chosen at implementation. The framing below is a starting point.
-
-**Indicator selection + threshold tuning** — supervised classification with regime label as `y` and indicator value (level + z-score) as `X`. Methods to consider:
-- Logistic regression — interpretable; per-indicator weights map naturally to "this indicator is a 0.32-strength bullish-Goldilocks signal at z>+1".
-- Random forest / gradient boosting — capture non-linear thresholds (e.g. "yield-curve inversion is binary, not gradual"). Feature-importance ranks indicators.
-- Time-series-aware cross-validation (purged k-fold, walk-forward) — standard random k-fold leaks look-ahead; macro time-series demands a stricter split.
-
-**Regime labelling itself** (when NBER + CPI direction isn't enough) — unsupervised:
-- Hidden Markov Models (HMM) on the proxy panel — canonical in regime-detection literature.
-- K-means / Gaussian mixture clustering on z-scored proxies — simpler, often works.
-- Both produce a discrete state per timestamp; label states post-hoc against the 4-quadrant frame.
-
-**Threshold definition for graduated Phase E indicators** — once an indicator is in the ensemble, its z-score thresholds (currently mostly hand-coded at ±1) get re-fitted to the regime data. ML helps pick thresholds that maximise per-regime classification accuracy rather than the heuristic ±1 rule.
-
-#### Work-stage breakdown
-
-1. **Stage 1 — Long-history label set.** Build `data/regime_history.csv` with monthly 4-quadrant labels back to 1947 using the proxy panel + NBER recession dates. Standalone deliverable; output reusable for any future regime work.
-2. **Stage 2 — Per-indicator reliability scoring.** Run each Phase E indicator (where history overlaps the label set) through supervised classification; output `data/regime_indicator_scores.csv` with AUC, hit-rate, lead-time, regime-state-conditional means + std-devs.
-3. **Stage 3 — Graduation + ensemble assembly.** Define reliability threshold; pick top-N indicators per concept; assemble the live current-regime classifier (probably ensemble-vote + HMM smoother).
-4. **Stage 4 — Per-indicator regime label.** New `regime_label` column on `macro_market.csv` snapshot output: each indicator's current contribution to the regime call (e.g. `goldilocks-confirming`, `reflation-warning`, `neutral`, `data-insufficient`).
-5. **Stage 5 — Live regime status output.** New tab `regime_status` (or column on `macro_market_hist`) carrying the timestamped regime call + per-axis confidence. This is what §3.7 consumes.
-
-Each stage ends in a CSV / output that can be inspected and signed off before the next starts.
-
-#### Acceptance
-
-- `data/regime_history.csv` exists, monthly back to 1947, 4-quadrant labels validated against NBER + IMF + Bridgewater public regime dates.
-- `data/regime_indicator_scores.csv` exists, one row per Phase E indicator + each long-history proxy.
-- `regime_status` output produces a current regime call on every daily run with the four-element tuple `(quadrant, leading_alignment, coincident_alignment, lagging_alignment)`.
-- Per-indicator `regime_label` column appears in `macro_market.csv`; explorer surfaces it (small UI follow-up).
-- §3.7 back-test consumes `regime_status` directly without further data plumbing.
+**Priority (data-pipeline residual):** None. All regime work here moved to the master plan.
+**Status:** Closed in this document.
 
 ### 3.6 Incremental Fetch Mode (fetch_hist.py)
 
@@ -597,72 +535,22 @@ Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run 
 
 This would reduce daily historical data runtime from ~10 minutes to seconds.
 
-### 3.7 Regime-Driven Back-Test & Portfolio Optimisation
+### 3.7 Regime-Driven Back-Test & Portfolio Optimisation — MOVED
 
-**Priority:** High strategic — this is the project's end-state artefact: a historical performance record of a regime-tilted multi-asset portfolio vs benchmark, demonstrating whether the indicator library + regime framework actually generates positive excess return.
-**Status:** Not started. Hard prerequisite: §3.5 (regime status output). Soft prerequisite: Phase H daily audit + the broader §3 coverage work so the portfolio rules are tilted on clean data.
+> **Moved 2026-05-06 to `../regime_AA_master_plan.docx` Section 6 (Portfolio Construction), Section 16 (Three Regime-Based Frameworks: Parallel Client Implementations), and Section 17 Phase 4 / Phase 5 / Phase 6 of the Master Forward Plan.**
+>
+> This section previously held the work plan for: (a) the asset-class universe and tilt-rules scaffolding for the regime-tilted portfolio, (b) the back-test engine producing a historical performance record vs benchmark, (c) regime-conditional portfolio optimisation. All of that work now lives in the regime AA master plan, which (i) treats the portfolio construction as three parallel client implementations (Framework A for multi-asset benchmark mandates, Framework B for total-return mandates using the rg-ERC dynamic benchmark of Bouyé and Teiletche, Framework C for absolute-return mandates), and (ii) treats the asset universe as a downstream design decision driven by the per-region data availability test in master plan Phase 0.
+>
+> What this means for the data pipeline:
+>
+> - The data pipeline's job is to keep producing the asset return data on its current cadence — `market_data_comp_hist.csv` + FRED bond-index series + the long-run market-price layer (OECD MEI feed, Shiller, Ken French, IMF Primary Commodity Prices, JST, BoE Millennium) once that layer is wired in. Schema, freshness, and registry hygiene remain in scope here.
+> - The portfolio engine that *consumes* the asset return data and produces the three-framework client portfolios is owned by the master plan.
+> - If the master plan's portfolio work surfaces a need for a new asset return series or a new corporate-action-adjusted reference series, the request comes back here as a §3 entry — but the analytical decision on what to add lives in the master plan.
+>
+> See `../_master_plan_drafts/responsibilities_boundary.md` for the durable scope record.
 
-**Goal:** define a multi-asset portfolio managed against a strategic benchmark; consume `regime_status` from §3.5 plus a small set of explicit tilt rules (which asset classes to over/underweight in each regime, by what amount); back-test the resulting time series of allocations against the benchmark over the longest sample where the data supports; produce a historical performance record that flags whether the system delivers positive excess return.
-
-#### Benchmarks (final composition decided at implementation)
-
-Two benchmarks are planned, run side-by-side:
-
-1. **Classic 60/40** — 60% MSCI ACWI / 40% Bloomberg Global Aggregate (in USD). Industry standard; gives an intuitive "are we beating the obvious passive comparator?" read.
-2. **Regime-probability-weighted total-return benchmark** — for each regime, a static long-only composition that represents the regime's "natural" passive blend (e.g. Goldilocks ≈ heavy equity + duration; Stagflation ≈ heavy commodity + short-duration); the live benchmark is the time-weighted average of these compositions weighted by the regime probability output from §3.5. Acts as the "regime-aware buy-and-hold" comparator — the strategy must add value beyond just having the right static blend per regime.
-
-Exact composition of both benchmarks is locked in at implementation, after the §3 coverage work resolves which asset classes we have reliable long-history data for.
-
-#### Asset-class universe & tilt rules
-
-The asset universe will be defined at implementation, **using the existing asset-class nomenclature in `data/index_library.csv`** (Equity / Fixed Income / Rates / Spread / FX / Commodity / Crypto / Volatility, plus the established sub-classes within each). Concrete buckets selected from those classes once §3 coverage tells us what we have reliable data for.
-
-For each (asset class × regime) cell, an explicit **tilt rule** specifies an over/underweight versus the strategic benchmark, e.g.:
-
-| Asset class | Goldilocks | Reflation / Overheating | Stagflation | Disinflation / Recession |
-|---|---|---|---|---|
-| Developed equity | + | + | − | − |
-| EM equity | + | + + | − − | − |
-| Long-duration govt | − | − − | − | + + |
-| IG credit | + | 0 | − | − |
-| HY credit | + | + | − − | − − |
-| Commodities | 0 | + + | + | − |
-| Gold | − | + | + + | + |
-| Cash / short-duration | − | 0 | + | + |
-
-Magnitudes (percentage-point tilts vs benchmark weight) are TBD at implementation. The `leading_alignment` confidence dimension from §3.5 modulates the tilt magnitude — high-conviction regime calls get full tilts; low-conviction or transition states get scaled-down tilts.
-
-#### Mechanics
-
-- **Rebalancing cadence.** Probably **monthly** (matches macro-data cadence) for v1; alternatives (weekly / quarterly / regime-change-triggered) tested at implementation to see which delivers the cleanest excess-return profile without overtrading.
-- **Transaction costs.** Ignored for v1. Re-introduce at v2 once the unconstrained back-test confirms the system has signal worth paying costs for.
-- **Look-ahead controls.** Regime status used at any back-test timestamp `t` is computed exclusively from data publishable on or before `t` — i.e. respects the data-release-lag of each underlying series (FRED OECD-mirror series have a 1-2 month publication lag; surveys ≈ 1 month; PMIs ≈ same week). Walk-forward construction of the regime classifier (per §3.5) is the upstream guarantee here.
-- **Position-size constraints.** Each tilt rule capped at ±X% (TBD) from the benchmark weight; portfolio-level long-only constraint; total weights sum to 100%.
-
-#### Output
-
-A new top-level `backtest/` directory holds:
-
-- `backtest/run_backtest.py` — runs the full back-test from `data/regime_status.csv` + asset return data + the tilt-rules CSV; emits the time series of allocations, returns, and benchmark-relative performance metrics.
-- `data/backtest_history.csv` — daily/monthly time series of the regime-tilted portfolio's returns, the benchmark returns, and the tracking error / excess return.
-- `data/backtest_summary.txt` — annualised return / vol / Sharpe / max drawdown / hit-rate per regime, vs each benchmark.
-- A new explorer tab or section showing the back-test track record alongside live regime status.
-
-#### Work-stage breakdown
-
-1. **Stage 1 — Asset return time series.** Pull the asset universe's return histories (over the longest sample where data is reliable). Reuse `index_library.csv` and `market_data_comp_hist.csv` plus FRED bond-index series. Standalone deliverable: `data/asset_return_panel.csv`.
-2. **Stage 2 — Tilt-rules CSV.** Hand-author `data/regime_tilt_rules.csv` from the (asset class × regime) grid. CSV-driven per §0.
-3. **Stage 3 — Back-test engine.** Build `backtest/run_backtest.py` that consumes asset returns + regime status + tilt rules and produces the allocation time series + return time series.
-4. **Stage 4 — Performance reporting.** Generate `backtest_summary.txt` and visualise track record vs both benchmarks.
-5. **Stage 5 — Sensitivity analysis.** Test alternative rebalancing frequencies, alternative tilt magnitudes, and partial-conviction modulation; document which choices materially affect excess return.
-6. **Stage 6 — Live integration.** Daily run extends to update `backtest_history.csv` + the explorer view as a paper-traded ongoing record.
-
-#### Acceptance
-
-- `backtest/run_backtest.py` runs end-to-end from CSV inputs and produces clean output.
-- `data/backtest_history.csv` has at least 10 years of monthly data covering multiple regime transitions, with positive excess return vs the classic 60/40 benchmark over the full sample.
-- Stage 5 sensitivity analysis identifies which mechanic choices (rebalance frequency, tilt magnitude, conviction modulation) drive the most excess return — these become the tuning knobs locked in for live operation.
-- Daily run paper-trades the strategy from Stage 6 onward, accumulating a real-time track record alongside the historical back-test.
+**Priority (data-pipeline residual):** None. All portfolio / back-test work here moved to the master plan.
+**Status:** Closed in this document.
 
 ### 3.8 Weekly Retirement Review Workflow
 
