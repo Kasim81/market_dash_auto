@@ -218,12 +218,13 @@ These CSVs in `data/` are the single source of truth for everything the pipeline
 | `macro_library_ecb.csv` | 3 | Phase ME (Stage D, 2026-04-30) | `sources/ecb.py` (ECB Data Portal — Deposit Rate, AAA yield curve 2Y/30Y) |
 | `macro_library_boj.csv` | 2 | Phase ME (Stage D, 2026-04-30) | `sources/boj.py` (BoJ Time-Series — Policy Rate, Tankan Large Mfg DI) |
 | `macro_library_estat.csv` | 1 | Phase ME (Stage D, 2026-04-30) | `sources/estat.py` (e-Stat — METI IIP) |
-| `macro_library_nasdaqdl.csv` | 1 | Phase ME (§3.9, 2026-05-08) | `sources/nasdaq_data_link.py` (Nasdaq Data Link — LBMA/GOLD daily PM fix) |
-| `source_fallbacks.csv` | 10 | Phase ME (Stage B, 2026-04-30; §3.9 row added 2026-05-08) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
+| `macro_library_nasdaqdl.csv` | 0 | Phase ME (§3.9, 2026-05-08; emptied 2026-05-09) | `sources/nasdaq_data_link.py` — scaffolding kept for any future free NDL dataset; LBMA/GOLD removed when discovered to be on NDL's paid tier |
+| `macro_library_lbma.csv` | 1 | Phase ME (§3.9, 2026-05-09) | `sources/lbma.py` (LBMA prices.lbma.org.uk JSON — daily gold PM USD fix back to 1968) |
+| `source_fallbacks.csv` | 10 | Phase ME (Stage B, 2026-04-30; §3.9 row added 2026-05-08; T0 swapped to LBMA 2026-05-09) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
 | `macro_indicator_library.csv` | 93 | Phase E | `compute_macro_market.py` (composite indicator registry) |
 | `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.1 cross-reference; not consumed by the runtime pipeline |
 
-**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
+**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
 **Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks + history-preservation row counts (Section D, added 2026-04-30) during the existing fetch (no separate probe needed).
 
@@ -629,33 +630,33 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 - `data/retirement_decisions.csv` carries a full historic record of every decision and application date.
 - Daily audit comment (`audit_comment.md`) carries `@kasim81` mention so the operator receives email notifications for daily audits.
 
-### 3.9 Nasdaq Data Link — long-run commodity prices (regime-AA-driven)
+### 3.9 Long-run commodity prices — LBMA gold (regime-AA-driven)
 
 **Priority:** Medium-High — closes the daily long-run gold gap for the regime AA `commodity_return` pillar. Surfaced by regime AA Phase 0c Step 3 verification (2026-05-08): FRED's LBMA gold AM and PM fix series (`GOLDAMGBD228NLBM`, `GOLDPMGBD228NLBM`) confirmed discontinued in 2017 when the LBMA changed methodology; no FRED replacement exists.
 
-**Status:** In progress (2026-05-08) — module + library wired; awaiting `NASDAQ_DATA_LINK_API_KEY` GitHub Actions secret + first daily-run validation. Filed under the §3.7-style protocol (the master plan's portfolio / commodity work surfaces a need; the request comes back here as a §3 entry).
+**Status:** In progress (2026-05-09) — replumbed onto LBMA's own JSON feed at `prices.lbma.org.uk` after the initial Nasdaq Data Link wiring (2026-05-08) hit a 403 on `LBMA/GOLD` (dataset moved to NDL's paid tier). New module `sources/lbma.py` + library `data/macro_library_lbma.csv` carries `GOLD_USD_PM`; the NDL scaffolding (`sources/nasdaq_data_link.py`, empty `data/macro_library_nasdaqdl.csv`, `requirements.txt` line, `NASDAQ_DATA_LINK_API_KEY` workflow secret) is retained for any future free NDL dataset. Awaiting first daily-run validation. Filed under the §3.7-style protocol (the master plan's portfolio / commodity work surfaces a need; the request comes back here as a §3 entry).
 
-**Driver:** `../regime-aa` Phase 0c — the per-region availability matrix (test plan §4) needs a daily long-run gold series. Nasdaq Data Link's `LBMA/GOLD` (free tier as of 2026-05) is the modern home of the very LBMA AM/PM fix that FRED used to mirror, daily back to 1968.
+**Driver:** `../regime-aa` Phase 0c — the per-region availability matrix (test plan §4) needs a daily long-run gold series. LBMA publishes the canonical fix daily back to 1968 via the same auction process FRED used to mirror.
 
 **Scope:**
 
-- New T2 source module `sources/nasdaq_data_link.py` using the `nasdaq-data-link` Python library (`pip install nasdaq-data-link`).
-- New library `data/macro_library_nasdaqdl.csv` per §0.1 architecture rule (every NDL series ID lives in CSV, never in Python).
-- GitHub Actions secret `NASDAQ_DATA_LINK_API_KEY` injected into the daily run.
+- New T0 source module `sources/lbma.py` reading `https://prices.lbma.org.uk/json/<series>.json` (no API key, public JSON).
+- New library `data/macro_library_lbma.csv` per §0.1 architecture rule (every LBMA series stem + currency lives in CSV, never in Python).
 - Sister-file safeguard applied per Stage A (`*_hist_x.csv`).
-- First series: `LBMA/GOLD` — daily AM/PM USD/GBP/EUR, 1968+. Maps to a new `GLOBAL_GOLD_USD` row in the indicator library (or equivalent — exact name to be set when wiring).
-- Register in `data/source_fallbacks.csv` as T0 for the gold composite (no current T0 exists).
+- First series: `gold_pm` — daily PM auction fix USD/GBP/EUR, 1968+. Maps to `GOLD_USD_PM` (raw) and `GLOBAL_GOLD1` (Phase E composite).
+- Register in `data/source_fallbacks.csv` as T0 for `GOLD_USD_PM`; T1 = Nasdaq Data Link `LBMA/GOLD` (now paid, kept as documented fallback rather than runtime path).
+- The Nasdaq Data Link scaffolding from the 2026-05-08 attempt remains in place but with an empty library — it stays available for any future free NDL dataset.
 
-**Future expansion candidates** (deferred until the regime AA work surfaces explicit need): `LBMA/SILVER`, `LPPM/PLAT`, `LPPM/PALL`. Other free NDL datasets that could close commodity_return gaps are reviewable on a case-by-case basis.
+**Future expansion candidates** (deferred until the regime AA work surfaces explicit need): LBMA `gold_am`, `silver`, `platinum_am`/`pm`, `palladium_am`/`pm` — same module, additional rows in `macro_library_lbma.csv`.
 
 **Acceptance:**
 
-- `sources/nasdaq_data_link.py` fetches `LBMA/GOLD` end-to-end via the daily run.
-- `data/macro_library_nasdaqdl.csv` lives in the registry; the row passes the daily integrated audit.
-- Sister-file `*_hist_x.csv` exists and `library_utils.write_hist_with_archive()` is in use for the new module.
+- `sources/lbma.py` fetches `gold_pm` end-to-end via the daily run; `GOLD_USD_PM` populated in `macro_economic_hist.csv` back to 1968-04-01.
+- `GLOBAL_GOLD1` Phase E composite resolves with raw / zscore / regime in `macro_market.csv` and `macro_market_hist.csv`.
+- Sister-file `*_hist_x.csv` keeps pace with live (Option B writer; `library_utils.write_hist_with_archive()`).
 - Cross-repo confirmation: the regime AA repo's Phase 0c availability matrix records the gold row sourced from `market_dash_auto` rather than FRED.
 
-**Related cross-repo work** (in `regime-aa`, not this repo): the Phase 0c verifier `src/data_ingestion/verify_fred_us_native.py` already documents the FRED gold gap and points at NDL `LBMA/GOLD` as the canonical long-run daily path (commit `1256ab2` on the `feature/verify-fred-us-native` branch).
+**Related cross-repo work** (in `regime-aa`, not this repo): the Phase 0c verifier `src/data_ingestion/verify_fred_us_native.py` documents the FRED gold gap. Original commit `1256ab2` (on the `feature/verify-fred-us-native` branch) pointed at NDL `LBMA/GOLD` as the long-run path; that pointer should be updated to LBMA direct now that NDL is paid.
 
 ---
 
