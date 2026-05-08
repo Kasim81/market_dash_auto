@@ -218,11 +218,12 @@ These CSVs in `data/` are the single source of truth for everything the pipeline
 | `macro_library_ecb.csv` | 3 | Phase ME (Stage D, 2026-04-30) | `sources/ecb.py` (ECB Data Portal — Deposit Rate, AAA yield curve 2Y/30Y) |
 | `macro_library_boj.csv` | 2 | Phase ME (Stage D, 2026-04-30) | `sources/boj.py` (BoJ Time-Series — Policy Rate, Tankan Large Mfg DI) |
 | `macro_library_estat.csv` | 1 | Phase ME (Stage D, 2026-04-30) | `sources/estat.py` (e-Stat — METI IIP) |
-| `source_fallbacks.csv` | 9 | Phase ME (Stage B, 2026-04-30) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
-| `macro_indicator_library.csv` | 92 | Phase E | `compute_macro_market.py` (composite indicator registry) |
+| `macro_library_nasdaqdl.csv` | 1 | Phase ME (§3.9, 2026-05-08) | `sources/nasdaq_data_link.py` (Nasdaq Data Link — LBMA/GOLD daily PM fix) |
+| `source_fallbacks.csv` | 10 | Phase ME (Stage B, 2026-04-30; §3.9 row added 2026-05-08) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
+| `macro_indicator_library.csv` | 93 | Phase E | `compute_macro_market.py` (composite indicator registry) |
 | `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.1 cross-reference; not consumed by the runtime pipeline |
 
-**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
+**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
 **Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks + history-preservation row counts (Section D, added 2026-04-30) during the existing fetch (no separate probe needed).
 
@@ -632,7 +633,7 @@ This would reduce daily historical data runtime from ~10 minutes to seconds.
 
 **Priority:** Medium-High — closes the daily long-run gold gap for the regime AA `commodity_return` pillar. Surfaced by regime AA Phase 0c Step 3 verification (2026-05-08): FRED's LBMA gold AM and PM fix series (`GOLDAMGBD228NLBM`, `GOLDPMGBD228NLBM`) confirmed discontinued in 2017 when the LBMA changed methodology; no FRED replacement exists.
 
-**Status:** Not started. Filed under the §3.7-style protocol (the master plan's portfolio / commodity work surfaces a need; the request comes back here as a §3 entry).
+**Status:** In progress (2026-05-08) — module + library wired; awaiting `NASDAQ_DATA_LINK_API_KEY` GitHub Actions secret + first daily-run validation. Filed under the §3.7-style protocol (the master plan's portfolio / commodity work surfaces a need; the request comes back here as a §3 entry).
 
 **Driver:** `../regime-aa` Phase 0c — the per-region availability matrix (test plan §4) needs a daily long-run gold series. Nasdaq Data Link's `LBMA/GOLD` (free tier as of 2026-05) is the modern home of the very LBMA AM/PM fix that FRED used to mirror, daily back to 1968.
 

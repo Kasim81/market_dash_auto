@@ -31,6 +31,7 @@ jobs:
         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
+        NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
       run: |
         set -o pipefail
         git pull --rebase
