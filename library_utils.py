@@ -334,14 +334,18 @@ SHEETS_LEGACY_TABS_TO_DELETE = frozenset({
 # ---------------------------------------------------------------------------
 # Source-side history can shrink retroactively (e.g. April 2026 ICE Data demand
 # that FRED truncate ICE BofA series to a rolling 3-year window). For every
-# `*_hist.csv` we maintain, a sister `*_hist_x.csv` ("x" = "extended") preserves
-# any rows that would otherwise be lost. The sister is append-only.
+# `*_hist.csv` we maintain, a sister `*_hist_x.csv` ("x" = "extended") tracks
+# the union of every date ever observed in live. The sister is append-only.
 #
-# Detection is per-column floor advancement (not row-count change): a rolling
-# window keeps row count constant while the earliest date walks forward. For
-# each column where the new fetch's earliest non-null date is later than the
-# locally-stored earliest non-null date, the rows about to disappear are routed
-# to the sister CSV before the live CSV is overwritten.
+# Two rules drive every write:
+#   1. Per-column floor advancement (rolling-window shrinkage): for each column
+#      where the new fetch's earliest non-null date is later than the existing
+#      live's, the rows about to disappear are routed to the sister before the
+#      live file is overwritten.
+#   2. Forward extension: every date in the incoming write that isn't already
+#      in the sister is appended too. This keeps the sister current with live's
+#      latest tick — without it, a sister written once at bootstrap drifts into
+#      a strict subset of live and provides no preservation value going forward.
 #
 # Read paths use load_hist_with_archive() to transparently union live + sister.
 
@@ -404,14 +408,20 @@ def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col):
 
 
 def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
-    """Write a *_hist.csv preserving any rows that would otherwise be lost.
+    """Write a *_hist.csv keeping the sister `<path>_x.csv` current.
 
-    Per-column floor-advancement detection: for each column shared between the
-    new `df` and the existing live file, if `new.earliest_nonnull_date` > the
-    same column's `local.earliest_nonnull_date`, the rows in the live file with
-    `date < new.earliest_nonnull_date` AND that column non-null are appended to
-    the sister `<path>_x.csv` (deduplicated by date) before the live file is
-    rewritten with `df`.
+    Two write rules into the sister, both applied on every call:
+
+    1. Shrinkage archive — for each column shared between the new `df` and
+       the existing live file, if `new.earliest_nonnull_date` > the same
+       column's `local.earliest_nonnull_date`, the live rows with
+       `date < new.earliest_nonnull_date` AND that column non-null are appended
+       to the sister before the live file is overwritten.
+
+    2. Forward extension — every date in the incoming `df` that isn't already
+       in the sister is appended too. This keeps the sister rolling forward
+       with live so it remains a true append-only superset rather than drifting
+       into a strict subset.
 
     Parameters
     ----------
@@ -437,14 +447,15 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
     n_prefix = len(prefix_rows) if prefix_rows else 0
     sister = _sister_path(path)
 
-    # Read existing live for the shrinkage check.
+    # Rule 1 — shrinkage archive: read existing live and detect per-column
+    # floor advancement.
+    archive_df = None
     if _hp_os.path.exists(path):
         old_df = _hp_pd.read_csv(path, skiprows=n_prefix, low_memory=False)
         if date_col in old_df.columns:
             old_df[date_col] = _hp_pd.to_datetime(old_df[date_col], errors="coerce")
             old_df = old_df[old_df[date_col].notna()].reset_index(drop=True)
 
-            # Per-column floor comparison.
             archive_row_idx = set()
             shared_cols = [c for c in new_df.columns
                            if c in old_df.columns and c != date_col]
@@ -456,13 +467,20 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
                 old_min = old_nn[date_col].min()
                 new_min = new_nn[date_col].min()
                 if new_min > old_min:
-                    # Old rows that will lose this column on the new write.
                     mask = (old_df[date_col] < new_min) & old_df[col].notna()
                     archive_row_idx.update(old_df.index[mask].tolist())
 
             if archive_row_idx:
                 archive_df = old_df.loc[sorted(archive_row_idx)].copy()
-                _append_archive_rows(sister, archive_df, prefix_rows, date_col)
+
+    # Rule 2 — forward extension: union shrinkage archive (if any) with the
+    # incoming new_df, then append to sister. Dedup-by-date in
+    # _append_archive_rows keeps the existing sister value on overlap, so
+    # repeated writes of unchanged history are idempotent.
+    parts = [p for p in (archive_df, new_df) if p is not None and not p.empty]
+    if parts:
+        to_archive = _hp_pd.concat(parts, ignore_index=True)
+        _append_archive_rows(sister, to_archive, prefix_rows, date_col)
 
     # Write the live file.
     _write_hist_payload(path, new_df, prefix_rows, date_col)

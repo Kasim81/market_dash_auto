@@ -635,6 +635,9 @@ REGIME_RULES = {
         "global-expansion" if not np.isnan(r) and r > 51
         else ("global-contraction" if not np.isnan(r) and r < 49 else "neutral")
     ),
+    # Long-run gold price (LBMA PM fix, USD/oz). Z-scored on 156w window —
+    # high z = safe-haven / inflation hedge bid; low z = risk-on / disinflation.
+    "GLOBAL_GOLD1": lambda r, z: _r(r, z, 1, -1, "safe-haven-bid", "risk-on-gold"),
 }
 
 
@@ -1620,6 +1623,18 @@ def _calc_FX_CMD3(cp, **_):
     return _log_ratio(_p(cp, "CL=F"), _p(cp, "GC=F"))
 
 
+def _calc_GLOBAL_GOLD1(mu, **_):
+    """
+    LBMA gold PM fix (USD/oz) — long-run daily gold benchmark from 1968.
+
+    Source column GOLD_USD_PM is provisioned by sources/nasdaq_data_link.py
+    (LBMA/GOLD via Nasdaq Data Link) and replaces FRED's discontinued
+    GOLDPMGBD228NLBM. Returned as the raw price level — the framework's
+    156-week rolling z-score handles the regime classification.
+    """
+    return _to_weekly_friday(_get_col(mu, "GOLD_USD_PM"))
+
+
 # ---------------------------------------------------------------------------
 # DISPATCHER — ASIA & REGIONAL
 # ---------------------------------------------------------------------------
@@ -1654,6 +1669,7 @@ _ASIA_REGIONAL_CALCULATORS = {
     "GL_G1":   _calc_GL_G1,
     "FX_CMD6": _calc_FX_CMD6,
     "FX_CMD3": _calc_FX_CMD3,
+    "GLOBAL_GOLD1": _calc_GLOBAL_GOLD1,
 }
 
 # ===========================================================================

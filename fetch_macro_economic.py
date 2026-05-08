@@ -39,6 +39,7 @@ from sources import boe as boe_src
 from sources import ecb as ecb_src
 from sources import boj as boj_src
 from sources import estat as estat_src
+from sources import nasdaq_data_link as ndl_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -106,6 +107,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(ecb_src.load_library())
     indicators.extend(boj_src.load_library())
     indicators.extend(estat_src.load_library())
+    indicators.extend(ndl_src.load_library())
     return indicators
 
 
@@ -376,6 +378,29 @@ def _fetch_estat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
+# -- Nasdaq Data Link snapshot --
+
+NDL_DELAY = 0.6  # seconds between Nasdaq Data Link calls
+
+
+def _fetch_ndl_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = ndl_src.fetch_series_as_pandas(
+        indic["source_id"],
+        sub_field=indic.get("sub_field", ""),
+    )
+    time.sleep(NDL_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
 # -- ifo snapshot (batch) --
 
 def _fetch_ifo_snapshot_batch(
@@ -442,6 +467,8 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_boj_snapshot(indic, fetched_at)
             elif src == "e-Stat":
                 got = _fetch_estat_snapshot(indic, fetched_at)
+            elif src == "Nasdaq Data Link":
+                got = _fetch_ndl_snapshot(indic, fetched_at)
             else:
                 print(f"  [WARN] Unknown source '{src}' — skipping")
                 continue
@@ -606,6 +633,20 @@ def _fetch_estat_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
+# -- Nasdaq Data Link --
+
+def _fetch_ndl_history(indic: dict) -> dict[str, pd.Series]:
+    s = ndl_src.fetch_series_as_pandas(
+        indic["source_id"],
+        sub_field=indic.get("sub_field", ""),
+        col_name=indic["col"],
+    )
+    time.sleep(NDL_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
 # -- ifo (shares the workbook download with snapshot via module cache) --
 
 _IFO_MONTHLY_DF: pd.DataFrame | None = None
@@ -667,6 +708,8 @@ def _history_for_indicator(
         return _fetch_boj_history(indic)
     if src == "e-Stat":
         return _fetch_estat_history(indic)
+    if src == "Nasdaq Data Link":
+        return _fetch_ndl_history(indic)
     if src == "ifo":
         return _fetch_ifo_history(indic, ifo_indicators)
     print(f"  [WARN] Unknown source '{src}' in history fetch")

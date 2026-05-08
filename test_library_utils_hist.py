@@ -1,11 +1,14 @@
 """Unit tests for library_utils.write_hist_with_archive / load_hist_with_archive.
 
 Covers the §3.1.1 history-preservation contract:
-  - First write with no live file (no shrinkage to detect).
-  - Rolling-window source: row count stable, earliest date walks forward → archive triggers.
-  - Pure extension (new latest date appended): no archive.
-  - Mixed columns: only rolling columns trigger archive; stable columns leave sister untouched.
-  - Sister is append-only and deduped by date.
+  - First write creates a sister covering every date in the incoming df.
+  - Rolling-window source: row count stable, earliest date walks forward →
+    displaced rows archived to sister.
+  - Pure extension (new latest date appended): sister grows forward to track
+    live's tail.
+  - Mixed columns: rolling columns drive shrinkage archiving; stable columns
+    pass through untouched.
+  - Sister is append-only and deduped by date (existing values win on overlap).
   - load_hist_with_archive unions live + sister with live winning on overlap.
 """
 import os
@@ -40,11 +43,17 @@ class HistArchiveTest(unittest.TestCase):
             d["FRED_T10Y"] = fred
         return pd.DataFrame(d)
 
-    def test_first_write_no_sister(self):
+    def test_first_write_creates_sister_covering_full_dates(self):
         df = self._df(["2020-01-01", "2020-02-01", "2020-03-01"], ice=[4.5, 4.6, 4.7])
         write_hist_with_archive(df, self.path)
         self.assertTrue(os.path.exists(self.path))
-        self.assertFalse(os.path.exists(self.sister))
+        # Sister mirrors live from the first write so it can grow forward as
+        # live evolves (Option B — strict superset semantics).
+        self.assertTrue(os.path.exists(self.sister))
+        sister_df = pd.read_csv(self.sister)
+        sister_df["Date"] = pd.to_datetime(sister_df["Date"])
+        self.assertEqual(sorted(sister_df["Date"].dt.strftime("%Y-%m-%d").tolist()),
+                         ["2020-01-01", "2020-02-01", "2020-03-01"])
 
     def test_rolling_window_triggers_archive(self):
         # T0: live has 5 months of ICE_HY
@@ -62,12 +71,21 @@ class HistArchiveTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.sister))
         sister_df = pd.read_csv(self.sister)
         sister_df["Date"] = pd.to_datetime(sister_df["Date"])
-        # Sister should hold the two displaced rows (2020-01 and 2020-02)
+        # Sister must hold every date ever observed in live, with the original
+        # values for the two displaced rows (2020-01, 2020-02) preserved by
+        # existing-wins dedup.
         self.assertEqual(sorted(sister_df["Date"].dt.strftime("%Y-%m-%d").tolist()),
-                         ["2020-01-01", "2020-02-01"])
-        self.assertEqual(sorted(sister_df["ICE_HY"].tolist()), [1.0, 2.0])
+                         ["2020-01-01", "2020-02-01", "2020-03-01",
+                          "2020-04-01", "2020-05-01", "2020-06-01", "2020-07-01"])
+        # The two displaced ICE_HY values survive in sister.
+        ice_by_date = dict(zip(sister_df["Date"].dt.strftime("%Y-%m-%d"),
+                               sister_df["ICE_HY"]))
+        self.assertEqual(ice_by_date["2020-01-01"], 1.0)
+        self.assertEqual(ice_by_date["2020-02-01"], 2.0)
 
-    def test_pure_extension_no_archive(self):
+    def test_pure_extension_grows_sister_forward(self):
+        # Option B: even without shrinkage, sister tracks live's forward edge
+        # so it stays a true superset rather than drifting into a strict subset.
         write_hist_with_archive(
             self._df(["2020-01-01", "2020-02-01"], ice=[1.0, 2.0]),
             self.path,
@@ -76,8 +94,12 @@ class HistArchiveTest(unittest.TestCase):
             self._df(["2020-01-01", "2020-02-01", "2020-03-01"], ice=[1.0, 2.0, 3.0]),
             self.path,
         )
-        self.assertFalse(os.path.exists(self.sister),
-                         "sister should not exist when earliest date is unchanged")
+        self.assertTrue(os.path.exists(self.sister))
+        sister_df = pd.read_csv(self.sister)
+        sister_df["Date"] = pd.to_datetime(sister_df["Date"])
+        self.assertEqual(sorted(sister_df["Date"].dt.strftime("%Y-%m-%d").tolist()),
+                         ["2020-01-01", "2020-02-01", "2020-03-01"])
+        self.assertEqual(sorted(sister_df["ICE_HY"].tolist()), [1.0, 2.0, 3.0])
 
     def test_mixed_columns_only_rolling_archived(self):
         # Live: FRED stable from 2010, ICE from 2010 too
@@ -94,16 +116,16 @@ class HistArchiveTest(unittest.TestCase):
                      fred=[10.0, 11.0, 12.0]),
             self.path,
         )
-        # ICE rolled forward 10 years; archive should hold rows where ICE was non-null
-        # in the dropped range [2010-01-01, 2020-01-01)
+        # ICE rolled forward 10 years; the original non-null ICE_HY values for
+        # 2010-01-01 and 2015-01-01 must survive in sister via existing-wins
+        # dedup against the displaced rows from the previous live.
         self.assertTrue(os.path.exists(self.sister))
         sister_df = pd.read_csv(self.sister)
         sister_df["Date"] = pd.to_datetime(sister_df["Date"])
-        self.assertEqual(sorted(sister_df["Date"].dt.strftime("%Y-%m-%d").tolist()),
-                         ["2010-01-01", "2015-01-01"])
-        # Both rows in the archive carry ICE_HY (the rolling column) plus FRED_T10Y
-        # values from the original live (incidentally captured — that's fine).
-        self.assertEqual(sorted(sister_df["ICE_HY"].tolist()), [1.0, 2.0])
+        ice_by_date = dict(zip(sister_df["Date"].dt.strftime("%Y-%m-%d"),
+                               sister_df["ICE_HY"]))
+        self.assertEqual(ice_by_date["2010-01-01"], 1.0)
+        self.assertEqual(ice_by_date["2015-01-01"], 2.0)
 
     def test_sister_append_only(self):
         # First roll
@@ -115,8 +137,6 @@ class HistArchiveTest(unittest.TestCase):
             self._df(["2020-02-01", "2020-03-01", "2020-04-01"], ice=[2.0, 3.0, 4.0]),
             self.path,
         )
-        # Sister has 2020-01-01
-        df1 = pd.read_csv(self.sister)
         # Second roll — another month displaced
         write_hist_with_archive(
             self._df(["2020-03-01", "2020-04-01", "2020-05-01"], ice=[3.0, 4.0, 5.0]),
@@ -124,9 +144,14 @@ class HistArchiveTest(unittest.TestCase):
         )
         df2 = pd.read_csv(self.sister)
         df2["Date"] = pd.to_datetime(df2["Date"])
+        # Sister now spans every date ever observed across the three writes,
+        # with original values preserved for the two displaced months.
         self.assertEqual(sorted(df2["Date"].dt.strftime("%Y-%m-%d").tolist()),
-                         ["2020-01-01", "2020-02-01"])
-        self.assertEqual(sorted(df2["ICE_HY"].tolist()), [1.0, 2.0])
+                         ["2020-01-01", "2020-02-01", "2020-03-01",
+                          "2020-04-01", "2020-05-01"])
+        ice_by_date = dict(zip(df2["Date"].dt.strftime("%Y-%m-%d"), df2["ICE_HY"]))
+        self.assertEqual(ice_by_date["2020-01-01"], 1.0)
+        self.assertEqual(ice_by_date["2020-02-01"], 2.0)
 
     def test_load_unions_live_and_sister(self):
         write_hist_with_archive(

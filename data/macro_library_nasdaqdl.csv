@@ -1,0 +1,2 @@
+series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,sub_field,freshness_override_days
+LBMA/GOLD,GOLD_USD_PM,LBMA Gold Price PM Fix (USD/oz),Commodities,Precious Metals,USD/oz,Daily,GLOBAL,Nasdaq Data Link LBMA/GOLD daily PM fix in USD. Replaces FRED's discontinued GOLDPMGBD228NLBM (LBMA changed methodology in 2017). Wired §3.9 2026-05-08 — driven by regime AA Phase 0c long-run gold requirement.,500,Cross-Asset,L,USD (PM),7
