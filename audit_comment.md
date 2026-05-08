@@ -1,6 +1,6 @@
-## Daily audit — 2026-05-08 — **36 ISSUES** (1 fetch error, 31 stale series, 1 static-check failure, 3 history-preservation issues)
+## Daily audit — 2026-05-08 — **35 ISSUES** (1 fetch error, 31 stale series, 3 static-check failures)
 
-_Run: 2026-05-08 04:11 UTC_
+_Run: 2026-05-08 16:17 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -61,8 +61,10 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (1):
+**missing_columns** (3):
 - _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'GOLD_USD_PM') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
@@ -71,14 +73,9 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | File | Live rows | Sister rows | Union | Live range | Sister range |
 |---|---|---|---|---|---|
-| `market_data_comp_hist.csv` | 3,984 | 3,982 | 3,984 | 1950-01-06 → 2026-05-08 | 1950-01-06 → 2026-04-24 |
-| `macro_economic_hist.csv` | 4,142 | 4,140 | 4,142 | 1946-12-27 → 2026-05-08 | 1946-12-27 → 2026-04-24 |
-| `macro_market_hist.csv` | 1,375 | 1,374 | 1,375 | 2000-01-07 → 2026-05-08 | 2000-01-07 → 2026-05-01 |
-
-**ALERTS** (3):
-- market_data_comp_hist.csv: sister rows are a strict subset of live (3982 ⊂ 3984) — sister may have been rewritten incorrectly
-- macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4142) — sister may have been rewritten incorrectly
-- macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1375) — sister may have been rewritten incorrectly
+| `market_data_comp_hist.csv` | 3,984 | 3,984 | 3,984 | 1950-01-06 → 2026-05-08 | 1950-01-06 → 2026-05-08 |
+| `macro_economic_hist.csv` | 4,142 | 4,142 | 4,142 | 1946-12-27 → 2026-05-08 | 1946-12-27 → 2026-05-08 |
+| `macro_market_hist.csv` | 1,375 | 1,375 | 1,375 | 2000-01-07 → 2026-05-08 | 2000-01-07 → 2026-05-08 |
 
 </details>
 

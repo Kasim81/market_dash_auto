@@ -3,10 +3,12 @@
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
---- Section B: Static checks (1 issues) ---
+--- Section B: Static checks (3 issues) ---
   MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+  MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+  MISSING_COLUMNS             _get_col(...,'GOLD_USD_PM') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 140  STALE 14  EXPIRED 17) ---
+--- Section C: Value-change staleness (FRESH 114  STALE 14  EXPIRED 17) ---
   EXPIRED (17):
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2471d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1253d     tolerance=45d
@@ -41,14 +43,10 @@
     Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=63d       tolerance=45d
     Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-01  age=7d        tolerance=5d
 
---- Section D: History preservation (3 issues) ---
-  market_data_comp_hist.csv         live= 3984 rows (1950-01-06→2026-05-08)  sister= 3982 rows (1950-01-06→2026-04-24)  union= 3984
-  macro_economic_hist.csv           live= 4142 rows (1946-12-27→2026-05-08)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4142
-  macro_market_hist.csv             live= 1375 rows (2000-01-07→2026-05-08)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1375
-
-  ALERT  market_data_comp_hist.csv: sister rows are a strict subset of live (3982 ⊂ 3984) — sister may have been rewritten incorrectly
-  ALERT  macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4142) — sister may have been rewritten incorrectly
-  ALERT  macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1375) — sister may have been rewritten incorrectly
+--- Section D: History preservation (0 issues) ---
+  market_data_comp_hist.csv         live= 3984 rows (1950-01-06→2026-05-08)  sister= 3984 rows (1950-01-06→2026-05-08)  union= 3984
+  macro_economic_hist.csv           live= 4142 rows (1946-12-27→2026-05-08)  sister= 4142 rows (1946-12-27→2026-05-08)  union= 4142
+  macro_market_hist.csv             live= 1375 rows (2000-01-07→2026-05-08)  sister= 1375 rows (2000-01-07→2026-05-08)  union= 1375
 
 Footer:
   * = per-row override applied (freshness_override_days column)
