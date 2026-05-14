@@ -1,15 +1,14 @@
-## Daily audit — 2026-05-13 — **36 ISSUES** (2 fetch errors, 31 stale series, 3 static-check failures)
+## Daily audit — 2026-05-14 — **49 ISSUES** (1 fetch error, 45 stale series, 3 static-check failures)
 
-_Run: 2026-05-13 04:44 UTC_
+_Run: 2026-05-14 04:44 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5540 obs`
 
 </details>
 
@@ -20,42 +19,56 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_M2` | FRED | Monthly | 2019-08-02 | 2476d | 45d |
-| `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1258d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 922d | 45d |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2024-03-01 | 803d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 341d | 45d |
-| `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 334d | 30d\* |
-| `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 250d | 60d\* |
-| `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 159d | 45d |
-| `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 159d | 75d\* |
-| `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 131d | 45d |
-| `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 131d | 45d |
-| `CMRMTSPL` | FRED | Monthly | 2026-02-06 | 96d | 45d |
-| `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-01 | 12d | 5d |
+| `CHN_M2` | FRED | Monthly | 2019-08-02 | 2477d | 45d |
+| `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1259d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 923d | 45d |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2024-03-01 | 804d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 342d | 45d |
+| `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 335d | 30d\* |
+| `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 251d | 60d\* |
+| `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 160d | 45d |
+| `GBR_UNEMPLOYMENT` | OECD | Monthly | 2025-12-05 | 160d | 75d\* |
+| `FEDFUNDS` | FRED | Monthly | 2026-01-02 | 132d | 45d |
+| `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `EU_IND_CONF` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 132d | 45d |
+| `CMRMTSPL` | FRED | Monthly | 2026-02-06 | 97d | 45d |
+| `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-01 | 13d | 5d |
 
-**STALE** (13):
+**STALE** (27):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CP` | FRED | Quarterly | 2025-10-03 | 222d | 180d\* |
-| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 222d | 180d\* |
-| `CHN_IMPORTS` | FRED | Monthly | 2025-12-05 | 159d | 150d\* |
-| `CHN_EXPORTS` | FRED | Monthly | 2025-12-05 | 159d | 150d\* |
-| `EZ_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 159d | 150d\* |
-| `EZ_RETAIL_VOL` | DB.nomics | Monthly | 2025-12-05 | 159d | 150d\* |
-| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 131d | 75d\* |
-| `ITA_BTP_10Y` | FRED | Monthly | 2026-02-06 | 96d | 90d\* |
-| `IND_GOVT_10Y` | FRED | Monthly | 2026-02-06 | 96d | 90d\* |
-| `JPN_CON_CONF` | FRED | Monthly | 2026-02-06 | 96d | 90d\* |
-| `CHN_CON_CONF` | FRED | Monthly | 2026-02-06 | 96d | 90d\* |
-| `EA19_RATE_3M` | OECD | Monthly | 2026-02-06 | 96d | 90d\* |
-| `PERMIT` | FRED | Monthly | 2026-03-06 | 68d | 45d |
+| `CP` | FRED | Quarterly | 2025-10-03 | 223d | 180d\* |
+| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 223d | 180d\* |
+| `CHN_IMPORTS` | FRED | Monthly | 2025-12-05 | 160d | 150d\* |
+| `CHN_EXPORTS` | FRED | Monthly | 2025-12-05 | 160d | 150d\* |
+| `EZ_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 160d | 150d\* |
+| `EZ_RETAIL_VOL` | DB.nomics | Monthly | 2025-12-05 | 160d | 150d\* |
+| `DEU_UNEMPLOYMENT` | OECD | Monthly | 2026-01-02 | 132d | 75d\* |
+| `ITA_BTP_10Y` | FRED | Monthly | 2026-02-06 | 97d | 90d\* |
+| `IND_GOVT_10Y` | FRED | Monthly | 2026-02-06 | 97d | 90d\* |
+| `JPN_CON_CONF` | FRED | Monthly | 2026-02-06 | 97d | 90d\* |
+| `CHN_CON_CONF` | FRED | Monthly | 2026-02-06 | 97d | 90d\* |
+| `EA19_RATE_3M` | OECD | Monthly | 2026-02-06 | 97d | 90d\* |
+| `PERMIT` | FRED | Monthly | 2026-03-06 | 69d | 45d |
+| `T10Y2Y` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `T10Y3M` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `T5YIE` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `T10YIE` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `T5YIFR` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `DGS2` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `DGS10` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `DFII10` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `DFII5` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `BAMLH0A0HYM2` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `BAMLC0A0CM` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `BAMLC0A0CMEY` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `BAMLCC0A0CMTRIV` | FRED | Daily | 2026-05-08 | 6d | 5d |
+| `BAMLHE00EHYIOAS` | FRED | Daily | 2026-05-08 | 6d | 5d |
 
 </details>
 
