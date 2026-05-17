@@ -1,10 +1,10 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-05-16 04:10 UTC
+Market Dashboard Data Fetch — 2026-05-17 04:41 UTC
 ============================================================
 Fetching comprehensive FX rates...
-  GBP (GBPUSD=X): OK (5838 rows)
+  GBP (GBPUSD=X): OK (5839 rows)
   EUR (EURUSD=X): OK (5826 rows)
-  AUD (AUDUSD=X): OK (5202 rows)
+  AUD (AUDUSD=X): OK (5203 rows)
   JPY (USDJPY=X): OK (7660 rows)
   CNY (CNY=X): OK (6229 rows)
   INR (INR=X): OK (5824 rows)
@@ -506,7 +506,7 @@ Pushing data to Google Sheets...
   ✓ Written 351 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-05-16 04:15 UTC
+✓ Completed at 2026-05-17 04:46 UTC
 
 --- market_data asset class breakdown ---
 
@@ -549,7 +549,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,985 data rows × 698 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 3997 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 80.1s
+Comp historical build completed in 108.0s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -730,9 +730,10 @@ macro_economic — Unified Economic Data Coordinator
   [ifo] GET https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
   [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
   [ifo] GET https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] GET https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx returned 3038 bytes with Content-Type='text/html; charset=utf-8' but body doesn't start with xlsx magic. First 120 bytes: b'<!DOCTYPE html> <html lang="en">   <head>     <meta       http-equiv="Content-Security-Policy"       content="default-sr'
-  [ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 8 URL(s); landing-page scrape either returned no link or served an anti-bot challenge page for every candidate.  Last tried: https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx
+  [ifo] Direct-URL resolve + validated: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx
+  [ifo] Resolved workbook: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx  (98,351 bytes)
+  [ifo] Reading sheet 1: 'Wirtschaftsbereiche'
+  [ifo] Reading sheet 0: 'ifo Geschäftsklima Deutschland'
   Written 183 rows to data/macro_economic.csv
   [macro_economic] Written 184 rows to 'macro_economic'
 
@@ -905,7 +906,7 @@ macro_economic — Unified Economic Data Coordinator
   Written 4143 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4158 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 345.1s
+  macro_economic run completed in 306.8s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
@@ -928,20 +929,20 @@ macro_economic — Unified Economic Data Coordinator
   [compute] US_V1: raw=2.93  z=0.69  regime='normal'  fwd='improving'  (2026-05-15)
   [compute] US_V2: raw=1.4664  z=-0.9  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] FX_CMD2: raw=-0.4224  z=2.21  regime='weak-USD'  fwd='stable'  (2026-05-15)
-  [compute] FX_CMD1: raw=-6.5913  z=-0.82  regime='neutral'  fwd='stable'  (2026-05-15)
+  [compute] FX_CMD1: raw=-6.5857  z=-0.79  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] M1: raw=0.0906  z=0.46  regime='risk-on'  fwd='improving'  (2026-05-15)
   [compute] M2: raw=0.8  z=-0.07  regime='risk-on'  fwd='improving'  (2026-05-15)
   [compute] M3: raw=0.225  z=0.68  regime='equity-regime'  fwd='stable'  (2026-05-15)
   [compute] M4: raw=0.0162  z=-1.03  regime='carry'  fwd='stable'  (2026-05-15)
   [compute] M5: raw=0.1769  z=1.29  regime='defensive'  fwd='stable'  (2026-05-15)
-  [compute] EU_G3: raw=0.7005  z=1.17  regime='pro-growth-EU'  fwd='stable'  (2026-05-15)
+  [compute] EU_G3: raw=0.6951  z=1.12  regime='pro-growth-EU'  fwd='stable'  (2026-05-15)
   [compute] UK_G1: raw=0.7958  z=-1.65  regime='global-preferred'  fwd='stable'  (2026-05-15)
   [compute] EU_G2: raw=-2.4319  z=-1.14  regime='US-dominance'  fwd='stable'  (2026-05-15)
   [compute] EU_Cr1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
   [compute] EU_Cr2: raw=2.63  z=-1.3  regime='EU-HY-easy'  fwd='stable'  (2026-05-15)
-  [compute] UK_R2: raw=0.146  z=-0.81  regime='neutral'  fwd='stable'  (2026-05-15)
-  [compute] UK_Cr1: raw=-2.0913  z=1.59  regime='credit-appetite'  fwd='stable'  (2026-05-15)
-  [compute] EU_G4: raw=0.054  z=-0.92  regime='neutral'  fwd='stable'  (2026-05-15)
+  [compute] UK_R2: raw=0.1387  z=-0.95  regime='neutral'  fwd='stable'  (2026-05-15)
+  [compute] UK_Cr1: raw=-2.0863  z=1.84  regime='credit-appetite'  fwd='stable'  (2026-05-15)
+  [compute] EU_G4: raw=0.1277  z=-0.8  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] AS_CN_G3: raw=-0.0204  z=0.95  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] AS_CN_G2: raw=0.9407  z=1.94  regime='China-outperform'  fwd='stable'  (2026-05-15)
   [compute] AS_IN_G1: raw=3.0294  z=-0.76  regime='neutral'  fwd='stable'  (2026-05-15)
@@ -956,7 +957,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] US_R4: raw=2.49  z=2.19  regime='high-inflation-exp'  fwd='stable'  (2026-05-15)
   [compute] UK_R1: raw=1.8244  z=-0.26  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] FX_CMD5: raw=107.5773  z=-0.23  regime='neutral'  fwd='stable'  (2026-05-15)
-  [compute] FX_CMD4: raw=-6.5913  z=-0.82  regime='neutral'  fwd='stable'  (2026-05-15)
+  [compute] FX_CMD4: raw=-6.5857  z=-0.79  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] US_JOBS1: raw=-11.1232  z=-2.14  regime='overheating'  fwd='stable'  (2026-05-15)
   [compute] US_JOBS3: raw=0.0065  z=1.25  regime='strong-labour'  fwd='stable'  (2026-05-15)
   [compute] US_G6: raw=1.7542  z=2.14  regime='strong-growth'  fwd='stable'  (2026-05-15)
@@ -981,7 +982,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] US_EQ_F2: raw=0.4913  z=-1.85  regime='growth-regime'  fwd='stable'  (2026-05-15)
   [compute] US_R3: raw=0.595  z=1.11  regime='steep'  fwd='stable'  (2026-05-15)
   [compute] US_CA_G1: raw=3.4889  z=1.94  regime='risk-on'  fwd='stable'  (2026-05-15)
-  [compute] US_Cr4: raw=-3.162  z=1.67  regime='credit-appetite'  fwd='stable'  (2026-05-15)
+  [compute] US_Cr4: raw=-3.1665  z=1.56  regime='credit-appetite'  fwd='stable'  (2026-05-15)
   [compute] US_G5: raw=-0.0418  z=3.4  regime='tech-led'  fwd='improving'  (2026-05-15)
   [compute] US_G4: raw=-1.2994  z=-2.08  regime='narrow-concentrated'  fwd='stable'  (2026-05-15)
   [compute] US_ISM1: raw=47.7  z=-0.14  regime='contraction'  fwd='stable [leading]'  (2026-05-15)
@@ -995,7 +996,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] GL_G2: raw=1.9209  z=2.06  regime='risk-on'  fwd='stable'  (2026-05-15)
   [compute] GL_G1: raw=-1.1225  z=1.99  regime='em-outperform'  fwd='stable'  (2026-05-15)
   [compute] FX_CMD6: raw=0.4197  z=3.42  regime='commodity-bull'  fwd='stable'  (2026-05-15)
-  [compute] FX_CMD3: raw=-3.7662  z=-0.29  regime='neutral'  fwd='stable'  (2026-05-15)
+  [compute] FX_CMD3: raw=-3.8102  z=-0.41  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] FX_EM1: raw=-0.01  z=-0.28  regime='neutral'  fwd='stable'  (2026-05-15)
   [compute] US_PMI1: raw=10.3  z=-1.92  regime='contraction'  fwd='stable [leading]'  (2026-05-15)
   [compute] US_PMI2: raw=47.7  z=-0.14  regime='contraction'  fwd='stable [leading]'  (2026-05-15)
@@ -1041,7 +1042,7 @@ market_comp    : 696 series across 6 asset classes
 Total output: 24.54 MB  (8.30 MB HTML + 16.24 MB companion JS)
 
 
-=== Data audit @ 2026-05-16 ===
+=== Data audit @ 2026-05-17 ===
 
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1053,33 +1054,33 @@ Total output: 24.54 MB  (8.30 MB HTML + 16.24 MB companion JS)
 
 --- Section C: Value-change staleness (FRESH 119  STALE 8  EXPIRED 18) ---
   EXPIRED (18):
-    Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2479d     tolerance=45d
-    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1261d     tolerance=45d
-    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=925d      tolerance=45d
-    Monthly     JPN_IND_PROD                      src=e-Stat       series=0003446463                last_obs=2024-03-01  age=806d      tolerance=45d
-    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=344d      tolerance=45d
-    Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=337d      tolerance=30d*
-    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=253d      tolerance=60d*
-    Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=162d      tolerance=45d
-    Monthly     GBR_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2025-12-05  age=162d      tolerance=75d*
-    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=134d      tolerance=45d
-    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-02-06  age=99d       tolerance=45d
-    Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-01  age=15d       tolerance=5d
+    Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2480d     tolerance=45d
+    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1262d     tolerance=45d
+    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=926d      tolerance=45d
+    Monthly     JPN_IND_PROD                      src=e-Stat       series=0003446463                last_obs=2024-03-01  age=807d      tolerance=45d
+    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=345d      tolerance=45d
+    Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=338d      tolerance=30d*
+    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=254d      tolerance=60d*
+    Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=163d      tolerance=45d
+    Monthly     GBR_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2025-12-05  age=163d      tolerance=75d*
+    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=135d      tolerance=45d
+    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-02-06  age=100d      tolerance=45d
+    Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-01  age=16d       tolerance=5d
   STALE (8):
-    Quarterly   CP                                src=FRED         series=CP                        last_obs=2025-10-03  age=225d      tolerance=180d*
-    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=225d      tolerance=180d*
-    Monthly     EZ_IND_PROD                       src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20  last_obs=2025-12-05  age=162d      tolerance=150d*
-    Monthly     EZ_RETAIL_VOL                     src=DB.nomics    series=Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20  last_obs=2025-12-05  age=162d      tolerance=150d*
-    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=134d      tolerance=75d*
-    Monthly     EA19_RATE_3M                      src=OECD         series=RATE_3M                   last_obs=2026-02-06  age=99d       tolerance=90d*
-    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=71d       tolerance=45d
-    Daily       T5YIFR                            src=FRED         series=T5YIFR                    last_obs=2026-05-08  age=8d        tolerance=5d
+    Quarterly   CP                                src=FRED         series=CP                        last_obs=2025-10-03  age=226d      tolerance=180d*
+    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=226d      tolerance=180d*
+    Monthly     EZ_IND_PROD                       src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20  last_obs=2025-12-05  age=163d      tolerance=150d*
+    Monthly     EZ_RETAIL_VOL                     src=DB.nomics    series=Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20  last_obs=2025-12-05  age=163d      tolerance=150d*
+    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-01-02  age=135d      tolerance=75d*
+    Monthly     EA19_RATE_3M                      src=OECD         series=RATE_3M                   last_obs=2026-02-06  age=100d      tolerance=90d*
+    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-03-06  age=72d       tolerance=45d
+    Daily       T5YIFR                            src=FRED         series=T5YIFR                    last_obs=2026-05-08  age=9d        tolerance=5d
 
 --- Section D: History preservation (0 issues) ---
   market_data_comp_hist.csv         live= 3985 rows (1950-01-06→2026-05-15)  sister= 3985 rows (1950-01-06→2026-05-15)  union= 3985
