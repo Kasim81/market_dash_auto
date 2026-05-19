@@ -145,6 +145,7 @@ MACRO_LIBS = {
     "boj":       DATA / "macro_library_boj.csv",
     "estat":     DATA / "macro_library_estat.csv",
     "nasdaqdl":  DATA / "macro_library_nasdaqdl.csv",
+    "lbma":      DATA / "macro_library_lbma.csv",
 }
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
@@ -161,7 +162,7 @@ def _macro_econ_expected() -> set[str]:
     country_codes = _read_country_codes()
 
     # FRED, DB.nomics, ifo, BoE, ECB, BoJ, e-Stat: col or series_id
-    for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl"):
+    for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma"):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue
