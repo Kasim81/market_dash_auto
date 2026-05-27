@@ -56,17 +56,53 @@ def load_library() -> list[dict]:
 # SERIES FETCH
 # ---------------------------------------------------------------------------
 
+# Circuit breaker: DB.nomics carries 13 series fetched in both the snapshot
+# and history passes (26 calls). When the API is unresponsive, each call
+# burns retries × timeout + backoff, so a full outage would otherwise stall
+# the daily pipeline for ~an hour (the failure mode seen 2026-05-27). After
+# _BREAKER_THRESHOLD consecutive hard failures we assume the API is down and
+# short-circuit every remaining call this process, capping total wasted time
+# at ~1-2 min. A successful (or merely server-responding) call resets the
+# counter, so isolated blips never trip it — only a sustained outage does.
+_CONSEC_FAILURES = 0
+_BREAKER_TRIPPED = False
+_BREAKER_THRESHOLD = 3
+
+
+def _register_failure(series_id: str) -> None:
+    global _CONSEC_FAILURES, _BREAKER_TRIPPED
+    _CONSEC_FAILURES += 1
+    if _CONSEC_FAILURES >= _BREAKER_THRESHOLD and not _BREAKER_TRIPPED:
+        _BREAKER_TRIPPED = True
+        print(f"    [DB.nomics BREAKER OPEN] {_CONSEC_FAILURES} consecutive failures — "
+              f"skipping remaining DB.nomics fetches this run (API appears unreachable)")
+
+
+def _reset_failures() -> None:
+    global _CONSEC_FAILURES
+    _CONSEC_FAILURES = 0
+
+
 def fetch_series(
     series_id: str,
-    retries: int = 4,
+    retries: int = 2,
     backoff_base: int = 2,
-    timeout: int = 30,
+    timeout: int = 12,
 ) -> dict | None:
     """
     Fetch a single series document (including observations) from DB.nomics.
     series_id format: "PROVIDER/DATASET/SERIES_CODE".  Returns the first
     docs[] entry or None on failure.
+
+    Bounded for fail-fast: tight timeout + few retries, plus a process-level
+    circuit breaker (see above) so a DB.nomics outage degrades the 13 series
+    to last-known/blank within ~1-2 min instead of stalling the pipeline.
     """
+    global _BREAKER_TRIPPED
+    if _BREAKER_TRIPPED:
+        print(f"    [DB.nomics SKIP] {series_id} — circuit breaker open (API unresponsive this run)")
+        return None
+
     url = f"{DBNOMICS_BASE}/series"
     params = {"observations": "1", "series_ids": series_id, "limit": 1}
 
@@ -75,32 +111,40 @@ def fetch_series(
             resp = requests.get(url, params=params, timeout=timeout)
 
             if resp.status_code == 200:
+                _reset_failures()  # server is up
                 data = resp.json()
                 docs = data.get("series", {}).get("docs", [])
                 return docs[0] if docs else None
 
             if resp.status_code == 429 or resp.status_code >= 500:
-                wait = backoff_base ** (attempt + 1)
-                print(
-                    f"    [DB.nomics HTTP {resp.status_code}] {series_id} — "
-                    f"backing off {wait}s (attempt {attempt + 1}/{retries})"
-                )
-                time.sleep(wait)
+                if attempt + 1 < retries:
+                    wait = backoff_base ** (attempt + 1)
+                    print(
+                        f"    [DB.nomics HTTP {resp.status_code}] {series_id} — "
+                        f"backing off {wait}s (attempt {attempt + 1}/{retries})"
+                    )
+                    time.sleep(wait)
                 continue
 
+            # Other 4xx: the server responded — a series-specific miss, not an
+            # outage. Reset the breaker counter and skip just this series.
+            _reset_failures()
             print(f"    [DB.nomics HTTP {resp.status_code}] {series_id} — skipping")
             return None
 
         except requests.exceptions.Timeout:
-            wait = backoff_base ** (attempt + 1)
-            print(f"    [DB.nomics timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
+            if attempt + 1 < retries:
+                wait = backoff_base ** (attempt + 1)
+                print(f"    [DB.nomics timeout] {series_id} — backing off {wait}s")
+                time.sleep(wait)
 
         except requests.exceptions.RequestException as e:
             print(f"    [DB.nomics request error] {series_id}: {e} — skipping")
+            _register_failure(series_id)
             return None
 
     print(f"    [DB.nomics FAIL] {series_id} — {retries} attempts exhausted")
+    _register_failure(series_id)
     return None
 
 
