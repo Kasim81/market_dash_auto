@@ -160,14 +160,17 @@ def _candidate_urls():
     workbook — and only fall back to German (`gsk-d-`) if no English month
     resolves. ifo intermittently throttles with the same 3038-byte HTML, so
     _try_download_xlsx retries each URL with backoff."""
-    months = list(_iter_recent_yyyymm(months_back=4))
+    months = list(_iter_recent_yyyymm(months_back=3))
     for _, _, yyyymm in months:
         yield f"{IFO_BASE}/sites/default/files/secure/timeseries/gsk-e-{yyyymm}.xlsx"
-    for _, _, yyyymm in months:
+    # German fallback only for the most recent 2 months — keeps the
+    # worst-case (all-hang) candidate count bounded: 4 gsk-e + 2 gsk-d = 6
+    # URLs x 2 attempts x 15s ≈ 3 min ceiling, vs. ~30 min before.
+    for _, _, yyyymm in months[:2]:
         yield f"{IFO_BASE}/sites/default/files/secure/timeseries/gsk-d-{yyyymm}.xlsx"
 
 
-def _try_download_xlsx(session: requests.Session, url: str, retries: int = 3) -> bytes | None:
+def _try_download_xlsx(session: requests.Session, url: str, retries: int = 2) -> bytes | None:
     """
     GET `url` through `session` and return the body only if it looks like
     a real xlsx (starts with PK\\x03\\x04).  Returns None otherwise.
@@ -175,33 +178,60 @@ def _try_download_xlsx(session: requests.Session, url: str, retries: int = 3) ->
     ifo intermittently serves a 3038-byte HTML page in place of a workbook
     that does exist (verified via scripts/ifo_probe.py: the same URL returns
     a real xlsx on one request and HTML on another). So a non-xlsx body is
-    treated as a *retryable* throttle, not a hard miss — we retry with
-    exponential backoff before giving up on this URL.
+    treated as a *retryable* throttle, not a hard miss — we retry with a
+    short backoff before giving up on this URL.
+
+    Timeout is deliberately tight (15s): ifo is a non-critical source (only
+    DE_IFO feeds a calculator) and can hang connections when throttling, so
+    the whole resolve must fail fast rather than block the daily pipeline.
     """
     for attempt in range(retries):
         try:
-            r = session.get(url, headers=_XLSX_HEADERS, timeout=60)
+            r = session.get(url, headers=_XLSX_HEADERS, timeout=15)
         except requests.exceptions.RequestException as e:
-            print(f"  [ifo] GET {url} raised {type(e).__name__}: {e}")
+            print(f"  [ifo] GET {url} raised {type(e).__name__}: {e}", flush=True)
         else:
             if r.status_code == 200 and r.content.startswith(_XLSX_MAGIC):
                 return r.content
             if r.status_code != 200:
-                print(f"  [ifo] GET {url} HTTP {r.status_code} (attempt {attempt + 1}/{retries})")
+                print(f"  [ifo] GET {url} HTTP {r.status_code} (attempt {attempt + 1}/{retries})", flush=True)
             else:
                 ct = r.headers.get("Content-Type", "")
                 head = r.content[:80].replace(b"\n", b" ")
                 print(
                     f"  [ifo] GET {url} returned {len(r.content)} bytes "
                     f"(ct={ct!r}) not xlsx (attempt {attempt + 1}/{retries}); "
-                    f"first 80: {head!r}"
+                    f"first 80: {head!r}", flush=True
                 )
         if attempt + 1 < retries:
-            time.sleep(2 ** attempt)
+            time.sleep(1)
     return None
 
 
+# Process-level cache so resolve_workbook() does its network work once even
+# though both the snapshot batch and the history builder call it. Caches the
+# failure too (as the raised RuntimeError) so a hung/throttled ifo isn't
+# re-attempted a second time within the same run.
+_RESOLVE_CACHE: tuple[str, bytes] | None = None
+_RESOLVE_ERROR: Exception | None = None
+
+
 def resolve_workbook() -> tuple[str, bytes]:
+    """Cached wrapper around _resolve_workbook_impl — runs once per process."""
+    global _RESOLVE_CACHE, _RESOLVE_ERROR
+    if _RESOLVE_CACHE is not None:
+        return _RESOLVE_CACHE
+    if _RESOLVE_ERROR is not None:
+        raise _RESOLVE_ERROR
+    try:
+        _RESOLVE_CACHE = _resolve_workbook_impl()
+        return _RESOLVE_CACHE
+    except Exception as e:
+        _RESOLVE_ERROR = e
+        raise
+
+
+def _resolve_workbook_impl() -> tuple[str, bytes]:
     """
     Find AND download the ifo workbook in a single pass through a shared
     requests.Session.  Returns (url, xlsx_bytes) on success.
@@ -220,7 +250,7 @@ def resolve_workbook() -> tuple[str, bytes]:
 
     # Strategy 1: hit landing page (sets cookies) and scrape link(s).
     try:
-        resp = session.get(IFO_LANDING, timeout=30)
+        resp = session.get(IFO_LANDING, timeout=15)
         if resp.status_code == 200:
             matches = _HREF_RE.findall(resp.text)
             # Prefer English when it's present, else keep the encounter order.
