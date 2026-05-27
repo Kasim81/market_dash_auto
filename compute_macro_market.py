@@ -1627,10 +1627,11 @@ def _calc_GLOBAL_GOLD1(mu, **_):
     """
     LBMA gold PM fix (USD/oz) — long-run daily gold benchmark from 1968.
 
-    Source column GOLD_USD_PM is provisioned by sources/nasdaq_data_link.py
-    (LBMA/GOLD via Nasdaq Data Link) and replaces FRED's discontinued
-    GOLDPMGBD228NLBM. Returned as the raw price level — the framework's
-    156-week rolling z-score handles the regime classification.
+    Source column GOLD_USD_PM is provisioned by sources/lbma.py from the
+    `gold_pm` row in data/macro_library_lbma.csv (LBMA daily PM auction fix),
+    replacing FRED's discontinued GOLDPMGBD228NLBM. Returned as the raw price
+    level — the framework's 156-week rolling z-score handles the regime
+    classification.
     """
     return _to_weekly_friday(_get_col(mu, "GOLD_USD_PM"))
 
