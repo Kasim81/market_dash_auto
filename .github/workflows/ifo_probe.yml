@@ -1,0 +1,36 @@
+name: ifo probe (diagnostic)
+# One-shot diagnostic for the ifo Geschäftsklimaindex (gsk-*.xlsx) fetch
+# failure. Runs scripts/ifo_probe.py from the GitHub runner (full network,
+# the same environment the daily job fails in) and commits the findings to
+# ifo_probe_result.txt so they can be reviewed. Manual trigger only —
+# delete this workflow + the result file once the ifo fix lands.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install requests
+        run: python -m pip install --upgrade pip requests
+      - name: Run ifo probe
+        run: python scripts/ifo_probe.py
+      - name: Commit result
+        if: always()
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git pull --rebase
+          [ -f ifo_probe_result.txt ] && git add -f ifo_probe_result.txt || true
+          git diff --staged --quiet || (
+            git commit -m "ifo probe result - $(date -u '+%Y-%m-%d %H:%M UTC')" &&
+            git push
+          )
