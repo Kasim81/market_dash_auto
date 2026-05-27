@@ -1,0 +1,60 @@
+=== ifo probe @ 2026-05-27T22:02:28.543144Z ===
+
+[1] CONTROL — known-good WES-Euro workbook
+  https://www.ifo.de/sites/default/files/2019-10/wes-euro-e-2019q4.xlsx
+    HTTP 200     20075 bytes  XLSX (real workbook)
+
+[2] LINK DISCOVERY — scrape landing pages for xlsx/gsk hrefs
+  https://www.ifo.de/en/ifo-time-series
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/en/survey/ifo-business-survey
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/en/ifo-business-climate-index
+    HTTP 200    103290 bytes  HTML  -> https://www.ifo.de/en/survey/ifo-business-climate-index-germany
+  https://www.ifo.de/ifo-zeitreihen
+    HTTP 200      3038 bytes  HTML
+
+  Candidate download links found:
+    /en/podcast-geschaeftsklima
+    /publikationen/2018/aufsatz-zeitschrift/das-neue-ifo-geschaeftsklima-deutschland
+    /publikationen/2018/aufsatz-zeitschrift/das-neue-ifo-geschaeftsklima-ostdeutschland-und-sachsen
+    /umfrage/ifo-geschaeftsklima-deutschland
+    https://www.ifo.de/umfrage/ifo-geschaeftsklima-deutschland
+
+[3] REGRESSION — gsk URL patterns sources/ifo.py currently guesses
+  https://www.ifo.de/sites/default/files/2026-05/gsk-e-202605.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-e-202605.xlsx
+    HTTP 200    101247 bytes  XLSX (real workbook)
+  https://www.ifo.de/sites/default/files/2026-05/gsk-d-202605.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202605.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/2026-04/gsk-e-202604.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-e-202604.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/2026-04/gsk-d-202604.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202604.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/2026-03/gsk-e-202603.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-e-202603.xlsx
+    HTTP 200     97823 bytes  XLSX (real workbook)
+  https://www.ifo.de/sites/default/files/2026-03/gsk-d-202603.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202603.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/2026-02/gsk-e-202602.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-e-202602.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/2026-02/gsk-d-202602.xlsx
+    HTTP 200      3038 bytes  HTML
+  https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202602.xlsx
+    HTTP 200     98351 bytes  XLSX (real workbook)
+
+=== interpretation ===
+  [1] XLSX  => runner CAN download ifo files -> gsk failure is a URL problem (use [2]).
+  [1] HTML  => runner is blocked (anti-bot/WAF) -> need cookies/headless or substitute.
