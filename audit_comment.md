@@ -1,15 +1,17 @@
-## Daily audit — 2026-05-27 — **31 ISSUES** (2 fetch errors, 27 stale series, 2 static-check failures)
+## Daily audit — 2026-05-27 — **29 ISSUES** (2 fetch errors, 27 stale series)
 
-_Run: 2026-05-27 05:14 UTC_
+_Run: 2026-05-27 23:59 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**other_warnings** (2):
+**yfinance_dead** (1):
+- `^SP500-151050`
+
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5550 obs`
 
 </details>
 
@@ -55,15 +57,6 @@ Full report attached as `data_audit.txt` in today's commit.
 
 </details>
 
-<details><summary>Static-check failures</summary>
-
-
-**missing_columns** (2):
-- _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-
-</details>
-
 <details><summary>History preservation</summary>
 
 
@@ -75,3 +68,5 @@ Full report attached as `data_audit.txt` in today's commit.
 
 </details>
 
+
+_audit_writeback: 1 ticker(s) on active dead-list streak (threshold 14d); none flipped this run._

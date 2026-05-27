@@ -1,14 +1,13 @@
 === Data audit @ 2026-05-27 ===
 
 --- Section A: Fetch outcomes (2 issues) ---
+  YFINANCE_DEAD       ^SP500-151050
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
-  OTHER_WARNINGS      [ECB] AAA euro govt yield: 5550 obs
 
---- Section B: Static checks (2 issues) ---
-  MISSING_COLUMNS             _get_col(...,'CHN_GOVT_10Y') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+--- Section B: Static checks (0 issues) ---
+  (none)
 
---- Section C: Value-change staleness (FRESH 119  STALE 11  EXPIRED 16) ---
+--- Section C: Value-change staleness (FRESH 145  STALE 11  EXPIRED 16) ---
   EXPIRED (16):
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2490d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1272d     tolerance=45d
