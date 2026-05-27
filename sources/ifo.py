@@ -30,6 +30,7 @@ from __future__ import annotations
 import io
 import pathlib
 import re
+import time
 from datetime import date
 
 import pandas as pd
@@ -147,38 +148,57 @@ def _iter_recent_yyyymm(months_back: int = 3):
 
 
 def _candidate_urls():
-    """Generate direct workbook URLs for the current + prior 3 months.
-    Try the canonical `secure/timeseries/` path first (German, current
-    format), then the older `YYYY-MM/` archive path (English, historical)."""
-    for y, m, yyyymm in _iter_recent_yyyymm(months_back=3):
+    """Generate direct workbook URLs for the current + prior 4 months.
+
+    Verified live via scripts/ifo_probe.py (2026-05-27): the workbooks are
+    English files under the `secure/timeseries/` path —
+    `gsk-e-202605.xlsx` there returned the real 101 KB workbook, while the
+    old `YYYY-MM/` dated-folder path and the German `gsk-d-` variant
+    returned a 3038-byte HTML page. We therefore prefer English
+    (`gsk-e-`) across all recent months first — the parser's
+    EXCEL_COL_NAMES / sheet+column map is calibrated to the English
+    workbook — and only fall back to German (`gsk-d-`) if no English month
+    resolves. ifo intermittently throttles with the same 3038-byte HTML, so
+    _try_download_xlsx retries each URL with backoff."""
+    months = list(_iter_recent_yyyymm(months_back=4))
+    for _, _, yyyymm in months:
+        yield f"{IFO_BASE}/sites/default/files/secure/timeseries/gsk-e-{yyyymm}.xlsx"
+    for _, _, yyyymm in months:
         yield f"{IFO_BASE}/sites/default/files/secure/timeseries/gsk-d-{yyyymm}.xlsx"
-        yield f"{IFO_BASE}/sites/default/files/{y:04d}-{m:02d}/gsk-e-{yyyymm}.xlsx"
 
 
-def _try_download_xlsx(session: requests.Session, url: str) -> bytes | None:
+def _try_download_xlsx(session: requests.Session, url: str, retries: int = 3) -> bytes | None:
     """
     GET `url` through `session` and return the body only if it looks like
-    a real xlsx (starts with PK\\x03\\x04).  Returns None otherwise —
-    anti-bot challenges and HTML error pages both fail this check.
+    a real xlsx (starts with PK\\x03\\x04).  Returns None otherwise.
+
+    ifo intermittently serves a 3038-byte HTML page in place of a workbook
+    that does exist (verified via scripts/ifo_probe.py: the same URL returns
+    a real xlsx on one request and HTML on another). So a non-xlsx body is
+    treated as a *retryable* throttle, not a hard miss — we retry with
+    exponential backoff before giving up on this URL.
     """
-    try:
-        r = session.get(url, headers=_XLSX_HEADERS, timeout=60)
-    except requests.exceptions.RequestException as e:
-        print(f"  [ifo] GET {url} raised {type(e).__name__}: {e}")
-        return None
-    if r.status_code != 200:
-        print(f"  [ifo] GET {url} HTTP {r.status_code}; skipping")
-        return None
-    if not r.content.startswith(_XLSX_MAGIC):
-        ct = r.headers.get("Content-Type", "")
-        head = r.content[:120].replace(b"\n", b" ")
-        print(
-            f"  [ifo] GET {url} returned {len(r.content)} bytes with "
-            f"Content-Type={ct!r} but body doesn't start with xlsx magic. "
-            f"First 120 bytes: {head!r}"
-        )
-        return None
-    return r.content
+    for attempt in range(retries):
+        try:
+            r = session.get(url, headers=_XLSX_HEADERS, timeout=60)
+        except requests.exceptions.RequestException as e:
+            print(f"  [ifo] GET {url} raised {type(e).__name__}: {e}")
+        else:
+            if r.status_code == 200 and r.content.startswith(_XLSX_MAGIC):
+                return r.content
+            if r.status_code != 200:
+                print(f"  [ifo] GET {url} HTTP {r.status_code} (attempt {attempt + 1}/{retries})")
+            else:
+                ct = r.headers.get("Content-Type", "")
+                head = r.content[:80].replace(b"\n", b" ")
+                print(
+                    f"  [ifo] GET {url} returned {len(r.content)} bytes "
+                    f"(ct={ct!r}) not xlsx (attempt {attempt + 1}/{retries}); "
+                    f"first 80: {head!r}"
+                )
+        if attempt + 1 < retries:
+            time.sleep(2 ** attempt)
+    return None
 
 
 def resolve_workbook() -> tuple[str, bytes]:
