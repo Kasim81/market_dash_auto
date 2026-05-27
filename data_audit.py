@@ -357,6 +357,7 @@ def section_b_static_checks() -> dict:
         "missing_calculators":    _check_missing_calculators(),
         "missing_columns":        _check_missing_get_col_columns(),
         "registry_drift":         _check_registry_drift(),
+        "unadjusted_splits":      _check_unadjusted_splits(),
     }
 
 
@@ -453,7 +454,14 @@ def _check_missing_calculators() -> list[str]:
 def _check_missing_get_col_columns() -> list[str]:
     """Every `_get_col(mu, "X")` / `_get_col(mu_or_dbn, "X")` literal in
     compute_macro_market.py must resolve to a column id that exists in
-    macro_economic_hist.csv."""
+    macro_economic_hist.csv.
+
+    Exception: columns in KNOWN_MISSING_COLUMNS are documented permanent
+    gaps (per forward_plan.md §1 Known Data Gaps) and have a deliberate
+    calculator reference so they wire automatically the day a source
+    appears. Suppressing them stops chronic false-positive churn while
+    keeping any *new* drift visible.
+    """
     code_path = ROOT / "compute_macro_market.py"
     hist_path = DATA / "macro_economic_hist.csv"
     if not (code_path.exists() and hist_path.exists()):
@@ -468,12 +476,96 @@ def _check_missing_get_col_columns() -> list[str]:
         first = next(csv.reader(f))
     hist_cols = {c.strip() for c in first[1:]}
 
-    missing = sorted(referenced - hist_cols)
+    missing = sorted(referenced - hist_cols - KNOWN_MISSING_COLUMNS)
     return [
         f"_get_col(...,{col!r}) referenced in compute_macro_market.py but column "
         f"absent from macro_economic_hist.csv"
         for col in missing
     ]
+
+
+# Columns referenced by compute_macro_market.py that are accepted gaps —
+# the calculator is left in place so the indicator wires automatically the
+# day a source becomes available, but the static-check alert is suppressed
+# in the meantime. Every entry here must trace back to forward_plan §1
+# Known Data Gaps. Keep this list short.
+KNOWN_MISSING_COLUMNS: frozenset = frozenset({
+    # No free source for a direct CN 10Y govt yield. Partial proxy in
+    # place via the CBON ETF in index_library.csv. Calculator
+    # _calc_AS_CN_R1 references CHN_GOVT_10Y so it self-wires the day
+    # a source lands. See forward_plan.md §1 Known Data Gaps.
+    "CHN_GOVT_10Y",
+})
+
+
+def _check_unadjusted_splits() -> list[str]:
+    """Flag week-over-week price discontinuities in market_data_comp_hist.csv
+    that look like a stock split Yahoo's feed never adjusted out (the failure
+    mode behind 1306.T's bogus -89% returns).
+
+    yfinance back-adjusts known splits via auto_adjust=True, but its
+    corporate-actions feed is patchy for some non-US listings — an unadjusted
+    split lands as a ~10x (or ~0.1x) single-week jump on an otherwise smooth
+    series, poisoning every return window straddling it.
+
+    Discontinuities already registered in data/manual_splits.csv are handled
+    (library_utils.apply_manual_splits back-adjusts them and
+    scripts/backadjust_hist_splits.py corrects stored history), so only
+    *unexplained* jumps in the trailing window are reported — i.e. a NEW
+    missing split needing a manual_splits.csv row + a back-adjust run.
+    """
+    comp_path = DATA / "market_data_comp_hist.csv"
+    if not comp_path.exists():
+        return []
+
+    # Registered (ticker, ex_date) pairs to suppress.
+    registered: set[tuple[str, str]] = set()
+    splits_path = DATA / "manual_splits.csv"
+    if splits_path.exists():
+        with splits_path.open(newline="") as f:
+            for row in csv.DictReader(f):
+                tk = (row.get("ticker") or "").strip()
+                ex = (row.get("ex_date") or "").strip()
+                if tk and ex:
+                    registered.add((tk, ex))
+
+    with comp_path.open(newline="") as f:
+        rows = list(csv.reader(f))
+    if len(rows) <= 12:
+        return []
+
+    ticker_row = rows[0]; variant_row = rows[1]
+    data = rows[12:]                       # 11 metadata rows + 1 header row
+    recent = data[-13:]                    # ~last quarter of weekly closes
+
+    LO, HI = 0.55, 1.8                     # split-like jump bounds
+    issues: list[str] = []
+    for c in range(2, len(ticker_row)):
+        tk = ticker_row[c].strip()
+        var = variant_row[c].strip() if c < len(variant_row) else ""
+        if not tk or var != "Local":
+            continue
+        prev = None
+        for r in recent:
+            if c >= len(r):
+                continue
+            d = r[1].strip()
+            v = r[c].strip()
+            try:
+                cur = float(v)
+            except ValueError:
+                cur = None
+            if prev is not None and cur is not None and prev[1] > 0 and cur > 0:
+                ratio = cur / prev[1]
+                if (ratio < LO or ratio > HI) and (tk, d) not in registered:
+                    issues.append(
+                        f"{tk}: {prev[1]:g} → {cur:g} ({ratio:.3f}x) at {d} — "
+                        f"possible unadjusted split; add a data/manual_splits.csv "
+                        f"row and run scripts/backadjust_hist_splits.py"
+                    )
+            if cur is not None:
+                prev = (d, cur)
+    return issues
 
 
 def _check_registry_drift() -> list[str]:
