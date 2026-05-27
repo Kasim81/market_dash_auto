@@ -460,6 +460,22 @@ def _r(raw, z, pos_z, neg_z, pos_label, neg_label, neutral="neutral"):
     return neutral
 
 
+def _infl_regime(r, z):
+    """Target-relative inflation regime on the raw YoY % level (most G10
+    central banks target ~2%). Shared by US/UK/EU/JP inflation composites."""
+    if np.isnan(r):
+        return "n/a"
+    if r > 4:
+        return "high-inflation"
+    if r > 2.5:
+        return "above-target"
+    if r >= 1.5:
+        return "on-target"
+    if r >= 0:
+        return "below-target"
+    return "deflation"
+
+
 REGIME_RULES = {
     # US Growth
     "US_G1":  lambda r, z: _r(r, z,  1, -1, "pro-growth",       "defensive"),
@@ -638,6 +654,22 @@ REGIME_RULES = {
     # Long-run gold price (LBMA PM fix, USD/oz). Z-scored on 156w window —
     # high z = safe-haven / inflation hedge bid; low z = risk-on / disinflation.
     "GLOBAL_GOLD1": lambda r, z: _r(r, z, 1, -1, "safe-haven-bid", "risk-on-gold"),
+    # Inflation composites (§3.1.3) — target-relative buckets on the raw YoY %.
+    "US_INFL1":  _infl_regime,
+    "UK_INFL1":  _infl_regime,
+    "EU_INFL1":  _infl_regime,
+    "JP_INFL1":  _infl_regime,
+    # China: no hard target, deflation-prone → reflation / stable / deflation-risk.
+    "CN_INFL1":  lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("reflation" if r > 3 else ("deflation-risk" if r < 0 else "stable"))
+    ),
+    # Inflation expectations: raw is the composite z (≈0-centred), so threshold on r.
+    "US_INFEXP1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("rising-expectations" if r > 1
+              else ("falling-expectations" if r < -1 else "anchored"))
+    ),
 }
 
 
@@ -1779,6 +1811,85 @@ def _calc_GL_PMI1(dbn, mi, **_):
     return combined
 
 
+# ===========================================================================
+# INDICATOR CALCULATORS — INFLATION (§3.1.3)
+#
+# Per-region inflation composites for the regime classifier's Inflation axis.
+# All inputs come from the unified macro_economic_hist via the `mu` handle.
+# The per-region *_CPI / EA_HICP columns are already stored as YoY % (not
+# index levels), so the regional gauges read directly as a target-relative
+# inflation level; US blends in core PCE YoY + the 5y5y forward breakeven.
+# US_INFEXP1 is a z-score composite of differently-scaled expectations series
+# (z-score each, then average — same pattern as GL_PMI1).
+# ===========================================================================
+
+def _calc_US_INFL1(mu, **_):
+    """US inflation gauge: mean of headline CPI YoY, core PCE YoY, and the
+    5y5y-forward breakeven (all %), so the regime reads as a target-relative
+    level. Degrades gracefully if a component is missing."""
+    cpi = _to_weekly_friday(_get_col(mu, "USA_CPI"))            # already YoY %
+    pce = _yoy(_to_weekly_friday(_get_col(mu, "PCEPILFE")))     # core PCE index → YoY %
+    fwd = _to_weekly_friday(_get_col(mu, "T5YIFR"))             # 5y5y fwd %, level
+    parts = [s for s in (cpi, pce, fwd) if s is not None and not s.empty]
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).mean(axis=1)
+
+
+def _calc_UK_INFL1(mu, **_):
+    """UK CPI YoY (GBR_CPI — already stored YoY %)."""
+    return _to_weekly_friday(_get_col(mu, "GBR_CPI"))
+
+
+def _calc_EU_INFL1(mu, **_):
+    """Euro-area HICP YoY (EA_HICP — already stored YoY %)."""
+    return _to_weekly_friday(_get_col(mu, "EA_HICP"))
+
+
+def _calc_JP_INFL1(mu, **_):
+    """Japan CPI YoY (JPN_CPI — already stored YoY %)."""
+    return _to_weekly_friday(_get_col(mu, "JPN_CPI"))
+
+
+def _calc_CN_INFL1(mu, **_):
+    """China inflation: mean of CPI YoY and PPI YoY (both already %).
+    China runs no hard 2% target and is deflation-prone, so it gets its own
+    reflation/stable/deflation-risk regime rather than the G10 target buckets."""
+    cpi = _to_weekly_friday(_get_col(mu, "CHN_CPI"))
+    ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))
+    parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).mean(axis=1)
+
+
+def _calc_US_INFEXP1(mu, **_):
+    """US inflation-expectations composite: z-score-normalised average of the
+    5y & 10y breakevens, the 5y5y forward, and Michigan 1y expectations.
+    Components are on different scales so each is z-scored before averaging;
+    the returned series is the composite z (≈0-centred)."""
+    comps = [
+        _to_weekly_friday(_get_col(mu, "T5YIE")),
+        _to_weekly_friday(_get_col(mu, "T10YIE")),
+        _to_weekly_friday(_get_col(mu, "T5YIFR")),
+        _to_weekly_friday(_get_col(mu, "MICH")),
+    ]
+    zs = [_rolling_zscore(s) for s in comps if s is not None and not s.empty]
+    if not zs:
+        return pd.Series(dtype=float)
+    return pd.concat(zs, axis=1).mean(axis=1)
+
+
+_INFLATION_CALCULATORS = {
+    "US_INFL1":   _calc_US_INFL1,
+    "UK_INFL1":   _calc_UK_INFL1,
+    "EU_INFL1":   _calc_EU_INFL1,
+    "JP_INFL1":   _calc_JP_INFL1,
+    "CN_INFL1":   _calc_CN_INFL1,
+    "US_INFEXP1": _calc_US_INFEXP1,
+}
+
+
 _PHASE_D_CALCULATORS = {
     "US_PMI1":  _calc_US_PMI1,
     "US_PMI2":  _calc_US_PMI2,
@@ -1802,6 +1913,7 @@ _ALL_CALCULATORS = {
     **_EU_CALCULATORS,
     **_ASIA_REGIONAL_CALCULATORS,
     **_PHASE_D_CALCULATORS,
+    **_INFLATION_CALCULATORS,
 }
 
 
