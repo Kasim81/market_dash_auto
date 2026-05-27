@@ -234,7 +234,8 @@ These are cases where a planned series is unavailable from any free source we ac
 
 | Gap | Impact | Resolution |
 |---|---|---|
-| **China 10-Year government bond yield** | `AS_CN_R1` (China–US 10Y spread) returns NaN against a direct CN 10Y series. FRED carries only the short-term `IR3TTS01CNM156N`; OECD MEI long-term-rate has no CN series. | Partial proxy in place via Stage F: `CBON` (VanEck CN Govt + Policy-Bank Bond ETF) added to `index_library.csv` — distribution yield acts as a tradable proxy for the regime model. Direct yield series remains an open path; details in §3.1.6. |
+| **China 10-Year government bond yield** | `AS_CN_R1` (China–US 10Y spread) returns NaN against a direct CN 10Y series. FRED carries only the short-term `IR3TTS01CNM156N`; OECD MEI long-term-rate has no CN series. The dangling `_get_col(mu, "CHN_GOVT_10Y")` reference in `_calc_AS_CN_R1` is deliberate (self-wires the day a source lands) and is allow-listed in `data_audit.py::KNOWN_MISSING_COLUMNS` so the static check doesn't churn. | Partial proxy in place via Stage F: `CBON` (VanEck CN Govt + Policy-Bank Bond ETF) added to `index_library.csv` — distribution yield acts as a tradable proxy for the regime model. Direct yield series remains an open path; details in §3.1.6. |
+| **ifo workbook download failing (since ~2026-05-08)** | All 26 ifo `DE_*` series stopped landing in `macro_economic_hist.csv` 10+ consecutive daily runs. `sources/ifo.py` resolves no `gsk-*.xlsx` link from the landing page and every direct-URL fallback returns a 3038-byte anti-bot challenge HTML (CSP-stamped) instead of the workbook. Headers already include browser UA + Accept + Referer; the protection layer is doing more than UA sniffing. `DE_IFO` shows in the daily audit as a `_get_col` missing-column failure. | **Not yet resolved.** Resolution paths in order: (1) wire DB.nomics ifo provider (`ifo/...`) as a T1 fallback for the climate/situation/expectations composite — DB.nomics aggregates ifo and bypasses ifo.de's anti-bot; (2) extend `sources/ifo.py` with a Playwright/headless-browser flow or session-cookie acquisition; (3) accept the gap and substitute via `DE_BCI` (already wired via FRED OECD-mirror). DE_IFO **is not** in the audit allowlist — the alert is correctly telling us ifo is offline. Tracked as a §3.1-priority follow-up. |
 | **Euro IG corporate effective yield** (target series: ICE BofA Euro Corporate Index Effective Yield) | `EU_Cr1` (Euro IG spread = corp yield − ECB AAA 10Y govt yield) returns NaN against a direct corp-yield series. FRED `BAMLEC0A0RMEY` 400s on every call; ECB SDW publishes no free aggregate Euro IG yield; iBoxx EUR Corporate is paywalled. | Partial proxy in place via Stage F: `IEAC.L` (iShares EUR IG Corp Bond ETF) added to `index_library.csv` — distribution yield acts as a tradable proxy. ECB AAA 10Y govt-yield half is already wired in `fetch_ecb_euro_ig_spread()`. Direct corp-yield paths (ECB MIR composite cost of borrowing; Bundesbank SDMX corporate-bond yields) tracked in §3.1.6. EU_Cr1 returns n/a until a direct series is wired; EU_Cr2 (Euro HY) remains its own indicator. |
 | **`BSCICP02JPM460S` / `BSCICP02CNM460S`** (OECD Business Confidence — Japan / China on FRED) | Don't exist on FRED. | Japan covered by `JP_PMI1` (proprietary, returns Insufficient Data); China covered by `CHNBSCICP02STSAM` (different ID). |
 | **`DE_ZEW1`** (ZEW Economic Sentiment) | Returns Insufficient Data. ZEW Mannheim licences the archive; no free API. | Substitute: German sentiment is covered by `DE_IFO1` + `DEU_BUS_CONF`. |
@@ -254,6 +255,7 @@ These are cases where a planned series is unavailable from any free source we ac
 **Active priority is open.** The audit-remediation backlog (sub-tracks 1–4) closed 2026-04-29; durable outcomes live in `manuals/technical_manual.md` (§7, §9.8 cluster reference, §9.9 library_sync, §9.10 audit_writeback, §13 ticker dispositions, §14 daily flow) and ongoing forcing-function gaps live in §1 Known Data Gaps.
 
 Candidate next tracks:
+- **Restore ifo workbook fetch** — `sources/ifo.py` has been failing for 10+ consecutive runs (since ~2026-05-08); all 26 `DE_*` ifo columns are absent from `macro_economic_hist.csv`. Likely path: wire DB.nomics ifo provider as a T1 fallback (sidesteps the anti-bot layer on ifo.de). Documented in §1 Known Data Gaps. Treat as a §3.1 prerequisite — losing 26 series silently is a worse failure mode than any new-feature gap.
 - **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), Growth + Inflation focus (§3.1.3), GDP Now wiring (§3.1.4), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
 - **§3.3 PE Ratio Integration** — small contained feature add.
@@ -536,6 +538,31 @@ Currently `fetch_hist.py` rebuilds the entire dataset from scratch on every run 
 3. Append to existing data rather than full rebuild
 
 This would reduce daily historical data runtime from ~10 minutes to seconds.
+
+### 3.6a Missing-split handling + sister-CSV self-heal (open design question)
+
+**Priority:** Medium — data-quality robustness. Partially shipped 2026-05-27.
+
+**Context.** yfinance back-adjusts splits via `auto_adjust=True`, but only for splits in Yahoo's corporate-actions feed, which is patchy for some non-US listings. `1306.T` (NEXT FUNDS TOPIX ETF) did a 10-for-1 split (record date 2026-03-31, effective 2026-04-01, ex-rights 2026-03-30 under Japan's T+2 settlement) that Yahoo never recorded, so the raw price dropped 3827→386.6 and every return window straddling it showed ≈ −89%.
+
+**Shipped (2026-05-27):**
+- `data/manual_splits.csv` — source-of-truth override (ticker, ex_date, ratio), per §0.
+- `library_utils.apply_manual_splits()` — called by `fetch_data.py` and `fetch_hist.py` on the raw yfinance series, so live snapshot + history self-correct on the next rebuild.
+- `scripts/backadjust_hist_splits.py` — idempotent one-time corrector for committed `*_hist.csv` + sister `*_hist_x.csv` (ran for `1306.T`).
+- `data_audit.py::_check_unadjusted_splits()` — flags any *new* unexplained ~10x weekly jump in `market_data_comp_hist.csv` (suppresses rows registered in `manual_splits.csv`).
+
+**Open design question — sister CSV cannot self-heal.** `library_utils._append_archive_rows()` dedups by date with `keep="first"`, so once a date's value is stored in a `*_hist_x.csv` sister it is **never** overwritten by a later corrected value. Consequences:
+- A bad value (stale price, unadjusted split, source revision) frozen in the sister stays wrong forever.
+- Today this is masked because `load_hist_with_archive()` does `live.combine_first(sister)` — live wins wherever live is non-null, and live (full rebuild) covers all in-range dates. The sister's stale value only surfaces if live ever *drops* that date (the sister's whole reason to exist — rolling-window truncation like ICE BofA).
+- So a corrected series + a stale sister = a latent landmine: correct today, silently wrong the day live's window rolls past it.
+
+We worked around it for `1306.T` by correcting the sister in place via the back-adjust script. The standing question is whether to change the merge/dedup so the sister can self-heal — options:
+1. **Prefer-fresher dedup** — when live and sister disagree on an overlapping date and live is non-null, update the sister to live's value. Risk: defeats the preservation guarantee for genuine rolling-window drops where live's later value is the *truncated* (wrong) one.
+2. **Versioned/keyed preservation** — sister stores (date, value, captured_at); a corrected capture supersedes an older one. More plumbing.
+3. **Periodic sister rebuild** — drop + repopulate sister from the longest-available live each run; loses nothing while live covers the range, but forfeits preservation for dates already truncated from live.
+4. **Status quo + manual corrector** — keep `keep="first"`, rely on `scripts/backadjust_hist_splits.py` for one-off corrections. Simplest; needs operator discipline.
+
+Decision deferred — it interacts with the Stage A preservation contract and needs care. Not a blocker; `1306.T` is corrected and the audit guard catches future cases.
 
 ### 3.7 Regime-Driven Back-Test & Portfolio Optimisation — MOVED
 

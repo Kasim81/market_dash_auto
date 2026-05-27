@@ -45,6 +45,7 @@ from library_utils import (
     COMP_FCY_PER_USD,
     lib_sort_key as _comp_inst_sort_key,
     write_hist_with_archive,
+    apply_manual_splits,
 )
 from sources.base import (
     get_sheets_service,
@@ -501,6 +502,10 @@ def fetch_comp_yfinance_history(
             s = s / 100
 
         s.index = pd.to_datetime(s.index)
+        # Back-adjust for any split missing from Yahoo's feed (e.g. the
+        # 1306.T 10:1 split) before resampling, so the stored weekly history
+        # is continuous across the split.
+        s = apply_manual_splits(s, ticker)
         weekly        = s.resample("W-FRI").last()
         local_aligned = weekly.reindex(spine).ffill(limit=5)
 

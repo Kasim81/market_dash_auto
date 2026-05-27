@@ -19,6 +19,7 @@ from library_utils import (
     COMP_FCY_PER_USD,
     SHEETS_LEGACY_TABS_TO_DELETE,
     lib_sort_key as _lib_sort_key,
+    apply_manual_splits,
 )
 
 # ─────────────────────────────────────────────
@@ -136,6 +137,9 @@ def fetch_yf_history(ticker, retries=3):
             if series is not None:
                 cutoff = pd.Timestamp(datetime.now(timezone.utc).date()).tz_localize("UTC").as_unit("us")
                 series = series[series.index < cutoff]
+                # Back-adjust for any split missing from Yahoo's feed (e.g. the
+                # 1306.T 10:1 split) so return windows straddling it are correct.
+                series = apply_manual_splits(series, ticker)
                 return series if not series.empty else None
         except Exception as e:
             print(f"  [{ticker}] attempt {attempt+1} failed: {e}")

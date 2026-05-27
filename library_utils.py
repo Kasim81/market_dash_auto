@@ -330,6 +330,85 @@ SHEETS_LEGACY_TABS_TO_DELETE = frozenset({
 
 
 # ---------------------------------------------------------------------------
+# MANUAL SPLIT OVERRIDES
+# ---------------------------------------------------------------------------
+# yfinance back-adjusts prices for splits via auto_adjust=True, but only for
+# splits present in Yahoo's corporate-actions feed. That feed is patchy for
+# some non-US listings (notably Tokyo-listed ETFs), so a real split can land
+# as a raw price discontinuity that auto_adjust never corrects — producing
+# bogus multi-month returns for any window straddling the split.
+#
+# data/manual_splits.csv is the source-of-truth override (per §0 — identifiers
+# and corrections live in CSV, not Python). Each row: ticker, ex_date, ratio.
+# apply_manual_splits() divides every price STRICTLY BEFORE ex_date by ratio,
+# making the pre-split history continuous with post-split prices. Both the
+# snapshot fetcher (fetch_data.py) and the history fetcher (fetch_hist.py) call
+# it on the raw yfinance series so the correction lands everywhere downstream.
+
+import csv as _ms_csv
+
+_MANUAL_SPLITS_CACHE = None
+
+
+def load_manual_splits(path="data/manual_splits.csv"):
+    """Load data/manual_splits.csv → {ticker: [(ex_date_Timestamp, ratio), ...]}.
+
+    Cached after first read (the process is short-lived). Missing file → {}.
+    """
+    global _MANUAL_SPLITS_CACHE
+    if _MANUAL_SPLITS_CACHE is not None:
+        return _MANUAL_SPLITS_CACHE
+
+    out: dict = {}
+    if _hp_os.path.exists(path):
+        with open(path, newline="", encoding="utf-8") as f:
+            for row in _ms_csv.DictReader(f):
+                tk = (row.get("ticker") or "").strip()
+                ex = (row.get("ex_date") or "").strip()
+                rt = (row.get("ratio") or "").strip()
+                if not tk or not ex or not rt:
+                    continue
+                try:
+                    ratio = float(rt)
+                    ex_ts = _hp_pd.Timestamp(ex)
+                except (ValueError, TypeError):
+                    continue
+                if ratio and ratio > 0:
+                    out.setdefault(tk, []).append((ex_ts, ratio))
+    _MANUAL_SPLITS_CACHE = out
+    return out
+
+
+def apply_manual_splits(series, ticker, splits=None):
+    """Back-adjust a date-indexed price Series for splits missing from Yahoo.
+
+    For each (ex_date, ratio) registered for `ticker`, every price on a date
+    strictly before ex_date is divided by ratio. tz-aware and tz-naive indices
+    are both handled (comparison is done on tz-naive calendar dates). Returns
+    the (possibly adjusted) Series; a no-op if the ticker has no overrides.
+    """
+    if series is None or len(series) == 0:
+        return series
+    table = splits if splits is not None else load_manual_splits()
+    entries = table.get(ticker)
+    if not entries:
+        return series
+
+    idx = _hp_pd.DatetimeIndex(series.index)
+    if idx.tz is not None:
+        idx_naive = idx.tz_convert("UTC").tz_localize(None)
+    else:
+        idx_naive = idx
+
+    out = series.copy()
+    for ex_ts, ratio in entries:
+        mask = idx_naive < ex_ts
+        if mask.any():
+            out.loc[mask] = out.loc[mask] / ratio
+    return out
+
+
+# ---------------------------------------------------------------------------
 # HISTORY PRESERVATION (forward_plan §3.1.1 — Stage A)
 # ---------------------------------------------------------------------------
 # Source-side history can shrink retroactively (e.g. April 2026 ICE Data demand
