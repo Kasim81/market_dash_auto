@@ -505,14 +505,25 @@ def _check_unadjusted_splits() -> list[str]:
 
     yfinance back-adjusts known splits via auto_adjust=True, but its
     corporate-actions feed is patchy for some non-US listings — an unadjusted
-    split lands as a ~10x (or ~0.1x) single-week jump on an otherwise smooth
-    series, poisoning every return window straddling it.
+    split lands as a single-week jump on an otherwise smooth series,
+    poisoning every return window straddling it. Splits happen at any ratio
+    (2:1, 3:2, 4:3, 5:4, 7:5, 10:1, …), so the detector must be
+    ratio-agnostic.
+
+    Three filters together separate real unadjusted splits from market moves:
+      1. Index skip — `^*` tickers are calculations, not securities, so they
+         cannot split. Excluded outright.
+      2. Clean-ratio match — splits produce *exact* integer-fraction price
+         ratios (1/N or M/N for small integers). Market moves coincide with
+         one only by accident, especially at the ±SPLIT_TOL tolerance below.
+      3. Persistence — the new price level must hold within ±PERSIST_TOL
+         over the next PERSIST_WEEKS weeks. A market move that happens to
+         land on a clean fraction one week usually drifts off it the next.
 
     Discontinuities already registered in data/manual_splits.csv are handled
     (library_utils.apply_manual_splits back-adjusts them and
     scripts/backadjust_hist_splits.py corrects stored history), so only
-    *unexplained* jumps in the trailing window are reported — i.e. a NEW
-    missing split needing a manual_splits.csv row + a back-adjust run.
+    *unexplained* sustained jumps in the trailing window are reported.
     """
     comp_path = DATA / "market_data_comp_hist.csv"
     if not comp_path.exists():
@@ -536,17 +547,49 @@ def _check_unadjusted_splits() -> list[str]:
 
     ticker_row = rows[0]; variant_row = rows[1]
     data = rows[12:]                       # 11 metadata rows + 1 header row
-    recent = data[-13:]                    # ~last quarter of weekly closes
+    # Look back far enough that a jump can have PERSIST_WEEKS of follow-up
+    # weeks AND we still see ~8 weeks of usable history before it.
+    scan = data[-(8 + 1 + 6):]              # 15 weekly closes
 
-    LO, HI = 0.55, 1.8                     # split-like jump bounds
+    # A weekly ratio outside this band is the *candidate* jump (catches splits
+    # down to ~6:5 = 0.83 / 1.20).
+    LO, HI = 0.85, 1.18
+    SPLIT_TOL = 0.01                        # match within ±1% of a clean ratio
+    PERSIST_WEEKS = 4                       # how long the new level must hold
+    PERSIST_TOL = 0.15                      # within ±15% of the post-jump close
+
+    # Clean integer-fraction ratios characteristic of real stock splits
+    # (forward + reverse). Restricted to denominators ≤ 5 — i.e. 2:1, 3:1,
+    # 4:1, 5:1, …, 20:1 plus the fractional splits 3:2, 4:3, 5:4, 5:2, 5:3
+    # and their inverses. Exotic ratios like 5:6 / 6:5 / 7:5 are deliberately
+    # excluded because real splits rarely use them and the wider list
+    # produced false positives on ~16% ETF market moves (e.g. EWY 0.837).
+    _split_ratios: set[float] = set()
+    for n in (2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20):
+        _split_ratios.add(1.0 / n)                          # forward 1:N
+        _split_ratios.add(float(n))                          # reverse N:1
+    for m, n in ((3, 2), (4, 3), (5, 4), (5, 2), (5, 3)):    # fractional M:N
+        _split_ratios.add(n / m)                             # forward ratio
+        _split_ratios.add(m / n)                             # reverse ratio
+
+    def _looks_like_split(r: float) -> bool:
+        return any(abs(r - sr) / sr <= SPLIT_TOL for sr in _split_ratios)
+
     issues: list[str] = []
     for c in range(2, len(ticker_row)):
         tk = ticker_row[c].strip()
-        var = variant_row[c].strip() if c < len(variant_row) else ""
-        if not tk or var != "Local":
+        # Indices (^* tickers in yfinance convention) are calculations, not
+        # securities — they cannot split. Skip outright to avoid false
+        # positives on vol-index regime shifts (^VIX, ^GVZ, ^OVX, ^VIX3M …).
+        if not tk or tk.startswith("^"):
             continue
-        prev = None
-        for r in recent:
+        var = variant_row[c].strip() if c < len(variant_row) else ""
+        if var != "Local":
+            continue
+
+        # Build a dense (date, value) series for this column.
+        series: list[tuple[str, float]] = []
+        for r in scan:
             if c >= len(r):
                 continue
             d = r[1].strip()
@@ -554,17 +597,41 @@ def _check_unadjusted_splits() -> list[str]:
             try:
                 cur = float(v)
             except ValueError:
-                cur = None
-            if prev is not None and cur is not None and prev[1] > 0 and cur > 0:
-                ratio = cur / prev[1]
-                if (ratio < LO or ratio > HI) and (tk, d) not in registered:
-                    issues.append(
-                        f"{tk}: {prev[1]:g} → {cur:g} ({ratio:.3f}x) at {d} — "
-                        f"possible unadjusted split; add a data/manual_splits.csv "
-                        f"row and run scripts/backadjust_hist_splits.py"
-                    )
-            if cur is not None:
-                prev = (d, cur)
+                continue
+            if cur > 0:
+                series.append((d, cur))
+
+        # Scan for jumps that have at least 2 follow-up weeks for the
+        # persistence check.
+        for i in range(1, len(series) - 1):
+            d_prev, prev_val = series[i - 1]
+            d_jump, cur_val  = series[i]
+            ratio = cur_val / prev_val
+            if LO <= ratio <= HI:
+                continue
+            if not _looks_like_split(ratio):
+                continue
+            if (tk, d_jump) in registered:
+                continue
+
+            followers = series[i + 1 : i + 1 + PERSIST_WEEKS]
+            if len(followers) < 2:           # not enough follow-up to confirm
+                continue
+            persisted = all(
+                abs(v_f / cur_val - 1.0) <= PERSIST_TOL
+                for _, v_f in followers
+            )
+            if not persisted:
+                continue
+
+            issues.append(
+                f"{tk}: {prev_val:g} → {cur_val:g} ({ratio:.3f}x) at {d_jump}, "
+                f"matches clean split ratio + new level held within "
+                f"±{int(PERSIST_TOL * 100)}% over the next {len(followers)} weeks "
+                f"— possible unadjusted split; add a data/manual_splits.csv row "
+                f"and run scripts/backadjust_hist_splits.py"
+            )
+            break  # one report per ticker — successive weeks would re-fire
     return issues
 
 
