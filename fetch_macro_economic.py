@@ -41,6 +41,12 @@ from sources import boj as boj_src
 from sources import estat as estat_src
 from sources import nasdaq_data_link as ndl_src
 from sources import lbma as lbma_src
+from sources import boc as boc_src
+from sources import statcan as statcan_src
+from sources import ons as ons_src
+from sources import bundesbank as bundesbank_src
+from sources import abs as abs_src
+from sources import istat as istat_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -110,6 +116,12 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(estat_src.load_library())
     indicators.extend(ndl_src.load_library())
     indicators.extend(lbma_src.load_library())
+    indicators.extend(boc_src.load_library())
+    indicators.extend(statcan_src.load_library())
+    indicators.extend(ons_src.load_library())
+    indicators.extend(bundesbank_src.load_library())
+    indicators.extend(abs_src.load_library())
+    indicators.extend(istat_src.load_library())
     return indicators
 
 
@@ -340,6 +352,127 @@ def _fetch_ecb_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
+# -- Bank of Canada Valet snapshot --
+
+BOC_DELAY = 0.4  # seconds between BoC Valet calls
+
+
+def _fetch_boc_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = boc_src.fetch_series_as_pandas(indic["source_id"], recent=2)
+    time.sleep(BOC_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- StatCan WDS snapshot --
+
+STATCAN_DELAY = 0.4  # seconds between StatCan WDS calls
+
+
+def _fetch_statcan_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = statcan_src.fetch_series_as_pandas(indic["source_id"], latest_n=2)
+    time.sleep(STATCAN_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ONS snapshot --
+
+ONS_DELAY = 0.4  # seconds between ONS calls
+
+
+def _fetch_ons_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    # ONS /data returns the full series in one small JSON; no last_n param.
+    s = ons_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(ONS_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- Bundesbank snapshot --
+
+BUNDESBANK_DELAY = 0.4  # seconds between Bundesbank calls
+
+
+def _fetch_bundesbank_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
+    time.sleep(BUNDESBANK_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ABS snapshot --
+
+ABS_DELAY = 0.4  # seconds between ABS calls
+
+
+def _fetch_abs_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = abs_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
+    time.sleep(ABS_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ISTAT snapshot --
+
+ISTAT_DELAY = 0.6  # seconds between ISTAT calls (flaky gateway — go gentle)
+
+
+def _fetch_istat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = istat_src.fetch_series_as_pandas(indic["source_id"], last_n=3)
+    time.sleep(ISTAT_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
 # -- BoJ Time-Series Data Search snapshot --
 
 BOJ_DELAY = 0.6  # seconds between BoJ API calls
@@ -490,6 +623,18 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_ecb_snapshot(indic, fetched_at)
             elif src == "BoJ":
                 got = _fetch_boj_snapshot(indic, fetched_at)
+            elif src == "BoC":
+                got = _fetch_boc_snapshot(indic, fetched_at)
+            elif src == "StatCan":
+                got = _fetch_statcan_snapshot(indic, fetched_at)
+            elif src == "ONS":
+                got = _fetch_ons_snapshot(indic, fetched_at)
+            elif src == "Bundesbank":
+                got = _fetch_bundesbank_snapshot(indic, fetched_at)
+            elif src == "ABS":
+                got = _fetch_abs_snapshot(indic, fetched_at)
+            elif src == "ISTAT":
+                got = _fetch_istat_snapshot(indic, fetched_at)
             elif src == "e-Stat":
                 got = _fetch_estat_snapshot(indic, fetched_at)
             elif src == "Nasdaq Data Link":
@@ -640,6 +785,66 @@ def _fetch_ecb_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
+# -- Bank of Canada Valet --
+
+def _fetch_boc_history(indic: dict) -> dict[str, pd.Series]:
+    s = boc_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BOC_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- StatCan WDS --
+
+def _fetch_statcan_history(indic: dict) -> dict[str, pd.Series]:
+    s = statcan_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(STATCAN_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ONS --
+
+def _fetch_ons_history(indic: dict) -> dict[str, pd.Series]:
+    s = ons_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ONS_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- Bundesbank --
+
+def _fetch_bundesbank_history(indic: dict) -> dict[str, pd.Series]:
+    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BUNDESBANK_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ABS --
+
+def _fetch_abs_history(indic: dict) -> dict[str, pd.Series]:
+    s = abs_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ABS_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ISTAT --
+
+def _fetch_istat_history(indic: dict) -> dict[str, pd.Series]:
+    s = istat_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ISTAT_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -747,6 +952,18 @@ def _history_for_indicator(
         return _fetch_ecb_history(indic)
     if src == "BoJ":
         return _fetch_boj_history(indic)
+    if src == "BoC":
+        return _fetch_boc_history(indic)
+    if src == "StatCan":
+        return _fetch_statcan_history(indic)
+    if src == "ONS":
+        return _fetch_ons_history(indic)
+    if src == "Bundesbank":
+        return _fetch_bundesbank_history(indic)
+    if src == "ABS":
+        return _fetch_abs_history(indic)
+    if src == "ISTAT":
+        return _fetch_istat_history(indic)
     if src == "e-Stat":
         return _fetch_estat_history(indic)
     if src == "Nasdaq Data Link":
@@ -759,19 +976,26 @@ def _history_for_indicator(
     return {}
 
 
-def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
-    """Build the wide-form Friday-spine history DataFrame."""
+def build_hist_df(
+    indicators: list[dict],
+) -> tuple[pd.DataFrame, dict[str, dict]]:
+    """Build the wide-form Friday-spine history DataFrame.
+
+    Returns (hist, provenance). `provenance[col_name]` is the indicator dict
+    whose raw series actually populated the column. When multiple sources
+    target the same col_name (e.g. JPN_POLICY_RATE on FRED, DB.nomics and
+    BoJ), the source whose raw series has the most recent non-null
+    observation wins — data freshness, not library load order. Ties are
+    broken in favour of the source that arrived first (stable order).
+    """
     today = date.today()
     spine = build_friday_spine(HIST_START, today)
 
     ifo_indicators = [i for i in indicators if i["source"] == "ifo"]
 
-    # Collect every (col_name -> spine-aligned Series) into a dict and
-    # build the wide DataFrame in a single pd.DataFrame() call at the end.
-    # Per-column assignment (`hist[col] = ...`) into a growing DataFrame
-    # fragments the block manager and triggers ~57 PerformanceWarnings on
-    # a full run.  pandas docs explicitly recommend this pattern.
     columns: dict[str, pd.Series] = {}
+    provenance: dict[str, dict] = {}
+    last_obs: dict[str, pd.Timestamp] = {}
 
     for indic in indicators:
         label = f"{indic['source']}/{indic['col']}/hist"
@@ -782,16 +1006,43 @@ def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
             print(f"  [{label}] history failed: {e}")
             continue
         for col_name, s in series_dict.items():
+            nonnull = s.dropna()
+            new_last = nonnull.index.max() if not nonnull.empty else pd.NaT
             combined = (
                 s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
             )
-            columns[col_name] = combined
+            if col_name not in columns:
+                columns[col_name] = combined
+                provenance[col_name] = indic
+                last_obs[col_name] = new_last
+                continue
+
+            cur_last = last_obs[col_name]
+            cur_src = provenance[col_name]["source"]
+            new_wins = pd.notna(new_last) and (
+                pd.isna(cur_last) or new_last > cur_last
+            )
+            cur_str = cur_last.date().isoformat() if pd.notna(cur_last) else "NaT"
+            new_str = new_last.date().isoformat() if pd.notna(new_last) else "NaT"
+            if new_wins:
+                print(
+                    f"    [merge] {col_name}: replaced {cur_src} (last={cur_str}) "
+                    f"with {indic['source']} (last={new_str})"
+                )
+                columns[col_name] = combined
+                provenance[col_name] = indic
+                last_obs[col_name] = new_last
+            else:
+                print(
+                    f"    [merge] {col_name}: kept {cur_src} (last={cur_str}) "
+                    f"over {indic['source']} (last={new_str})"
+                )
 
     hist = pd.DataFrame(columns, index=spine)
     hist.index.name = "Date"
 
     print(f"  macro_economic_hist: {len(hist)} rows × {len(hist.columns)} data columns")
-    return hist
+    return hist, provenance
 
 
 # -- Metadata prefix rows (one per metadata field × per column) --
@@ -805,28 +1056,34 @@ HIST_METADATA_ROWS = [
 
 
 def _build_hist_metadata_rows(
-    columns: list[str], indicators: list[dict],
+    columns: list[str], provenance: dict[str, dict],
 ) -> list[list]:
     """
     Build the 14 metadata rows that prefix macro_economic_hist.csv.
 
-    Each column in `columns` maps to an indicator via either:
-      - single-country source: col_name == indic["col"]
-      - multi-country source:  col_name == f"{country}_{indic['col']}"
+    `provenance[col_name]` is the indicator dict that actually populated the
+    column in build_hist_df (freshness-wins merge), so the Source / Series ID
+    / Indicator rows here truthfully describe what's in each column even when
+    multiple sources targeted the same col_name.
+
+    The column → country split is recovered by stripping the leading
+    "<COUNTRY>_" prefix when the indicator is a multi-country fan-out.
     """
-    # Build a lookup: col_name → (indicator_dict, country_or_empty)
-    lookup: dict[str, tuple[dict, str]] = {}
     country_meta = countries_src.country_meta()
 
-    for indic in indicators:
+    lookup: dict[str, tuple[dict, str]] = {}
+    for col_name, indic in provenance.items():
         if indic["country"]:
-            lookup[indic["col"]] = (indic, indic["country"])
+            lookup[col_name] = (indic, indic["country"])
         else:
-            # Multi-country: col_name is f"{country}_{indic['col']}".
-            # Register every possible (country, col_name) based on the
-            # canonical registry; callers may fan out to fewer.
-            for code in country_meta.keys():
-                lookup[f"{code}_{indic['col']}"] = (indic, code)
+            # Multi-country fan-out: col_name == f"{country}_{indic['col']}"
+            base = indic["col"]
+            country = ""
+            if col_name.endswith("_" + base):
+                code = col_name[: -(len(base) + 1)]
+                if code in country_meta:
+                    country = code
+            lookup[col_name] = (indic, country)
 
     ts = _utc_ts()
 
@@ -880,12 +1137,12 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
         print(f"  [macro_economic] snapshot Sheets push failed: {e}")
 
 
-def push_hist_to_sheets(df: pd.DataFrame, indicators: list[dict]) -> None:
+def push_hist_to_sheets(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     if df.empty:
         return
     try:
         columns = list(df.columns)
-        meta_rows = _build_hist_metadata_rows(columns, indicators)
+        meta_rows = _build_hist_metadata_rows(columns, provenance)
 
         df_out = df.reset_index()
         df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
@@ -902,7 +1159,7 @@ def push_hist_to_sheets(df: pd.DataFrame, indicators: list[dict]) -> None:
         print(f"  [macro_economic] hist Sheets push failed: {e}")
 
 
-def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
+def save_hist_csv(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     """
     Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
     then a header row (Date + column names), then one row per Friday.
@@ -912,7 +1169,7 @@ def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
     (per forward_plan §3.1.1 — e.g. ICE BofA 3-yr rolling window).
     """
     columns = list(df.columns)
-    meta_rows = _build_hist_metadata_rows(columns, indicators)
+    meta_rows = _build_hist_metadata_rows(columns, provenance)
 
     df_out = df.reset_index()
     write_hist_with_archive(df_out, HIST_CSV, prefix_rows=meta_rows)
@@ -949,9 +1206,9 @@ def run_phase_macro_economic() -> None:
 
     # History (Friday-spine wide DataFrame, 1947-present)
     print("\n[History] Fetching full history ...")
-    hist_df = build_hist_df(indicators)
-    save_hist_csv(hist_df, indicators)
-    push_hist_to_sheets(hist_df, indicators)
+    hist_df, provenance = build_hist_df(indicators)
+    save_hist_csv(hist_df, provenance)
+    push_hist_to_sheets(hist_df, provenance)
 
     print(f"\n  macro_economic run completed in {time.time() - t0:.1f}s")
 
