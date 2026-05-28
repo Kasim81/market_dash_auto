@@ -759,19 +759,26 @@ def _history_for_indicator(
     return {}
 
 
-def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
-    """Build the wide-form Friday-spine history DataFrame."""
+def build_hist_df(
+    indicators: list[dict],
+) -> tuple[pd.DataFrame, dict[str, dict]]:
+    """Build the wide-form Friday-spine history DataFrame.
+
+    Returns (hist, provenance). `provenance[col_name]` is the indicator dict
+    whose raw series actually populated the column. When multiple sources
+    target the same col_name (e.g. JPN_POLICY_RATE on FRED, DB.nomics and
+    BoJ), the source whose raw series has the most recent non-null
+    observation wins — data freshness, not library load order. Ties are
+    broken in favour of the source that arrived first (stable order).
+    """
     today = date.today()
     spine = build_friday_spine(HIST_START, today)
 
     ifo_indicators = [i for i in indicators if i["source"] == "ifo"]
 
-    # Collect every (col_name -> spine-aligned Series) into a dict and
-    # build the wide DataFrame in a single pd.DataFrame() call at the end.
-    # Per-column assignment (`hist[col] = ...`) into a growing DataFrame
-    # fragments the block manager and triggers ~57 PerformanceWarnings on
-    # a full run.  pandas docs explicitly recommend this pattern.
     columns: dict[str, pd.Series] = {}
+    provenance: dict[str, dict] = {}
+    last_obs: dict[str, pd.Timestamp] = {}
 
     for indic in indicators:
         label = f"{indic['source']}/{indic['col']}/hist"
@@ -782,16 +789,43 @@ def build_hist_df(indicators: list[dict]) -> pd.DataFrame:
             print(f"  [{label}] history failed: {e}")
             continue
         for col_name, s in series_dict.items():
+            nonnull = s.dropna()
+            new_last = nonnull.index.max() if not nonnull.empty else pd.NaT
             combined = (
                 s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
             )
-            columns[col_name] = combined
+            if col_name not in columns:
+                columns[col_name] = combined
+                provenance[col_name] = indic
+                last_obs[col_name] = new_last
+                continue
+
+            cur_last = last_obs[col_name]
+            cur_src = provenance[col_name]["source"]
+            new_wins = pd.notna(new_last) and (
+                pd.isna(cur_last) or new_last > cur_last
+            )
+            cur_str = cur_last.date().isoformat() if pd.notna(cur_last) else "NaT"
+            new_str = new_last.date().isoformat() if pd.notna(new_last) else "NaT"
+            if new_wins:
+                print(
+                    f"    [merge] {col_name}: replaced {cur_src} (last={cur_str}) "
+                    f"with {indic['source']} (last={new_str})"
+                )
+                columns[col_name] = combined
+                provenance[col_name] = indic
+                last_obs[col_name] = new_last
+            else:
+                print(
+                    f"    [merge] {col_name}: kept {cur_src} (last={cur_str}) "
+                    f"over {indic['source']} (last={new_str})"
+                )
 
     hist = pd.DataFrame(columns, index=spine)
     hist.index.name = "Date"
 
     print(f"  macro_economic_hist: {len(hist)} rows × {len(hist.columns)} data columns")
-    return hist
+    return hist, provenance
 
 
 # -- Metadata prefix rows (one per metadata field × per column) --
@@ -805,28 +839,34 @@ HIST_METADATA_ROWS = [
 
 
 def _build_hist_metadata_rows(
-    columns: list[str], indicators: list[dict],
+    columns: list[str], provenance: dict[str, dict],
 ) -> list[list]:
     """
     Build the 14 metadata rows that prefix macro_economic_hist.csv.
 
-    Each column in `columns` maps to an indicator via either:
-      - single-country source: col_name == indic["col"]
-      - multi-country source:  col_name == f"{country}_{indic['col']}"
+    `provenance[col_name]` is the indicator dict that actually populated the
+    column in build_hist_df (freshness-wins merge), so the Source / Series ID
+    / Indicator rows here truthfully describe what's in each column even when
+    multiple sources targeted the same col_name.
+
+    The column → country split is recovered by stripping the leading
+    "<COUNTRY>_" prefix when the indicator is a multi-country fan-out.
     """
-    # Build a lookup: col_name → (indicator_dict, country_or_empty)
-    lookup: dict[str, tuple[dict, str]] = {}
     country_meta = countries_src.country_meta()
 
-    for indic in indicators:
+    lookup: dict[str, tuple[dict, str]] = {}
+    for col_name, indic in provenance.items():
         if indic["country"]:
-            lookup[indic["col"]] = (indic, indic["country"])
+            lookup[col_name] = (indic, indic["country"])
         else:
-            # Multi-country: col_name is f"{country}_{indic['col']}".
-            # Register every possible (country, col_name) based on the
-            # canonical registry; callers may fan out to fewer.
-            for code in country_meta.keys():
-                lookup[f"{code}_{indic['col']}"] = (indic, code)
+            # Multi-country fan-out: col_name == f"{country}_{indic['col']}"
+            base = indic["col"]
+            country = ""
+            if col_name.endswith("_" + base):
+                code = col_name[: -(len(base) + 1)]
+                if code in country_meta:
+                    country = code
+            lookup[col_name] = (indic, country)
 
     ts = _utc_ts()
 
@@ -880,12 +920,12 @@ def push_snapshot_to_sheets(df: pd.DataFrame) -> None:
         print(f"  [macro_economic] snapshot Sheets push failed: {e}")
 
 
-def push_hist_to_sheets(df: pd.DataFrame, indicators: list[dict]) -> None:
+def push_hist_to_sheets(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     if df.empty:
         return
     try:
         columns = list(df.columns)
-        meta_rows = _build_hist_metadata_rows(columns, indicators)
+        meta_rows = _build_hist_metadata_rows(columns, provenance)
 
         df_out = df.reset_index()
         df_out["Date"] = df_out["Date"].dt.strftime("%Y-%m-%d")
@@ -902,7 +942,7 @@ def push_hist_to_sheets(df: pd.DataFrame, indicators: list[dict]) -> None:
         print(f"  [macro_economic] hist Sheets push failed: {e}")
 
 
-def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
+def save_hist_csv(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     """
     Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
     then a header row (Date + column names), then one row per Friday.
@@ -912,7 +952,7 @@ def save_hist_csv(df: pd.DataFrame, indicators: list[dict]) -> None:
     (per forward_plan §3.1.1 — e.g. ICE BofA 3-yr rolling window).
     """
     columns = list(df.columns)
-    meta_rows = _build_hist_metadata_rows(columns, indicators)
+    meta_rows = _build_hist_metadata_rows(columns, provenance)
 
     df_out = df.reset_index()
     write_hist_with_archive(df_out, HIST_CSV, prefix_rows=meta_rows)
@@ -949,9 +989,9 @@ def run_phase_macro_economic() -> None:
 
     # History (Friday-spine wide DataFrame, 1947-present)
     print("\n[History] Fetching full history ...")
-    hist_df = build_hist_df(indicators)
-    save_hist_csv(hist_df, indicators)
-    push_hist_to_sheets(hist_df, indicators)
+    hist_df, provenance = build_hist_df(indicators)
+    save_hist_csv(hist_df, provenance)
+    push_hist_to_sheets(hist_df, provenance)
 
     print(f"\n  macro_economic run completed in {time.time() - t0:.1f}s")
 
