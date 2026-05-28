@@ -1,0 +1,5 @@
+series_id,col,name,category,subcategory,units,frequency,country,notes,sort_key,concept,cycle_timing,freshness_override_days
+41690973,CAN_CPI_ALLITEMS,Canada Consumer Price Index (All-items),Prices,Consumer Prices,Index 2002=100,Monthly,CAN,StatCan WDS vector 41690973 (table 18-10-0004) — all-items CPI Canada. Verified live 2026-05-28 (168.0 @ 2026-04). Keyless POST API.,470,Prices / Inflation,L,45
+2062815,CAN_UNEMP_RATE,Canada Unemployment Rate (Labour Force Survey),Labour,Unemployment,Percent,Monthly,CAN,StatCan WDS vector 2062815 (table 14-10-0287) — LFS unemployment rate. Verified live 2026-05-28 (6.9% @ 2026-04).,471,Labour Market,L,45
+2062811,CAN_EMPLOYMENT,Canada Employment (Labour Force Survey),Labour,Employment,Thousands of persons,Monthly,CAN,StatCan WDS vector 2062811 (table 14-10-0287) — LFS employment level. Verified live 2026-05-28 (21034k @ 2026-04).,472,Labour Market,C,45
+65201210,CAN_GDP_MONTHLY,Canada Monthly Real GDP at Basic Prices,GDP,Output,Millions chained 2017 CAD,Monthly,CAN,StatCan WDS vector 65201210 (table 36-10-0434) — monthly real GDP by industry. Verified live 2026-05-28 (2348361 @ 2026-02).,473,Activity / Output,C,60

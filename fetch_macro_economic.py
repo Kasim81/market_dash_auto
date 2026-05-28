@@ -41,6 +41,12 @@ from sources import boj as boj_src
 from sources import estat as estat_src
 from sources import nasdaq_data_link as ndl_src
 from sources import lbma as lbma_src
+from sources import boc as boc_src
+from sources import statcan as statcan_src
+from sources import ons as ons_src
+from sources import bundesbank as bundesbank_src
+from sources import abs as abs_src
+from sources import istat as istat_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -110,6 +116,12 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(estat_src.load_library())
     indicators.extend(ndl_src.load_library())
     indicators.extend(lbma_src.load_library())
+    indicators.extend(boc_src.load_library())
+    indicators.extend(statcan_src.load_library())
+    indicators.extend(ons_src.load_library())
+    indicators.extend(bundesbank_src.load_library())
+    indicators.extend(abs_src.load_library())
+    indicators.extend(istat_src.load_library())
     return indicators
 
 
@@ -340,6 +352,127 @@ def _fetch_ecb_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
+# -- Bank of Canada Valet snapshot --
+
+BOC_DELAY = 0.4  # seconds between BoC Valet calls
+
+
+def _fetch_boc_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = boc_src.fetch_series_as_pandas(indic["source_id"], recent=2)
+    time.sleep(BOC_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- StatCan WDS snapshot --
+
+STATCAN_DELAY = 0.4  # seconds between StatCan WDS calls
+
+
+def _fetch_statcan_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = statcan_src.fetch_series_as_pandas(indic["source_id"], latest_n=2)
+    time.sleep(STATCAN_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ONS snapshot --
+
+ONS_DELAY = 0.4  # seconds between ONS calls
+
+
+def _fetch_ons_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    # ONS /data returns the full series in one small JSON; no last_n param.
+    s = ons_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(ONS_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- Bundesbank snapshot --
+
+BUNDESBANK_DELAY = 0.4  # seconds between Bundesbank calls
+
+
+def _fetch_bundesbank_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
+    time.sleep(BUNDESBANK_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ABS snapshot --
+
+ABS_DELAY = 0.4  # seconds between ABS calls
+
+
+def _fetch_abs_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = abs_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
+    time.sleep(ABS_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
+# -- ISTAT snapshot --
+
+ISTAT_DELAY = 0.6  # seconds between ISTAT calls (flaky gateway — go gentle)
+
+
+def _fetch_istat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = istat_src.fetch_series_as_pandas(indic["source_id"], last_n=3)
+    time.sleep(ISTAT_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
 # -- BoJ Time-Series Data Search snapshot --
 
 BOJ_DELAY = 0.6  # seconds between BoJ API calls
@@ -490,6 +623,18 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_ecb_snapshot(indic, fetched_at)
             elif src == "BoJ":
                 got = _fetch_boj_snapshot(indic, fetched_at)
+            elif src == "BoC":
+                got = _fetch_boc_snapshot(indic, fetched_at)
+            elif src == "StatCan":
+                got = _fetch_statcan_snapshot(indic, fetched_at)
+            elif src == "ONS":
+                got = _fetch_ons_snapshot(indic, fetched_at)
+            elif src == "Bundesbank":
+                got = _fetch_bundesbank_snapshot(indic, fetched_at)
+            elif src == "ABS":
+                got = _fetch_abs_snapshot(indic, fetched_at)
+            elif src == "ISTAT":
+                got = _fetch_istat_snapshot(indic, fetched_at)
             elif src == "e-Stat":
                 got = _fetch_estat_snapshot(indic, fetched_at)
             elif src == "Nasdaq Data Link":
@@ -640,6 +785,66 @@ def _fetch_ecb_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
+# -- Bank of Canada Valet --
+
+def _fetch_boc_history(indic: dict) -> dict[str, pd.Series]:
+    s = boc_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BOC_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- StatCan WDS --
+
+def _fetch_statcan_history(indic: dict) -> dict[str, pd.Series]:
+    s = statcan_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(STATCAN_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ONS --
+
+def _fetch_ons_history(indic: dict) -> dict[str, pd.Series]:
+    s = ons_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ONS_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- Bundesbank --
+
+def _fetch_bundesbank_history(indic: dict) -> dict[str, pd.Series]:
+    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BUNDESBANK_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ABS --
+
+def _fetch_abs_history(indic: dict) -> dict[str, pd.Series]:
+    s = abs_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ABS_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
+# -- ISTAT --
+
+def _fetch_istat_history(indic: dict) -> dict[str, pd.Series]:
+    s = istat_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(ISTAT_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -747,6 +952,18 @@ def _history_for_indicator(
         return _fetch_ecb_history(indic)
     if src == "BoJ":
         return _fetch_boj_history(indic)
+    if src == "BoC":
+        return _fetch_boc_history(indic)
+    if src == "StatCan":
+        return _fetch_statcan_history(indic)
+    if src == "ONS":
+        return _fetch_ons_history(indic)
+    if src == "Bundesbank":
+        return _fetch_bundesbank_history(indic)
+    if src == "ABS":
+        return _fetch_abs_history(indic)
+    if src == "ISTAT":
+        return _fetch_istat_history(indic)
     if src == "e-Stat":
         return _fetch_estat_history(indic)
     if src == "Nasdaq Data Link":

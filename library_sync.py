@@ -146,6 +146,12 @@ MACRO_LIBS = {
     "estat":     DATA / "macro_library_estat.csv",
     "nasdaqdl":  DATA / "macro_library_nasdaqdl.csv",
     "lbma":      DATA / "macro_library_lbma.csv",
+    "boc":       DATA / "macro_library_boc.csv",
+    "statcan":   DATA / "macro_library_statcan.csv",
+    "ons":       DATA / "macro_library_ons.csv",
+    "bundesbank": DATA / "macro_library_bundesbank.csv",
+    "abs":       DATA / "macro_library_abs.csv",
+    "istat":     DATA / "macro_library_istat.csv",
 }
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
@@ -161,8 +167,11 @@ def _macro_econ_expected() -> set[str]:
     out: set[str] = set()
     country_codes = _read_country_codes()
 
-    # FRED, DB.nomics, ifo, BoE, ECB, BoJ, e-Stat: col or series_id
-    for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma"):
+    # Single-column sources (col or series_id): FRED, DB.nomics, ifo, BoE,
+    # ECB, BoJ, e-Stat, Nasdaq DL, LBMA, plus the PR1 keyless adapters
+    # (BoC, StatCan, ONS, Bundesbank, ABS, ISTAT).
+    for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma",
+                "boc", "statcan", "ons", "bundesbank", "abs", "istat"):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue
