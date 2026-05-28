@@ -99,8 +99,8 @@ The project evolved from a single hardcoded pipeline into the current 6-phase ar
 |---|---|---|---|
 | Simple Pipeline | Original 66-instrument daily snapshot; consumed downstream by `trigger.py` | `fetch_data.py` → `market_data`, `sentiment_data` | Production (frozen) |
 | Comp Pipeline | Library-driven ~390-instrument snapshot + weekly history from 1990 | `fetch_data.py` + `fetch_hist.py` → `market_data_comp`, `market_data_comp_hist` | Production |
-| **Phase ME — Macro-Economic** (unified) | Single raw-macro data layer covering FRED / OECD / World Bank / IMF / DB.nomics / ifo / BoE / ECB / BoJ / e-Stat. Replaces retired Phase A / B / C / D. | `fetch_macro_economic.py` + `sources/{fred,oecd,worldbank,imf,dbnomics,ifo,boe,ecb,boj,estat,countries}.py` → `macro_economic`, `macro_economic_hist` | Production |
-| Phase E — Macro-Market Indicators | 92 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
+| **Phase ME — Macro-Economic** (unified) | Single raw-macro data layer covering FRED / OECD / World Bank / IMF / DB.nomics / ifo / BoE / ECB / BoJ / e-Stat / LBMA. Replaces retired Phase A / B / C / D. | `fetch_macro_economic.py` + `sources/{fred,oecd,worldbank,imf,dbnomics,ifo,boe,ecb,boj,estat,lbma,nasdaq_data_link,countries}.py` → `macro_economic`, `macro_economic_hist` | Production |
+| Phase E — Macro-Market Indicators | 99 composite indicators with 156w rolling z-scores, regimes, forward regimes, cycle timing (L/C/G) | `compute_macro_market.py` → `macro_market`, `macro_market_hist` | Production |
 | Phase F — Calculated Fields | Synthetic columns (mostly absorbed into Phase E) | absorbed into `compute_macro_market.py` | Mostly Done |
 | Phase G — Sheets Export Audit | 7-tab inventory, protected-tab guards across all 4 writers, legacy-tab cleanup, pipeline.log auto-commit | `library_utils.py` `SHEETS_*` constants | Done |
 | Phase H — Daily Integrated Audit | Three-section daily audit (fetch outcomes / static checks / value-change staleness) running on the existing daily fetch's `pipeline.log`; perpetual GitHub-Issue notification with first-line `ALL CLEAN` / `N ISSUES` summary | `data_audit.py` + `.github/workflows/update_data.yml` (post-audit step) | Done |
@@ -221,7 +221,7 @@ These CSVs in `data/` are the single source of truth for everything the pipeline
 | `macro_library_nasdaqdl.csv` | 0 | Phase ME (§3.9, 2026-05-08; emptied 2026-05-09) | `sources/nasdaq_data_link.py` — scaffolding kept for any future free NDL dataset; LBMA/GOLD removed when discovered to be on NDL's paid tier |
 | `macro_library_lbma.csv` | 1 | Phase ME (§3.9, 2026-05-09) | `sources/lbma.py` (LBMA prices.lbma.org.uk JSON — daily gold PM USD fix back to 1968) |
 | `source_fallbacks.csv` | 10 | Phase ME (Stage B, 2026-04-30; §3.9 row added 2026-05-08; T0 swapped to LBMA 2026-05-09) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
-| `macro_indicator_library.csv` | 93 | Phase E | `compute_macro_market.py` (composite indicator registry) |
+| `macro_indicator_library.csv` | 99 | Phase E | `compute_macro_market.py` (composite indicator registry) — 93 original + `GLOBAL_GOLD1` (§3.9) + 5 per-region inflation composites (`US/UK/EU/JP/CN_INFL1`, §3.1.3) + `US_INFEXP1` |
 | `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.1 cross-reference; not consumed by the runtime pipeline |
 
 **Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
@@ -235,7 +235,7 @@ These are cases where a planned series is unavailable from any free source we ac
 | Gap | Impact | Resolution |
 |---|---|---|
 | **China 10-Year government bond yield** | `AS_CN_R1` (China–US 10Y spread) returns NaN against a direct CN 10Y series. FRED carries only the short-term `IR3TTS01CNM156N`; OECD MEI long-term-rate has no CN series. The dangling `_get_col(mu, "CHN_GOVT_10Y")` reference in `_calc_AS_CN_R1` is deliberate (self-wires the day a source lands) and is allow-listed in `data_audit.py::KNOWN_MISSING_COLUMNS` so the static check doesn't churn. | Partial proxy in place via Stage F: `CBON` (VanEck CN Govt + Policy-Bank Bond ETF) added to `index_library.csv` — distribution yield acts as a tradable proxy for the regime model. Direct yield series remains an open path; details in §3.1.6. |
-| **ifo workbook download failing (since ~2026-05-08)** | All 26 ifo `DE_*` series stopped landing in `macro_economic_hist.csv` 10+ consecutive daily runs. `sources/ifo.py` resolves no `gsk-*.xlsx` link from the landing page and every direct-URL fallback returns a 3038-byte HTML page (CSP-stamped) instead of the workbook. `DE_IFO` shows in the daily audit as a `_get_col` missing-column failure. | **Not yet resolved.** DB.nomics path is **dead** — confirmed 2026-05-27 that DB.nomics carries no ifo provider/series, so the Stage-B-style aggregator fallback isn't available. ifo.de hosts the files free at `/sites/default/files/YYYY-MM/<name>.xlsx` (e.g. the WES-Euro workbook downloads fine), so the open question is whether our failure is (a) a stale/changed URL pattern — ifo restructured the `gsk-*.xlsx` path so our guesses 404 to a generic HTML page — or (b) a genuine anti-bot block on automated requests. Diagnostic pending: confirm whether a plain non-browser GET of a known-good ifo.de xlsx returns the file or HTML. Fix paths: (1) update `sources/ifo.py` to the current gsk download URL once confirmed; (2) if anti-bot, add a session-cookie warm-up / richer headers, else a headless-browser fetch; (3) accept the gap and substitute `DE_IFO1` via the OECD German BCI we already fetch (`DEU_BUS_CONF`). DE_IFO **is not** in the audit allowlist — the alert correctly tracks a real outage. Tracked as a §3.1-priority follow-up. |
+| **ifo workbook download failing (2026-05-08 → 2026-05-27)** | All 26 ifo `DE_*` series stopped landing in `macro_economic_hist.csv` for ~3 weeks; `DE_IFO` showed in the daily audit as a missing-column failure. `sources/ifo.py` was trying `secure/timeseries/gsk-d-<ym>.xlsx` (German at secure) and `<YYYY-MM>/gsk-e-<ym>.xlsx` (English at dated folder), both of which returned a 3038-byte HTML page. The diagnostic probe (`scripts/ifo_probe.py`, run from CI 2026-05-27) settled the cause: not anti-bot — the **English file under `secure/timeseries/gsk-e-<ym>.xlsx`** is the live path, and our code wasn't trying that combination. ifo additionally throttles intermittently with the same 3038-byte HTML for files that exist. | ✅ **Resolved 2026-05-27.** Fixed in two PRs: (1) **#150 URL correction** — `_candidate_urls()` switched to `secure/timeseries/gsk-e-<YYYYMM>.xlsx` (English, secure path) across current + prior 3 months, with `gsk-d` as a last-resort fallback; (2) **#151 fail-fast** — `_try_download_xlsx` retries with backoff, `_resolve_workbook_impl()` is cached process-level (success *and* failure), per-request timeout 15s + retries 2 → ifo's worst-case time bounded to ~3 min instead of ~60 min. The 04:53 UTC 2026-05-28 daily run validated the full path: month-walked from May (throttled) to April (`gsk-e-202604.xlsx`, 97,859 bytes — real xlsx), parsed all 26 `DE_*` columns, audit `missing_columns` clean. DB.nomics ifo-provider fallback **confirmed dead** during investigation (DB.nomics carries no ifo series). Durable fix lives in `manuals/technical_manual.md` §5 (ifo source) + §11 Pattern 10 (fail-fast network sources). |
 | **Euro IG corporate effective yield** (target series: ICE BofA Euro Corporate Index Effective Yield) | `EU_Cr1` (Euro IG spread = corp yield − ECB AAA 10Y govt yield) returns NaN against a direct corp-yield series. FRED `BAMLEC0A0RMEY` 400s on every call; ECB SDW publishes no free aggregate Euro IG yield; iBoxx EUR Corporate is paywalled. | Partial proxy in place via Stage F: `IEAC.L` (iShares EUR IG Corp Bond ETF) added to `index_library.csv` — distribution yield acts as a tradable proxy. ECB AAA 10Y govt-yield half is already wired in `fetch_ecb_euro_ig_spread()`. Direct corp-yield paths (ECB MIR composite cost of borrowing; Bundesbank SDMX corporate-bond yields) tracked in §3.1.6. EU_Cr1 returns n/a until a direct series is wired; EU_Cr2 (Euro HY) remains its own indicator. |
 | **`BSCICP02JPM460S` / `BSCICP02CNM460S`** (OECD Business Confidence — Japan / China on FRED) | Don't exist on FRED. | Japan covered by `JP_PMI1` (proprietary, returns Insufficient Data); China covered by `CHNBSCICP02STSAM` (different ID). |
 | **`DE_ZEW1`** (ZEW Economic Sentiment) | Returns Insufficient Data. ZEW Mannheim licences the archive; no free API. | Substitute: German sentiment is covered by `DE_IFO1` + `DEU_BUS_CONF`. |
@@ -254,9 +254,16 @@ These are cases where a planned series is unavailable from any free source we ac
 
 **Active priority is open.** The audit-remediation backlog (sub-tracks 1–4) closed 2026-04-29; durable outcomes live in `manuals/technical_manual.md` (§7, §9.8 cluster reference, §9.9 library_sync, §9.10 audit_writeback, §13 ticker dispositions, §14 daily flow) and ongoing forcing-function gaps live in §1 Known Data Gaps.
 
+**Recent completed work (session 2026-05-27/28):**
+- ✅ §3.9 LBMA gold long-run series — `GOLD_USD_PM` raw series 1968-04 → present in `macro_economic_hist`; `GLOBAL_GOLD1` Phase E composite live (safe-haven-bid regime).
+- ✅ §3.1.3 inflation composites — 5 per-region (`US/UK/EU/JP/CN_INFL1`) + `US_INFEXP1` shipped via #152.
+- ✅ ifo workbook outage resolved — see §1 Known Data Gaps row.
+- ✅ DB.nomics fail-fast / circuit breaker (#154) — outage no longer stalls the pipeline ~1hr.
+- ✅ 1306.T 10:1 split back-adjustment (#148) + generic data-audit split detector (#155).
+- ✅ Sister-CSV writer Option B (forward extension); open `keep="first"` self-heal question tracked in §3.6a.
+
 Candidate next tracks:
-- **Restore ifo workbook fetch** — `sources/ifo.py` has been failing for 10+ consecutive runs (since ~2026-05-08); all 26 `DE_*` ifo columns are absent from `macro_economic_hist.csv`. Likely path: wire DB.nomics ifo provider as a T1 fallback (sidesteps the anti-bot layer on ifo.de). Documented in §1 Known Data Gaps. Treat as a §3.1 prerequisite — losing 26 series silently is a worse failure mode than any new-feature gap.
-- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), Growth + Inflation focus (§3.1.3), GDP Now wiring (§3.1.4), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
+- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
 - **§3.3 PE Ratio Integration** — small contained feature add.
 - **§3.4 Market Index Expansion** — broadens market coverage; CSV-only additions to `index_library.csv`.
@@ -353,23 +360,34 @@ The regime work (now owned by `../regime_AA_master_plan.docx`) uses a per-region
 | CN | accept gaps | NBS retail / FAI / electricity / industrial profits / property — all flagged PROPRIETARY in `reference_indicators.csv` (no free foreign API). Current 3/9 is the practical ceiling. |
 | Global | optional: CPB World Trade Monitor + IP | New T3 fetcher `sources/cpb.py` (free CSV download, monthly); 2 rows. Low priority. |
 
-**Inflation axis** — surface coverage is OK (7 of 9 reference rows captured), but Phase E inflation indicators are too thin for regime work.
+**Inflation axis** — surface coverage was thin (only `US_R4` and `UK_R2` tagged `Inflation`). **Shipped 2026-05-28 via #152**: 5 per-region inflation composites + a separate inflation-expectations composite. ✅
 
-Current Phase E library has only **2 indicators with `concept = "Inflation"`** (`US_R4`, `UK_R2`). For regime work we want per-region inflation regime classifiers. **Outstanding additions** to `macro_indicator_library.csv`:
-
-| New indicator | Composition | Cycle | Concept |
+| Indicator | Composition (all inputs already in `macro_economic_hist`) | Headline / Core | Cycle |
 |---|---|---|---|
-| `US_INFL1` | CPI YoY z-score + Core PCE YoY z-score + 5y5y forward inflation expectation (`T5YIFR`) — output regime: high / above-target / on-target / below-target / disinflationary | L | Inflation |
-| `UK_INFL1` | UK CPI YoY (already wired via FRED `GBRCPIALLMINMEI`) + UK breakeven if available | L | Inflation |
-| `EU_INFL1` | HICP YoY (`EA_HICP` — Stage B wired) + 5y5y forward inflation expectation (ECB) | L | Inflation |
-| `JP_INFL1` | Core CPI YoY (`JPNCPIALLMINMEI`) + JP breakevens if available | L | Inflation |
-| `CN_INFL1` | CPI YoY + PPI YoY composite (both wired) | L | Inflation |
+| `US_INFL1` | mean of US headline CPI YoY (`USA_CPI`) + Core PCE YoY (`PCEPILFE`) + 5y5y forward breakeven (`T5YIFR`) | **Headline + Core** blend | L |
+| `UK_INFL1` | UK headline CPI YoY (`GBR_CPI`) | Headline only | L |
+| `EU_INFL1` | Euro-area headline HICP YoY (`EA_HICP`) | Headline only | L |
+| `JP_INFL1` | Japan headline CPI YoY (`JPN_CPI`) | Headline only | L |
+| `CN_INFL1` | mean of China headline CPI YoY + PPI YoY (`CHN_CPI` + `CHN_PPI`) | Headline only | L |
+| `US_INFEXP1` | z-composite of `T5YIE` + `T10YIE` + `T5YIFR` + `MICH` | Expectations (separate axis) | L (naturally leading) |
 
-These are pure-derived Phase E composites — implementation is a `_calc_*` function in `compute_macro_market.py` + a row in `macro_indicator_library.csv`. No new fetchers needed.
+Each row's `name` field in `macro_indicator_library.csv` explicitly states *headline / core / blend* so the regime-AA consumer can't confuse a headline-only gauge with the US headline+core blend (#155).
 
-**Two underlying-data fills** required first:
-- **JP PPI / Services PPI** — 2 missing inflation rows from the reference doc. Wire via e-Stat (`sources/estat.py` extension; both series exist on e-Stat).
-- **Inflation expectations integration** — `T5YIE`, `T10YIE`, `T5YIFR`, `MICH` are already in `macro_economic_hist.csv` but not surfaced as Phase E indicators. Surface as `US_INFEXP1` (composite) so the regime model can use them.
+**§3.1.3 follow-up — source core inflation series for UK / EA / JP / CN.** Only the US blend includes core (via FRED `PCEPILFE`); the other four `*_INFL1` indicators are headline-only because we don't yet have core series in the hist for those regions. Target series to wire into `macro_library_*.csv`:
+
+| Region | Target series | Likely source | Notes |
+|---|---|---|---|
+| UK | ONS CPI excluding energy, food, alcohol & tobacco (CDID `D7G7`) | ONS Time Series API (new T2 module `sources/ons.py` — Stage C delivers this anyway) | The BoE-watched UK core measure |
+| EA | Eurostat HICP, all-items excluding energy & unprocessed food (`prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20`) | DB.nomics Eurostat | Standard ECB "core" definition |
+| JP | Japan CPI excluding fresh food (the BoJ-watched "core CPI") | e-Stat extension (`sources/estat.py`) or FRED `JPNCPICEUNXFFMS` if mirrored | The BoJ's actual policy target |
+| CN | China NBS Core CPI (excluding food and energy) | DB.nomics if available, else direct NBS scrape | NBS publishes monthly; aggregator coverage patchy |
+
+Once those land, fold them into the per-region `*_INFL1` calculators as a second `Core CPI YoY` component (averaged with the headline) so each regional gauge becomes a headline + core blend like `US_INFL1` already is.
+
+**Other underlying-data fills** required:
+
+- **JP PPI / Services PPI** — 2 missing inflation rows from the reference doc. Wire via e-Stat (`sources/estat.py` extension; both series exist on e-Stat). Still outstanding.
+- ✅ ~~**Inflation expectations integration** — `T5YIE`, `T10YIE`, `T5YIFR`, `MICH` … Surface as `US_INFEXP1` (composite) so the regime model can use them.~~ Done 2026-05-28 (#152).
 
 #### 3.1.4 GDP Now indices and proxies
 
@@ -431,7 +449,7 @@ Outstanding-work-only acceptance criteria for §3.1 closure:
 - ✅ Stage D — 4 T2 modules built (BoE / ECB / BoJ / e-Stat) and exercising in CI without regression.
 - ✅ Stage F — community-ticker review shipped (`manuals/community_datasets_review.md`); 14 ETF additions in `index_library.csv`.
 - ⏳ **Stage C** — UK growth column (0/8 → ≥6/8) via `sources/ons.py`; JP growth column (3/7 → ≥6/7) via `sources/estat.py` extension. Region scorecard in `manuals/macro_market_indicators_coverage.xlsx` updated.
-- ⏳ **Growth + Inflation focus (§3.1.3)** — 5 new per-region inflation regime composites (`US_INFL1` / `UK_INFL1` / `EU_INFL1` / `JP_INFL1` / `CN_INFL1`) live in `macro_indicator_library.csv`; JP PPI and Services PPI rows added via e-Stat.
+- ✅ **Growth + Inflation focus (§3.1.3)** — 5 new per-region inflation regime composites (`US_INFL1` / `UK_INFL1` / `EU_INFL1` / `JP_INFL1` / `CN_INFL1`) + `US_INFEXP1` shipped 2026-05-28 (#152). **Follow-up**: source core CPI series for UK/EA/JP/CN to upgrade those gauges to headline+core blends like `US_INFL1`; JP PPI / Services PPI also outstanding via e-Stat.
 - ⏳ **GDP Now (§3.1.4)** — `US_GDPNOW1` + `US_NOWCAST1` via Atlanta Fed / NY Fed; `UK_NOWCAST1` via ONS monthly GDP; `EU_NOWCAST1` + `JP_NOWCAST1` as Phase E composites.
 - ⏳ **Stage E** — survey deep-dive: per-country target list distilled from the demand doc; rows added via existing modules where free; documented gaps where proprietary.
 - ⏳ **Stage G** — closeout: refresh `data/source_fallbacks.csv`, refresh `manuals/macro_market_indicators_coverage.xlsx`, archive working notes; this section enters `Status: Done` posture.
@@ -661,7 +679,9 @@ Decision deferred — it interacts with the Stage A preservation contract and ne
 
 **Priority:** Medium-High — closes the daily long-run gold gap for the regime AA `commodity_return` pillar. Surfaced by regime AA Phase 0c Step 3 verification (2026-05-08): FRED's LBMA gold AM and PM fix series (`GOLDAMGBD228NLBM`, `GOLDPMGBD228NLBM`) confirmed discontinued in 2017 when the LBMA changed methodology; no FRED replacement exists.
 
-**Status:** In progress (2026-05-09) — replumbed onto LBMA's own JSON feed at `prices.lbma.org.uk` after the initial Nasdaq Data Link wiring (2026-05-08) hit a 403 on `LBMA/GOLD` (dataset moved to NDL's paid tier). New module `sources/lbma.py` + library `data/macro_library_lbma.csv` carries `GOLD_USD_PM`; the NDL scaffolding (`sources/nasdaq_data_link.py`, empty `data/macro_library_nasdaqdl.csv`, `requirements.txt` line, `NASDAQ_DATA_LINK_API_KEY` workflow secret) is retained for any future free NDL dataset. Awaiting first daily-run validation. Filed under the §3.7-style protocol (the master plan's portfolio / commodity work surfaces a need; the request comes back here as a §3 entry).
+**Status:** ✅ **Done 2026-05-28** for gold; multi-commodity extension outstanding (see §3.9.1 below). Replumbed onto LBMA's own JSON feed at `prices.lbma.org.uk` after the initial Nasdaq Data Link wiring (2026-05-08) hit a 403 on `LBMA/GOLD` (dataset moved to NDL's paid tier). Module `sources/lbma.py` + library `data/macro_library_lbma.csv` carries `GOLD_USD_PM` (3,035 weekly points 1968-04-05 → present); Phase E `GLOBAL_GOLD1` indicator live with `safe-haven-bid` regime. The NDL scaffolding (`sources/nasdaq_data_link.py`, empty `data/macro_library_nasdaqdl.csv`, `requirements.txt` line, `NASDAQ_DATA_LINK_API_KEY` workflow secret) is retained for any future free NDL dataset.
+
+> **Important note on indicator-spine cap.** `GOLD_USD_PM` reaches 1968-04-05 in the **raw layer** (`macro_economic_hist.csv`), but `GLOBAL_GOLD1` in `macro_market.csv` / `macro_market_hist.csv` and the explorer **starts only 2000-01-07**, because `compute_macro_market.py::HIST_START = "2000-01-01"` truncates every Phase E indicator. For the regime AA `commodity_return` pillar (the whole reason §3.9 fetched 1968+), consume the **raw `GOLD_USD_PM` column** directly from the hist rather than the capped indicator. Lowering `HIST_START` would extend all 99 indicators back further but has a large blast radius (Sheets cell budget, 156w z-score window assumptions, every indicator's input availability) — do not change casually.
 
 **Driver:** `../regime-aa` Phase 0c — the per-region availability matrix (test plan §4) needs a daily long-run gold series. LBMA publishes the canonical fix daily back to 1968 via the same auction process FRED used to mirror.
 
@@ -674,7 +694,7 @@ Decision deferred — it interacts with the Stage A preservation contract and ne
 - Register in `data/source_fallbacks.csv` as T0 for `GOLD_USD_PM`; T1 = Nasdaq Data Link `LBMA/GOLD` (now paid, kept as documented fallback rather than runtime path).
 - The Nasdaq Data Link scaffolding from the 2026-05-08 attempt remains in place but with an empty library — it stays available for any future free NDL dataset.
 
-**Future expansion candidates** (deferred until the regime AA work surfaces explicit need): LBMA `gold_am`, `silver`, `platinum_am`/`pm`, `palladium_am`/`pm` — same module, additional rows in `macro_library_lbma.csv`.
+**Future expansion** — see **§3.9.1 below** for the full multi-commodity long-run plan (silver / copper / aluminium / oil / nat gas / agricultural softs / livestock).
 
 **Acceptance:**
 
@@ -685,7 +705,111 @@ Decision deferred — it interacts with the Stage A preservation contract and ne
 
 **Related cross-repo work** (in `regime-aa`, not this repo): the Phase 0c verifier `src/data_ingestion/verify_fred_us_native.py` documents the FRED gold gap. Original commit `1256ab2` (on the `feature/verify-fred-us-native` branch) pointed at NDL `LBMA/GOLD` as the long-run path; that pointer should be updated to LBMA direct now that NDL is paid.
 
-> **NOTE — gold history reaches 1968 in the raw layer but is capped at 2000 in the indicator (check before regime AA consumes it).** Verified 2026-05-27: `GOLD_USD_PM` in `macro_economic_hist.csv` runs **1968-04-05 → present** (3,035 weekly points) — the long-run capture works. But the `GLOBAL_GOLD1` Phase E composite (and everything in `macro_market.csv` / `macro_market_hist.csv`, and the dashboard) starts only at **2000-01-07**, because `compute_macro_market.py` `HIST_START = "2000-01-01"` truncates *every* indicator. So the 1968–2000 gold history exists but isn't surfaced through the indicator. For the regime AA `commodity_return` pillar — the whole reason §3.9 fetched 1968+ gold — either (a) **consume the raw `GOLD_USD_PM` column from `macro_economic_hist.csv` directly** (simplest; full history already there), or (b) lower `HIST_START` / compute long-history indicators on an extended spine (large blast radius: touches all 93 indicators, the Sheets cell budget, and 156-week z-score windows — do not change casually). Recommend (a). The comp-pipeline `GC=F` futures only reach 2000-09 (yfinance limit) regardless.
+#### 3.9.1 Multi-commodity long-run extension (regime-AA-driven follow-up)
+
+**Priority:** Medium-High — extends §3.9 from gold-only to the broader `commodity_return` set the regime AA work needs.
+
+**Status:** Not started. Outstanding.
+
+**Targets** (all should reach ≥ 1990, most ≥ 1980 or earlier):
+
+| Commodity | Likely source | Cadence | Notes |
+|---|---|---|---|
+| **Silver** | LBMA `silver.json` (extend `sources/lbma.py`) | Daily | Same module + a row in `macro_library_lbma.csv`. Back to ~1968 |
+| **Platinum** | LBMA `platinum_pm.json` / `platinum_am.json` | Daily | Same module + rows |
+| **Palladium** | LBMA `palladium_pm.json` / `palladium_am.json` | Daily | Same module + rows |
+| **Copper** | FRED `PCOPPUSDM` (IMF Primary Commodity Prices mirror) | Monthly | Just rows in `macro_library_fred.csv` |
+| **Aluminium** | FRED `PALUMUSDM` | Monthly | Same |
+| **Iron ore** | FRED `PIORECRUSDM` (already wired as a comp-pipeline FRED rate) — promote to indicator-library Phase E | Monthly | No new fetch needed |
+| **Brent / WTI crude oil** | FRED `WTISPLC` (WTI spot, 1986+); for Brent monthly, FRED `POILBREUSDM` | Daily / Monthly | Mix of daily WTI + monthly Brent works for regime use |
+| **Natural gas** | FRED `PNGASUSUSDM` (Henry Hub) | Monthly | |
+| **Wheat** | FRED `PWHEAMTUSDM` | Monthly | |
+| **Corn** | FRED `PMAIZMTUSDM` | Monthly | |
+| **Soybeans** | FRED `PSOYBUSDM` | Monthly | |
+| **Coffee (Arabica)** | FRED `PCOFFOTMUSDM` | Monthly | |
+| **Sugar** | FRED `PSUGAISAUSDM` | Monthly | |
+| **Cotton** | FRED `PCOTTINDUSDM` | Monthly | |
+| **Beef / Cattle** | FRED `PBEEFUSDM` (IMF mirror) | Monthly | |
+| **Lean hogs / Swine** | FRED `PPORKUSDM` (IMF mirror) | Monthly | |
+
+**Why FRED for most of them:** the IMF Primary Commodity Prices System publishes the canonical long-run monthly series (~1980+ in most cases, some longer); FRED mirrors them under stable `P*USDM` codes. We already have FRED wired and the per-row pattern works — net work is **CSV rows in `data/macro_library_fred.csv`**, no new module.
+
+**Why LBMA for the precious metals:** `sources/lbma.py` already exists; extending it to silver / platinum / palladium is a few CSV rows (existing `gold_pm` + new `silver`, `platinum_pm`, `palladium_pm`, `gold_am` etc.) — the parser handles the same JSON shape across all of them. Daily granularity preserved.
+
+**Scope of work:**
+
+1. Extend `data/macro_library_lbma.csv`: add `silver`, `platinum_pm`, `palladium_pm` (+ optionally the AM variants for symmetry). 3–6 rows.
+2. Extend `data/macro_library_fred.csv`: add the 13 FRED Primary Commodity Prices rows above. Each row needs canonical `col` names (e.g. `COPPER_USD`, `BRENT_USD`, `WHEAT_USD`).
+3. Add Phase E composites if the regime work wants them (`GLOBAL_OIL1`, `GLOBAL_COPPER1`, etc.) — optional; the regime AA consumer can also read the raw `*_USD` columns directly (as recommended for gold).
+4. Update `data/source_fallbacks.csv` with T0 entries for each commodity.
+5. Verify the comp-pipeline `GC=F` / `SI=F` / etc. yfinance futures don't conflict semantically — they're separate (futures vs spot/index) and serve a different role (daily, 2000+ only); these new long-run series sit alongside.
+
+**Cross-reference:** `../longrun_assetclass_data_sources.md` lists IMF Primary Commodity Prices among the long-run sources Phase 0 of the master plan needs.
+
+---
+
+### 3.10 ifo World Economic Survey — Euro Area historical backfill
+
+**Priority:** Medium — adds a long-run quarterly Euro-area sentiment series the regime AA work can use as a long-history Growth-axis input.
+
+**Status:** Not started.
+
+**Background.** During the 2026-05-27 ifo diagnostic (`scripts/ifo_probe.py` Test 1, the known-good control) we confirmed ifo serves a standalone workbook **"ifo Economic Climate for the Euro Area (1990–2019)"** at:
+
+```
+https://www.ifo.de/sites/default/files/2019-10/wes-euro-e-2019q4.xlsx
+```
+
+This is the **WES-Euro** workbook — the Euro-area subset of ifo's World Economic Survey (a quarterly survey of ~1,000 economists across ~120 countries, producing the World Economic Climate index). Different dataset from the monthly Geschäftsklima we already capture as `DE_IFO*` — WES is quarterly, cross-country (here: Euro-area aggregate), and the time-series spans 1990Q1 → 2019Q4 in this workbook.
+
+**Important caveat:** the file name and the upload path (`2019-10/`) indicate the workbook ended at **2019Q4** — ifo presumably folded the standalone WES-Euro publication into the main WES product after that point. So this is a **historical backfill** (1990Q1–2019Q4), not a live source. To extend beyond 2019 the operator needs to identify and wire ifo's current WES publication path (open question).
+
+**Scope:**
+
+1. **Backfill, one-time:** add a new fetcher target — a new mini-source or an extension of `sources/ifo.py` — that downloads the 2019Q4 workbook, parses the quarterly Euro-area Economic Climate index series (and the Situation / Expectations sub-components if cleanly available), and emits them as columns in `macro_economic_hist.csv`. Names: `EA_WES_CLIMATE`, optionally `EA_WES_SIT` / `EA_WES_EXP`. The historical workbook is static so this is a one-shot fetch — once the values are committed, no need to re-fetch unless the file ever updates.
+2. **Library row** in `data/macro_library_ifo.csv` (or a new `data/macro_library_ifo_wes.csv` if the parser shape diverges enough). Series ID `wes-euro-e-2019q4` (or generic `wes_euro_climate`), `col = EA_WES_CLIMATE`, frequency Quarterly, country EA19, concept Sentiment / Survey, cycle L.
+3. **Source-of-truth caveat documented:** mark in the row's `notes` that this series **ends 2019-Q4** with no current update path; future runs should detect and respect that (don't trigger a staleness alarm — extend the row's `freshness_override_days` or use a "frozen" flag).
+4. **Open follow-up:** identify and wire the **current** WES-Euro publication (post-2019). Likely paths to investigate: a different ifo URL (the modern WES might publish quarterly as part of the main WES report — PDF/Excel attachment), or via DB.nomics if any aggregator picked it up (probe shows DB.nomics has no `ifo` provider though, so likely a direct ifo.de path), or via the European Commission's Joint Harmonised Programme (which Eurostat publishes — `Eurostat/ei_bssi_*` already in our DB.nomics layer covers some of the same ground). Document the result in a §3.10 follow-up.
+
+**Acceptance:**
+
+- `EA_WES_CLIMATE` (and any sub-component columns) populated in `macro_economic_hist.csv` for 1990Q1 → 2019Q4 (≈120 quarterly points).
+- A row in the relevant `macro_library_*.csv` registers the series per §0.
+- The frozen-end-date is documented in the row's `notes` AND, ideally, the row carries a `freshness_override_days` large enough to suppress audit staleness on the permanently-stuck-at-2019 series — OR the staleness check is extended to recognise an explicit "frozen" flag.
+- Cross-reference from §1 Known Data Gaps acknowledging the post-2019 update path is open.
+
+### 3.11 Indicator Explorer integration audit
+
+**Priority:** Medium — documents the integration contract so future indicator additions surface correctly in the explorer + dashboard. Surfaced when the 2026-05-28 inflation composites didn't appear in the explorer (cause: timing — the daily run that would have computed them hadn't yet executed; explorer is correctly CSV/hist-driven).
+
+**Status:** Not started.
+
+**Context.** `docs/build_html.py` builds the explorer by:
+
+1. Reading **`data/macro_indicator_library.csv`** for metadata (group, sub_group, concept, subcategory, descriptions, regime classifications). The `_load_indicator_library()` helper at the top of the file.
+2. Reading **`data/macro_market_hist.csv`** for time-series data. It discovers `present_ids` by scanning hist column names ending in `_raw` / `_zscore` / `_regime` / `_fwd_regime` (lines 126–132 of `build_macro_market`).
+
+**The contract that makes a new indicator appear:**
+
+- (a) A row in `macro_indicator_library.csv` with a unique `id`, populated `group` / `sub_group` / `concept` / `subcategory` (otherwise it lands in the `ungrouped` bucket).
+- (b) A calculator registered in one of the `_*_CALCULATORS` dicts in `compute_macro_market.py`.
+- (c) An entry in `REGIME_RULES`.
+- (d) A **completed daily run after (a)/(b)/(c) merged** — without this, `macro_market_hist.csv` lacks the `<id>_raw`/`_zscore`/etc. columns and the explorer's `present_ids` discovery skips the indicator.
+
+If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the easiest to overlook — the merge succeeds but the indicator is invisible until the next pipeline run.
+
+**Scope of the audit task:**
+
+1. **Document the four-step contract** in `manuals/technical_manual.md` §9.7 (`docs/build_html.py`) so future indicator adds have a checklist.
+2. **Add a pre-flight check** to either the daily audit (`data_audit.py`) or `library_sync.py`: for every indicator in `macro_indicator_library.csv`, verify the corresponding `<id>_raw` column exists in `macro_market_hist.csv` (after the daily run). Surface any indicator that's in the library but not in the hist as a new audit finding. Same shape as the existing `missing_columns` / `missing_calculators` / `registry_drift` checks under Section B.
+3. **Documented retroactive verification** — once today's daily run completes (or a manual `workflow_dispatch` is triggered), confirm the 6 new inflation composites (`US/UK/EU/JP/CN_INFL1`, `US_INFEXP1`) appear in the explorer's Macro Market Indicators tree under their groups (US, UK, Eurozone, Japan, Asia) with cycle L tags.
+4. **Optional: explorer dry-run mode.** A flag to run `docs/build_html.py` against the current state and emit a manifest of indicators it would render (without writing HTML) — useful for CI to validate that any committed change to `macro_indicator_library.csv` will surface as expected.
+
+**Acceptance:**
+
+- Tech manual §9.7 explains the four-step contract.
+- The audit / library_sync gains a check that flags any `macro_indicator_library` row without a matching `<id>_raw` column in `macro_market_hist.csv`, with a remediation hint ("trigger an `update_data` run").
+- Manual verification: the 6 new inflation composites + `GLOBAL_GOLD1` appear in `docs/indicator_explorer.html` under their expected nodes after the next daily run.
 
 ---
 
