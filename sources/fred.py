@@ -92,7 +92,10 @@ def load_us_library_as_list() -> list[dict]:
         {
             "source":       "FRED",
             "source_id":    row["series_id"].strip(),
-            "col":          row["series_id"].strip(),
+            # Respect an explicit canonical `col` when present (e.g. USA_CPI),
+            # so an ultimate source (BLS) can share the column; fall back to
+            # the FRED series id for the many US rows that don't set one.
+            "col":          row["col"].strip() or row["series_id"].strip(),
             "name":         row["name"].strip(),
             "country":      row["country"].strip(),
             "category":     row["category"].strip(),

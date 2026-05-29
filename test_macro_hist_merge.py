@@ -113,10 +113,10 @@ class HistMergeFreshnessTest(unittest.TestCase):
         fred = self._series(["2024-02-09", "2024-02-16"], [3.0, 3.0])
         bls = self._series(["2024-02-09", "2024-02-16"], [3.1, 3.1])
         _, prov = fme.build_hist_df([
-            _indic("FRED", "CPIAUCSL", fred, country="USA"),
-            _indic("BLS", "CPIAUCSL", bls, country="USA"),
+            _indic("FRED", "USA_CPI_INDEX", fred, country="USA"),
+            _indic("BLS", "USA_CPI_INDEX", bls, country="USA"),
         ])
-        self.assertEqual(prov["CPIAUCSL"]["source"], "BLS")
+        self.assertEqual(prov["USA_CPI_INDEX"]["source"], "BLS")
 
     def test_tie_two_aggregators_keeps_first(self):
         # No primary involved → tie still keeps the first-registered source.
@@ -134,10 +134,10 @@ class HistMergeFreshnessTest(unittest.TestCase):
         fred = self._series(["2024-02-09", "2024-02-16"], [3.0, 3.0])
         bls = self._series(["2024-01-05"], [2.9])
         _, prov = fme.build_hist_df([
-            _indic("BLS", "CPIAUCSL", bls, country="USA"),
-            _indic("FRED", "CPIAUCSL", fred, country="USA"),
+            _indic("BLS", "USA_CPI_INDEX", bls, country="USA"),
+            _indic("FRED", "USA_CPI_INDEX", fred, country="USA"),
         ])
-        self.assertEqual(prov["CPIAUCSL"]["source"], "FRED")
+        self.assertEqual(prov["USA_CPI_INDEX"]["source"], "FRED")
 
     def test_metadata_reflects_winner(self):
         # The Source / Series ID metadata rows must describe the *winning*

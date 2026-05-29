@@ -28,8 +28,8 @@ US,26,Real Personal Consumption Expenditures,Consumer / BEA,~68% of GDP; tracks 
 US,27,Manufacturing & Trade Sales,Output / Census,CEI component covering wholesale + retail + manufacturing.,C,Full,FRED: CMRMTSPL,FRED CMRMTSPL (monthly),Stage 2 — added 2026-04-23
 US,28,Chicago Fed National Activity Index (CFNAI),Composite / Chicago Fed,Weighted average of 85 monthly indicators; 3-month MA <-0.7 signals recession.,C,Full,FRED: CFNAI,FRED CFNAI (monthly),Stage 2 — added 2026-04-23
 US,29,GDPNow / Nowcasts (Atlanta & NY Fed),Composite / Fed,Real-time GDP tracker updated with each data release.,C,None,,"Atlanta Fed API (JSON, free)","NEW_SOURCE:ATLANTA_FED — snapshot only, append through time; BETTER_SOURCE_PREFERRED"
-US,30,Unemployment Rate,Labour / BLS,Peaks several months after recessions end; Sahm Rule (0.5pp rise in 3m MA) flags recession.,G,Full,FRED: UNRATE → US_JOBS3,FRED (historic),
-US,31,Core CPI (YoY),Prices / BLS,Inflation lags cycle by 2–4 quarters; guides Fed policy.,G,Full,FRED: CPILFESL,FRED (historic),
+US,30,Unemployment Rate,Labour / BLS,Peaks several months after recessions end; Sahm Rule (0.5pp rise in 3m MA) flags recession.,G,Full,BLS (primary) / FRED (fallback): USA_UNEMPLOYMENT → US_JOBS3,BLS direct + FRED,
+US,31,Core CPI (YoY),Prices / BLS,Inflation lags cycle by 2–4 quarters; guides Fed policy.,G,Full,BLS (primary) / FRED (fallback): USA_CORE_CPI_INDEX,BLS direct + FRED,
 US,32,Core PCE Deflator,Prices / BEA,Fed's preferred inflation gauge; lagging indicator.,G,Full,FRED: PCEPILFE,FRED (historic),
 US,33,Unit Labour Costs,Labour / BLS,Wage inflation measure; turns after cycle.,G,Full,FRED: ULCNFB,FRED ULCNFB (quarterly),Stage 2 — added 2026-04-23
 US,34,Average Duration of Unemployment,Labour / BLS,LAG component; extends well into recoveries.,G,Full,FRED: UEMPMEAN,FRED UEMPMEAN (monthly),Stage 2 — added 2026-04-23
