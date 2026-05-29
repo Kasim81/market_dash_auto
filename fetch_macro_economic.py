@@ -47,6 +47,7 @@ from sources import ons as ons_src
 from sources import bundesbank as bundesbank_src
 from sources import abs as abs_src
 from sources import istat as istat_src
+from sources import bls as bls_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -122,6 +123,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(bundesbank_src.load_library())
     indicators.extend(abs_src.load_library())
     indicators.extend(istat_src.load_library())
+    indicators.extend(bls_src.load_library())
     return indicators
 
 
@@ -211,6 +213,59 @@ def _make_row(
 
 def _blank_row(indic: dict, country: str, col: str, fetched_at: str) -> dict:
     return _make_row(indic, country, col, None, None, None, fetched_at)
+
+
+# ---------------------------------------------------------------------------
+# SOURCE SELECTION (single canonical column per indicator)
+# ---------------------------------------------------------------------------
+# We deliberately do NOT create parallel vendor-suffixed columns when more
+# than one source can supply the same series. Instead every source targets
+# the same canonical `col`, and a single winner populates it:
+#   1. Data quality first — the source whose series carries the most recent
+#      observation wins (higher cadence ⇒ fresher ⇒ wins automatically).
+#   2. On a tie (equal latest period), the *ultimate* / primary source
+#      (national statistics office, central bank, exchange) is preferred over
+#      an aggregator that merely republishes it (FRED, OECD, World Bank, IMF,
+#      DB.nomics, Nasdaq Data Link).
+# Aggregators stay registered so they transparently back-fill when the
+# primary source is stale or unavailable — preference, not deletion.
+
+PRIMARY_SOURCES = {
+    "BoC", "StatCan", "ONS", "Bundesbank", "ABS", "ISTAT", "BLS",
+    "BoE", "ECB", "BoJ", "e-Stat", "ifo", "LBMA",
+}
+
+
+def _source_rank(source: str) -> int:
+    """Tie-break rank: 1 for ultimate/primary sources, 0 for aggregators."""
+    return 1 if source in PRIMARY_SOURCES else 0
+
+
+def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
+    """Collapse rows that share a (Country, Col) to a single winning source.
+
+    Winner = (has a value) > (most recent Last Period) > (primary over
+    aggregator). Group order follows first appearance so output stays stable.
+    """
+    order: list[tuple[str, str]] = []
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for r in rows:
+        key = (r.get("Country", ""), r.get("Col", ""))
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(r)
+
+    def _key(r: dict):
+        has_val = 0 if r.get("Latest Value") is None else 1
+        last_period = r.get("Last Period") or ""
+        return (has_val, last_period, _source_rank(r.get("Source", "")))
+
+    out: list[dict] = []
+    for key in order:
+        grp = groups[key]
+        out.append(grp[0] if len(grp) == 1 else max(grp, key=_key))
+    return out
 
 
 # -- FRED US snapshot --
@@ -473,6 +528,26 @@ def _fetch_istat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
+# -- BLS snapshot --
+
+BLS_DELAY = 0.5  # seconds between BLS API calls
+
+
+def _fetch_bls_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = bls_src.fetch_series_as_pandas(indic["source_id"], recent=True)
+    time.sleep(BLS_DELAY)
+    if s is None or s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    s = s.dropna()
+    if s.empty:
+        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    latest = float(s.iloc[-1])
+    prior = float(s.iloc[-2]) if len(s) >= 2 else None
+    last_period = s.index[-1].strftime("%Y-%m-%d")
+    return [_make_row(indic, indic["country"], indic["col"],
+                      latest, prior, last_period, fetched_at)]
+
+
 # -- BoJ Time-Series Data Search snapshot --
 
 BOJ_DELAY = 0.6  # seconds between BoJ API calls
@@ -635,6 +710,8 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_abs_snapshot(indic, fetched_at)
             elif src == "ISTAT":
                 got = _fetch_istat_snapshot(indic, fetched_at)
+            elif src == "BLS":
+                got = _fetch_bls_snapshot(indic, fetched_at)
             elif src == "e-Stat":
                 got = _fetch_estat_snapshot(indic, fetched_at)
             elif src == "Nasdaq Data Link":
@@ -655,6 +732,14 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
         except Exception as e:
             print(f"  [ifo] snapshot batch failed: {e}")
             rows.extend(_blank_row(i, i["country"], i["col"], fetched_at) for i in ifo_indicators)
+
+    # One canonical row per (Country, Col): drop duplicate sources, keeping the
+    # freshest / ultimate-source winner (see _dedupe_snapshot_rows).
+    before = len(rows)
+    rows = _dedupe_snapshot_rows(rows)
+    if before != len(rows):
+        print(f"  snapshot: collapsed {before} → {len(rows)} rows "
+              f"(deduped {before - len(rows)} aggregator/primary overlaps)")
 
     for i, row in enumerate(rows, start=1):
         row["row_id"] = i
@@ -845,6 +930,16 @@ def _fetch_istat_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
+# -- BLS --
+
+def _fetch_bls_history(indic: dict) -> dict[str, pd.Series]:
+    s = bls_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(BLS_DELAY)
+    if s is None or s.empty:
+        return {}
+    return {indic["col"]: s}
+
+
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -964,6 +1059,8 @@ def _history_for_indicator(
         return _fetch_abs_history(indic)
     if src == "ISTAT":
         return _fetch_istat_history(indic)
+    if src == "BLS":
+        return _fetch_bls_history(indic)
     if src == "e-Stat":
         return _fetch_estat_history(indic)
     if src == "Nasdaq Data Link":
@@ -1019,9 +1116,19 @@ def build_hist_df(
 
             cur_last = last_obs[col_name]
             cur_src = provenance[col_name]["source"]
-            new_wins = pd.notna(new_last) and (
+            # Data quality first: the source with the most recent observation
+            # wins (higher cadence ⇒ fresher). On a tie (equal latest period),
+            # prefer the ultimate/primary source over an aggregator.
+            fresher = pd.notna(new_last) and (
                 pd.isna(cur_last) or new_last > cur_last
             )
+            tie = (
+                pd.notna(new_last) and pd.notna(cur_last) and new_last == cur_last
+            )
+            tie_to_primary = tie and (
+                _source_rank(indic["source"]) > _source_rank(cur_src)
+            )
+            new_wins = fresher or tie_to_primary
             cur_str = cur_last.date().isoformat() if pd.notna(cur_last) else "NaT"
             new_str = new_last.date().isoformat() if pd.notna(new_last) else "NaT"
             if new_wins:
