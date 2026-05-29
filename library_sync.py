@@ -152,6 +152,7 @@ MACRO_LIBS = {
     "bundesbank": DATA / "macro_library_bundesbank.csv",
     "abs":       DATA / "macro_library_abs.csv",
     "istat":     DATA / "macro_library_istat.csv",
+    "bls":       DATA / "macro_library_bls.csv",
 }
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
@@ -171,7 +172,7 @@ def _macro_econ_expected() -> set[str]:
     # ECB, BoJ, e-Stat, Nasdaq DL, LBMA, plus the PR1 keyless adapters
     # (BoC, StatCan, ONS, Bundesbank, ABS, ISTAT).
     for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma",
-                "boc", "statcan", "ons", "bundesbank", "abs", "istat"):
+                "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls"):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue

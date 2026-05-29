@@ -106,6 +106,39 @@ class HistMergeFreshnessTest(unittest.TestCase):
         ])
         self.assertEqual(prov["X"]["source"], "FRED")
 
+    def test_tie_prefers_primary_over_aggregator(self):
+        # Equal latest observation, but one source is the ultimate/primary
+        # vendor (BLS) and the other an aggregator that republishes it (FRED).
+        # The primary must win even though the aggregator registered first.
+        fred = self._series(["2024-02-09", "2024-02-16"], [3.0, 3.0])
+        bls = self._series(["2024-02-09", "2024-02-16"], [3.1, 3.1])
+        _, prov = fme.build_hist_df([
+            _indic("FRED", "USA_CPI_INDEX", fred, country="USA"),
+            _indic("BLS", "USA_CPI_INDEX", bls, country="USA"),
+        ])
+        self.assertEqual(prov["USA_CPI_INDEX"]["source"], "BLS")
+
+    def test_tie_two_aggregators_keeps_first(self):
+        # No primary involved → tie still keeps the first-registered source.
+        a = self._series(["2024-02-16"], [1.0])
+        b = self._series(["2024-02-16"], [2.0])
+        _, prov = fme.build_hist_df([
+            _indic("FRED", "Y", a),
+            _indic("World Bank", "Y", b),
+        ])
+        self.assertEqual(prov["Y"]["source"], "FRED")
+
+    def test_fresher_aggregator_still_beats_stale_primary(self):
+        # Data quality (freshness) is the FIRST criterion: a fresher aggregator
+        # beats a stale primary. (Primary preference only breaks exact ties.)
+        fred = self._series(["2024-02-09", "2024-02-16"], [3.0, 3.0])
+        bls = self._series(["2024-01-05"], [2.9])
+        _, prov = fme.build_hist_df([
+            _indic("BLS", "USA_CPI_INDEX", bls, country="USA"),
+            _indic("FRED", "USA_CPI_INDEX", fred, country="USA"),
+        ])
+        self.assertEqual(prov["USA_CPI_INDEX"]["source"], "FRED")
+
     def test_metadata_reflects_winner(self):
         # The Source / Series ID metadata rows must describe the *winning*
         # source, not whatever source loaded last (the prior bug).

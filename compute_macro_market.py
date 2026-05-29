@@ -1046,10 +1046,10 @@ def _calc_US_JOBS1(mu, **_):
 def _calc_US_JOBS3(mu, **_):
     """
     Labour market composite z-score.
-    Components: UNRATE (inverted), PAYEMS YoY, IC4WSA YoY (inverted).
+    Components: USA_UNEMPLOYMENT (inverted), PAYEMS YoY, IC4WSA YoY (inverted).
     Equal-weight average of the three rolling z-scores.
     """
-    unrate  = _to_weekly_friday(_get_col(mu, "UNRATE"))
+    unrate  = _to_weekly_friday(_get_col(mu, "USA_UNEMPLOYMENT"))
     payems  = _to_weekly_friday(_get_col(mu, "PAYEMS"))
     claims  = _to_weekly_friday(_get_col(mu, "IC4WSA"))
 

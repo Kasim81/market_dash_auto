@@ -5,13 +5,13 @@ M2SL,,US M2 Money Supply,Growth,Money Supply,Billions USD (SA),Monthly,YoY growt
 PERMIT,,US Building Permits (SAAR),Growth,Leading Indicators,Thousands of Units (SAAR),Monthly,Leads housing starts 1-2m; YoY negative = construction contraction,50,USA,Housing,L,
 IC4WSA,,US Initial Jobless Claims 4-Week Average,Growth,Labour Market,Thousands of Persons (SA),Weekly,Sustained rise above 300k signals labour market deterioration,60,USA,Labour,L,
 PAYEMS,,US Nonfarm Payrolls MoM Change,Growth,Labour Market,Thousands of Persons (SA),Monthly,3m avg >200k = solid expansion; <100k = slowdown; negative = recession,70,USA,Labour,C,75
-UNRATE,,US Unemployment Rate,Growth,Labour Market,Percent (SA),Monthly,Sahm Rule: 0.5pp rise in 3m average vs prior 12m low = recession signal,80,USA,Labour,G,75
+UNRATE,USA_UNEMPLOYMENT,US Unemployment Rate,Growth,Labour Market,Percent (SA),Monthly,Sahm Rule: 0.5pp rise in 3m average vs prior 12m low = recession signal,80,USA,Labour,G,75
 INDPRO,,US Industrial Production Index,Growth,Real Activity,Index 2017=100 (SA),Monthly,YoY negative = recession signal; companion to manufacturing PMI,90,USA,Growth,C,75
 RSXFS,,US Retail Sales ex-Autos MoM,Growth,Real Activity,Millions USD (SA),Monthly,Consumer spending momentum; YoY real negative = recessionary signal,100,USA,Consumer,C,75
 DRTSCILM,,US SLOOS Net % Banks Tightening C&I Lending Standards (Large Firms),Growth,Credit Cycle,Net Percent (SA),Quarterly,Net tightening >20% has preceded every recession; 6-12m lead time,110,USA,Credit / Spreads,L,
 NFCI,,Chicago Fed National Financial Conditions Index (NFCI),Financial Conditions,Composite,Index,Weekly,Negative = easier than avg; positive and rising = tightening; leads growth 3-6m,120,USA,Credit / Spreads,L,14
-CPIAUCSL,,US CPI Headline,Inflation,CPI,Index 1982-84=100 (SA),Monthly,Primary public inflation benchmark; >5% YoY = high-inflation regime,130,USA,Inflation,G,75
-CPILFESL,,US Core CPI (ex Food & Energy),Inflation,CPI,Index 1982-84=100 (SA),Monthly,Strips transitory commodity effects; sticky >3% = overheating signal,140,USA,Inflation,G,75
+CPIAUCSL,USA_CPI_INDEX,US CPI Headline,Inflation,CPI,Index 1982-84=100 (SA),Monthly,Primary public inflation benchmark; >5% YoY = high-inflation regime,130,USA,Inflation,G,75
+CPILFESL,USA_CORE_CPI_INDEX,US Core CPI (ex Food & Energy),Inflation,CPI,Index 1982-84=100 (SA),Monthly,Strips transitory commodity effects; sticky >3% = overheating signal,140,USA,Inflation,G,75
 PCEPILFE,,US Core PCE Deflator,Inflation,PCE,Index 2017=100 (SA),Monthly,Fed's preferred inflation measure; Fed 2% target refers to this series,150,USA,Inflation,G,90
 PPIACO,,US PPI All Commodities,Inflation,PPI,Index 1982=100 (NSA),Monthly,Leads CPI by 2-3m; acceleration = leading indicator of consumer price pressure,160,USA,Inflation,C,75
 T5YIE,,US TIPS 5Y Breakeven Inflation Rate,Inflation,Breakevens,Percent,Daily,Market-implied 5yr avg inflation; level >3% = inflation concern,170,USA,Inflation,L,
