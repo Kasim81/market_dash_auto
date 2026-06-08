@@ -193,7 +193,7 @@ S&P 500 Chemicals (Industry),Equity,Equity,Index,Equity Industry,North America,U
 S&P 500 Construction Materials,Equity,Equity,Index,Equity Industry,North America,United States,Equity Industry,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-151020,,,,,,,,2000-01-07,False
 S&P 500 Containers & Packaging,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-151030,,,,,,,,,False
 S&P 500 Metals & Mining (Indust,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-151040,,,,,,,,2000-01-07,False
-S&P 500 Paper & Forest Products (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-151050,,,,,,,,2015-12-18,False
+S&P 500 Paper & Forest Products (Industry),Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-151050,,,,,,,,2015-12-18,False
 S&P 500 Aerospace & Defense (In,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-201010,,,,,,,,2000-03-07,False
 S&P 500 Building Products (Indu,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-201020,,,,,,,,2000-02-29,False
 S&P 500 Construction & Engineer,Equity,Equity,Index,Equity Industry,North America,United States,,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-201030,,,,,,,,2000-02-29,False
