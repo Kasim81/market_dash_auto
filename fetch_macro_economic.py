@@ -50,7 +50,6 @@ from sources import istat as istat_src
 from sources import bls as bls_src
 from sources import insee as insee_src
 from sources import bdf as bdf_src
-from sources import mospi as mospi_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -129,7 +128,6 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(bls_src.load_library())
     indicators.extend(insee_src.load_library())
     indicators.extend(bdf_src.load_library())
-    indicators.extend(mospi_src.load_library())
     return indicators
 
 
@@ -239,7 +237,7 @@ def _blank_row(indic: dict, country: str, col: str, fetched_at: str) -> dict:
 PRIMARY_SOURCES = {
     "BoC", "StatCan", "ONS", "Bundesbank", "ABS", "ISTAT", "BLS",
     "BoE", "ECB", "BoJ", "e-Stat", "ifo", "LBMA",
-    "INSEE", "Banque de France", "MoSPI",
+    "INSEE", "Banque de France",
 }
 
 
@@ -555,14 +553,12 @@ def _fetch_bls_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
-# -- INSEE / Banque de France / MoSPI snapshots --
-# National statistical offices wired as PRIMARY sources for FRA / IND. Libraries
-# are empty until series are curated, so these dispatch paths are inert today;
-# each module no-ops gracefully until its API key is present.
+# -- INSEE / Banque de France snapshots --
+# National statistical offices wired as PRIMARY sources for FRA. INSEE is keyless
+# and curated; Banque de France no-ops gracefully until BDF_API_KEY is present.
 
 INSEE_DELAY = 0.5  # seconds between INSEE API calls
 BDF_DELAY   = 0.5  # seconds between Banque de France API calls
-MOSPI_DELAY = 0.5  # seconds between MoSPI (data.gov.in) API calls
 
 
 def _snapshot_from_series(s, indic: dict, fetched_at: str) -> list[dict]:
@@ -588,12 +584,6 @@ def _fetch_insee_snapshot(indic: dict, fetched_at: str) -> list[dict]:
 def _fetch_bdf_snapshot(indic: dict, fetched_at: str) -> list[dict]:
     s = bdf_src.fetch_series_as_pandas(indic["source_id"])
     time.sleep(BDF_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_mospi_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = mospi_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(MOSPI_DELAY)
     return _snapshot_from_series(s, indic, fetched_at)
 
 
@@ -765,8 +755,6 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_insee_snapshot(indic, fetched_at)
             elif src == "Banque de France":
                 got = _fetch_bdf_snapshot(indic, fetched_at)
-            elif src == "MoSPI":
-                got = _fetch_mospi_snapshot(indic, fetched_at)
             elif src == "e-Stat":
                 got = _fetch_estat_snapshot(indic, fetched_at)
             elif src == "Nasdaq Data Link":
@@ -1007,12 +995,6 @@ def _fetch_bdf_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s} if s is not None and not s.empty else {}
 
 
-def _fetch_mospi_history(indic: dict) -> dict[str, pd.Series]:
-    s = mospi_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(MOSPI_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -1138,8 +1120,6 @@ def _history_for_indicator(
         return _fetch_insee_history(indic)
     if src == "Banque de France":
         return _fetch_bdf_history(indic)
-    if src == "MoSPI":
-        return _fetch_mospi_history(indic)
     if src == "e-Stat":
         return _fetch_estat_history(indic)
     if src == "Nasdaq Data Link":

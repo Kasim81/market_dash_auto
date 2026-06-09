@@ -106,7 +106,13 @@ def fetch_series(
         return None
 
     url = f"{BDF_BASE}/{series_id}"
+    # Webstat sits behind an IBM API Connect gateway: client id (+ optional
+    # secret) sent as X-IBM-Client-* headers. The 401 body distinguishes
+    # "Invalid client id or secret", so we forward a secret when one is set.
     headers = {**_HEADERS, "X-IBM-Client-Id": key}
+    secret = os.environ.get("BDF_API_SECRET", "").strip()
+    if secret:
+        headers["X-IBM-Client-Secret"] = secret
     params = {"format": "sdmx-json"}
     for attempt in range(retries):
         try:
