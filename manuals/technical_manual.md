@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-04-28
+> Last updated: 2026-06-09
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-7 top-level Python modules (incl. `data_audit.py`) + 13-module `sources/` package + `docs/build_html.py` + `scripts/` utilities, totalling ~9,800 lines. Configuration: 12 input CSV libraries (1 instrument library + 10 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 data CSVs (one per active Sheets tab) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+8 top-level Python modules (incl. `data_audit.py`) + 22-module + 1 scaffolding-only `sources/` package + `docs/build_html.py` + `scripts/` utilities, totalling ~14,000 lines. Configuration: 23 input CSV libraries (1 instrument library + 20 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 data CSVs (one per active Sheets tab) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -89,7 +89,16 @@ market_dash_auto/
 │   ├── boj.py                         # Bank of Japan Time-Series API fetcher (320 lines)
 │   ├── estat.py                       # e-Stat (Japan Statistics Bureau) REST API fetcher (312 lines)
 │   ├── lbma.py                        # LBMA precious-metals JSON fetcher (prices.lbma.org.uk) — §3.9
-│   └── nasdaq_data_link.py            # Nasdaq Data Link scaffolding (empty after LBMA/GOLD went paid-tier — §3.9)
+│   ├── nasdaq_data_link.py            # Nasdaq Data Link scaffolding (empty after LBMA/GOLD went paid-tier — §3.9)
+│   ├── boc.py                         # Bank of Canada Valet API fetcher — keyless JSON (183 lines)
+│   ├── statcan.py                     # Statistics Canada WDS fetcher — keyless POST API (201 lines)
+│   ├── ons.py                         # ONS Zebedee /data API fetcher — keyless JSON (218 lines)
+│   ├── bundesbank.py                  # Deutsche Bundesbank SDMX-ML fetcher — keyless (218 lines)
+│   ├── abs.py                         # Australian Bureau of Statistics SDMX-CSV fetcher — keyless (206 lines)
+│   ├── istat.py                       # ISTAT (Italy) SDMX-CSV fetcher with vintage (EDITION) resolution (280 lines)
+│   ├── bls.py                         # US Bureau of Labor Statistics Public Data API fetcher — BLS_API_KEY optional (284 lines)
+│   ├── insee.py                       # INSEE BDM SDMX-ML fetcher — keyless + optional INSEE_API_KEY (231 lines)
+│   └── bdf.py                         # Banque de France Webstat SDMX-JSON fetcher — BDF_API_KEY required (225 lines)
 │
 ├── data/                          # CSV config libraries + pipeline output files
 │   ├── index_library.csv              # Instrument master library (~390 rows, 29 columns)
@@ -109,6 +118,15 @@ market_dash_auto/
 │   ├── macro_library_estat.csv        # e-Stat statsDataIds (1 row)
 │   ├── macro_library_lbma.csv         # LBMA JSON series stems + currency (1 row → gold_pm)
 │   ├── macro_library_nasdaqdl.csv     # Header-only — NDL scaffolding (no live rows after LBMA/GOLD went paid)
+│   ├── macro_library_boc.csv          # BoC Valet series names (5 rows: CAN policy rate, GoC bond yields, CPI-median, USD/CAD)
+│   ├── macro_library_statcan.csv      # StatCan WDS vector IDs (4 rows: CAN CPI, unemployment, GDP, employment)
+│   ├── macro_library_ons.csv          # ONS CDID taxonomy paths (6 rows: GBR CPI/CPIH, real GDP, unemployment, employment, AWE)
+│   ├── macro_library_bundesbank.csv   # Bundesbank SDMX keys (4 rows: DEU 10Y/short bund yields + 2 more)
+│   ├── macro_library_abs.csv          # ABS SDMX keys (5 rows: AUS CPI, real GDP, GDP growth, unemployment, participation rate)
+│   ├── macro_library_istat.csv        # ISTAT SDMX keys (3 rows: ITA unemployment, industrial production)
+│   ├── macro_library_bls.csv          # BLS series IDs (4 rows: USA CPI headline, core CPI, unemployment, avg hourly earnings)
+│   ├── macro_library_insee.csv        # INSEE BDM idbanks (3 rows: FRA business climate, unemployment, GDP volume)
+│   └── macro_library_bdf.csv          # BdF Webstat SDMX keys (2 rows: FRA MFI lending rates — PROVISIONAL/UNVERIFIED)
 │   │
 │   ├── source_fallbacks.csv           # Per-indicator T0/T1/T2/T3 fallback chain (Stage B + §3.9)
 │   ├── manual_splits.csv              # Yahoo-missing split overrides (ticker, ex_date, ratio) — §11 Pattern 11
@@ -194,7 +212,8 @@ fetch_data.py
 │
 ├─ [try] run_phase_macro_economic()             ← fetch_macro_economic  → macro_economic + macro_economic_hist
 │                                                  (Phase ME — unified raw-macro layer)
-│                                                  Internally fans out to sources/{fred,oecd,worldbank,imf,dbnomics,ifo}.py
+│                                                  Internally fans out to sources/{fred,oecd,worldbank,imf,dbnomics,ifo,
+│                                                  boe,ecb,boj,estat,lbma,boc,statcan,ons,bundesbank,abs,istat,bls,insee,bdf}.py
 │                                                  driven by data/macro_library_*.csv per §0 of forward_plan.md
 │
 └─ [try] run_phase_e()                          ← compute_macro_market  → macro_market + macro_market_hist
@@ -321,6 +340,74 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 3. If it's a sustained 3038-HTML throttle, the cache + retry should already bound it; consider widening `months_back` in `_candidate_urls()`.
 4. Last resort: substitute `DE_IFO1` via the OECD German BCI (`DEU_BUS_CONF`) we already fetch — same survey methodology, different aggregator.
 
+### US Bureau of Labor Statistics — BLS Public Data API (2026-05-28)
+
+- **URL:** `https://api.bls.gov/publicAPI/v2/timeseries/data/` (POST, v2 with key) / `https://api.bls.gov/publicAPI/v1/timeseries/data/<seriesid>` (GET, keyless v1)
+- **Auth:** `BLS_API_KEY` optional — without a key the v1 keyless endpoint serves a ~3-year rolling window; with a free registration key the v2 endpoint gives 500 queries/day, 50 series/query, and 20-year history. Pipeline currently operates keyless for the 4 registered series (recent window sufficient for freshness; history is provided by FRED fallback columns).
+- **Used for:** 4 US series that share canonical columns with FRED — `USA_CPI_INDEX` (CUSR0000SA0 — CPI-U SA), `USA_CORE_CPI_INDEX` (CUSR0000SA0L1E — Core CPI SA), `USA_UNEMPLOYMENT` (LNS14000000), `USA_AVG_HOURLY_EARN` (CES0500000003 — average hourly earnings total private SA; genuine coverage gap with no FRED-library equivalent). BLS is the **ultimate (primary) source**; FRED is the automatic fallback. Library: `data/macro_library_bls.csv`.
+- **Fetcher:** `sources/bls.py` (284 lines). Smoke test: `test_bls_smoke.py` (daily CI step).
+
+### Bank of Canada — Valet API (2026-05-28)
+
+- **URL:** `https://www.bankofcanada.ca/valet/observations/<seriesNames>/json` with `?recent=<n>` or `?start_date=YYYY-MM-DD`
+- **Auth:** None required. Free, keyless JSON API.
+- **Used for:** 5 Canada series: Policy Rate (`CAN_POLICY_RATE` ← V39079), GoC 2Y benchmark yield (`CAN_GOV_2Y` ← BD.CDN.2YR.DQ.YLD), GoC 10Y benchmark yield (`CAN_GOV_10Y` ← BD.CDN.10YR.DQ.YLD), BoC CPI-median core inflation (`CAN_CPI_MEDIAN`), USD/CAD reference rate (`CAN_USDCAD`). Library: `data/macro_library_boc.csv`.
+- **Fetcher:** `sources/boc.py` (183 lines). Response shape: `{"observations": [{"d": "YYYY-MM-DD", "<series>": {"v": "<value>"}}, ...]}`.
+
+### Statistics Canada — Web Data Service (2026-05-28)
+
+- **URL:** `POST https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods` (latest N periods) or GET for full history
+- **Auth:** None required. Free, keyless JSON API.
+- **Used for:** 4 Canada series: `CAN_CPI` (vector 41690973 — all-items CPI), `CAN_UNEMPLOYMENT` (vector 2062815 — LFS rate), plus 2 more. Library: `data/macro_library_statcan.csv`.
+- **Series ID convention:** numeric vector ID (with or without leading `v`).
+- **Fetcher:** `sources/statcan.py` (201 lines).
+
+### UK Office for National Statistics — ONS Zebedee API (2026-05-28)
+
+- **URL:** `https://api.beta.ons.gov.uk/v1/data?uri=<taxonomy-path>/timeseries/<cdid>/<dataset>` (the legacy `api.ons.gov.uk` host was decommissioned 2024-11-25)
+- **Auth:** None required. Free, keyless JSON API.
+- **Used for:** 6 UK series: `GBR_CPI_YOY` (D7G7 — CPI annual rate), `GBR_CPIH_YOY` (L55O — CPIH annual rate), `GBR_GDP_REAL` (ABMI — real GDP chain volume), `GBR_UNEMPLOYMENT` (MGSX — unemployment rate 16+), `GBR_EMP_RATE` (LF24 — employment rate 16-64), `GBR_AWE_REGPAY_YOY` (KAI9 — average weekly earnings regular pay YoY). Library: `data/macro_library_ons.csv`.
+- **Series ID convention:** website taxonomy URI of the timeseries (e.g. `economy/inflationandpriceindices/timeseries/d7g7/mm23`). The module picks the finest non-empty frequency array from the response (months > quarters > years).
+- **Fetcher:** `sources/ons.py` (218 lines).
+
+### Deutsche Bundesbank — SDMX REST API (2026-05-28)
+
+- **URL:** `https://api.statistiken.bundesbank.de/rest/data/<flow>/<key>?lastNObservations=<n>`
+- **Auth:** None required. SDMX-ML only (JSON/CSV return HTTP 406).
+- **Used for:** 4 Germany series: `DEU_BUND_10Y` (BBSIS daily yield residual maturity 9-10y — daily, ultimate source vs FRED monthly mirror), `DEU_BUND_1_2Y` (1-2y residual maturity — genuine gap, no aggregator equivalent), plus 2 more. Library: `data/macro_library_bundesbank.csv`.
+- **Series ID convention:** `<flow>/<key>` where the key is the full dot-separated SDMX dimension tuple (all 15 dimensions for BBSIS required — a shorter key returns HTTP 404).
+- **Fetcher:** `sources/bundesbank.py` (218 lines).
+
+### Australian Bureau of Statistics — ABS Data API (2026-05-28)
+
+- **URL:** `https://data.api.abs.gov.au/rest/data/<flow>/<key>?lastNObservations=<n>` (SDMX-CSV; JSON returns HTTP 406)
+- **Auth:** None required.
+- **Used for:** 5 Australia series: `AUS_CPI` (CPI all-groups index), `AUS_GDP_REAL` (chain volume GDP), `AUS_GDP_GROWTH` (QoQ % change), `AUS_UNEMPLOYMENT` (LF unemployment rate 15+ SA), `AUS_PART_RATE` (participation rate 15+ SA). Library: `data/macro_library_abs.csv`.
+- **Fetcher:** `sources/abs.py` (206 lines). CSV shape identical to ECB Data Portal (TIME_PERIOD + OBS_VALUE columns).
+
+### ISTAT — Italy Statistics Bureau SDMX API (2026-05-28)
+
+- **URL:** `https://esploradati.istat.it/SDMXWS/rest/data/<flow>/<key>?lastNObservations=<n>` (SDMX-CSV)
+- **Auth:** None required. **Note:** ISTAT gateway is flaky and frequently returns transient HTTP 503 — the module retries generously.
+- **Used for:** 3 Italy series: `ITA_UNEMPLOYMENT` (dataflow 151_874 — monthly unemployment rate 15-74), `ITA_IND_PROD` (dataflow 115_333 — industrial production total ex-construction, base 2021). Library: `data/macro_library_istat.csv`.
+- **Vintage (EDITION) handling:** many ISTAT dataflows carry an EDITION dimension for release vintages. Leave the trailing slot empty in the series ID (trailing dot) — the module resolves the *latest* edition (the vintage with the most recent observation) at fetch time.
+- **Fetcher:** `sources/istat.py` (280 lines).
+
+### INSEE BDM — Banque de Données Macroéconomiques (2026-06-09)
+
+- **URL:** `https://api.insee.fr/series/BDM/V1/data/<dataset>/<key>` (SDMX-ML)
+- **Auth:** Keyless — the BDM API is open. An optional `INSEE_API_KEY` (Bearer token from the INSEE portal) can be set as an env var; the module sends it if present but does not require it. Series ID convention: `<dataset>/<key>` or `SERIES_BDM/<idbank>` for a bare idbank lookup.
+- **Used for:** 3 France series (INSEE is the **ultimate/primary** source, superseding OECD/Eurostat aggregators): `FRA_BUS_CONF` (idbank 001565530 — Business Climate all-sectors, normalised mean=100), `FRA_UNEMPLOYMENT` (idbank 001688527 — ILO unemployment rate, Quarterly), `FRA_GDP_INDEX` (idbank 011794860 — GDP chained volume SA-WDA, base 2020). All 3 verified live keyless 2026-06. Library: `data/macro_library_insee.csv`.
+- **Fetcher:** `sources/insee.py` (231 lines). Parses both SDMX-ML generic-data (`<ObsDimension>/<ObsValue>`) and structure-specific (`TIME_PERIOD=`/`OBS_VALUE=` attributes) shapes. Smoke test: `test_insee_smoke.py` (daily CI step).
+
+### Banque de France — Webstat API (2026-06-09) — PROVISIONAL
+
+- **URL:** `https://api.webstat.banque-france.fr/webstat-fr/v1/data/<dataset>/<key>` (SDMX-JSON)
+- **Auth:** `BDF_API_KEY` required (IBM API Connect gateway; send as `X-IBM-Client-Id` header). An optional `BDF_API_SECRET` can be set as `X-IBM-Client-Secret`. Without a key the module logs a warning and skips all BdF series gracefully. Register a free application on the Webstat developer portal (`developer.webstat.banque-france.fr`).
+- **Used for:** 2 France MFI lending-rate series — `FRA_LOAN_RATE_HOUSE` (MIR1 — new loans to households for house purchase) and `FRA_LOAN_RATE_NFC` (new loans to non-financial corporations). Library: `data/macro_library_bdf.csv`.
+- **Status:** **PROVISIONAL / UNVERIFIED** — the series keys follow the ECB/SDMX MIR convention and have not yet been validated against a live credentialed fetch (no BDF_API_KEY in the current GitHub Secrets). Validate from the first credentialed CI run; correct series keys in `macro_library_bdf.csv` if needed. See `notes` column in the library CSV.
+- **Fetcher:** `sources/bdf.py` (225 lines). Smoke test: `test_bdf_smoke.py` (daily CI step — currently always skips without a key).
+
 ### Google Sheets API v4
 
 - **Auth:** Service account JSON in `GOOGLE_CREDENTIALS` environment variable (GitHub Secret)
@@ -430,6 +517,15 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_estat.csv` | 1 | sources/estat.py | **NEW 2026-04-30 (Stage D).** e-Stat statsDataIds: `0003446463` (JPN_IND_PROD — METI Indices of Industrial Production, 71 yrs of monthly data 1955→present). |
 | `macro_library_lbma.csv` | 1 | sources/lbma.py | **NEW 2026-05-09 (§3.9).** LBMA precious-metal fix series. Schema includes `sub_field` (USD/GBP/EUR) for currency selection from the JSON `v` array. Row: `gold_pm` → `GOLD_USD_PM` (LBMA Gold PM Fix, USD/oz, daily 1968-04-05 → present). Extension targets in §3.9.1: `silver`, `platinum_pm`, `palladium_pm`. |
 | `macro_library_nasdaqdl.csv` | 0 | sources/nasdaq_data_link.py | Header-only — NDL scaffolding kept after LBMA/GOLD went paid-tier in May 2026. Available for any future free NDL dataset. |
+| `macro_library_boc.csv` | 5 | sources/boc.py | **NEW 2026-05-28.** Bank of Canada Valet series: CAN policy rate (V39079), GoC 2Y/10Y benchmark yields, BoC CPI-median core inflation, USD/CAD reference rate. Keyless. |
+| `macro_library_statcan.csv` | 4 | sources/statcan.py | **NEW 2026-05-28.** Statistics Canada WDS vector IDs: CAN CPI (all-items), unemployment rate, + 2 more. Keyless POST API. |
+| `macro_library_ons.csv` | 6 | sources/ons.py | **NEW 2026-05-28.** ONS CDID taxonomy paths via Zebedee /data API: GBR CPI annual rate (D7G7), CPIH (L55O), real GDP (ABMI), unemployment rate (MGSX), employment rate (LF24), AWE regular pay growth (KAI9). Keyless. |
+| `macro_library_bundesbank.csv` | 4 | sources/bundesbank.py | **NEW 2026-05-28.** Bundesbank SDMX-ML BBSIS dimension keys: DEU Bund 10Y daily yield (ultimate source vs FRED monthly mirror), DEU Bund 1-2Y (genuine gap — no aggregator equivalent), + 2 more. Keyless. |
+| `macro_library_abs.csv` | 5 | sources/abs.py | **NEW 2026-05-28.** ABS SDMX-CSV keys: AUS CPI (all-groups), real GDP, GDP growth (QoQ), unemployment rate (15+ SA), participation rate (15+ SA). Keyless. |
+| `macro_library_istat.csv` | 3 | sources/istat.py | **NEW 2026-05-28.** ISTAT SDMX keys: ITA monthly unemployment rate 15-74 (dataflow 151_874), industrial production total ex-construction base 2021 (dataflow 115_333). Vintage (EDITION) slot left empty — module resolves latest at fetch time. Keyless. |
+| `macro_library_bls.csv` | 4 | sources/bls.py | **NEW 2026-05-28/29.** BLS Public Data API series IDs: `USA_CPI_INDEX` (CUSR0000SA0), `USA_CORE_CPI_INDEX` (CUSR0000SA0L1E), `USA_UNEMPLOYMENT` (LNS14000000), `USA_AVG_HOURLY_EARN` (CES0500000003 — genuine coverage gap, no FRED-library equivalent). BLS is the ultimate source; FRED is the automatic fallback for the first three. BLS_API_KEY optional. |
+| `macro_library_insee.csv` | 3 | sources/insee.py | **NEW 2026-06-09.** INSEE BDM idbanks (SERIES_BDM/ prefix): `FRA_BUS_CONF` (001565530 — Business Climate), `FRA_UNEMPLOYMENT` (001688527 — ILO unemployment rate Quarterly), `FRA_GDP_INDEX` (011794860 — GDP chained volume SA-WDA). INSEE is the ultimate source; supersedes OECD/Eurostat. Keyless (optional INSEE_API_KEY). |
+| `macro_library_bdf.csv` | 2 | sources/bdf.py | **NEW 2026-06-09. PROVISIONAL.** Banque de France Webstat SDMX keys: `FRA_LOAN_RATE_HOUSE`, `FRA_LOAN_RATE_NFC` (MFI lending rates). Series keys UNVERIFIED — awaiting first credentialed fetch (BDF_API_KEY not yet in GitHub Secrets). |
 | `manual_splits.csv` | 1 | library_utils.apply_manual_splits + scripts/backadjust_hist_splits.py | **NEW 2026-05-27 (§3.6a Pattern 11).** Stock-split overrides for Yahoo's missing corporate-actions feed. Schema: `ticker, ex_date, ratio, notes`. Current row: `1306.T 2026-03-30 10` (NEXT FUNDS TOPIX ETF 10:1 split — ex-rights = record date 2026-03-31 minus 1 business day under Japan's T+2). |
 | `source_fallbacks.csv` | 10 | (documentation only — runtime walker not yet built) | **NEW 2026-04-30 (Stage B); GOLD_USD_PM row added §3.9 2026-05-08.** Canonical record of the §3.1.2 architectural fallback chain per indicator. Columns: `indicator_id, t0_source, t0_id, t1_source, t1_id, t2_source, t2_id, t3_source, t3_id, t1_status, t1_latest, notes`. v1 is a documentation artefact + future hook for explicit chain-walking logic; today the fallback effect is achieved implicitly via `_collect_all_indicators` ordering (later sources overwrite earlier sources at the column level). |
 | `macro_indicator_library.csv` | 99 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4); 7 indicators added since: **`GLOBAL_GOLD1`** (§3.9 LBMA gold), **`US_INFL1`/`UK_INFL1`/`EU_INFL1`/`JP_INFL1`/`CN_INFL1`** (§3.1.3 per-region inflation regimes, each `name` field labelled headline / core / blend), **`US_INFEXP1`** (z-composite inflation expectations). Canonical 17-concept taxonomy: Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum. |
@@ -648,13 +744,13 @@ The module loads every indicator definition from the per-source CSVs at import t
 
 #### Read order
 
-Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema.
+Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema.
 
-### 9.5 `sources/` package (13 modules + 1 scaffolding-only, ~3,300 lines total)
+### 9.5 `sources/` package (22 modules + 1 scaffolding-only, ~5,350 lines total)
 
-**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry).
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09.
 
-**Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma`. Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Last writer wins per `col` — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
+**Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf`. Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Last writer wins per `col` — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
 #### 9.5.1 `sources/base.py` (220 lines)
 
@@ -800,6 +896,109 @@ Statistics Bureau of Japan e-Stat fetcher. JSON REST API; reads `ESTAT_APP_ID` f
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
 Falls back gracefully if `ESTAT_APP_ID` env var is missing.
+
+#### 9.5.13 `sources/boc.py` (183 lines, 2026-05-28)
+
+Bank of Canada Valet API fetcher. Keyless JSON. Series names are Valet identifiers (e.g. `V39079`).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_boc.csv` |
+| `fetch_series(series_name, recent, start_date, ...)` | GET against the Valet observations endpoint; uses `recent=N` for snapshot, `start_date=` for history |
+| `parse_json(doc, series_name)` | Extract `(date, value)` tuples from the `observations` array |
+| `fetch_series_as_pandas(series_name, ...)` | Convenience wrapper |
+
+#### 9.5.14 `sources/statcan.py` (201 lines, 2026-05-28)
+
+Statistics Canada WDS POST API fetcher. Keyless. Vector IDs are numeric (e.g. `41690973`).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_statcan.csv` |
+| `fetch_series(vector_id, latest_n, ...)` | POST to `getDataFromVectorsAndLatestNPeriods` |
+| `parse_json(doc, vector_id)` | Extract `(refPer, value)` tuples from the `vectorDataPoint` array |
+| `fetch_series_as_pandas(vector_id, ...)` | Convenience wrapper |
+
+#### 9.5.15 `sources/ons.py` (218 lines, 2026-05-28)
+
+UK ONS Zebedee /data API fetcher. Keyless JSON. The legacy `api.ons.gov.uk` host was decommissioned 2024-11-25.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_ons.csv` |
+| `fetch_series(series_id, ...)` | GET against `https://api.beta.ons.gov.uk/v1/data?uri=<series_id>` |
+| `parse_json(doc, series_id)` | Pick finest non-empty frequency array (months > quarters > years); parse period strings to dates |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+#### 9.5.16 `sources/bundesbank.py` (218 lines, 2026-05-28)
+
+Deutsche Bundesbank SDMX-ML REST API fetcher. Keyless. All dimension values required in the key (JSON/CSV return HTTP 406).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_bundesbank.csv` |
+| `fetch_series(series_id, last_n, ...)` | GET against `https://api.statistiken.bundesbank.de/rest/data/<flow>/<key>` |
+| `parse_xml(text, series_id)` | SDMX generic-data XML → `list[(date, float)]` |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+#### 9.5.17 `sources/abs.py` (206 lines, 2026-05-28)
+
+Australian Bureau of Statistics SDMX-CSV API fetcher. Keyless. Same CSV shape as the ECB Data Portal (TIME_PERIOD + OBS_VALUE columns).
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_abs.csv` |
+| `fetch_series(series_id, last_n, ...)` | GET against `https://data.api.abs.gov.au/rest/data/<flow>/<key>` with `Accept: text/csv` |
+| `parse_csv(text, series_id)` | Read TIME_PERIOD + OBS_VALUE columns |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+#### 9.5.18 `sources/istat.py` (280 lines, 2026-05-28)
+
+ISTAT (Italy) SDMX-CSV API fetcher. Keyless; generous retry budget due to frequent HTTP 503 from the ISTAT gateway.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_istat.csv` |
+| `_resolve_edition(series_id, ...)` | For dataflows with a trailing-dot EDITION slot, enumerate available vintages and return the latest (most recent observation) |
+| `fetch_series(series_id, last_n, ...)` | GET against `https://esploradati.istat.it/SDMXWS/rest/data/<flow>/<key>`; calls `_resolve_edition` if series_id ends with `.` |
+| `parse_csv(text, series_id)` | Read TIME_PERIOD + OBS_VALUE columns |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+#### 9.5.19 `sources/bls.py` (284 lines, 2026-05-28)
+
+US Bureau of Labor Statistics Public Data API fetcher. `BLS_API_KEY` optional — v1 endpoint is keyless (recent window); v2 endpoint (full history, up to 19-year spans) requires a free registration key.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_bls.csv` |
+| `fetch_series(series_id, recent, ...)` | v1 GET (keyless) or v2 POST (with key) based on `BLS_API_KEY` env var |
+| `parse_json(doc, series_id)` | Extract `(year+period, value)` tuples from the BLS response; maps period codes (`M01`–`M12`) to end-of-month dates |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper; `recent=True` → keyless v1 recent window |
+
+#### 9.5.20 `sources/insee.py` (231 lines, 2026-06-09)
+
+INSEE BDM (Banque de Données Macroéconomiques) SDMX-ML fetcher. Keyless; optional `INSEE_API_KEY` as Bearer token.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_insee.csv` |
+| `fetch_series(series_id, ...)` | GET against `https://api.insee.fr/series/BDM/V1/data/<series_id>`; sends `INSEE_API_KEY` as Bearer if set |
+| `parse_xml(text, series_id)` | SDMX-ML namespace-agnostic parser: handles both generic-data and structure-specific `Obs` element shapes |
+| `_parse_period(p)` | Handles daily `YYYY-MM-DD`, monthly `YYYY-MM`, quarterly `YYYY-Qn`, annual `YYYY` |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+#### 9.5.21 `sources/bdf.py` (225 lines, 2026-06-09) — PROVISIONAL
+
+Banque de France Webstat SDMX-JSON fetcher. `BDF_API_KEY` required (IBM API Connect `X-IBM-Client-Id` header); `BDF_API_SECRET` optional. Without a key the module skips gracefully — gaps surface in the daily audit.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_bdf.csv` |
+| `fetch_series(series_id, ...)` | GET against `https://api.webstat.banque-france.fr/webstat-fr/v1/data/<series_id>?format=sdmx-json`; skips with a warning if no key |
+| `parse_json(doc, series_id)` | SDMX-JSON parser: extracts time periods from `structure.dimensions.observation[0].values`, values from `dataSets[0].series[*].observations` |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+
+Status: BDF_API_KEY not yet provisioned as a GitHub Secret — all BdF series produce SKIP warnings until credentialed. Series keys in `macro_library_bdf.csv` are UNVERIFIED.
 
 ### 9.6 `compute_macro_market.py` (2,103 lines)
 
@@ -1385,12 +1584,15 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 | `GOOGLE_CREDENTIALS` | Exists | Google Sheets push (service account JSON) |
 | `ESTAT_APP_ID` | Exists | e-Stat REST API (`sources/estat.py`) — Japan Statistics Bureau |
 | `NASDAQ_DATA_LINK_API_KEY` | Exists, currently unused | Wired §3.9 (2026-05-08) when `LBMA/GOLD` was on the NDL free tier; same-day NDL moved LBMA to paid tier, so gold was replumbed to LBMA-direct (`sources/lbma.py`). Secret is retained as live scaffolding so any future free NDL dataset becomes a CSV-row addition. |
-| `BLS_API_KEY` | Missing | Not currently needed — may be needed for future BLS integration |
+| `BLS_API_KEY` | Exists (optional) | `sources/bls.py` (2026-05-28). BLS Public Data API v2 registration key — unlocks 500 queries/day, 50 series/query, 20-year history spans. Without it the pipeline falls back to the keyless v1 endpoint (recent window only; sufficient for freshness; FRED provides the historical depth). |
+| `BDF_API_KEY` | **Missing** — needed | `sources/bdf.py` (2026-06-09). IBM API Connect `X-IBM-Client-Id` for Banque de France Webstat. Without it all BdF series skip gracefully; `macro_library_bdf.csv` rows will remain unvalidated. Obtain from `developer.webstat.banque-france.fr`. |
+| `BDF_API_SECRET` | **Missing** — optional | `sources/bdf.py`. Optional IBM API Connect `X-IBM-Client-Secret` companion to `BDF_API_KEY`. |
 | `FMP_API_KEY` | Exists, reserved for future use | Registered 2026-04-21. **Phase D FMP calendar module deleted 2026-04-23** — economic calendar endpoint paywalled on free tier (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained for planned PE-ratio integration via `/stable/ratios` endpoint (still free; see `forward_plan.md` §3.3). |
 
 ### Workflow-level configuration
 
 - **`PYTHONUNBUFFERED=1`** (set in `.github/workflows/update_data.yml` env block, 2026-05-27). Block-buffered stdout through `tee pipeline.log` previously masked which step a long run was actually on (the ifo stall investigation). Unbuffered output ensures the live Actions log + the committed `pipeline.log` reflect progress in real time. Cost: zero; preserve this permanently.
+- **Primary-source smoke tests step (2026-06-09).** A new `if: always()` + `continue-on-error: true` CI step runs `python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke -v` and tees output into `pipeline.log`. Each test skips gracefully when the source endpoint is unreachable — a transient outage never blocks the daily commit. A genuine regression (e.g. a changed BLS response schema) surfaces as a loud warning in the daily audit Issue. BLS_API_KEY is optional; INSEE needs no key; BdF is expected to skip until the secret is provisioned.
 
 ---
 
