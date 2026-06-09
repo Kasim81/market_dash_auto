@@ -32,6 +32,10 @@ jobs:
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
         NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
+        BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+        INSEE_API_KEY: ${{ secrets.INSEE_API_KEY }}
+        BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
+        MOSPI_API_KEY: ${{ secrets.MOSPI_API_KEY }}
         # Unbuffered stdout so the live Actions log + pipeline.log reflect
         # progress in real time (block buffering through `tee` previously
         # hid which step a long run was actually on).
