@@ -98,19 +98,20 @@ def fetch_series(
 ) -> str | None:
     """Fetch a single INSEE BDM series as raw SDMX-ML text, or None.
 
-    series_id: '<dataset>/<key>'. Reads INSEE_API_KEY from env; without it the
-    call is skipped gracefully (returns None).
+    series_id: '<dataset>/<key>' (e.g. 'SERIES_BDM/001763852' for an idbank,
+    or '<dataflow>/<key>'). The BDM web service is open and keyless; if an
+    INSEE_API_KEY is present it is sent as a Bearer token (harmless, and lets a
+    metered portal subscription be used), but it is not required.
     """
-    key = os.environ.get("INSEE_API_KEY", "").strip()
-    if not key:
-        print(f"    [INSEE] no INSEE_API_KEY env var — skipping {series_id}")
-        return None
     if "/" not in series_id:
         print(f"    [INSEE] invalid series_id {series_id!r} (expected '<DATASET>/<KEY>')")
         return None
 
     url = f"{INSEE_BASE}/{series_id}"
-    headers = {**_HEADERS, "Authorization": f"Bearer {key}"}
+    headers = dict(_HEADERS)
+    key = os.environ.get("INSEE_API_KEY", "").strip()
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
     for attempt in range(retries):
         try:
             resp = requests.get(url, headers=headers, timeout=timeout)
