@@ -47,24 +47,25 @@ jobs:
         # exit status.  Stdout + stderr both go into pipeline.log so the
         # log is the sole source of truth for what happened in the run.
         python fetch_data.py 2>&1 | tee pipeline.log
-    - name: BLS source smoke test
-      # Live verification that the BLS source — the ultimate vendor for US CPI,
-      # core CPI and unemployment (USA_CPI_INDEX / USA_CORE_CPI_INDEX /
-      # USA_UNEMPLOYMENT) plus USA_AVG_HOURLY_EARN — still fetches recent data
-      # and wins the primary-source tie-break over FRED. Network-gated: SKIPS
-      # if BLS is unreachable, so a transient outage never blocks the daily
-      # commit. continue-on-error keeps a genuine BLS regression a loud warning
-      # (surfaced in the daily Issue via pipeline.log), not a hard build gate —
-      # consistent with the data-audit channel. Uses stdlib unittest (pytest is
-      # not a pipeline dependency). BLS_API_KEY is optional (keyless v1 works).
+    - name: Primary-source smoke tests
+      # Live verification that the ultimate/primary sources still fetch recent
+      # data: BLS (US CPI / core CPI / unemployment + avg hourly earnings, and
+      # the primary-source tie-break over FRED) and INSEE (French business
+      # climate, unemployment, GDP — keyless BDM API). Network-gated: each
+      # SKIPS if its endpoint is unreachable, so a transient outage never blocks
+      # the daily commit. continue-on-error keeps a genuine regression a loud
+      # warning (surfaced in the daily Issue via pipeline.log), not a hard build
+      # gate — consistent with the data-audit channel. Uses stdlib unittest
+      # (pytest is not a pipeline dependency). BLS_API_KEY is optional (keyless
+      # v1 works); INSEE needs no key.
       if: always()
       continue-on-error: true
       env:
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
       run: |
         echo "" >> pipeline.log
-        echo "=== BLS source smoke test ===" >> pipeline.log
-        python -m unittest test_bls_smoke -v 2>&1 | tee -a pipeline.log
+        echo "=== Primary-source smoke tests (BLS, INSEE) ===" >> pipeline.log
+        python -m unittest test_bls_smoke test_insee_smoke -v 2>&1 | tee -a pipeline.log
     - name: Rebuild indicator explorer
       run: |
         set -o pipefail
