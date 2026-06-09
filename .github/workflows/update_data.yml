@@ -56,11 +56,15 @@ jobs:
       # warning (surfaced in the daily Issue via pipeline.log), not a hard build
       # gate — consistent with the data-audit channel. Uses stdlib unittest
       # (pytest is not a pipeline dependency). BLS_API_KEY is optional (keyless
-      # v1 works); INSEE needs no key.
+      # v1 works); INSEE needs no key; BdF is key-gated, so BDF_API_KEY (+ the
+      # optional BDF_API_SECRET) must be exposed here too or test_bdf_smoke just
+      # skips — which is the whole signal we want on the first credentialed run.
       if: always()
       continue-on-error: true
       env:
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+        BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
+        BDF_API_SECRET: ${{ secrets.BDF_API_SECRET }}
       run: |
         echo "" >> pipeline.log
         echo "=== Primary-source smoke tests (BLS, INSEE, BdF) ===" >> pipeline.log
