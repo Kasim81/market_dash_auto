@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-05-06
+> Last updated: 2026-06-09
 
 This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
 
@@ -32,6 +32,15 @@ There are multiple source-of-truth CSVs — one per data source — not a single
 - `data/macro_library_estat.csv` — every e-Stat statsDataId (Stage D, 2026-04-30)
 - `data/source_fallbacks.csv` — T0 / T1 / T2 / T3 fallback chain per indicator (Stage B, 2026-04-30)
 - `data/macro_indicator_library.csv` — every Phase E composite indicator
+- `data/macro_library_boc.csv` — every BoC Valet series name (2026-05-28)
+- `data/macro_library_statcan.csv` — every StatCan WDS vector ID (2026-05-28)
+- `data/macro_library_ons.csv` — every ONS CDID taxonomy path (2026-05-28)
+- `data/macro_library_bundesbank.csv` — every Bundesbank SDMX key (2026-05-28)
+- `data/macro_library_abs.csv` — every ABS SDMX-CSV key (2026-05-28)
+- `data/macro_library_istat.csv` — every ISTAT SDMX key (2026-05-28)
+- `data/macro_library_bls.csv` — every BLS series ID (2026-05-28)
+- `data/macro_library_insee.csv` — every INSEE BDM idbank (2026-06-09)
+- `data/macro_library_bdf.csv` — every Banque de France Webstat SDMX key (2026-06-09; PROVISIONAL)
 
 If the change you're about to make adds, removes, renames, or substitutes a fetched identifier — the only file you should be editing is the appropriate `data/macro_library_*.csv` (or `index_library.csv` / `macro_indicator_library.csv` depending on what you're changing). If you are reaching for a string literal in a `.py` file that looks like `"INDIRLTLT01STM"`, `"BSCICP02DEM460S"`, `"ISM/pmi/pm"`, `"BAMLHE00EHYIOAS"`, etc., **stop and put it in the relevant CSV instead.**
 
@@ -140,6 +149,15 @@ Phase D's "Tier 3 FMP calendar" track was paywalled and rejected on 2026-04-23 �
 - **ECB Data Portal** (Stage D, 2026-04-30) — 3 Euro-area rates / yields series: Deposit Facility Rate (FM dataset), AAA yield curve 2Y / 30Y (YC dataset). Library: `data/macro_library_ecb.csv`. Closes the DE 2Y bund-yield gap and the EA deposit-rate forcing-function row.
 - **BoJ Time-Series Data Search API** (Stage D, 2026-04-30) — 2 Japan series: Policy Rate (FM01'STRDCLUCON) replacing the frozen FRED OECD-mirror row, and Tankan Large Manufacturer Business Conditions DI (CO'TK99F1000601GCQ01000) used as `JP_TANKAN1` to substitute for the proprietary au Jibun Bank Manufacturing PMI. Library: `data/macro_library_boj.csv`.
 - **e-Stat REST API** (Stage D, 2026-04-30) — 1 Japan series: METI Indices of Industrial Production (statsDataId `0003446463`), replacing the frozen FRED OECD-mirror row. Library: `data/macro_library_estat.csv`. Requires `ESTAT_APP_ID` env var (injected via GitHub Actions secret).
+- **Bank of Canada Valet** (2026-05-28) — 5 Canada series: policy rate (V39079), GoC 2Y/10Y benchmark bond yields, BoC CPI-median core inflation, USD/CAD reference rate. Keyless JSON. Library: `data/macro_library_boc.csv`.
+- **Statistics Canada WDS** (2026-05-28) — 4 Canada series: CAN CPI (all-items, vector 41690973), unemployment rate (vector 2062815), + 2 more. Keyless POST API. Library: `data/macro_library_statcan.csv`.
+- **ONS Zebedee /data API** (2026-05-28) — 6 UK series: CPI annual rate (D7G7), CPIH (L55O), real GDP (ABMI), unemployment rate (MGSX), employment rate (LF24), AWE regular pay growth (KAI9). Keyless. Partially closes the UK growth column (GBR_GDP_REAL wired). Library: `data/macro_library_ons.csv`.
+- **Deutsche Bundesbank SDMX-ML** (2026-05-28) — 4 Germany series including DEU_BUND_10Y (daily, ultimate source — supersedes FRED monthly mirror) and DEU_BUND_1_2Y (genuine gap — no aggregator). Keyless. Library: `data/macro_library_bundesbank.csv`.
+- **ABS Data API** (2026-05-28) — 5 Australia series: CPI (all-groups), real GDP, GDP growth QoQ, unemployment rate 15+ SA, participation rate. Keyless SDMX-CSV. Library: `data/macro_library_abs.csv`.
+- **ISTAT SDMX API** (2026-05-28) — 3 Italy series: monthly unemployment rate 15-74 (dataflow 151_874) and industrial production total ex-construction (dataflow 115_333). Vintage (EDITION) resolution at fetch time. Keyless. Library: `data/macro_library_istat.csv`.
+- **BLS Public Data API** (2026-05-28) — 4 US series; BLS is the ultimate source for `USA_CPI_INDEX`, `USA_CORE_CPI_INDEX`, `USA_UNEMPLOYMENT` (FRED is the automatic fallback); `USA_AVG_HOURLY_EARN` (CES0500000003) is a genuine coverage gap with no FRED-library equivalent. BLS_API_KEY optional. Library: `data/macro_library_bls.csv`.
+- **INSEE BDM SDMX-ML** (2026-06-09) — 3 France series (INSEE is the ultimate/primary source; supersedes OECD/Eurostat aggregators): `FRA_BUS_CONF` (Business Climate), `FRA_UNEMPLOYMENT` (ILO quarterly), `FRA_GDP_INDEX` (chained volume SA-WDA). Keyless + optional `INSEE_API_KEY`. Library: `data/macro_library_insee.csv`.
+- **Banque de France Webstat SDMX-JSON** (2026-06-09) — 2 France MFI lending-rate series (`FRA_LOAN_RATE_HOUSE`, `FRA_LOAN_RATE_NFC`). **PROVISIONAL** — BDF_API_KEY not yet provisioned; series keys unverified. Library: `data/macro_library_bdf.csv`.
 
 **Country registry:** `data/macro_library_countries.csv` is the single source of truth for the 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) and their WB / IMF code mappings. `IND` was added in the 2026-04-26 supplemental refactor for the India 10Y bond yield, with empty `wb_code` / `imf_code` so it doesn't fan out into multi-country queries.
 
@@ -220,11 +238,20 @@ These CSVs in `data/` are the single source of truth for everything the pipeline
 | `macro_library_estat.csv` | 1 | Phase ME (Stage D, 2026-04-30) | `sources/estat.py` (e-Stat — METI IIP) |
 | `macro_library_nasdaqdl.csv` | 0 | Phase ME (§3.9, 2026-05-08; emptied 2026-05-09) | `sources/nasdaq_data_link.py` — scaffolding kept for any future free NDL dataset; LBMA/GOLD removed when discovered to be on NDL's paid tier |
 | `macro_library_lbma.csv` | 1 | Phase ME (§3.9, 2026-05-09) | `sources/lbma.py` (LBMA prices.lbma.org.uk JSON — daily gold PM USD fix back to 1968) |
+| `macro_library_boc.csv` | 5 | Phase ME (2026-05-28) | `sources/boc.py` (BoC Valet — policy rate, GoC 2Y/10Y yields, CPI-median, USD/CAD) |
+| `macro_library_statcan.csv` | 4 | Phase ME (2026-05-28) | `sources/statcan.py` (StatCan WDS — CAN CPI, unemployment, + 2 more) |
+| `macro_library_ons.csv` | 6 | Phase ME (2026-05-28) | `sources/ons.py` (ONS Zebedee — GBR CPI/CPIH, real GDP, unemployment, employment, AWE) |
+| `macro_library_bundesbank.csv` | 4 | Phase ME (2026-05-28) | `sources/bundesbank.py` (Bundesbank SDMX — DEU Bund 10Y/1-2Y yields) |
+| `macro_library_abs.csv` | 5 | Phase ME (2026-05-28) | `sources/abs.py` (ABS SDMX — AUS CPI, GDP, unemployment, participation) |
+| `macro_library_istat.csv` | 3 | Phase ME (2026-05-28) | `sources/istat.py` (ISTAT SDMX — ITA unemployment, industrial production) |
+| `macro_library_bls.csv` | 4 | Phase ME (2026-05-28) | `sources/bls.py` (BLS — USA CPI, core CPI, unemployment, avg hourly earnings) |
+| `macro_library_insee.csv` | 3 | Phase ME (2026-06-09) | `sources/insee.py` (INSEE BDM — FRA business climate, unemployment, GDP volume; keyless) |
+| `macro_library_bdf.csv` | 2 | Phase ME (2026-06-09; PROVISIONAL) | `sources/bdf.py` (BdF Webstat — FRA MFI lending rates; BDF_API_KEY missing; series keys unverified) |
 | `source_fallbacks.csv` | 10 | Phase ME (Stage B, 2026-04-30; §3.9 row added 2026-05-08; T0 swapped to LBMA 2026-05-09) | Documentation-only registry of T0 / T1 / T2 / T3 chain per indicator (runtime walker not yet built; effect is implicit via `_collect_all_indicators` ordering) |
 | `macro_indicator_library.csv` | 99 | Phase E | `compute_macro_market.py` (composite indicator registry) — 93 original + `GLOBAL_GOLD1` (§3.9) + 5 per-region inflation composites (`US/UK/EU/JP/CN_INFL1`, §3.1.3) + `US_INFEXP1` |
 | `reference_indicators.csv` | 206 | Reference (gap audit) | §3.1.1 cross-reference; not consumed by the runtime pipeline |
 
-**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
+**Read order in `fetch_macro_economic.py`:** `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema (`source`, `source_id`, `col`, `name`, `country`, `category`, `subcategory`, `concept`, `cycle_timing`, `units`, `frequency`, `notes`, `sort_key`). Last writer wins per column — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
 **Library validity** is now covered by Phase H — the daily integrated audit captures HTTP errors + dead tickers + schema-drift static checks + history-preservation row counts (Section D, added 2026-04-30) during the existing fetch (no separate probe needed).
 
@@ -261,6 +288,12 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ DB.nomics fail-fast / circuit breaker (#154) — outage no longer stalls the pipeline ~1hr.
 - ✅ 1306.T 10:1 split back-adjustment (#148) + generic data-audit split detector (#155).
 - ✅ Sister-CSV writer Option B (forward extension); open `keep="first"` self-heal question tracked in §3.6a.
+
+**Recent completed work (session 2026-05-28 / 2026-06-09):**
+- ✅ 7 keyless source adapters (PR #157, 2026-05-28): `sources/boc.py`, `sources/statcan.py`, `sources/ons.py`, `sources/bundesbank.py`, `sources/abs.py`, `sources/istat.py` (6 keyless), plus `sources/bls.py` (BLS_API_KEY optional). 36 new series rows across 7 libraries.
+- ✅ `sources/insee.py` (PR #160/161, 2026-06-09) — 3 French macro series (business climate, unemployment, GDP volume) via INSEE BDM keyless SDMX. Supersedes OECD/Eurostat as primary source for France.
+- ✅ `sources/bdf.py` (PR #161, 2026-06-09) — Banque de France Webstat scaffolding + 2 provisional MFI lending-rate rows. PROVISIONAL — BDF_API_KEY not yet in GitHub Secrets; series keys unverified. Added to prod but skips gracefully.
+- ✅ Primary-source smoke tests (2026-06-09) — `test_bls_smoke.py`, `test_insee_smoke.py`, `test_bdf_smoke.py`; new non-blocking CI step runs daily and appends to `pipeline.log`.
 
 Candidate next tracks:
 - **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
@@ -339,7 +372,7 @@ Stage definitions are in `manuals/technical_manual.md` §11 Pattern 9 (architect
 |---|---|---|
 | A — History-preservation | ✅ Shipped 2026-04-30 | — |
 | B — T1 fallback chains | ✅ Shipped 2026-04-30 | — (4 of 9 forcing-function rows resolved at T1; the other 5 either fall through to Stage D T2 modules or are accepted gaps) |
-| **C — Reference-baseline close-out (regional roll-up)** | **Outstanding** | Close the 118 `Missing` rows in `reference_indicators.csv` where a free path exists. Priority: **UK growth (0/8 — ONS API)**, **Japan growth (3/7 → ~6/7 via e-Stat extension)**, China growth (mostly proprietary; accept). Mechanically: add rows to existing `data/macro_library_<source>.csv` files; new T2 modules only if no aggregator + no Stage-D-module path exists. |
+| **C — Reference-baseline close-out (regional roll-up)** | **Partial — In Progress** | Close the 118 `Missing` rows in `reference_indicators.csv` where a free path exists. **`sources/ons.py` built 2026-05-28** — 6 ONS series wired (GBR_CPI_YOY, GBR_CPIH_YOY, GBR_GDP_REAL, GBR_UNEMPLOYMENT, GBR_EMP_RATE, GBR_AWE_REGPAY_YOY); UK GDP and 3 labour series now live. Still outstanding: UK IoP, Retail Sales Index, Index of Services, claimant count, BICS business survey (5 more rows to close UK growth column fully). Japan growth (3/7 → ~6/7 via e-Stat extension) still outstanding. China growth mostly proprietary; accept. |
 | D — On-demand T2 modules | ✅ Shipped 2026-04-30 | — (4 modules built: BoE / ECB / BoJ / e-Stat) |
 | **E — Survey deep-dive** | **Outstanding** | Canonical demand-side guide is `manuals/G20_PMI_Master_Table.docx` — 33 G20 surveys with tier / publisher / frequency / free URL / API access / PMI-similarity assessment. Strategy: prioritise ◆ **Strong**-tier surveys with free API access not yet wired (BoK BSI via ECOS, IMEF via Banxico SIE, INEGI EMOE, TCMB EVDS, Argentina INDEC Open Data API, Indonesia BI API). ◇ Proxy-tier surveys covered by existing OECD BCI / Eurostat ESI / FRED routes where free; new T2 module only when the canonical source is meaningfully fresher. ○ Limited-tier surveys (Saudi headline-only, Russia post-2022) accepted as gaps. JP Tankan sub-DIs already accessible — just add rows to `macro_library_boj.csv`. UK CBI / GfK / RICS remain proprietary — accept. CN NBS sub-data proprietary — accept. Scraper infrastructure (`sources/scraper_base.py`) only as last resort. |
 | F — Community ticker catalogues | ✅ Shipped 2026-04-30 | — (14 ETFs added; report at `manuals/community_datasets_review.md`) |
@@ -354,7 +387,7 @@ The regime work (now owned by `../regime_AA_master_plan.docx`) uses a per-region
 | Region | Action | Specific targets |
 |---|---|---|
 | US | ✅ no action — 6/6 captured | — |
-| **UK** | **wire ONS API** (new T2 module `sources/ons.py`) | Monthly UK GDP, Index of Production (IoP), Retail Sales Index, Index of Services, claimant count, employment level, average weekly earnings, BICS business survey. ~8 rows; closes the entire UK growth column. |
+| **UK** | **✅ `sources/ons.py` wired 2026-05-28** — partially done. GBR_GDP_REAL, GBR_UNEMPLOYMENT, GBR_EMP_RATE, GBR_AWE_REGPAY_YOY live. Still outstanding: IoP, Retail Sales Index, Index of Services, claimant count, BICS business survey (~5 more rows to close the column fully). | Add remaining rows to `data/macro_library_ons.csv`. |
 | **JP** | **extend e-Stat library** | `sources/estat.py` already exists; just add rows: machinery orders (Cabinet Office), retail sales, household income/expenditure, economy watchers DI, tertiary industry index. ~4-6 rows; brings JP from 3/7 → 6/7. |
 | EZ | ✅ no action — 6/6 captured | — |
 | CN | accept gaps | NBS retail / FAI / electricity / industrial profits / property — all flagged PROPRIETARY in `reference_indicators.csv` (no free foreign API). Current 3/9 is the practical ceiling. |
@@ -448,7 +481,7 @@ Outstanding-work-only acceptance criteria for §3.1 closure:
 - ✅ Stage B — 4 of 9 forcing-function rows resolved at T1; the other 5 either route through Stage D T2 modules or are accepted gaps.
 - ✅ Stage D — 4 T2 modules built (BoE / ECB / BoJ / e-Stat) and exercising in CI without regression.
 - ✅ Stage F — community-ticker review shipped (`manuals/community_datasets_review.md`); 14 ETF additions in `index_library.csv`.
-- ⏳ **Stage C** — UK growth column (0/8 → ≥6/8) via `sources/ons.py`; JP growth column (3/7 → ≥6/7) via `sources/estat.py` extension. Region scorecard in `manuals/macro_market_indicators_coverage.xlsx` updated.
+- ⏳ **Stage C** — `sources/ons.py` built 2026-05-28; UK GDP + 3 labour series live. Still outstanding: UK IoP / Retail Sales / IoS / claimant count / BICS (~5 more `macro_library_ons.csv` rows). JP growth column (3/7 → ≥6/7) via `sources/estat.py` extension. Region scorecard in `manuals/macro_market_indicators_coverage.xlsx` not yet updated.
 - ✅ **Growth + Inflation focus (§3.1.3)** — 5 new per-region inflation regime composites (`US_INFL1` / `UK_INFL1` / `EU_INFL1` / `JP_INFL1` / `CN_INFL1`) + `US_INFEXP1` shipped 2026-05-28 (#152). **Follow-up**: source core CPI series for UK/EA/JP/CN to upgrade those gauges to headline+core blends like `US_INFL1`; JP PPI / Services PPI also outstanding via e-Stat.
 - ⏳ **GDP Now (§3.1.4)** — `US_GDPNOW1` + `US_NOWCAST1` via Atlanta Fed / NY Fed; `UK_NOWCAST1` via ONS monthly GDP; `EU_NOWCAST1` + `JP_NOWCAST1` as Phase E composites.
 - ⏳ **Stage E** — survey deep-dive: per-country target list distilled from the demand doc; rows added via existing modules where free; documented gaps where proprietary.
