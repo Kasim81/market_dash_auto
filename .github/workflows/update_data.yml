@@ -33,9 +33,8 @@ jobs:
         ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
         NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
-        INSEE_API_KEY: ${{ secrets.INSEE_API_KEY }}
         BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
-        MOSPI_API_KEY: ${{ secrets.MOSPI_API_KEY }}
+        BDF_API_SECRET: ${{ secrets.BDF_API_SECRET }}
         # Unbuffered stdout so the live Actions log + pipeline.log reflect
         # progress in real time (block buffering through `tee` previously
         # hid which step a long run was actually on).
@@ -64,8 +63,8 @@ jobs:
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
       run: |
         echo "" >> pipeline.log
-        echo "=== Primary-source smoke tests (BLS, INSEE) ===" >> pipeline.log
-        python -m unittest test_bls_smoke test_insee_smoke -v 2>&1 | tee -a pipeline.log
+        echo "=== Primary-source smoke tests (BLS, INSEE, BdF) ===" >> pipeline.log
+        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke -v 2>&1 | tee -a pipeline.log
     - name: Rebuild indicator explorer
       run: |
         set -o pipefail
