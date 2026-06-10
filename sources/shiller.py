@@ -10,31 +10,54 @@ Canonical primary source: Yale economics homepage,
 
 Updated quarterly-ish by Shiller himself. The xls workbook carries:
   - A "Data" sheet with the long-run series
-  - Pre-header rows of titles + sub-headers
-  - A Date column in decimal-year format ("1871.01", "1871.02", ...)
+  - 7 pre-header rows of titles + sub-headers; row 8 is the column header
+  - A Date column in decimal-year format ("1871.01", "1871.02", ..., "1871.12")
   - Per-column series: S&P Composite Price (P), Dividend (D), Earnings (E),
     CPI, Long Interest Rate (GS10), Real Price, Real Dividend, Real
     Earnings, and CAPE.
 
-Indicator definitions live in data/macro_library_shiller.csv. Each row's
-`series_id` is the source column header (or a stable alias the loader
-maps to a header). The library is currently scaffold-only — populating
-rows + wiring fetch dispatch in fetch_macro_economic.py is the §3.13
-follow-up tracked in forward_plan.md.
+Fallback mirrors (regime-AA Phase 0c memo §3.11):
+  - https://shillerdata.com/ (Shiller's commercial homepage; serves the same
+    xls)
+  - https://datahub.io/core/s-and-p-500/r/data.csv (community CSV mirror,
+    subset of columns)
+  - https://posix4e.github.io/shiller_wrapper_data/data.json (community JSON
+    mirror — preferred for daily polling per the handoff memo)
 
-Wired §3.13 (2026-06-10) — module + library schema only. The xls parser
-is intentionally a stub returning None until the workbook layout is
-verified against a live download (sandbox blocks Yale with 403, so the
-verification needs to happen on a credentialed CI run or a local copy).
-Driven by regime AA Phase 0 long-run availability + master plan §6
-portfolio construction.
+Indicator definitions live in data/macro_library_shiller.csv. Each row's
+`series_id` is the source column header from the "Data" sheet (e.g.
+"CAPE", "S&P Comp. P", "Dividend D", "Earnings E", "CPI",
+"Long Interest Rate GS10").
+
+Date column quirk: the Shiller "Date" column stores decimal years where
+the fractional part is the two-digit month — "1871.01" is January 1871
+and "1871.10" is October 1871 (NOT the first decile of the year). As
+floats these round-trip distinctly because 0.01 and 0.10 are different
+IEEE-754 numbers, so `month = round((val - year) * 100)` recovers the
+intended month. When the workbook is delivered with cell values stored
+as strings instead of numbers (some mirror conversions do this), we
+honour the string convention from the prompt: "1871.1" → January,
+"1871.10" → October — single-digit fractional means single-digit month;
+two-digit fractional means two-digit month (no padding logic).
+
+The downloaded workbook is cached per process (read once, slice many —
+same shape as sources/ifo.py::_resolve_workbook_impl()), so a fetch loop
+that pulls CAPE + CPI + Long Rate from the same library only hits Yale
+once.
+
+Wired §3.13 (2026-06-10) — parser populated + library rows added in the
+same commit. The library load is still a no-op when the CSV is empty,
+matching the macro_library_nasdaqdl.csv precedent.
 """
 
 from __future__ import annotations
 
+import io
 import pathlib
+import time
 
 import pandas as pd
+import requests
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_shiller.csv"
 
@@ -42,14 +65,47 @@ _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_sh
 # The xls is ~1MB; pull weekly at most once the parser is verified.
 SHILLER_XLS_URL = "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
 
+# Fallback hosts. Order is intentional:
+#   1. Yale (canonical original)
+#   2. shillerdata.com (Shiller's own commercial site — same xls under a
+#      different domain in case Yale's webserver is down)
+#   3. (the community JSON / datahub CSV mirrors are reachable via different
+#      code paths — they're not the same .xls download, so they're handled
+#      separately by upstream code if/when this module is extended.)
+SHILLER_XLS_HOSTS = [
+    "http://www.econ.yale.edu/~shiller/data/ie_data.xls",
+    "https://shillerdata.com/ie_data.xls",
+]
+
 # Browser-like UA — Yale's webserver 403s the default python-requests UA.
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept": "application/vnd.ms-excel,application/octet-stream,*/*;q=0.8",
+    "Accept": (
+        "application/vnd.ms-excel,application/vnd.openxmlformats-"
+        "officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
 }
+
+# First bytes of file magic. Modern Shiller distributions ship an xlsx (ZIP
+# archive) with an .xls extension; older ones were genuine BIFF binary
+# .xls. openpyxl handles the former; the latter would need xlrd (not
+# installed). We log + bail if we see a BIFF magic so the failure is
+# diagnosable.
+_XLSX_MAGIC = b"PK\x03\x04"
+_BIFF_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # OLE2 compound file (legacy .xls)
+
+# The "Data" sheet in ie_data.xls has 7 pre-header rows of title +
+# attribution text; row 8 is the column-name header. Verified against the
+# workbook structure documented on Shiller's homepage and in multiple
+# community readers (econdb, posix4e/shiller_wrapper_data). If a future
+# Shiller release shifts the header row, the parser surfaces a clear error
+# from the "Date column not found" branch in _parse_data_sheet.
+_DATA_SHEET_NAME = "Data"
+_DATA_HEADER_ROW = 7  # 0-indexed; pandas header= parameter
 
 
 # ---------------------------------------------------------------------------
@@ -59,8 +115,7 @@ _HEADERS = {
 def load_library() -> list[dict]:
     """Load Shiller indicator definitions from macro_library_shiller.csv.
 
-    Returns [] when the library is empty/absent (scaffold state today).
-    Populate the CSV once the xls parser below is verified."""
+    Returns [] when the library is empty/absent."""
     if not _LIBRARY_CSV.exists():
         return []
     df = pd.read_csv(_LIBRARY_CSV, dtype=str, keep_default_na=False)
@@ -90,7 +145,224 @@ def load_library() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# SERIES FETCH — stub (parser unimplemented; see module docstring)
+# WORKBOOK DOWNLOAD + CACHE
+# ---------------------------------------------------------------------------
+
+# Process-level caches. Cache the parsed DataFrame too so a fetch loop that
+# pulls 6 columns from the same workbook does one download + one parse.
+_WORKBOOK_BYTES_CACHE: bytes | None = None
+_WORKBOOK_BYTES_TRIED: bool = False
+_DATA_FRAME_CACHE: pd.DataFrame | None = None
+
+
+def _download_workbook(timeout: int = 30, retries: int = 2) -> bytes | None:
+    """Download ie_data.xls from the canonical Yale URL with mirror fallback.
+
+    Returns the raw bytes (xlsx-with-.xls-extension in modern releases) or
+    None on hard failure. Logs every attempt for pipeline.log capture.
+    Cached per process via _resolve_workbook_bytes()."""
+    last_exc: Exception | None = None
+    for attempt in range(retries):
+        for host in SHILLER_XLS_HOSTS:
+            try:
+                resp = requests.get(host, headers=_HEADERS, timeout=timeout)
+                if resp.status_code != 200:
+                    print(f"    [Shiller HTTP {resp.status_code}] {host}")
+                    continue
+                body = resp.content
+                if not body:
+                    print(f"    [Shiller] {host}: empty body")
+                    continue
+                if body.startswith(_XLSX_MAGIC):
+                    print(f"    [Shiller] resolved xlsx ({len(body):,} bytes) via {host}")
+                    return body
+                if body.startswith(_BIFF_MAGIC):
+                    print(
+                        f"    [Shiller] {host}: legacy BIFF .xls (need xlrd; "
+                        f"not installed). Skipping host."
+                    )
+                    continue
+                head = body[:32].replace(b"\n", b" ")
+                print(
+                    f"    [Shiller] {host}: unrecognised file magic — "
+                    f"first 32 bytes: {head!r}"
+                )
+            except requests.Timeout:
+                print(f"    [Shiller timeout] {host}")
+                last_exc = TimeoutError(f"timeout on {host}")
+                continue
+            except requests.RequestException as e:
+                print(f"    [Shiller request error] {host}: {e}")
+                last_exc = e
+                continue
+        # All hosts failed this attempt — back off before retry.
+        wait = 2 ** attempt
+        if attempt + 1 < retries:
+            print(f"    [Shiller] all hosts failed — backing off {wait}s")
+            time.sleep(wait)
+    print(
+        f"    [Shiller FAIL] {retries} attempts × {len(SHILLER_XLS_HOSTS)} host(s) "
+        f"exhausted ({last_exc})"
+    )
+    return None
+
+
+def _resolve_workbook_bytes() -> bytes | None:
+    """Cached wrapper around _download_workbook — runs once per process.
+
+    On failure, caches the None result so a subsequent series fetch in the
+    same run doesn't re-hit a dead endpoint."""
+    global _WORKBOOK_BYTES_CACHE, _WORKBOOK_BYTES_TRIED
+    if _WORKBOOK_BYTES_TRIED:
+        return _WORKBOOK_BYTES_CACHE
+    _WORKBOOK_BYTES_CACHE = _download_workbook()
+    _WORKBOOK_BYTES_TRIED = True
+    return _WORKBOOK_BYTES_CACHE
+
+
+# ---------------------------------------------------------------------------
+# DECIMAL-YEAR DATE PARSER
+# ---------------------------------------------------------------------------
+
+def _parse_shiller_date(raw) -> pd.Timestamp | None:
+    """Parse one Shiller decimal-year cell to a month-end Timestamp.
+
+    Accepts either:
+      - float / int (Excel native): "1871.01" stored as 1871.01,
+        "1871.10" stored as 1871.10. Distinguishable because the
+        fractional parts are different IEEE-754 numbers; recover month
+        via `round((val - year) * 100)`.
+      - string: honours the prompt convention — "1871.1" → January
+        (single-digit fractional = single-digit month), "1871.10" →
+        October (two-digit fractional = two-digit month). No padding
+        guesswork; the string already tells us the intent.
+
+    Anchors the date at month-end so the index aligns with the rest of
+    the pipeline's monthly-cadence series (e.g. ifo, BLS).
+    """
+    if raw is None:
+        return None
+    # Empty-cell sentinels.
+    if isinstance(raw, float) and pd.isna(raw):
+        return None
+    # String path — honour the string's literal width.
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return None
+        if "." not in s:
+            # Year-only (unlikely for Shiller, but tolerate).
+            try:
+                year = int(s)
+            except ValueError:
+                return None
+            month = 12  # treat as end-of-year
+        else:
+            ystr, mstr = s.split(".", 1)
+            try:
+                year = int(ystr)
+                # "1" → Jan, "10" → Oct, "12" → Dec. Single-digit
+                # fractional is a single-digit month per the documented
+                # convention; no auto-padding.
+                month = int(mstr)
+            except ValueError:
+                return None
+    else:
+        # Numeric path — float or int.
+        try:
+            val = float(raw)
+        except (TypeError, ValueError):
+            return None
+        if pd.isna(val):
+            return None
+        year = int(val)
+        frac = val - year
+        # frac for .01 is ~0.01, for .10 is ~0.10, for .12 is ~0.12.
+        # Multiply by 100 and round to nearest int — handles the float
+        # noise on 0.01-style values cleanly.
+        month = int(round(frac * 100))
+        # Sanity: if the workbook ever ships YYYY.M-as-fraction (eg.
+        # 1871.5 meaning mid-year), this would mis-recover. Shiller has
+        # never done that, but trap the out-of-range case.
+        if month == 0:
+            # `1871.0` exactly → treat as January.
+            month = 1
+    if not (1 <= month <= 12):
+        return None
+    if year < 1700 or year > 2200:
+        return None
+    return pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0)
+
+
+# ---------------------------------------------------------------------------
+# WORKBOOK PARSER
+# ---------------------------------------------------------------------------
+
+def _parse_data_sheet(xlsx_bytes: bytes) -> pd.DataFrame | None:
+    """Parse the "Data" sheet of ie_data.xls(x) into a date-indexed
+    DataFrame whose columns are the Shiller header names (e.g. "CAPE",
+    "S&P Comp. P", "Dividend D", ...). Returns None on parse failure.
+
+    Cached at the wrapper level (_resolve_data_frame); this function is
+    pure and re-callable but the cache means it only runs once per
+    process."""
+    try:
+        df = pd.read_excel(
+            io.BytesIO(xlsx_bytes),
+            sheet_name=_DATA_SHEET_NAME,
+            header=_DATA_HEADER_ROW,
+            engine="openpyxl",
+        )
+    except Exception as e:
+        print(f"    [Shiller] read_excel failed: {type(e).__name__}: {e}")
+        return None
+
+    if df.empty:
+        print("    [Shiller] Data sheet parsed as empty")
+        return None
+
+    # Normalise the column index — strip whitespace, drop unnamed
+    # spillover columns that openpyxl manufactures for empty header cells.
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.loc[:, [c for c in df.columns if c and not c.startswith("Unnamed")]]
+
+    # Locate the Date column. Shiller's header is exactly "Date".
+    if "Date" not in df.columns:
+        print(
+            f"    [Shiller] 'Date' column not found in Data sheet. "
+            f"Columns seen: {list(df.columns)[:12]}..."
+        )
+        return None
+
+    dates = df["Date"].map(_parse_shiller_date)
+    valid_mask = dates.notna()
+    if not valid_mask.any():
+        print("    [Shiller] no rows produced a valid Date — parser may be wrong")
+        return None
+
+    df = df.loc[valid_mask].copy()
+    df.index = pd.DatetimeIndex(dates.loc[valid_mask].tolist())
+    df = df.drop(columns=["Date"])
+    df = df[~df.index.duplicated(keep="first")].sort_index()
+    return df
+
+
+def _resolve_data_frame() -> pd.DataFrame | None:
+    """Cached: download + parse the Data sheet exactly once per process."""
+    global _DATA_FRAME_CACHE
+    if _DATA_FRAME_CACHE is not None:
+        return _DATA_FRAME_CACHE
+    body = _resolve_workbook_bytes()
+    if body is None:
+        return None
+    parsed = _parse_data_sheet(body)
+    if parsed is not None:
+        _DATA_FRAME_CACHE = parsed
+    return parsed
+
+
+# ---------------------------------------------------------------------------
+# SERIES FETCH
 # ---------------------------------------------------------------------------
 
 def fetch_series_as_pandas(
@@ -99,15 +371,30 @@ def fetch_series_as_pandas(
 ) -> pd.Series | None:
     """Fetch one Shiller series and return a date-indexed pd.Series, or None.
 
-    Stub — the xls parser is intentionally unimplemented until the
-    ie_data.xls sheet layout is verified against a live download. Returns
-    None + a one-line warning so fetch_macro_economic's dispatch loop
-    handles it the same way as any other source returning no data, and
-    the daily audit will flag any library rows that reference Shiller.
+    series_id : header from the Data sheet, e.g. "CAPE", "S&P Comp. P",
+                "Dividend D", "Earnings E", "CPI", "Long Interest Rate GS10".
+    col_name  : optional name for the returned Series (default = series_id).
 
-    See module docstring for the implementation plan."""
-    print(
-        f"    [Shiller] {series_id} — parser not yet wired (§3.13 follow-up); "
-        f"returning None"
-    )
-    return None
+    Returns None on download / parse failure (logged to stdout for
+    pipeline.log capture)."""
+    df = _resolve_data_frame()
+    if df is None:
+        return None
+    if series_id not in df.columns:
+        # Tolerate trivial whitespace mismatches and try a normalised
+        # lookup before giving up.
+        norm = {c.strip(): c for c in df.columns}
+        if series_id.strip() in norm:
+            series_id = norm[series_id.strip()]
+        else:
+            print(
+                f"    [Shiller] column {series_id!r} not in Data sheet. "
+                f"Available: {list(df.columns)[:18]}"
+            )
+            return None
+    s = pd.to_numeric(df[series_id], errors="coerce").dropna()
+    if s.empty:
+        print(f"    [Shiller] {series_id} parsed 0 numeric observations")
+        return None
+    s.name = col_name or series_id
+    return s
