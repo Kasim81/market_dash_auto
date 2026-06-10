@@ -429,7 +429,7 @@ Once those land, fold them into the per-region `*_INFL1` calculators as a second
 
 **Other underlying-data fills** required:
 
-- **JP PPI / Services PPI** — 2 missing inflation rows from the reference doc. Wire via e-Stat (`sources/estat.py` extension; both series exist on e-Stat). Still outstanding.
+- ✅ **JP PPI / Services PPI** shipped 2026-06-10 via BoJ Time-Series Data Search direct (`sources/boj.py`, the keyless BoJ-publisher route). Series codes verified live against the BoJ `getMetadata` endpoint: `PR01'PRCG20_2200000000` → `JPN_PPI` (Producer Price Index All Commodities, 2020 base, monthly back to 1960-01, last 2026-05) and `PR02'PRCS20_5200000000` → `JPN_SPPI` (Services Producer Price Index All Items, 2020 base, monthly back to 1985-01, last 2026-04). DB.nomics' BoJ mirror was investigated and found to be stale at 2024-04/05 (~2-year lag, unrefreshed aggregator); BoJ direct is the right choice and what our existing `sources/boj.py` module is purpose-built for.
 - ✅ ~~**Inflation expectations integration** — `T5YIE`, `T10YIE`, `T5YIFR`, `MICH` … Surface as `US_INFEXP1` (composite) so the regime model can use them.~~ Done 2026-05-28 (#152).
 
 #### 3.1.4 GDP Now indices and proxies
