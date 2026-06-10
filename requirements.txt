@@ -8,3 +8,4 @@ nasdaq-data-link
 # dev-only: used by manuals/build_docx.py, manuals/md_to_docx.py, archive/generate_review_excel.py
 python-docx
 openpyxl
+xlrd<2.0
