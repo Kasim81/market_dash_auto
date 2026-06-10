@@ -66,10 +66,11 @@ jobs:
       env:
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
         BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
+        ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
       run: |
         echo "" >> pipeline.log
-        echo "=== Primary-source smoke tests (BLS, INSEE, BdF) ===" >> pipeline.log
-        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke -v 2>&1 | tee -a pipeline.log
+        echo "=== Primary-source smoke tests (BLS, INSEE, BdF, Alpha Vantage) ===" >> pipeline.log
+        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke -v 2>&1 | tee -a pipeline.log
     - name: Rebuild indicator explorer
       run: |
         set -o pipefail

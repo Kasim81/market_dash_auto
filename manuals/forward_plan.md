@@ -525,7 +525,7 @@ Outstanding-work-only acceptance criteria for §3.1 closure:
 ### 3.3 PE Ratio Integration
 
 **Priority:** Medium-high — valuation data is a core input for a macro-market dashboard.
-**Status:** Not started.
+**Status:** Capability shipped 2026-06-10. Alpha Vantage scaffold + smoke test landed (`sources/alpha_vantage.py` with `fetch_overview()` + `get_pe_ratios()`, `data/macro_library_alpha_vantage.csv` empty schema, `test_alpha_vantage_smoke.py` exercising `OVERVIEW` for `SPY`; smoke step in `update_data.yml` extended to expose `ALPHAVANTAGE_API_KEY` and run the new test). Free-tier quota is 25 requests/day so a per-ticker daily pull is feasible for the ~5-row major-index ETF set (SPY/QQQ/IWM/EFA/EEM) once we settle on the storage shape — likely a new `data/equity_pe_snapshot.csv` rather than mixing snapshot-only PE/forward-PE values into the time-series `macro_economic_hist`. Population + writer remain outstanding pending that schema decision. Historical PE / CAPE (multpl.com / shillerdata) is a separate track — see §3.13.
 
 **Objective:** Integrate price-to-earnings (PE) ratio data for major indices (S&P 500, Nasdaq 100, FTSE 100, Euro Stoxx 50, Nikkei 225, MSCI EM, etc.) and/or individual equity markets. PE ratios provide valuation context for equity regime signals and can feed forward-PE-based composite indicators in Phase E.
 
