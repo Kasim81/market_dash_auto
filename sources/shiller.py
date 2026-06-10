@@ -18,11 +18,13 @@ Updated quarterly-ish by Shiller himself. The xls workbook carries:
 
 Fallback mirrors (regime-AA Phase 0c memo §3.11):
   - https://shillerdata.com/ (Shiller's commercial homepage; serves the same
-    xls)
+    xls — the actual download URL is on img1.wsimg.com behind a blob path,
+    discovered by scraping the homepage 2026-06-10)
   - https://datahub.io/core/s-and-p-500/r/data.csv (community CSV mirror,
     subset of columns)
-  - https://posix4e.github.io/shiller_wrapper_data/data.json (community JSON
-    mirror — preferred for daily polling per the handoff memo)
+  - https://posix4e.github.io/shiller_wrapper_data/data.json — referenced
+    in the handoff memo but the GitHub Pages site returns 404 as of
+    2026-06-10; not wired here until/unless it comes back.
 
 Indicator definitions live in data/macro_library_shiller.csv. Each row's
 `series_id` is the source column header from the "Data" sheet (e.g.
@@ -72,9 +74,15 @@ SHILLER_XLS_URL = "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
 #   3. (the community JSON / datahub CSV mirrors are reachable via different
 #      code paths — they're not the same .xls download, so they're handled
 #      separately by upstream code if/when this module is extended.)
+# shillerdata.com hosts the same workbook but the actual file is on the
+# GoDaddy/wsimg.com blob CDN — the homepage at https://shillerdata.com/
+# does not serve /ie_data.xls directly (that path 404s). The blob path
+# below was scraped from the "Download" link on the homepage on
+# 2026-06-10; the `?ver=` query string changes when Shiller re-uploads,
+# so if this 404s in the future, re-scrape the homepage to refresh.
 SHILLER_XLS_HOSTS = [
     "http://www.econ.yale.edu/~shiller/data/ie_data.xls",
-    "https://shillerdata.com/ie_data.xls",
+    "https://img1.wsimg.com/blobby/go/e5e77e0b-59d1-44d9-ab25-4763ac982e53/downloads/c9b8cf0f-f01a-49f5-9ea5-d19443390ab2/ie_data.xls?ver=1780495520681",
 ]
 
 # Browser-like UA — Yale's webserver 403s the default python-requests UA.
@@ -90,11 +98,11 @@ _HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-# First bytes of file magic. Modern Shiller distributions ship an xlsx (ZIP
-# archive) with an .xls extension; older ones were genuine BIFF binary
-# .xls. openpyxl handles the former; the latter would need xlrd (not
-# installed). We log + bail if we see a BIFF magic so the failure is
-# diagnosable.
+# First bytes of file magic. Shiller distributions historically ship a
+# genuine BIFF binary .xls (OLE2 compound file) — that's the current Yale
+# delivery as of 2026-06-10. Some mirrors transcode to xlsx (ZIP archive)
+# but keep the .xls extension. We dispatch by magic: openpyxl for xlsx,
+# xlrd (<2.0; 2.0 dropped .xls support) for BIFF.
 _XLSX_MAGIC = b"PK\x03\x04"
 _BIFF_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # OLE2 compound file (legacy .xls)
 
@@ -177,11 +185,8 @@ def _download_workbook(timeout: int = 30, retries: int = 2) -> bytes | None:
                     print(f"    [Shiller] resolved xlsx ({len(body):,} bytes) via {host}")
                     return body
                 if body.startswith(_BIFF_MAGIC):
-                    print(
-                        f"    [Shiller] {host}: legacy BIFF .xls (need xlrd; "
-                        f"not installed). Skipping host."
-                    )
-                    continue
+                    print(f"    [Shiller] resolved BIFF .xls ({len(body):,} bytes) via {host}")
+                    return body
                 head = body[:32].replace(b"\n", b" ")
                 print(
                     f"    [Shiller] {host}: unrecognised file magic — "
@@ -298,23 +303,74 @@ def _parse_shiller_date(raw) -> pd.Timestamp | None:
 # WORKBOOK PARSER
 # ---------------------------------------------------------------------------
 
+def _read_biff_sheet_with_xlrd(
+    xlsx_bytes: bytes,
+    sheet_name: str,
+    header_row: int,
+) -> pd.DataFrame | None:
+    """Read one sheet of a legacy BIFF .xls workbook via xlrd directly,
+    bypassing pandas (modern pandas — 2.0+ — refuses to use xlrd<2.0
+    through `pd.read_excel`, but xlrd<2.0 is the only release that can
+    still read .xls). We read the raw cells via xlrd and assemble the
+    DataFrame ourselves to keep the dispatch transparent."""
+    try:
+        import xlrd  # type: ignore
+    except ImportError as e:
+        print(f"    [Shiller] xlrd not installed; cannot read BIFF .xls ({e})")
+        return None
+    try:
+        book = xlrd.open_workbook(file_contents=xlsx_bytes)
+        sheet = book.sheet_by_name(sheet_name)
+    except Exception as e:
+        print(f"    [Shiller] xlrd open/sheet failed: {type(e).__name__}: {e}")
+        return None
+    if sheet.nrows <= header_row:
+        print(
+            f"    [Shiller] sheet {sheet_name!r} has {sheet.nrows} rows; "
+            f"header row {header_row} is out of range"
+        )
+        return None
+    header = [sheet.cell_value(header_row, c) for c in range(sheet.ncols)]
+    rows = [
+        [sheet.cell_value(r, c) for c in range(sheet.ncols)]
+        for r in range(header_row + 1, sheet.nrows)
+    ]
+    return pd.DataFrame(rows, columns=header)
+
+
 def _parse_data_sheet(xlsx_bytes: bytes) -> pd.DataFrame | None:
     """Parse the "Data" sheet of ie_data.xls(x) into a date-indexed
     DataFrame whose columns are the Shiller header names (e.g. "CAPE",
     "S&P Comp. P", "Dividend D", ...). Returns None on parse failure.
 
+    Dispatches by file magic: BIFF (legacy OLE2 .xls — Yale's current
+    delivery) goes through xlrd directly (modern pandas refuses to use
+    xlrd<2.0, but xlrd<2.0 is the only release that can read .xls);
+    xlsx (ZIP) goes through openpyxl via pandas as normal.
+
     Cached at the wrapper level (_resolve_data_frame); this function is
     pure and re-callable but the cache means it only runs once per
     process."""
-    try:
-        df = pd.read_excel(
-            io.BytesIO(xlsx_bytes),
-            sheet_name=_DATA_SHEET_NAME,
-            header=_DATA_HEADER_ROW,
-            engine="openpyxl",
+    if xlsx_bytes.startswith(_BIFF_MAGIC):
+        df = _read_biff_sheet_with_xlrd(
+            xlsx_bytes, _DATA_SHEET_NAME, _DATA_HEADER_ROW
         )
-    except Exception as e:
-        print(f"    [Shiller] read_excel failed: {type(e).__name__}: {e}")
+        if df is None:
+            return None
+    elif xlsx_bytes.startswith(_XLSX_MAGIC):
+        try:
+            df = pd.read_excel(
+                io.BytesIO(xlsx_bytes),
+                sheet_name=_DATA_SHEET_NAME,
+                header=_DATA_HEADER_ROW,
+                engine="openpyxl",
+            )
+        except Exception as e:
+            print(f"    [Shiller] read_excel (openpyxl) failed: {type(e).__name__}: {e}")
+            return None
+    else:
+        head = xlsx_bytes[:32].replace(b"\n", b" ")
+        print(f"    [Shiller] unrecognised workbook magic: {head!r}")
         return None
 
     if df.empty:
