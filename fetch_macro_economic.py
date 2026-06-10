@@ -50,6 +50,9 @@ from sources import istat as istat_src
 from sources import bls as bls_src
 from sources import insee as insee_src
 from sources import bdf as bdf_src
+from sources import shiller as shiller_src
+from sources import french as french_src
+from sources import jst as jst_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -128,6 +131,9 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(bls_src.load_library())
     indicators.extend(insee_src.load_library())
     indicators.extend(bdf_src.load_library())
+    indicators.extend(shiller_src.load_library())
+    indicators.extend(french_src.load_library())
+    indicators.extend(jst_src.load_library())
     return indicators
 
 
@@ -587,6 +593,35 @@ def _fetch_bdf_snapshot(indic: dict, fetched_at: str) -> list[dict]:
     return _snapshot_from_series(s, indic, fetched_at)
 
 
+# -- §3.13 long-run sources (Shiller / Ken French / JST) snapshot --
+#
+# These three sources each cache a single workbook/ZIP/.dta per process so the
+# whole library hits one network round-trip total — the delay only matters
+# between distinct downloads, not between successive series within one source.
+# Keep the delay short.
+SHILLER_DELAY = 0.1
+FRENCH_DELAY  = 0.1
+JST_DELAY     = 0.1
+
+
+def _fetch_shiller_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = shiller_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(SHILLER_DELAY)
+    return _snapshot_from_series(s, indic, fetched_at)
+
+
+def _fetch_french_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = french_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(FRENCH_DELAY)
+    return _snapshot_from_series(s, indic, fetched_at)
+
+
+def _fetch_jst_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = jst_src.fetch_series_as_pandas(indic["source_id"])
+    time.sleep(JST_DELAY)
+    return _snapshot_from_series(s, indic, fetched_at)
+
+
 # -- BoJ Time-Series Data Search snapshot --
 
 BOJ_DELAY = 0.6  # seconds between BoJ API calls
@@ -761,6 +796,12 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_ndl_snapshot(indic, fetched_at)
             elif src == "LBMA":
                 got = _fetch_lbma_snapshot(indic, fetched_at)
+            elif src == "Shiller":
+                got = _fetch_shiller_snapshot(indic, fetched_at)
+            elif src == "KenFrench":
+                got = _fetch_french_snapshot(indic, fetched_at)
+            elif src == "JST":
+                got = _fetch_jst_snapshot(indic, fetched_at)
             else:
                 print(f"  [WARN] Unknown source '{src}' — skipping")
                 continue
@@ -995,6 +1036,26 @@ def _fetch_bdf_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s} if s is not None and not s.empty else {}
 
 
+# -- §3.13 long-run sources (Shiller / Ken French / JST) history --
+
+def _fetch_shiller_history(indic: dict) -> dict[str, pd.Series]:
+    s = shiller_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(SHILLER_DELAY)
+    return {indic["col"]: s} if s is not None and not s.empty else {}
+
+
+def _fetch_french_history(indic: dict) -> dict[str, pd.Series]:
+    s = french_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(FRENCH_DELAY)
+    return {indic["col"]: s} if s is not None and not s.empty else {}
+
+
+def _fetch_jst_history(indic: dict) -> dict[str, pd.Series]:
+    s = jst_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(JST_DELAY)
+    return {indic["col"]: s} if s is not None and not s.empty else {}
+
+
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -1126,6 +1187,12 @@ def _history_for_indicator(
         return _fetch_ndl_history(indic)
     if src == "LBMA":
         return _fetch_lbma_history(indic)
+    if src == "Shiller":
+        return _fetch_shiller_history(indic)
+    if src == "KenFrench":
+        return _fetch_french_history(indic)
+    if src == "JST":
+        return _fetch_jst_history(indic)
     if src == "ifo":
         return _fetch_ifo_history(indic, ifo_indicators)
     print(f"  [WARN] Unknown source '{src}' in history fetch")
