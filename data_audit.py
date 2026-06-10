@@ -373,7 +373,11 @@ def _check_orphan_country_codes() -> list[str]:
         valid = {row["code"].strip() for row in csv.DictReader(f) if row.get("code")}
 
     issues: list[str] = []
-    for lib_name in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma"):
+    for lib_name in (
+        "fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl",
+        "lbma", "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls",
+        "insee", "bdf", "alpha_vantage", "shiller", "french", "jst",
+    ):
         path = DATA / f"macro_library_{lib_name}.csv"
         if not path.exists():
             continue
