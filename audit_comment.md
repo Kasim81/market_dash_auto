@@ -1,22 +1,21 @@
-## Daily audit — 2026-06-10 — **45 ISSUES** (2 fetch errors, 42 stale series, 1 static-check failure)
+## Daily audit — 2026-06-10 — **44 ISSUES** (1 fetch error, 42 stale series, 1 static-check failure)
 
-_Run: 2026-06-10 05:16 UTC_
+_Run: 2026-06-10 11:04 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5560 obs`
 
 </details>
 
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (25):
+**EXPIRED** (24):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -42,11 +41,10 @@ Full report attached as `data_audit.txt` in today's commit.
 | `CMRMTSPL` | FRED | Monthly | 2026-03-06 | 96d | 45d |
 | `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-03-06 | 96d | 45d |
 | `GBR_AWE_REGPAY_YOY` | ONS | Monthly | 2026-03-06 | 96d | 45d |
-| `ITA_IND_PROD` | ISTAT | Monthly | 2026-03-06 | 96d | 45d |
 | `T5YIFR` | FRED | Daily | 2026-05-29 | 12d | 5d |
 | `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-29 | 12d | 5d |
 
-**STALE** (17):
+**STALE** (18):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -67,6 +65,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `GBR_CPI_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
 | `GBR_CPIH_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
 | `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 68d | 45d |
+| `ITA_IND_PROD` | ISTAT | Monthly | 2026-04-03 | 68d | 45d |
 
 </details>
 
