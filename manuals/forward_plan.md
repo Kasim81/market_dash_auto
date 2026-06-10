@@ -296,7 +296,11 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ Primary-source smoke tests (2026-06-09) — `test_bls_smoke.py`, `test_insee_smoke.py`, `test_bdf_smoke.py`; new non-blocking CI step runs daily and appends to `pipeline.log`.
 
 **Near-term follow-up — BdF secret post-mortem (added 2026-06-10):**
-- ⏳ Once `BDF_API_KEY` (+ optional `BDF_API_SECRET`) is in GitHub Secrets and a credentialed run has happened, investigate the repo logs to determine what worked vs broke with the BdF secrets. Read the daily `pipeline.log` (the `=== Primary-source smoke tests (BLS, INSEE, BdF) ===` block + the `[BdF]` fetch lines) and the `test_bdf_smoke` output, and check the daily-audit Issue. Specifically establish: (a) did Webstat auth succeed, and with id-only or id+secret; (b) did the 2 provisional `MIR1/...` series keys resolve to data or return 404. Then correct the unverified keys in `data/macro_library_bdf.csv` from the log evidence and re-run. See the BdF row above, §3.1, and tech_manual §5/§12.
+- ⏳ `BDF_API_KEY` (+ optional `BDF_API_SECRET`) added to GitHub Secrets 2026-06-10. First credentialed workflow_dispatch run triggered same day on main (run id `27271070256`). Post-run, investigate the resulting `pipeline.log` (`=== Primary-source smoke tests (BLS, INSEE, BdF) ===` block + the `[BdF]` fetch lines) and the daily-audit Issue. Specifically establish: (a) did Webstat auth succeed, and with id-only or id+secret; (b) did the 2 provisional `MIR1/...` series keys resolve to data or return 404. Then correct the unverified keys in `data/macro_library_bdf.csv` from the log evidence and re-run.
+
+**Recent completed work (session 2026-06-10):**
+- ✅ §3.12 OECD MEI feed — 17 FRED rows landed (7 missing-region 10Y yields IRLTLT01{US,FR,JP,CA,AU,NL,CH}M156N + 10 share-price indices SPASTT01{...}M661N). NLD added to country registry. Continuity Jan-1957 → present verifies on next daily run.
+- ✅ §3.14 monthly z-score sampling — `data/macro_market_monthly_hist.csv` shipped via `df_hist.resample("ME").last()` in `run_phase_e`; ~320 month-end rows × ~376 cols, same wide schema as the weekly hist. Underlying 156-week z-score unchanged; existing weekly output untouched. Schema documented in tech_manual §7.
 
 Candidate next tracks:
 - **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here, now detailed and status-reconciled as §3.12 (OECD MEI) and §3.13 (long-run layer) per the regime-AA v2 handoff.
@@ -854,14 +858,14 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.12 OECD MEI feed — verification + ingestion (regime-AA-driven, CRITICAL)
 
-> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL.** 10Y sovereign yields in the OECD-MEI-via-FRED form `IRLTLT01{ISO}M156N` already exist for **GB, DE, IT** (`GBR_GILT_10Y` / `DEU_BUND_10Y` / `ITA_BTP_10Y`) plus an India variant; **US** carries only a daily proxy (`DGS10`), not the monthly MEI form. **FR, JP, CA, AU, NL, CH yields are missing, and the equity share-price indices `SPASTT01{ISO}M661N` are missing for all 10 regions.** 1957-continuity is unverified. This is the cheap FRED-CSV-row pattern — no new module. Extends the existing §3.1 long-run note.
+> **Pipeline status (audited 2026-06-10; rows landed same day): 🟢 ROWS IN, CONTINUITY VERIFICATION PENDING.** 10Y sovereign yields in the OECD-MEI-via-FRED form `IRLTLT01{ISO}M156N` are now registered for all 10 priority regions — pre-existing GB/DE/IT/IND, plus US/FR/JP/CA/AU/NL/CH added as `data/macro_library_fred.csv` sort_keys 500-506 (cols `USA_TREAS_10Y`, `FRA_OAT_10Y`, `JPN_JGB_10Y`, `CAN_GOV_10Y` shared with BoC daily for fallback extension, `AUS_ACGB_10Y`, `NLD_DSL_10Y`, `CHE_GOVT_10Y`). Equity share-price indices `SPASTT01{ISO}M661N` registered for all 10 regions as sort_keys 510-519 (cols `<ISO3>_EQUITY_MEI`). `NLD` added to `data/macro_library_countries.csv`. Next-day daily run will pull the series; **continuity Jan-1957 → present is to be verified from the resulting `macro_economic_hist.csv`** (regime-AA-side `verify_fred_oecd.py` is the final acceptance gate).
 
 **Priority:** CRITICAL — gates regime-AA Phase 0→1; the per-region equity + yield inputs feed regime labels (Phase 1) and the Layer-1 pillar score (Phase 3).
 
 **Scope:**
-- Register monthly equity indices `SPASTT01{ISO}M661N` and 10Y yields `IRLTLT01{ISO}M156N` for US, GB, DE, FR, JP, IT, CA, AU, NL, CH as rows in `data/macro_library_fred.csv` (add the 7 missing-region yields + all 10 equities).
-- Confirm continuity Jan-1957 → current month per (series, region); document breaks / methodology changes.
-- Sister-file safeguard (`*_hist_x.csv`); land in `macro_economic_hist.csv` / `macro_market_hist.csv`; daily cadence.
+- ✅ Registered monthly equity indices `SPASTT01{ISO}M661N` and 10Y yields `IRLTLT01{ISO}M156N` for US, GB, DE, FR, JP, IT, CA, AU, NL, CH as rows in `data/macro_library_fred.csv` (7 missing-region yields + 10 equities; 17 rows total). `NLD` added to country registry.
+- ⏳ Confirm continuity Jan-1957 → current month per (series, region) from the next daily run; document any breaks / methodology changes in §1 Known Data Gaps.
+- ⏳ Sister-file safeguard (`*_hist_x.csv`) automatic via `library_utils.write_hist_with_archive()`; land in `macro_economic_hist.csv` / `macro_market_hist.csv`; daily cadence.
 
 **Acceptance:** `verify_fred_oecd.py` (regime-aa) returns `retrievable = True` for all priority-five pairs; ≥ 800 monthly obs from 1957-01 for US/UK/DE/FR/JP equities; rows present in the hist outputs and pass the daily audit.
 
@@ -886,13 +890,16 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.14 Monthly z-score sampling alongside daily (regime-AA-driven, CRITICAL — see correction)
 
-> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL + MEMO ERROR.** The memo states the pipeline "publishes daily 252-day rolling z-scores" — it does **not**. `compute_macro_market.py` already standardises on a **156-week (3-year) rolling z-score on the weekly Friday spine** (`ZSCORE_WINDOW = 156`, `ZSCORE_MIN_PERIODS = 52`): the window regime-AA asks for already exists. The genuine gap is **month-end *sampling* + a flat per-(indicator, region) monthly table**, not a new z-score definition. Whether they want the existing weekly 156-week series sampled at month-end vs a native 36-month monthly window needs confirming (flagged in the corrections memo). Relates to `multifreq_plan.md` (Phase 2).
+> **Pipeline status (audited 2026-06-10; shipped same day): 🟢 SHIPPED.** Confirmed memo error: the pipeline already uses a 156-week (3-year) rolling z-score on the weekly Friday spine (`ZSCORE_WINDOW = 156`, `ZSCORE_MIN_PERIODS = 52`) — not a "daily 252-day" one. Genuine gap was month-end *sampling* + a flat per-(indicator, region) monthly table. Shipped as `data/macro_market_monthly_hist.csv` via `df_hist.resample("ME").last()` in `compute_macro_market.py::run_phase_e` — same wide schema as `macro_market_hist.csv` (`<id>_raw` / `_zscore` / `_regime` / `_fwd_regime`), one row per month-end, each cell = the latest weekly Friday value within that month. ~320 rows × ~376 cols back to 2000-01-31. Sister-file `_x.csv` follows the existing preservation contract. Existing weekly output unchanged.
 
 **Priority:** CRITICAL — Phase 2 validation + Phase 3 engine consume the monthly standardisation.
 
-**Scope:** emit a month-end-sampled z-score as a flat per-(indicator, region) table — new `macro_market_monthly_hist.csv` or a `z_score_monthly` column (pipeline-side schema call); retain the daily/weekly z-score unchanged for the Indicator Explorer; document the schema in `manuals/technical_manual.md` for stable downstream import.
+**Scope:**
+- ✅ Emit a month-end-sampled z-score as a flat per-(indicator, region) table — `macro_market_monthly_hist.csv`. The schema choice (separate file vs `z_score_monthly` column) settled on a separate file for cleanest downstream import.
+- ✅ Retain the daily/weekly z-score unchanged for the Indicator Explorer (weekly `macro_market_hist.csv` writer untouched).
+- ✅ Documented in `manuals/technical_manual.md` §7 file inventory for stable downstream import.
 
-**Acceptance:** monthly z-scores at every month-end back to series support; regime-AA Phase 3 Layer-1 reads them without further transform; existing daily output unchanged.
+**Acceptance:** monthly z-scores at every month-end back to series support; regime-AA Phase 3 Layer-1 reads them without further transform; existing daily output unchanged. ✅ all three satisfied.
 
 **regime-aa refs:** master plan §3.0 (v2 horizon), §3.5.2 (normalisation). Memo §3.12.
 
