@@ -326,15 +326,29 @@ def _build_payload(keep_column) -> dict:
 
 
 def build_macro_economic() -> dict:
-    """Single merged payload spanning every raw-macro source — FRED (US +
-    intl), OECD, World Bank, IMF, DB.nomics, ifo, BoE.  Powers the unified
-    "Economic Data" sidebar section (§2.5 restructure) where the user
-    browses all raw indicators by country (default By Region view) or by
-    concept (By Concept view), with the per-source distinction kept only as
-    filterable metadata in `meta.Source`.
+    """Single merged payload spanning every raw-macro source in the unified
+    hist. Powers the "Economic Data" sidebar section (§2.5 restructure) where
+    the user browses all raw indicators by country (default By Region view)
+    or by concept (By Concept view), with the per-source distinction kept
+    only as filterable metadata in `meta.Source`.
+
+    The source allowlist must enumerate every `source` string the per-source
+    loaders return (see `sources/*.py` load_library()). Missing a source
+    here means every column from that source is silently dropped from the
+    explorer's Economic Data tree, even though the data is correctly
+    populated in macro_economic_hist.csv.
     """
     return _build_payload(lambda m: m.get("Source") in {
-        "FRED", "OECD", "World Bank", "IMF", "DB.nomics", "ifo", "BoE", "ECB", "BoJ", "e-Stat",
+        # Aggregators
+        "FRED", "OECD", "World Bank", "IMF", "DB.nomics",
+        # Direct national-statistics offices / central banks
+        "BoE", "ECB", "BoJ", "e-Stat", "ifo",
+        "BoC", "StatCan", "ONS", "Bundesbank", "ABS", "ISTAT", "BLS",
+        "INSEE", "Banque de France",
+        # Commodity / market reference
+        "LBMA", "Nasdaq Data Link", "Alpha Vantage",
+        # §3.13 long-run sources
+        "Shiller", "KenFrench", "JST",
     })
 
 

@@ -153,6 +153,12 @@ MACRO_LIBS = {
     "abs":       DATA / "macro_library_abs.csv",
     "istat":     DATA / "macro_library_istat.csv",
     "bls":       DATA / "macro_library_bls.csv",
+    "insee":     DATA / "macro_library_insee.csv",
+    "bdf":       DATA / "macro_library_bdf.csv",
+    "alpha_vantage": DATA / "macro_library_alpha_vantage.csv",
+    "shiller":   DATA / "macro_library_shiller.csv",
+    "french":    DATA / "macro_library_french.csv",
+    "jst":       DATA / "macro_library_jst.csv",
 }
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
