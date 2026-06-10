@@ -356,6 +356,7 @@ def section_b_static_checks() -> dict:
         "duplicate_indicator_ids": _check_duplicate_indicator_ids(),
         "missing_calculators":    _check_missing_calculators(),
         "missing_columns":        _check_missing_get_col_columns(),
+        "missing_explorer_indicators": _check_missing_explorer_indicators(),
         "registry_drift":         _check_registry_drift(),
         "unadjusted_splits":      _check_unadjusted_splits(),
     }
@@ -451,6 +452,46 @@ def _check_missing_calculators() -> list[str]:
             for ind_id in missing]
 
 
+def _check_missing_explorer_indicators() -> list[str]:
+    """Every indicator id in macro_indicator_library.csv must have a matching
+    `<id>_raw` column in macro_market_hist.csv (the explorer's `present_ids`
+    discovery scans column-name suffixes, so a missing `_raw` column means the
+    indicator silently never appears in the explorer or `macro_market.csv`).
+
+    This is the gap forward_plan §3.11 documents: an indicator can be registered
+    in the library + a calculator dispatch + REGIME_RULES, but if a daily run
+    hasn't happened since the merge — or the calculator silently returned an
+    empty Series for the full HIST_START → today window — the hist won't carry
+    the column and the explorer skips the indicator without warning. The
+    remediation in either case is to trigger an `update_data` workflow_dispatch.
+    """
+    lib_path = DATA / "macro_indicator_library.csv"
+    hist_path = DATA / "macro_market_hist.csv"
+    if not (lib_path.exists() and hist_path.exists()):
+        return []
+
+    with lib_path.open(newline="") as f:
+        ind_ids = [
+            (row.get("id") or "").strip()
+            for row in csv.DictReader(f)
+            if (row.get("id") or "").strip()
+        ]
+
+    with hist_path.open(newline="") as f:
+        hist_cols = set(next(csv.reader(f)))
+
+    missing = [
+        ind for ind in ind_ids
+        if f"{ind}_raw" not in hist_cols and ind not in KNOWN_MISSING_INDICATORS
+    ]
+    return [
+        f"indicator {ind!r} present in library but no `{ind}_raw` column in "
+        f"macro_market_hist.csv (trigger update_data run, or check calculator "
+        f"returned non-empty Series)"
+        for ind in missing
+    ]
+
+
 def _check_missing_get_col_columns() -> list[str]:
     """Every `_get_col(mu, "X")` / `_get_col(mu_or_dbn, "X")` literal in
     compute_macro_market.py must resolve to a column id that exists in
@@ -495,6 +536,32 @@ KNOWN_MISSING_COLUMNS: frozenset = frozenset({
     # _calc_AS_CN_R1 references CHN_GOVT_10Y so it self-wires the day
     # a source lands. See forward_plan.md §1 Known Data Gaps.
     "CHN_GOVT_10Y",
+})
+
+
+# Indicator ids registered in macro_indicator_library.csv whose `<id>_raw`
+# column is permanently absent from macro_market_hist.csv because the
+# underlying input has no free source. The calculator + library row are
+# left in place so the indicator self-wires the day a source becomes
+# available, but the explorer pre-flight alert is suppressed in the
+# meantime. Every entry traces back to forward_plan.md §1 Known Data Gaps.
+KNOWN_MISSING_INDICATORS: frozenset = frozenset({
+    # Euro IG corporate effective yield: FRED BAMLEC0A0RMEY 400s on every
+    # call; ECB SDW has no free aggregate Euro IG yield; iBoxx paywalled.
+    # Partial proxy via IEAC.L ETF in index_library.csv.
+    "EU_Cr1",
+    # China–US 10Y rate spread: depends on CHN_GOVT_10Y (no free source —
+    # see KNOWN_MISSING_COLUMNS above).
+    "AS_CN_R1",
+    # Germany ZEW Economic Sentiment: ZEW Mannheim licences the archive;
+    # no free API. Substituted by DE_IFO1 + DEU_BUS_CONF.
+    "DE_ZEW1",
+    # Japan au Jibun Bank Manufacturing PMI: S&P Global proprietary, no
+    # free monthly feed. Functionally substituted by JP_TANKAN1.
+    "JP_PMI1",
+    # Caixin China Manufacturing PMI: S&P Global proprietary. Substituted
+    # by CN_PMI1 (OECD BCI for China).
+    "CN_PMI2",
 })
 
 
