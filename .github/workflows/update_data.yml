@@ -34,7 +34,6 @@ jobs:
         NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
         BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
-        BDF_API_SECRET: ${{ secrets.BDF_API_SECRET }}
         # Unbuffered stdout so the live Actions log + pipeline.log reflect
         # progress in real time (block buffering through `tee` previously
         # hid which step a long run was actually on).
@@ -56,15 +55,17 @@ jobs:
       # warning (surfaced in the daily Issue via pipeline.log), not a hard build
       # gate — consistent with the data-audit channel. Uses stdlib unittest
       # (pytest is not a pipeline dependency). BLS_API_KEY is optional (keyless
-      # v1 works); INSEE needs no key; BdF is key-gated, so BDF_API_KEY (+ the
-      # optional BDF_API_SECRET) must be exposed here too or test_bdf_smoke just
-      # skips — which is the whole signal we want on the first credentialed run.
+      # v1 works); INSEE needs no key; BdF is key-gated, so BDF_API_KEY must be
+      # exposed here too or test_bdf_smoke just skips — which is the whole
+      # signal we want on the first credentialed run. (BDF_API_SECRET was
+      # retired 2026-06-10 with the migration from the legacy IBM API Connect
+      # stack to the Opendatasoft Explore v2.1 stack — the new stack uses a
+      # single Apikey header.)
       if: always()
       continue-on-error: true
       env:
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
         BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
-        BDF_API_SECRET: ${{ secrets.BDF_API_SECRET }}
       run: |
         echo "" >> pipeline.log
         echo "=== Primary-source smoke tests (BLS, INSEE, BdF) ===" >> pipeline.log

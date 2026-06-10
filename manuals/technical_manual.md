@@ -98,7 +98,7 @@ market_dash_auto/
 │   ├── istat.py                       # ISTAT (Italy) SDMX-CSV fetcher with vintage (EDITION) resolution (280 lines)
 │   ├── bls.py                         # US Bureau of Labor Statistics Public Data API fetcher — BLS_API_KEY optional (284 lines)
 │   ├── insee.py                       # INSEE BDM SDMX-ML fetcher — keyless + optional INSEE_API_KEY (231 lines)
-│   └── bdf.py                         # Banque de France Webstat SDMX-JSON fetcher — BDF_API_KEY required (225 lines)
+│   └── bdf.py                         # Banque de France Webstat Opendatasoft Explore v2.1 fetcher — BDF_API_KEY required
 │
 ├── data/                          # CSV config libraries + pipeline output files
 │   ├── index_library.csv              # Instrument master library (~390 rows, 29 columns)
@@ -126,7 +126,7 @@ market_dash_auto/
 │   ├── macro_library_istat.csv        # ISTAT SDMX keys (3 rows: ITA unemployment, industrial production)
 │   ├── macro_library_bls.csv          # BLS series IDs (4 rows: USA CPI headline, core CPI, unemployment, avg hourly earnings)
 │   ├── macro_library_insee.csv        # INSEE BDM idbanks (3 rows: FRA business climate, unemployment, GDP volume)
-│   └── macro_library_bdf.csv          # BdF Webstat SDMX keys (2 rows: FRA MFI lending rates — PROVISIONAL/UNVERIFIED)
+│   └── macro_library_bdf.csv          # BdF Webstat Opendatasoft Explore v2.1 keys (2 rows: FRA MFI lending rates — PROVISIONAL — dataset_id|odsql_where format)
 │   │
 │   ├── source_fallbacks.csv           # Per-indicator T0/T1/T2/T3 fallback chain (Stage B + §3.9)
 │   ├── manual_splits.csv              # Yahoo-missing split overrides (ticker, ex_date, ratio) — §11 Pattern 11
@@ -400,13 +400,15 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Used for:** 3 France series (INSEE is the **ultimate/primary** source, superseding OECD/Eurostat aggregators): `FRA_BUS_CONF` (idbank 001565530 — Business Climate all-sectors, normalised mean=100), `FRA_UNEMPLOYMENT` (idbank 001688527 — ILO unemployment rate, Quarterly), `FRA_GDP_INDEX` (idbank 011794860 — GDP chained volume SA-WDA, base 2020). All 3 verified live keyless 2026-06. Library: `data/macro_library_insee.csv`.
 - **Fetcher:** `sources/insee.py` (231 lines). Parses both SDMX-ML generic-data (`<ObsDimension>/<ObsValue>`) and structure-specific (`TIME_PERIOD=`/`OBS_VALUE=` attributes) shapes. Smoke test: `test_insee_smoke.py` (daily CI step).
 
-### Banque de France — Webstat API (2026-06-09) — PROVISIONAL
+### Banque de France — Webstat API (Opendatasoft Explore v2.1, migrated 2026-06-10) — PROVISIONAL
 
-- **URL:** `https://api.webstat.banque-france.fr/webstat-fr/v1/data/<dataset>/<key>` (SDMX-JSON)
-- **Auth:** `BDF_API_KEY` required (IBM API Connect gateway; send as `X-IBM-Client-Id` header). An optional `BDF_API_SECRET` can be set as `X-IBM-Client-Secret`. Without a key the module logs a warning and skips all BdF series gracefully. Register a free application on the Webstat developer portal (`developer.webstat.banque-france.fr`).
-- **Used for:** 2 France MFI lending-rate series — `FRA_LOAN_RATE_HOUSE` (MIR1 — new loans to households for house purchase) and `FRA_LOAN_RATE_NFC` (new loans to non-financial corporations). Library: `data/macro_library_bdf.csv`.
-- **Status:** **PROVISIONAL / UNVERIFIED** — the series keys follow the ECB/SDMX MIR convention and have not yet been validated against a live credentialed fetch (no BDF_API_KEY in the current GitHub Secrets). Validate from the first credentialed CI run; correct series keys in `macro_library_bdf.csv` if needed. See `notes` column in the library CSV.
-- **Fetcher:** `sources/bdf.py` (225 lines). Smoke test: `test_bdf_smoke.py` (daily CI step — currently always skips without a key).
+- **URL:** `https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/<dataset_id>/records?where=<ODSQL>&limit=100&offset=N` (records JSON per Opendatasoft conventions: `{"total_count": N, "results": [{...}]}`)
+- **Auth:** `BDF_API_KEY` required (single `Authorization: Apikey <key>` header — the legacy IBM API Connect Client Id + Client Secret pair was retired with the migration). Without a key the module logs a warning and skips all BdF series gracefully. Register on the developer portal at `https://webstat.banque-france.fr/` (Login → API).
+- **Used for:** 2 France MFI lending-rate series — `FRA_LOAN_RATE_HOUSE` (legacy SDMX key `M.FR.B.A2C.A.R.A.2250.EUR.N` — new loans to households for house purchase) and `FRA_LOAN_RATE_NFC` (legacy SDMX key `M.FR.B.A2A.A.R.A.2240.EUR.N` — new loans to non-financial corporations). Library: `data/macro_library_bdf.csv`.
+- **Series-id convention:** `<dataset_id>|<odsql_where>` — single library column carries both halves separated by `|`. Records that decompose into `dataset_id == 'PROVISIONAL'` are flagged and skipped by the fetcher with a loud warning.
+- **Status:** **PROVISIONAL / UNVERIFIED** — the public Opendatasoft catalogue exposes only one dataset (`tableaux_rapports_preetablis` = archived report attachments); the 37k+ time series including the MIR dataset are gated behind the developer-portal login. The two rows in `macro_library_bdf.csv` carry their original legacy SDMX dot-keys in the `series_id` field as `PROVISIONAL|legacy_sdmx_key=...` annotations so the next credentialed session can translate them in-place. Confirmation requires a real `BDF_API_KEY` in the runtime to query `/catalog/datasets?q=MFI+interest+rates` and walk the resulting dataset schema.
+- **Migration history (2026-06-10):** the legacy IBM API Connect stack (`api.webstat.banque-france.fr/webstat-fr/v1`, SDMX-JSON, `X-IBM-Client-Id` + `X-IBM-Client-Secret`) was deprecated; the first credentialed run on 2026-06-10 (run id `27271070256`) returned HTTP 401 `"Invalid client id or secret"`, traced to BdF having already migrated to the Opendatasoft stack. `BDF_API_SECRET` was removed from `.github/workflows/update_data.yml` in the same commit.
+- **Fetcher:** `sources/bdf.py`. Smoke test: `test_bdf_smoke.py` (daily CI step — skips when `BDF_API_KEY` is unset, and PROVISIONAL rows skip individually so the test stays green until the rows are upgraded to real `<dataset_id>|<odsql>` form).
 
 ### Google Sheets API v4
 
@@ -525,7 +527,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_istat.csv` | 3 | sources/istat.py | **NEW 2026-05-28.** ISTAT SDMX keys: ITA monthly unemployment rate 15-74 (dataflow 151_874), industrial production total ex-construction base 2021 (dataflow 115_333). Vintage (EDITION) slot left empty — module resolves latest at fetch time. Keyless. |
 | `macro_library_bls.csv` | 4 | sources/bls.py | **NEW 2026-05-28/29.** BLS Public Data API series IDs: `USA_CPI_INDEX` (CUSR0000SA0), `USA_CORE_CPI_INDEX` (CUSR0000SA0L1E), `USA_UNEMPLOYMENT` (LNS14000000), `USA_AVG_HOURLY_EARN` (CES0500000003 — genuine coverage gap, no FRED-library equivalent). BLS is the ultimate source; FRED is the automatic fallback for the first three. BLS_API_KEY optional. |
 | `macro_library_insee.csv` | 3 | sources/insee.py | **NEW 2026-06-09.** INSEE BDM idbanks (SERIES_BDM/ prefix): `FRA_BUS_CONF` (001565530 — Business Climate), `FRA_UNEMPLOYMENT` (001688527 — ILO unemployment rate Quarterly), `FRA_GDP_INDEX` (011794860 — GDP chained volume SA-WDA). INSEE is the ultimate source; supersedes OECD/Eurostat. Keyless (optional INSEE_API_KEY). |
-| `macro_library_bdf.csv` | 2 | sources/bdf.py | **NEW 2026-06-09. PROVISIONAL.** Banque de France Webstat SDMX keys: `FRA_LOAN_RATE_HOUSE`, `FRA_LOAN_RATE_NFC` (MFI lending rates). Series keys UNVERIFIED — awaiting first credentialed fetch (BDF_API_KEY not yet in GitHub Secrets). |
+| `macro_library_bdf.csv` | 2 | sources/bdf.py | **NEW 2026-06-09; rewritten 2026-06-10 for Opendatasoft Explore v2.1. PROVISIONAL.** Banque de France Webstat keys in `<dataset_id>|<odsql_where>` form: `FRA_LOAN_RATE_HOUSE`, `FRA_LOAN_RATE_NFC` (MFI lending rates). Both rows still PROVISIONAL — dataset_id + ODSQL filter to be discovered on the first credentialed run (the public catalogue exposes only an archived-reports dataset). The legacy SDMX dot-keys are preserved in-line as `PROVISIONAL|legacy_sdmx_key=...` to feed the next-session lookup. |
 | `manual_splits.csv` | 1 | library_utils.apply_manual_splits + scripts/backadjust_hist_splits.py | **NEW 2026-05-27 (§3.6a Pattern 11).** Stock-split overrides for Yahoo's missing corporate-actions feed. Schema: `ticker, ex_date, ratio, notes`. Current row: `1306.T 2026-03-30 10` (NEXT FUNDS TOPIX ETF 10:1 split — ex-rights = record date 2026-03-31 minus 1 business day under Japan's T+2). |
 | `source_fallbacks.csv` | 10 | (documentation only — runtime walker not yet built) | **NEW 2026-04-30 (Stage B); GOLD_USD_PM row added §3.9 2026-05-08.** Canonical record of the §3.1.2 architectural fallback chain per indicator. Columns: `indicator_id, t0_source, t0_id, t1_source, t1_id, t2_source, t2_id, t3_source, t3_id, t1_status, t1_latest, notes`. v1 is a documentation artefact + future hook for explicit chain-walking logic; today the fallback effect is achieved implicitly via `_collect_all_indicators` ordering (later sources overwrite earlier sources at the column level). |
 | `macro_indicator_library.csv` | 99 | compute_macro_market.py, docs/build_html.py | Phase E composite-indicator registry (id, category, group, sub_group, **concept**, **subcategory**, naturally_leading, formula, interpretation, regime_classification, cycle_timing). `concept` + `subcategory` added 2026-04-28 (§2.4); 7 indicators added since: **`GLOBAL_GOLD1`** (§3.9 LBMA gold), **`US_INFL1`/`UK_INFL1`/`EU_INFL1`/`JP_INFL1`/`CN_INFL1`** (§3.1.3 per-region inflation regimes, each `name` field labelled headline / core / blend), **`US_INFEXP1`** (z-composite inflation expectations). Canonical 17-concept taxonomy: Equity, Rates / Yields, Credit / Spreads, Inflation, Sentiment / Survey, Leading Indicators, Growth, Labour, Consumer, Housing, Manufacturing, External / Trade, Money / Liquidity, Cross-Asset, FX, Volatility, Momentum. |
@@ -988,18 +990,20 @@ INSEE BDM (Banque de Données Macroéconomiques) SDMX-ML fetcher. Keyless; optio
 | `_parse_period(p)` | Handles daily `YYYY-MM-DD`, monthly `YYYY-MM`, quarterly `YYYY-Qn`, annual `YYYY` |
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
-#### 9.5.21 `sources/bdf.py` (225 lines, 2026-06-09) — PROVISIONAL
+#### 9.5.21 `sources/bdf.py` (Opendatasoft Explore v2.1, rewritten 2026-06-10) — PROVISIONAL
 
-Banque de France Webstat SDMX-JSON fetcher. `BDF_API_KEY` required (IBM API Connect `X-IBM-Client-Id` header); `BDF_API_SECRET` optional. Without a key the module skips gracefully — gaps surface in the daily audit.
+Banque de France Webstat Opendatasoft records-JSON fetcher. `BDF_API_KEY` required (sent as `Authorization: Apikey <key>`); no companion secret. Without a key the module skips gracefully — gaps surface in the daily audit. Migrated from the legacy IBM API Connect stack on 2026-06-10 — see §5 BdF entry for the migration post-mortem.
 
 | Function | Purpose |
 |---|---|
-| `load_library()` | Read `data/macro_library_bdf.csv` |
-| `fetch_series(series_id, ...)` | GET against `https://api.webstat.banque-france.fr/webstat-fr/v1/data/<series_id>?format=sdmx-json`; skips with a warning if no key |
-| `parse_json(doc, series_id)` | SDMX-JSON parser: extracts time periods from `structure.dimensions.observation[0].values`, values from `dataSets[0].series[*].observations` |
-| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
+| `load_library()` | Read `data/macro_library_bdf.csv` (public API unchanged from the legacy module) |
+| `fetch_series(series_id, ...)` | GET against `https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/<dataset_id>/records?where=<odsql>&limit=100&offset=N`; pages until `total_count` is reached; skips with a warning if no key or if the row is PROVISIONAL |
+| `_split_series_id(series_id)` | Split `<dataset_id>|<odsql_where>` into its two halves |
+| `parse_records(records, series_id)` | Opendatasoft records-JSON parser: heuristically detects time field (`time_period` / `date` / `period` / …) and value field (`obs_value` / `value` / …) from the first record, so the same parser works across BdF's heterogeneous Opendatasoft schemas |
+| `_parse_period(p)` | Handles daily `YYYY-MM-DD` + ISO datetime, monthly `YYYY-MM`, quarterly `YYYY-Qn`, annual `YYYY` |
+| `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper (public API unchanged) |
 
-Status: BDF_API_KEY not yet provisioned as a GitHub Secret — all BdF series produce SKIP warnings until credentialed. Series keys in `macro_library_bdf.csv` are UNVERIFIED.
+Status: both library rows still carry `series_id = 'PROVISIONAL|legacy_sdmx_key=...'` because the public catalogue (anonymous probe) exposes only one dataset (`tableaux_rapports_preetablis`). Once `BDF_API_KEY` is in the runtime: discover the MIR dataset_id via `/catalog/datasets?q=MFI+interest+rates`, walk the schema, translate the two legacy SDMX dot-keys into `<dataset_id>|<odsql_where>` form, and commit the upgraded CSV.
 
 ### 9.6 `compute_macro_market.py` (2,103 lines)
 
@@ -1586,8 +1590,7 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 | `ESTAT_APP_ID` | Exists | e-Stat REST API (`sources/estat.py`) — Japan Statistics Bureau |
 | `NASDAQ_DATA_LINK_API_KEY` | Exists, currently unused | Wired §3.9 (2026-05-08) when `LBMA/GOLD` was on the NDL free tier; same-day NDL moved LBMA to paid tier, so gold was replumbed to LBMA-direct (`sources/lbma.py`). Secret is retained as live scaffolding so any future free NDL dataset becomes a CSV-row addition. |
 | `BLS_API_KEY` | Exists (optional) | `sources/bls.py` (2026-05-28). BLS Public Data API v2 registration key — unlocks 500 queries/day, 50 series/query, 20-year history spans. Without it the pipeline falls back to the keyless v1 endpoint (recent window only; sufficient for freshness; FRED provides the historical depth). |
-| `BDF_API_KEY` | **Missing** — needed | `sources/bdf.py` (2026-06-09). IBM API Connect `X-IBM-Client-Id` for Banque de France Webstat. Without it all BdF series skip gracefully; `macro_library_bdf.csv` rows will remain unvalidated. Obtain from `developer.webstat.banque-france.fr`. |
-| `BDF_API_SECRET` | **Missing** — optional | `sources/bdf.py`. Optional IBM API Connect `X-IBM-Client-Secret` companion to `BDF_API_KEY`. |
+| `BDF_API_KEY` | **Missing** — needed | `sources/bdf.py` (Opendatasoft Explore v2.1 stack — migrated 2026-06-10). Sent as `Authorization: Apikey <key>`. Without it all BdF series skip gracefully; `macro_library_bdf.csv` rows will remain unvalidated PROVISIONAL. Obtain from `https://webstat.banque-france.fr/` (Login → API). |
 | `FMP_API_KEY` | Exists, reserved for future use | Registered 2026-04-21. **Phase D FMP calendar module deleted 2026-04-23** — economic calendar endpoint paywalled on free tier (`/v3/economic_calendar` → HTTP 403, `/stable/economic-calendar` → HTTP 402). Secret retained for planned PE-ratio integration via `/stable/ratios` endpoint (still free; see `forward_plan.md` §3.3). |
 
 ### Workflow-level configuration
