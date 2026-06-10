@@ -398,7 +398,7 @@ The regime work (now owned by `../regime_AA_master_plan.docx`) uses a per-region
 |---|---|---|
 | US | ✅ no action — 6/6 captured | — |
 | **UK** | **✅ `sources/ons.py` wired 2026-05-28** — partially done. GBR_GDP_REAL, GBR_UNEMPLOYMENT, GBR_EMP_RATE, GBR_AWE_REGPAY_YOY live. Still outstanding: IoP, Retail Sales Index, Index of Services, claimant count, BICS business survey (~5 more rows to close the column fully). | Add remaining rows to `data/macro_library_ons.csv`. |
-| **JP** | **extend e-Stat library** | `sources/estat.py` already exists; just add rows: machinery orders (Cabinet Office), retail sales, household income/expenditure, economy watchers DI, tertiary industry index. ~4-6 rows; brings JP from 3/7 → 6/7. |
+| **JP** | **✅ shipped via e-Stat extension 2026-06-10** — 5 rows added to `data/macro_library_estat.csv` (JPN_TERT_IND, JPN_MACH_ORDERS, JPN_RETAIL_SALES, JPN_HH_EXP, JPN_EWS_DI). All PROVISIONAL pending live verification once `ESTAT_APP_ID` is available; cdCatNN filters likely needed on first fetch. Brings JP from 3/7 → ~6/7+ on the Growth column. | — |
 | EZ | ✅ no action — 6/6 captured | — |
 | CN | accept gaps | NBS retail / FAI / electricity / industrial profits / property — all flagged PROPRIETARY in `reference_indicators.csv` (no free foreign API). Current 3/9 is the practical ceiling. |
 | Global | optional: CPB World Trade Monitor + IP | New T3 fetcher `sources/cpb.py` (free CSV download, monthly); 2 rows. Low priority. |
