@@ -208,66 +208,90 @@ def _read_zip_member(zip_bytes: bytes, zip_stem: str) -> str | None:
 def _parse_monthly_block(csv_text: str, zip_stem: str) -> pd.DataFrame | None:
     """Extract the monthly section from a Ken French data-library CSV.
 
-    Every Ken French file follows the same shape:
-      - A multi-line prose preamble (variable length).
-      - The monthly block: a header row of column names, then rows whose
-        first field is ``YYYYMM`` (6 digits).
-      - A blank line.
-      - The annual block: a header row, then rows whose first field is
-        ``YYYY`` (4 digits).  We deliberately stop before this — the
-        annual block uses a different cadence and our composite series_id
-        encodes only monthly extraction.
+    Every Ken French file follows the same multi-section shape:
+      - A multi-line prose preamble (research disclaimer, dataset name,
+        copyright) — variable number of lines, no comma structure.
+      - One or more **data sections**, each separated from the next by one
+        or more blank lines.  Each section starts with a header row that
+        has an empty first field followed by the factor column names
+        (e.g. ``,Mkt-RF,SMB,HML,RMW,CMA,RF``).  Data rows follow with a
+        date key in the first field.
+      - The first data section uses ``YYYYMM`` (6 digits) keys = monthly.
+      - Subsequent sections use ``YYYY`` (4 digits) keys = annual (with
+        sub-flavours for Jan-Dec vs Jul-Jun calendars).
+
+    We split the file on blank lines into sections, then pick the first
+    section whose first data row's first field is exactly 6 digits — that
+    is the monthly block by construction.
 
     Returns a DataFrame indexed by month-end ``Timestamp`` with float
-    columns, or ``None`` if the file doesn't match the expected shape.
+    columns, or ``None`` if no monthly section is found.
     """
     lines = csv_text.splitlines()
 
-    # Find the header row: the first line that, after the prose preamble,
-    # parses as comma-separated text WITHOUT a leading 4+ digit number,
-    # AND whose immediate next non-blank line starts with a 6-digit date.
-    header_idx: int | None = None
-    for i, line in enumerate(lines):
-        parts = [p.strip() for p in line.split(",")]
-        if not parts or not parts[0]:
-            continue  # blank first field — could be the header (Date col empty)
-        # The header has an empty first field followed by the column names.
-        # The monthly data rows have a 6-digit YYYYMM first field.
-        if not parts[0].isdigit() and len(parts) >= 2:
-            # Look ahead for the first non-blank data row.
-            for j in range(i + 1, len(lines)):
-                nxt = lines[j].split(",")[0].strip()
-                if not nxt:
-                    continue
-                if len(nxt) == 6 and nxt.isdigit():
-                    header_idx = i
-                    break
-                # Not a YYYYMM — keep scanning the file for a later header.
-                break
-            if header_idx is not None:
-                break
+    # Group consecutive non-blank lines into sections.  A "blank line"
+    # here means a line whose stripped form is empty OR whose every comma-
+    # separated field is empty (sometimes Ken French emits ", , , ," gap
+    # lines instead of a pure newline).
+    sections: list[list[str]] = []
+    current: list[str] = []
+    for line in lines:
+        if not line.strip() or all(not p.strip() for p in line.split(",")):
+            if current:
+                sections.append(current)
+                current = []
+            continue
+        current.append(line)
+    if current:
+        sections.append(current)
 
-    if header_idx is None:
-        print(f"    [KenFrench] {zip_stem}: no monthly header row located", flush=True)
+    # Find the first section whose first data row (the line after the
+    # header) carries a 6-digit YYYYMM key.  That is the monthly block.
+    monthly_section: list[str] | None = None
+    for section in sections:
+        if len(section) < 2:
+            continue
+        # The header is the first line of the section whose first field is
+        # empty (i.e. ",Col1,Col2,...") — but we tolerate the rare case
+        # where the date column carries a label like "Date".  We locate
+        # the first data row by scanning forward for a line whose first
+        # comma-separated field is all digits.
+        first_data_field: str | None = None
+        for line in section[1:]:
+            head = line.split(",", 1)[0].strip()
+            if head and head.isdigit():
+                first_data_field = head
+                break
+        if first_data_field is None:
+            continue
+        if len(first_data_field) == 6:
+            monthly_section = section
+            break
+
+    if monthly_section is None:
+        print(f"    [KenFrench] {zip_stem}: no monthly section located "
+              f"(scanned {len(sections)} sections)", flush=True)
         return None
 
-    header_parts = [p.strip() for p in lines[header_idx].split(",")]
-    # First column is the YYYYMM date; the remaining are factor columns.
-    col_names = header_parts[1:]
+    header_parts = [p.strip() for p in monthly_section[0].split(",")]
+    # First column is the YYYYMM date column (usually empty header); the
+    # remaining are factor columns.  Drop the leading date-column slot.
+    col_names = [c for c in header_parts[1:] if c]
     if not col_names:
-        print(f"    [KenFrench] {zip_stem}: header has no factor columns", flush=True)
+        print(f"    [KenFrench] {zip_stem}: monthly header has no factor "
+              f"columns: {header_parts!r}", flush=True)
         return None
 
     rows: list[tuple[pd.Timestamp, list[float]]] = []
-    for line in lines[header_idx + 1:]:
+    for line in monthly_section[1:]:
         parts = [p.strip() for p in line.split(",")]
         if not parts or not parts[0]:
-            # Blank line — end of monthly block.
-            break
+            continue
         head = parts[0]
         if not (len(head) == 6 and head.isdigit()):
-            # Hit the annual block (4-digit year) or trailing prose — stop.
-            break
+            # Stray non-monthly row inside the monthly section — skip.
+            # (Defensive; in practice the section is homogeneous.)
+            continue
         try:
             year = int(head[:4])
             month = int(head[4:])
@@ -288,7 +312,7 @@ def _parse_monthly_block(csv_text: str, zip_stem: str) -> pd.DataFrame | None:
         rows.append((ts, vals))
 
     if not rows:
-        print(f"    [KenFrench] {zip_stem}: monthly block parsed 0 rows", flush=True)
+        print(f"    [KenFrench] {zip_stem}: monthly section parsed 0 rows", flush=True)
         return None
 
     idx = [r[0] for r in rows]
