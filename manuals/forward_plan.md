@@ -854,14 +854,14 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.12 OECD MEI feed — verification + ingestion (regime-AA-driven, CRITICAL)
 
-> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL.** 10Y sovereign yields in the OECD-MEI-via-FRED form `IRLTLT01{ISO}M156N` already exist for **GB, DE, IT** (`GBR_GILT_10Y` / `DEU_BUND_10Y` / `ITA_BTP_10Y`) plus an India variant; **US** carries only a daily proxy (`DGS10`), not the monthly MEI form. **FR, JP, CA, AU, NL, CH yields are missing, and the equity share-price indices `SPASTT01{ISO}M661N` are missing for all 10 regions.** 1957-continuity is unverified. This is the cheap FRED-CSV-row pattern — no new module. Extends the existing §3.1 long-run note.
+> **Pipeline status (audited 2026-06-10; rows landed same day): 🟢 ROWS IN, CONTINUITY VERIFICATION PENDING.** 10Y sovereign yields in the OECD-MEI-via-FRED form `IRLTLT01{ISO}M156N` are now registered for all 10 priority regions — pre-existing GB/DE/IT/IND, plus US/FR/JP/CA/AU/NL/CH added as `data/macro_library_fred.csv` sort_keys 500-506 (cols `USA_TREAS_10Y`, `FRA_OAT_10Y`, `JPN_JGB_10Y`, `CAN_GOV_10Y` shared with BoC daily for fallback extension, `AUS_ACGB_10Y`, `NLD_DSL_10Y`, `CHE_GOVT_10Y`). Equity share-price indices `SPASTT01{ISO}M661N` registered for all 10 regions as sort_keys 510-519 (cols `<ISO3>_EQUITY_MEI`). `NLD` added to `data/macro_library_countries.csv`. Next-day daily run will pull the series; **continuity Jan-1957 → present is to be verified from the resulting `macro_economic_hist.csv`** (regime-AA-side `verify_fred_oecd.py` is the final acceptance gate).
 
 **Priority:** CRITICAL — gates regime-AA Phase 0→1; the per-region equity + yield inputs feed regime labels (Phase 1) and the Layer-1 pillar score (Phase 3).
 
 **Scope:**
-- Register monthly equity indices `SPASTT01{ISO}M661N` and 10Y yields `IRLTLT01{ISO}M156N` for US, GB, DE, FR, JP, IT, CA, AU, NL, CH as rows in `data/macro_library_fred.csv` (add the 7 missing-region yields + all 10 equities).
-- Confirm continuity Jan-1957 → current month per (series, region); document breaks / methodology changes.
-- Sister-file safeguard (`*_hist_x.csv`); land in `macro_economic_hist.csv` / `macro_market_hist.csv`; daily cadence.
+- ✅ Registered monthly equity indices `SPASTT01{ISO}M661N` and 10Y yields `IRLTLT01{ISO}M156N` for US, GB, DE, FR, JP, IT, CA, AU, NL, CH as rows in `data/macro_library_fred.csv` (7 missing-region yields + 10 equities; 17 rows total). `NLD` added to country registry.
+- ⏳ Confirm continuity Jan-1957 → current month per (series, region) from the next daily run; document any breaks / methodology changes in §1 Known Data Gaps.
+- ⏳ Sister-file safeguard (`*_hist_x.csv`) automatic via `library_utils.write_hist_with_archive()`; land in `macro_economic_hist.csv` / `macro_market_hist.csv`; daily cadence.
 
 **Acceptance:** `verify_fred_oecd.py` (regime-aa) returns `retrievable = True` for all priority-five pairs; ≥ 800 monthly obs from 1957-01 for US/UK/DE/FR/JP equities; rows present in the hist outputs and pass the daily audit.
 
