@@ -1834,10 +1834,15 @@ def _calc_GL_PMI1(dbn, mi, **_):
 def _calc_US_INFL1(mu, **_):
     """US inflation gauge: mean of headline CPI YoY, core PCE YoY, and the
     5y5y-forward breakeven (all %), so the regime reads as a target-relative
-    level. Degrades gracefully if a component is missing."""
-    cpi = _to_weekly_friday(_get_col(mu, "USA_CPI"))            # already YoY %
-    pce = _yoy(_to_weekly_friday(_get_col(mu, "PCEPILFE")))     # core PCE index → YoY %
-    fwd = _to_weekly_friday(_get_col(mu, "T5YIFR"))             # 5y5y fwd %, level
+    level. Degrades gracefully if a component is missing.
+
+    `USA_CPI_INDEX` is the BLS/FRED CPI level (1982-84=100); we convert to
+    YoY% here. The old code looked for `USA_CPI` which doesn't actually
+    exist as a column — fixed 2026-06-10 so the calculator now uses all
+    three components instead of silently dropping the headline."""
+    cpi = _yoy(_to_weekly_friday(_get_col(mu, "USA_CPI_INDEX")))  # BLS/FRED CPI level → YoY %
+    pce = _yoy(_to_weekly_friday(_get_col(mu, "PCEPILFE")))       # core PCE index → YoY %
+    fwd = _to_weekly_friday(_get_col(mu, "T5YIFR"))               # 5y5y fwd %, level
     parts = [s for s in (cpi, pce, fwd) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)
@@ -1845,13 +1850,13 @@ def _calc_US_INFL1(mu, **_):
 
 
 def _calc_UK_INFL1(mu, **_):
-    """UK inflation: mean of headline CPI YoY and core CPI YoY (both already %).
-    Headline = GBR_CPI; core = GBR_CORE_CPI_YOY (ONS DKO8 — CPI ex energy /
-    food / alcohol / tobacco, the BoE-watched core measure). Same blend
-    shape as US_INFL1 (per §3.1.3 follow-up). Falls back to headline-only
-    if core is absent — preserves behaviour pre-DKO8 wiring."""
-    head = _to_weekly_friday(_get_col(mu, "GBR_CPI"))
-    core = _to_weekly_friday(_get_col(mu, "GBR_CORE_CPI_YOY"))
+    """UK inflation: mean of headline CPI YoY and core CPI YoY (both %).
+    Headline = GBR_CPI (FRED `GBRCPIALLMINMEI` — Index 2015=100, converted
+    to YoY here); core = GBR_CORE_CPI_YOY (ONS DKO8 — already YoY % ex
+    energy / food / alcohol / tobacco). Same blend shape as US_INFL1.
+    Falls back to headline-only if core is absent."""
+    head = _yoy(_to_weekly_friday(_get_col(mu, "GBR_CPI")))       # CPI index → YoY %
+    core = _to_weekly_friday(_get_col(mu, "GBR_CORE_CPI_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)
@@ -1860,13 +1865,12 @@ def _calc_UK_INFL1(mu, **_):
 
 def _calc_EU_INFL1(mu, **_):
     """Euro-area inflation: mean of headline HICP YoY and core HICP YoY
-    (both already %). Headline = EA_HICP; core = EA_HICP_CORE_YOY (Eurostat
-    prc_hicp_manr TOT_X_NRG_FOOD — overall index excluding energy / food /
-    alcohol / tobacco, the standard ECB core HICP definition). Same blend
-    shape as US_INFL1 / UK_INFL1 (per §3.1.3 follow-up). Falls back to
-    headline-only if core is absent."""
-    head = _to_weekly_friday(_get_col(mu, "EA_HICP"))
-    core = _to_weekly_friday(_get_col(mu, "EA_HICP_CORE_YOY"))
+    (both already %). Headline = EA_HICP (FRED `EA19CPALTT01GYM` —
+    already YoY %); core = EA_HICP_CORE_YOY (Eurostat
+    prc_hicp_manr TOT_X_NRG_FOOD — the standard ECB core HICP YoY
+    definition). Falls back to headline-only if core is absent."""
+    head = _to_weekly_friday(_get_col(mu, "EA_HICP"))             # already YoY %
+    core = _to_weekly_friday(_get_col(mu, "EA_HICP_CORE_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)
@@ -1874,14 +1878,14 @@ def _calc_EU_INFL1(mu, **_):
 
 
 def _calc_JP_INFL1(mu, **_):
-    """Japan inflation: mean of headline CPI YoY and core CPI YoY (both
-    already %). Headline = JPN_CPI; core = JPN_CORE_CPI_YOY (OECD
-    COICOP2018 national CPI ex-food-and-energy YoY %, the international
-    core convention; replaces the frozen FRED / OECD MEI mirror that
-    stopped updating at 2021-06). Same blend shape as US_INFL1 / UK_INFL1
-    (per §3.1.3 follow-up). Falls back to headline-only if core is absent."""
-    head = _to_weekly_friday(_get_col(mu, "JPN_CPI"))
-    core = _to_weekly_friday(_get_col(mu, "JPN_CORE_CPI_YOY"))
+    """Japan inflation: mean of headline CPI YoY and core CPI YoY (both %).
+    Headline = JPN_CPI (FRED `JPNCPIALLMINMEI` — Index 2015=100, converted
+    to YoY here); core = JPN_CORE_CPI_YOY (OECD COICOP2018 national CPI
+    ex-food-and-energy — already YoY %; replaces the frozen FRED / OECD
+    MEI mirror that stopped updating at 2021-06). Falls back to
+    headline-only if core is absent."""
+    head = _yoy(_to_weekly_friday(_get_col(mu, "JPN_CPI")))       # CPI index → YoY %
+    core = _to_weekly_friday(_get_col(mu, "JPN_CORE_CPI_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)
@@ -1889,11 +1893,13 @@ def _calc_JP_INFL1(mu, **_):
 
 
 def _calc_CN_INFL1(mu, **_):
-    """China inflation: mean of CPI YoY and PPI YoY (both already %).
+    """China inflation: mean of CPI YoY and PPI YoY (both %).
+    Headline = CHN_CPI (FRED `CHNCPIALLMINMEI` — Index 2015=100, converted
+    to YoY here); PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — already YoY %).
     China runs no hard 2% target and is deflation-prone, so it gets its own
     reflation/stable/deflation-risk regime rather than the G10 target buckets."""
-    cpi = _to_weekly_friday(_get_col(mu, "CHN_CPI"))
-    ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))
+    cpi = _yoy(_to_weekly_friday(_get_col(mu, "CHN_CPI")))        # CPI index → YoY %
+    ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))              # already YoY %
     parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)

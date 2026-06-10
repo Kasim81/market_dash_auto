@@ -186,7 +186,28 @@ jobs:
         [ -f data/macro_ifo_hist.csv ] && git rm -f data/macro_ifo_hist.csv || true
         [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
         [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
-        git diff --staged --quiet || (
-          git commit -m "Update market data + explorer - $(date -u '+%Y-%m-%d %H:%M UTC')" &&
-          git push
-        )
+        # Retry commit-and-push up to 3 times. Without this, a parallel
+        # PR merging onto main during the ~1-2h run window causes the
+        # final push to be rejected (e.g. run 27292302120, 2026-06-10).
+        # We rebase the staged changes onto the freshly-fetched main and
+        # try again; conflicts here surface as a loud failure (data files
+        # are runner-output not human-edits, so conflicts shouldn't
+        # legitimately happen — if they do, we want them visible).
+        if ! git diff --staged --quiet; then
+          for attempt in 1 2 3; do
+            git commit -m "Update market data + explorer - $(date -u '+%Y-%m-%d %H:%M UTC')"
+            if git push; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt — rebasing on origin/main and retrying"
+            git fetch origin main
+            git reset --soft HEAD~1
+            git stash --include-untracked
+            git rebase origin/main || { echo "Rebase failed — aborting"; git rebase --abort; exit 1; }
+            git stash pop
+            git add -A
+          done
+          echo "Push still rejected after 3 attempts — failing loudly"
+          exit 1
+        fi

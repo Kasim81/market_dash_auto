@@ -53,18 +53,35 @@ MACRO_HIST_META_ROWS = 14
 # Library names map to the Source string the per-source modules write into the
 # unified hist's Source metadata row.
 SOURCE_BY_LIBRARY = {
+    # Aggregators
     "fred":      "FRED",
     "oecd":      "OECD",
     "worldbank": "World Bank",
     "imf":       "IMF",
     "dbnomics":  "DB.nomics",
+    # Direct national-statistics offices / central banks
     "ifo":       "ifo",
     "boe":       "BoE",
     "ecb":       "ECB",
     "boj":       "BoJ",
     "estat":     "e-Stat",
+    "boc":       "BoC",
+    "statcan":   "StatCan",
+    "ons":       "ONS",
+    "bundesbank": "Bundesbank",
+    "abs":       "ABS",
+    "istat":     "ISTAT",
+    "bls":       "BLS",
+    "insee":     "INSEE",
+    "bdf":       "Banque de France",
+    # Commodity / market reference
     "nasdaqdl":  "Nasdaq Data Link",
     "lbma":      "LBMA",
+    "alpha_vantage": "Alpha Vantage",
+    # §3.13 long-run historical / cross-validation anchors
+    "shiller":   "Shiller",
+    "french":    "KenFrench",
+    "jst":       "JST",
 }
 
 
@@ -96,6 +113,40 @@ def load_overrides() -> dict[tuple[str, str], int]:
                 if sid and ovr:
                     overrides[(source, sid)] = int(ovr)
     return overrides
+
+
+def load_anchors() -> dict[tuple[str, str], dict]:
+    """Walk every per-source library CSV; collect rows marked as historical
+    anchors. Returns a dict keyed by (Source, series_id) with values:
+        {"is_anchor": True, "next_expected_release": date | None}
+
+    A "historical anchor" is a row whose underlying dataset is published on
+    a multi-year cadence (e.g. JST Macrohistory R6 shipped 2021 covering data
+    through 2020; the JST team's next release is on their own schedule).
+    Marking such a row with `is_historical_anchor=true` in the library CSV
+    opts it out of the standard frequency-based staleness check — the data's
+    "age" is intrinsic, not a pipeline bug.
+
+    `next_expected_release` (YYYY-MM-DD) gates whether we should be alerting
+    on a missing newer release. If today >= that date AND the row hasn't
+    refreshed since the previous release, audit reports OVERDUE so the
+    operator goes and checks for a new version upstream.
+    """
+    anchors: dict[tuple[str, str], dict] = {}
+    for lib_name, source in SOURCE_BY_LIBRARY.items():
+        path = DATA / f"macro_library_{lib_name}.csv"
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            for row in csv.DictReader(f):
+                sid = row.get("series_id", "").strip()
+                flag = row.get("is_historical_anchor", "").strip().lower()
+                if not sid or flag not in ("true", "1", "yes"):
+                    continue
+                ner_raw = row.get("next_expected_release", "").strip()
+                ner = parse_date(ner_raw) if ner_raw else None
+                anchors[(source, sid)] = {"is_anchor": True, "next_expected_release": ner}
+    return anchors
 
 
 def parse_date(s: str | None) -> date | None:
@@ -166,20 +217,48 @@ def classify_age(age: int | None, threshold: int) -> str:
 
 
 def section_c_staleness() -> dict:
-    """Return {fresh: [...], stale: [...], expired: [...]} keyed by status."""
+    """Return {fresh, stale, expired, anchors_active, anchors_overdue} keyed
+    by status.
+
+    Buckets:
+      - FRESH/STALE/EXPIRED — standard frequency-based check on the row's age
+        vs the per-frequency threshold (or per-row `freshness_override_days`).
+      - ANCHORS_ACTIVE — row flagged `is_historical_anchor=true`, no
+        `next_expected_release` set OR today < next_expected_release.
+        Informational only; the data's age is intrinsic to the dataset.
+      - ANCHORS_OVERDUE — anchor row whose `next_expected_release` date has
+        passed. Means we should be checking upstream for a newer release
+        (e.g. JST R7 if R6 -> R7 should have shipped by the listed date).
+    """
     thresholds = load_thresholds()
     overrides = load_overrides()
+    anchors = load_anchors()
     series = load_macro_hist()
 
     fresh: list = []
     stale: list = []
     expired: list = []
+    anchors_active: list = []
+    anchors_overdue: list = []
 
     for s in series:
         last_obs = parse_date(s["last_obs"])
         age = (TODAY - last_obs).days if last_obs else None
-
         key = (s["source"], s["series_id"])
+
+        # Historical-anchor path: skip the frequency-based staleness check
+        # entirely; the data's age is intrinsic to the dataset's release
+        # cadence. Surface separately so the operator sees them but the
+        # standard "stale" bucket isn't polluted with non-bugs.
+        if key in anchors:
+            ner = anchors[key]["next_expected_release"]
+            rec = {**s, "age": age, "next_expected_release": ner.isoformat() if ner else ""}
+            if ner is not None and TODAY >= ner:
+                anchors_overdue.append(rec)
+            else:
+                anchors_active.append(rec)
+            continue
+
         if key in overrides:
             threshold = overrides[key]
             override_used = True
@@ -196,10 +275,18 @@ def section_c_staleness() -> dict:
         else:
             expired.append(rec)
 
-    # Sort STALE/EXPIRED by descending age
+    # Sort STALE/EXPIRED by descending age; anchors by next_expected_release.
     stale.sort(key=lambda r: -(r["age"] if r["age"] is not None else 10**9))
     expired.sort(key=lambda r: -(r["age"] if r["age"] is not None else 10**9))
-    return {"fresh": fresh, "stale": stale, "expired": expired}
+    anchors_overdue.sort(key=lambda r: r.get("next_expected_release", ""))
+    anchors_active.sort(key=lambda r: r.get("next_expected_release", "9999"))
+    return {
+        "fresh": fresh,
+        "stale": stale,
+        "expired": expired,
+        "anchors_active": anchors_active,
+        "anchors_overdue": anchors_overdue,
+    }
 
 
 # =============================================================================
@@ -857,9 +944,12 @@ def render_report(sections: dict) -> str:
 
     # Section C
     c = sections["c"]
+    n_anchors_active  = len(c.get("anchors_active", []))
+    n_anchors_overdue = len(c.get("anchors_overdue", []))
     lines.append(
         f"--- Section C: Value-change staleness "
-        f"(FRESH {len(c['fresh'])}  STALE {len(c['stale'])}  EXPIRED {len(c['expired'])}) ---"
+        f"(FRESH {len(c['fresh'])}  STALE {len(c['stale'])}  EXPIRED {len(c['expired'])}"
+        f"  ANCHORS {n_anchors_active}  OVERDUE-ANCHORS {n_anchors_overdue}) ---"
     )
     for label, bucket in [("EXPIRED", c["expired"]), ("STALE", c["stale"])]:
         if not bucket:
@@ -873,6 +963,31 @@ def render_report(sections: dict) -> str:
                 f"src={r['source']:11s}  series={r['series_id']:24s}  "
                 f"last_obs={r['last_obs'] or '—':10s}  "
                 f"age={age_str:8s}  tolerance={t_str}"
+            )
+    # Anchors-overdue is an actual alert; surface it next to STALE/EXPIRED so
+    # the operator sees it. Anchors-active is informational only.
+    if n_anchors_overdue:
+        lines.append(f"  OVERDUE-ANCHORS ({n_anchors_overdue}) — check upstream for newer release:")
+        for r in c["anchors_overdue"]:
+            age_str = f"{r['age']}d" if r["age"] is not None else "no_obs"
+            lines.append(
+                f"    {r['frequency']:10s}  {r['col_id']:32s}  "
+                f"src={r['source']:11s}  series={r['series_id']:24s}  "
+                f"last_obs={r['last_obs'] or '—':10s}  "
+                f"age={age_str:8s}  next_expected_release={r.get('next_expected_release','—')}"
+            )
+    if n_anchors_active:
+        lines.append(
+            f"  ANCHORS-ACTIVE ({n_anchors_active}) — historical anchors, "
+            f"no frequency-based staleness check (release cadence intrinsic):"
+        )
+        for r in c["anchors_active"]:
+            ner_str = r.get("next_expected_release","") or "—"
+            lines.append(
+                f"    {r['frequency']:10s}  {r['col_id']:32s}  "
+                f"src={r['source']:11s}  series={r['series_id']:24s}  "
+                f"last_obs={r['last_obs'] or '—':10s}  "
+                f"next_expected_release={ner_str}"
             )
     lines.append("")
 
@@ -914,18 +1029,26 @@ def render_comment(sections: dict) -> str:
     n_a = sum(len(v) for v in a.values())
     n_b = sum(len(v) for v in b.values())
     n_stale = len(c["stale"]) + len(c["expired"])
+    n_anchors_overdue = len(c.get("anchors_overdue", []))
+    n_anchors_active  = len(c.get("anchors_active", []))
     n_d = len(d["issues"])
-    total = n_a + n_b + n_stale + n_d
+    total = n_a + n_b + n_stale + n_anchors_overdue + n_d
 
     lines: list[str] = []
     if total == 0:
-        lines.append(f"## Daily audit — {TODAY.isoformat()} — **ALL CLEAN**")
+        anchor_note = (
+            f" (plus {n_anchors_active} historical anchor{'s' if n_anchors_active != 1 else ''} active)"
+            if n_anchors_active else ""
+        )
+        lines.append(f"## Daily audit — {TODAY.isoformat()} — **ALL CLEAN**{anchor_note}")
     else:
         parts: list[str] = []
         if n_a:
             parts.append(f"{n_a} fetch error{'s' if n_a != 1 else ''}")
         if n_stale:
             parts.append(f"{n_stale} stale serie{'s' if n_stale != 1 else ''}")
+        if n_anchors_overdue:
+            parts.append(f"{n_anchors_overdue} overdue anchor{'s' if n_anchors_overdue != 1 else ''}")
         if n_b:
             parts.append(f"{n_b} static-check failure{'s' if n_b != 1 else ''}")
         if n_d:
@@ -970,6 +1093,37 @@ def render_comment(sections: dict) -> str:
                 )
             if len(bucket) > 30:
                 lines.append(f"| _… {len(bucket) - 30} more in `data_audit.txt`_ |  |  |  |  |  |")
+        lines.append("\n</details>\n")
+
+    # Overdue anchors: real alert — go check upstream for a new release.
+    if n_anchors_overdue:
+        lines.append("<details open><summary>Overdue historical anchors — check upstream for newer release</summary>\n")
+        lines.append("| Series | Source | Last obs | Age | Next expected release |")
+        lines.append("|---|---|---|---|---|")
+        for r in c["anchors_overdue"][:30]:
+            age_str = f"{r['age']}d" if r["age"] is not None else "no_obs"
+            lines.append(
+                f"| `{r['col_id']}` | {r['source']} | {r['last_obs'] or '—'} | "
+                f"{age_str} | {r.get('next_expected_release','—')} |"
+            )
+        if len(c["anchors_overdue"]) > 30:
+            lines.append(f"| _… {len(c['anchors_overdue']) - 30} more in `data_audit.txt`_ |  |  |  |  |")
+        lines.append("\n</details>\n")
+
+    # Active anchors: informational only — historical datasets with intrinsic
+    # release cadence (e.g. JST Macrohistory R6). Not a bug, but visible so
+    # the operator knows they exist.
+    if n_anchors_active:
+        lines.append("<details><summary>Active historical anchors (informational)</summary>\n")
+        lines.append("| Series | Source | Last obs | Next expected release |")
+        lines.append("|---|---|---|---|")
+        for r in c["anchors_active"][:30]:
+            ner = r.get("next_expected_release","") or "—"
+            lines.append(
+                f"| `{r['col_id']}` | {r['source']} | {r['last_obs'] or '—'} | {ner} |"
+            )
+        if len(c["anchors_active"]) > 30:
+            lines.append(f"| _… {len(c['anchors_active']) - 30} more in `data_audit.txt`_ |  |  |  |")
         lines.append("\n</details>\n")
 
     if n_b:
