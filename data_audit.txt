@@ -1,18 +1,64 @@
 === Data audit @ 2026-06-10 ===
 
---- Section A: Fetch outcomes (0 issues) ---
-  (none)
+--- Section A: Fetch outcomes (1 issues) ---
+  OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
---- Section B: Static checks (4 issues) ---
-  MISSING_COLUMNS             _get_col(...,'EA_HICP_CORE_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'GBR_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-  MISSING_COLUMNS             _get_col(...,'JPN_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+--- Section B: Static checks (48 issues) ---
+  REGISTRY_DRIFT              hist column 'AUS_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'AUS_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'AUS_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'AUS_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CAN_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CAN_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CAN_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CHE_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CHE_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CHE_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'CHE_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'DEU_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'DEU_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'DEU_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'DEU_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'FRA_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'FRA_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
   REGISTRY_DRIFT              hist column 'FRA_GDP_INDEX' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'FRA_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'FRA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'GBR_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'GBR_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'GBR_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'GBR_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'ITA_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'ITA_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'ITA_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'ITA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'JPN_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'JPN_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'JPN_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'JPN_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'NLD_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'NLD_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'NLD_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'NLD_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_CAPE' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_CPI_SHILLER' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_CMA' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_HML' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_MKT_RF' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_RF' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_RMW' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_FF_SMB' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+  REGISTRY_DRIFT              hist column 'USA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 
---- Section C: Value-change staleness (FRESH 167  STALE 16  EXPIRED 23) ---
-  EXPIRED (23):
+--- Section C: Value-change staleness (FRESH 188  STALE 22  EXPIRED 26  ANCHORS 39  OVERDUE-ANCHORS 0) ---
+  EXPIRED (26):
     Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2504d     tolerance=45d
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1286d     tolerance=45d
+    Monthly     USA_CAPE                          src=Shiller      series=CAPE                      last_obs=2023-10-06  age=978d      tolerance=90d*
+    Monthly     USA_CPI_SHILLER                   src=Shiller      series=CPI                       last_obs=2023-10-06  age=978d      tolerance=90d*
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=950d      tolerance=45d
     Monthly     JPN_IND_PROD                      src=FRED         series=JPNPROINDMISMEI           last_obs=2024-03-01  age=831d      tolerance=45d
     Monthly     GBR_CPI                           src=FRED         series=GBRCPIALLMINMEI           last_obs=2025-03-07  age=460d      tolerance=45d
@@ -20,7 +66,7 @@
     Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=369d      tolerance=45d
     Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=362d      tolerance=30d*
     Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=278d      tolerance=60d*
-    Daily       CAN_POLICY_RATE                   src=BoC          series=V39079                    last_obs=2025-10-31  age=222d      tolerance=5d
+    Daily       CAN_POLICY_RATE                   src=BoC          series=V39079                    last_obs=2025-10-31  age=222d      tolerance=7d*
     Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=187d      tolerance=45d
     Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=159d      tolerance=45d
     Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=159d      tolerance=45d
@@ -28,13 +74,14 @@
     Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=159d      tolerance=45d
     Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=159d      tolerance=45d
     Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=159d      tolerance=45d
-    Monthly     GBR_EMP_RATE                      src=ONS          series=employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms  last_obs=2026-01-02  age=159d      tolerance=45d
-    Monthly     GBR_UNEMPLOYMENT                  src=ONS          series=employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms  last_obs=2026-02-06  age=124d      tolerance=45d
+    Monthly     EA_HICP_CORE_YOY                  src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20  last_obs=2026-01-02  age=159d      tolerance=45d
+    Monthly     GBR_EMP_RATE                      src=ONS          series=employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms  last_obs=2026-01-02  age=159d      tolerance=45d*
+    Monthly     GBR_UNEMPLOYMENT                  src=ONS          series=employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms  last_obs=2026-02-06  age=124d      tolerance=45d*
     Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-03-06  age=96d       tolerance=45d
-    Monthly     GBR_AWE_REGPAY_YOY                src=ONS          series=employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kai9/lms  last_obs=2026-03-06  age=96d       tolerance=45d
+    Monthly     GBR_AWE_REGPAY_YOY                src=ONS          series=employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kai9/lms  last_obs=2026-03-06  age=96d       tolerance=45d*
     Daily       T5YIFR                            src=FRED         series=T5YIFR                    last_obs=2026-05-29  age=12d       tolerance=5d
     Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-29  age=12d       tolerance=5d
-  STALE (16):
+  STALE (22):
     Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=250d      tolerance=180d*
     Monthly     EZ_IND_PROD                       src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20  last_obs=2025-12-05  age=187d      tolerance=150d*
     Monthly     EZ_RETAIL_VOL                     src=DB.nomics    series=Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20  last_obs=2025-12-05  age=187d      tolerance=150d*
@@ -45,20 +92,63 @@
     Monthly     NLD_DSL_10Y                       src=FRED         series=IRLTLT01NLM156N           last_obs=2026-03-06  age=96d       tolerance=75d*
     Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-03-06  age=96d       tolerance=75d*
     Monthly     GBR_RATE_3M                       src=OECD         series=RATE_3M                   last_obs=2026-03-06  age=96d       tolerance=90d*
+    Quarterly   GBR_GDP_REAL                      src=ONS          series=economy/grossdomesticproductgdp/timeseries/abmi/pn2  last_obs=2026-03-06  age=96d       tolerance=90d*
+    Monthly     GBR_IND_PROD                      src=ONS          series=economy/economicoutputandproductivity/output/timeseries/k222/diop  last_obs=2026-03-06  age=96d       tolerance=60d*
+    Monthly     GBR_SERV_PROD                     src=ONS          series=economy/economicoutputandproductivity/output/timeseries/s2ku/ios1  last_obs=2026-03-06  age=96d       tolerance=60d*
     Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-04-03  age=68d       tolerance=45d
-    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-04-03  age=68d       tolerance=45d
-    Monthly     GBR_CPI_YOY                       src=ONS          series=economy/inflationandpriceindices/timeseries/d7g7/mm23  last_obs=2026-04-03  age=68d       tolerance=45d
-    Monthly     GBR_CPIH_YOY                      src=ONS          series=economy/inflationandpriceindices/timeseries/l55o/mm23  last_obs=2026-04-03  age=68d       tolerance=45d
-    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-04-03  age=68d       tolerance=45d
+    Monthly     JPN_SPPI                          src=BoJ          series=PR02'PRCS20_5200000000    last_obs=2026-04-03  age=68d       tolerance=45d*
+    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-04-03  age=68d       tolerance=45d*
+    Monthly     GBR_CPI_YOY                       src=ONS          series=economy/inflationandpriceindices/timeseries/d7g7/mm23  last_obs=2026-04-03  age=68d       tolerance=45d*
+    Monthly     GBR_CPIH_YOY                      src=ONS          series=economy/inflationandpriceindices/timeseries/l55o/mm23  last_obs=2026-04-03  age=68d       tolerance=45d*
+    Monthly     GBR_CORE_CPI_YOY                  src=ONS          series=economy/inflationandpriceindices/timeseries/dko8/mm23  last_obs=2026-04-03  age=68d       tolerance=45d*
+    Monthly     GBR_RETAIL_VOL                    src=ONS          series=businessindustryandtrade/retailindustry/timeseries/j5ek/drsi  last_obs=2026-04-03  age=68d       tolerance=60d*
+    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-04-03  age=68d       tolerance=45d*
     Weekly      NFCI                              src=FRED         series=NFCI                      last_obs=2026-05-22  age=19d       tolerance=14d*
+  ANCHORS-ACTIVE (39) — historical anchors, no frequency-based staleness check (release cadence intrinsic):
+    Annual      USA_CPI_JST                       src=JST          series=USA|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      USA_GDP_JST                       src=JST          series=USA|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      USA_EQUITY_TR_JST                 src=JST          series=USA|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      USA_LTRATE_JST                    src=JST          series=USA|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      GBR_CPI_JST                       src=JST          series=GBR|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      GBR_GDP_JST                       src=JST          series=GBR|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      GBR_EQUITY_TR_JST                 src=JST          series=GBR|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      GBR_LTRATE_JST                    src=JST          series=GBR|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      DEU_CPI_JST                       src=JST          series=DEU|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      DEU_GDP_JST                       src=JST          series=DEU|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      DEU_EQUITY_TR_JST                 src=JST          series=DEU|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      DEU_LTRATE_JST                    src=JST          series=DEU|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      FRA_CPI_JST                       src=JST          series=FRA|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      FRA_GDP_JST                       src=JST          series=FRA|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      FRA_EQUITY_TR_JST                 src=JST          series=FRA|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      FRA_LTRATE_JST                    src=JST          series=FRA|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      JPN_CPI_JST                       src=JST          series=JPN|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      JPN_GDP_JST                       src=JST          series=JPN|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      JPN_EQUITY_TR_JST                 src=JST          series=JPN|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      JPN_LTRATE_JST                    src=JST          series=JPN|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      ITA_CPI_JST                       src=JST          series=ITA|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      ITA_GDP_JST                       src=JST          series=ITA|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      ITA_EQUITY_TR_JST                 src=JST          series=ITA|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      ITA_LTRATE_JST                    src=JST          series=ITA|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CAN_CPI_JST                       src=JST          series=CAN|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CAN_GDP_JST                       src=JST          series=CAN|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CAN_LTRATE_JST                    src=JST          series=CAN|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      AUS_CPI_JST                       src=JST          series=AUS|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      AUS_GDP_JST                       src=JST          series=AUS|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      AUS_EQUITY_TR_JST                 src=JST          series=AUS|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      AUS_LTRATE_JST                    src=JST          series=AUS|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      NLD_CPI_JST                       src=JST          series=NLD|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      NLD_GDP_JST                       src=JST          series=NLD|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      NLD_EQUITY_TR_JST                 src=JST          series=NLD|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      NLD_LTRATE_JST                    src=JST          series=NLD|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CHE_CPI_JST                       src=JST          series=CHE|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CHE_GDP_JST                       src=JST          series=CHE|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CHE_EQUITY_TR_JST                 src=JST          series=CHE|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
+    Annual      CHE_LTRATE_JST                    src=JST          series=CHE|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
 
---- Section D: History preservation (2 issues) ---
+--- Section D: History preservation (0 issues) ---
   market_data_comp_hist.csv         live= 3988 rows (1950-01-06→2026-06-05)  sister= 3988 rows (1950-01-06→2026-06-05)  union= 3988
-  macro_economic_hist.csv           live= 4146 rows (1946-12-27→2026-06-05)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4146
-  macro_market_hist.csv             live= 1380 rows (2000-01-07→2026-06-12)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1380
-
-  ALERT  macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4146) — sister may have been rewritten incorrectly
-  ALERT  macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1380) — sister may have been rewritten incorrectly
+  macro_economic_hist.csv           live= 4146 rows (1946-12-27→2026-06-05)  sister= 4146 rows (1946-12-27→2026-06-05)  union= 4146
+  macro_market_hist.csv             live= 1380 rows (2000-01-07→2026-06-12)  sister= 1380 rows (2000-01-07→2026-06-12)  union= 1380
 
 Footer:
   * = per-row override applied (freshness_override_days column)

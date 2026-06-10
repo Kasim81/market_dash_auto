@@ -1,18 +1,28 @@
-## Daily audit — 2026-06-10 — **45 ISSUES** (39 stale series, 4 static-check failures, 2 history-preservation issues)
+## Daily audit — 2026-06-10 — **97 ISSUES** (1 fetch error, 48 stale series, 48 static-check failures)
 
-_Run: 2026-06-10 16:46 UTC_
+_Run: 2026-06-10 23:43 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
+
+<details><summary>Fetch errors</summary>
+
+
+**other_warnings** (1):
+- `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
+
+</details>
 
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (23):
+**EXPIRED** (26):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
 | `CHN_M2` | FRED | Monthly | 2019-08-02 | 2504d | 45d |
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1286d | 45d |
+| `USA_CAPE` | Shiller | Monthly | 2023-10-06 | 978d | 90d\* |
+| `USA_CPI_SHILLER` | Shiller | Monthly | 2023-10-06 | 978d | 90d\* |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 950d | 45d |
 | `JPN_IND_PROD` | FRED | Monthly | 2024-03-01 | 831d | 45d |
 | `GBR_CPI` | FRED | Monthly | 2025-03-07 | 460d | 45d |
@@ -20,7 +30,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 369d | 45d |
 | `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 362d | 30d\* |
 | `ISM_SVC_PMI` | DB.nomics | Monthly | 2025-09-05 | 278d | 60d\* |
-| `CAN_POLICY_RATE` | BoC | Daily | 2025-10-31 | 222d | 5d |
+| `CAN_POLICY_RATE` | BoC | Daily | 2025-10-31 | 222d | 7d\* |
 | `DEU_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 187d | 45d |
 | `EA_HICP` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
 | `EU_ESI` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
@@ -28,14 +38,15 @@ Full report attached as `data_audit.txt` in today's commit.
 | `EU_SVC_CONF` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
 | `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
 | `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
-| `GBR_EMP_RATE` | ONS | Monthly | 2026-01-02 | 159d | 45d |
-| `GBR_UNEMPLOYMENT` | ONS | Monthly | 2026-02-06 | 124d | 45d |
+| `EA_HICP_CORE_YOY` | DB.nomics | Monthly | 2026-01-02 | 159d | 45d |
+| `GBR_EMP_RATE` | ONS | Monthly | 2026-01-02 | 159d | 45d\* |
+| `GBR_UNEMPLOYMENT` | ONS | Monthly | 2026-02-06 | 124d | 45d\* |
 | `CMRMTSPL` | FRED | Monthly | 2026-03-06 | 96d | 45d |
-| `GBR_AWE_REGPAY_YOY` | ONS | Monthly | 2026-03-06 | 96d | 45d |
+| `GBR_AWE_REGPAY_YOY` | ONS | Monthly | 2026-03-06 | 96d | 45d\* |
 | `T5YIFR` | FRED | Daily | 2026-05-29 | 12d | 5d |
 | `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-29 | 12d | 5d |
 
-**STALE** (16):
+**STALE** (22):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -49,25 +60,94 @@ Full report attached as `data_audit.txt` in today's commit.
 | `NLD_DSL_10Y` | FRED | Monthly | 2026-03-06 | 96d | 75d\* |
 | `FRA_UNEMPLOYMENT` | OECD | Monthly | 2026-03-06 | 96d | 75d\* |
 | `GBR_RATE_3M` | OECD | Monthly | 2026-03-06 | 96d | 90d\* |
+| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-06 | 96d | 90d\* |
+| `GBR_IND_PROD` | ONS | Monthly | 2026-03-06 | 96d | 60d\* |
+| `GBR_SERV_PROD` | ONS | Monthly | 2026-03-06 | 96d | 60d\* |
 | `PERMIT` | FRED | Monthly | 2026-04-03 | 68d | 45d |
-| `CAN_CPI_MEDIAN` | BoC | Monthly | 2026-04-03 | 68d | 45d |
-| `GBR_CPI_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
-| `GBR_CPIH_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
-| `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 68d | 45d |
+| `JPN_SPPI` | BoJ | Monthly | 2026-04-03 | 68d | 45d\* |
+| `CAN_CPI_MEDIAN` | BoC | Monthly | 2026-04-03 | 68d | 45d\* |
+| `GBR_CPI_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d\* |
+| `GBR_CPIH_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d\* |
+| `GBR_CORE_CPI_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d\* |
+| `GBR_RETAIL_VOL` | ONS | Monthly | 2026-04-03 | 68d | 60d\* |
+| `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 68d | 45d\* |
 | `NFCI` | FRED | Weekly | 2026-05-22 | 19d | 14d\* |
+
+</details>
+
+<details><summary>Active historical anchors (informational)</summary>
+
+| Series | Source | Last obs | Next expected release |
+|---|---|---|---|
+| `USA_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `USA_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `USA_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `USA_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `GBR_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `GBR_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `GBR_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `GBR_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `DEU_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `DEU_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `DEU_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `DEU_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `FRA_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `FRA_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `FRA_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `FRA_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `JPN_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `JPN_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `JPN_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `JPN_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `ITA_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `ITA_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `ITA_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `ITA_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `CAN_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `CAN_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `CAN_LTRATE_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `AUS_CPI_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `AUS_GDP_JST` | JST | 2021-01-01 | 2026-12-31 |
+| `AUS_EQUITY_TR_JST` | JST | 2021-01-01 | 2026-12-31 |
+| _… 9 more in `data_audit.txt`_ |  |  |  |
 
 </details>
 
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (3):
-- _get_col(...,'EA_HICP_CORE_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-- _get_col(...,'GBR_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-- _get_col(...,'JPN_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
-
-**registry_drift** (1):
+**registry_drift** (48):
+- hist column 'AUS_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'AUS_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'AUS_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'AUS_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CAN_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CAN_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CAN_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CHE_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CHE_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CHE_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'CHE_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'DEU_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'DEU_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'DEU_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'DEU_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'FRA_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'FRA_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 - hist column 'FRA_GDP_INDEX' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'FRA_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'FRA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'GBR_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'GBR_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'GBR_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'GBR_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'ITA_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'ITA_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'ITA_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'ITA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'JPN_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- hist column 'JPN_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
+- _… 18 more in `data_audit.txt`_
 
 </details>
 
@@ -77,12 +157,8 @@ Full report attached as `data_audit.txt` in today's commit.
 | File | Live rows | Sister rows | Union | Live range | Sister range |
 |---|---|---|---|---|---|
 | `market_data_comp_hist.csv` | 3,988 | 3,988 | 3,988 | 1950-01-06 → 2026-06-05 | 1950-01-06 → 2026-06-05 |
-| `macro_economic_hist.csv` | 4,146 | 4,140 | 4,146 | 1946-12-27 → 2026-06-05 | 1946-12-27 → 2026-04-24 |
-| `macro_market_hist.csv` | 1,380 | 1,374 | 1,380 | 2000-01-07 → 2026-06-12 | 2000-01-07 → 2026-05-01 |
-
-**ALERTS** (2):
-- macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4146) — sister may have been rewritten incorrectly
-- macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1380) — sister may have been rewritten incorrectly
+| `macro_economic_hist.csv` | 4,146 | 4,146 | 4,146 | 1946-12-27 → 2026-06-05 | 1946-12-27 → 2026-06-05 |
+| `macro_market_hist.csv` | 1,380 | 1,380 | 1,380 | 2000-01-07 → 2026-06-12 | 2000-01-07 → 2026-06-12 |
 
 </details>
 
