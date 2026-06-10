@@ -1,9 +1,12 @@
 === Data audit @ 2026-06-10 ===
 
---- Section A: Fetch outcomes (1 issues) ---
-  OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
+--- Section A: Fetch outcomes (0 issues) ---
+  (none)
 
---- Section B: Static checks (1 issues) ---
+--- Section B: Static checks (4 issues) ---
+  MISSING_COLUMNS             _get_col(...,'EA_HICP_CORE_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+  MISSING_COLUMNS             _get_col(...,'GBR_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+  MISSING_COLUMNS             _get_col(...,'JPN_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
   REGISTRY_DRIFT              hist column 'FRA_GDP_INDEX' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 
 --- Section C: Value-change staleness (FRESH 167  STALE 16  EXPIRED 23) ---
@@ -49,10 +52,13 @@
     Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-04-03  age=68d       tolerance=45d
     Weekly      NFCI                              src=FRED         series=NFCI                      last_obs=2026-05-22  age=19d       tolerance=14d*
 
---- Section D: History preservation (0 issues) ---
+--- Section D: History preservation (2 issues) ---
   market_data_comp_hist.csv         live= 3988 rows (1950-01-06→2026-06-05)  sister= 3988 rows (1950-01-06→2026-06-05)  union= 3988
-  macro_economic_hist.csv           live= 4146 rows (1946-12-27→2026-06-05)  sister= 4146 rows (1946-12-27→2026-06-05)  union= 4146
-  macro_market_hist.csv             live= 1380 rows (2000-01-07→2026-06-12)  sister= 1380 rows (2000-01-07→2026-06-12)  union= 1380
+  macro_economic_hist.csv           live= 4146 rows (1946-12-27→2026-06-05)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4146
+  macro_market_hist.csv             live= 1380 rows (2000-01-07→2026-06-12)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1380
+
+  ALERT  macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4146) — sister may have been rewritten incorrectly
+  ALERT  macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1380) — sister may have been rewritten incorrectly
 
 Footer:
   * = per-row override applied (freshness_override_days column)

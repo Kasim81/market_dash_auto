@@ -1,16 +1,8 @@
-## Daily audit — 2026-06-10 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
+## Daily audit — 2026-06-10 — **45 ISSUES** (39 stale series, 4 static-check failures, 2 history-preservation issues)
 
-_Run: 2026-06-10 13:51 UTC_
+_Run: 2026-06-10 16:46 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
-
-<details><summary>Fetch errors</summary>
-
-
-**other_warnings** (1):
-- `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-
-</details>
 
 <details><summary>Stale series</summary>
 
@@ -69,6 +61,11 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
+**missing_columns** (3):
+- _get_col(...,'EA_HICP_CORE_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'GBR_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+- _get_col(...,'JPN_CORE_CPI_YOY') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+
 **registry_drift** (1):
 - hist column 'FRA_GDP_INDEX' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 
@@ -80,8 +77,12 @@ Full report attached as `data_audit.txt` in today's commit.
 | File | Live rows | Sister rows | Union | Live range | Sister range |
 |---|---|---|---|---|---|
 | `market_data_comp_hist.csv` | 3,988 | 3,988 | 3,988 | 1950-01-06 → 2026-06-05 | 1950-01-06 → 2026-06-05 |
-| `macro_economic_hist.csv` | 4,146 | 4,146 | 4,146 | 1946-12-27 → 2026-06-05 | 1946-12-27 → 2026-06-05 |
-| `macro_market_hist.csv` | 1,380 | 1,380 | 1,380 | 2000-01-07 → 2026-06-12 | 2000-01-07 → 2026-06-12 |
+| `macro_economic_hist.csv` | 4,146 | 4,140 | 4,146 | 1946-12-27 → 2026-06-05 | 1946-12-27 → 2026-04-24 |
+| `macro_market_hist.csv` | 1,380 | 1,374 | 1,380 | 2000-01-07 → 2026-06-12 | 2000-01-07 → 2026-05-01 |
+
+**ALERTS** (2):
+- macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4146) — sister may have been rewritten incorrectly
+- macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1380) — sister may have been rewritten incorrectly
 
 </details>
 
