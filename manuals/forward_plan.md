@@ -299,12 +299,13 @@ These are cases where a planned series is unavailable from any free source we ac
 - ⏳ Once `BDF_API_KEY` (+ optional `BDF_API_SECRET`) is in GitHub Secrets and a credentialed run has happened, investigate the repo logs to determine what worked vs broke with the BdF secrets. Read the daily `pipeline.log` (the `=== Primary-source smoke tests (BLS, INSEE, BdF) ===` block + the `[BdF]` fetch lines) and the `test_bdf_smoke` output, and check the daily-audit Issue. Specifically establish: (a) did Webstat auth succeed, and with id-only or id+secret; (b) did the 2 provisional `MIR1/...` series keys resolve to data or return 404. Then correct the unverified keys in `data/macro_library_bdf.csv` from the log evidence and re-run. See the BdF row above, §3.1, and tech_manual §5/§12.
 
 Candidate next tracks:
-- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here.
+- **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here, now detailed and status-reconciled as §3.12 (OECD MEI) and §3.13 (long-run layer) per the regime-AA v2 handoff.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
 - **§3.3 PE Ratio Integration** — small contained feature add.
 - **§3.4 Market Index Expansion** — broadens market coverage; CSV-only additions to `index_library.csv`.
 - **§3.6 Incremental Fetch Mode** — performance work for `fetch_hist.py`.
 - **§3.8 Weekly Retirement Review Workflow** — closes the auto-remediation gap left by the daily audit.
+- **Regime-AA v2 asks (§3.12–§3.17)** — cross-repo handoff (`manuals/2026-06-10-regime-aa-v2-pipeline-handoff.md`), status-reconciled. **CRITICAL:** §3.12 OECD MEI ingestion (🟡 partial — FRED CSV rows) and §3.14 monthly z-score sampling (🟡 partial — window already exists, needs month-end output) gate regime-AA Phase 0 / Phase 2. **HIGH:** §3.13 long-run source modules. See §3.12–§3.17 for the per-ask status.
 
 > **Note: §3.5 and §3.7 are MOVED.** Regime-based indicator labelling, ML-driven regime identification, and the regime-driven back-test / portfolio optimiser have been moved out of this document into `../regime_AA_master_plan.docx`. The stub sections at §3.5 and §3.7 below record the move and direct readers to the relevant master-plan sections.
 
@@ -846,6 +847,84 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 - Tech manual §9.7 explains the four-step contract.
 - The audit / library_sync gains a check that flags any `macro_indicator_library` row without a matching `<id>_raw` column in `macro_market_hist.csv`, with a remediation hint ("trigger an `update_data` run").
 - Manual verification: the 6 new inflation composites + `GLOBAL_GOLD1` appear in `docs/indicator_explorer.html` under their expected nodes after the next daily run.
+
+### Regime-AA v2 data-pipeline asks (§3.12–§3.17)
+
+> **Provenance & reconciliation.** These six sub-sections are the reconciled landing of the cross-repo handoff memo `manuals/2026-06-10-regime-aa-v2-pipeline-handoff.md` (filed from `regime-aa`, master-plan v2). The memo numbered them §3.10–§3.15; they are **renumbered §3.12–§3.17** here because §3.10 (ifo backfill) and §3.11 (Indicator Explorer audit) already exist. Each carries a **Pipeline status (audited 2026-06-10)** line reconciling the ask against the live code, with cross-links to existing tracks so already-done work is not re-scheduled. Factual corrections to the memo were captured for the source project in `manuals/2026-06-10-regime-aa-v2-pipeline-handoff-corrections.md` (to be filed back to regime-aa as an inverse-direction proposal).
+
+### 3.12 OECD MEI feed — verification + ingestion (regime-AA-driven, CRITICAL)
+
+> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL.** 10Y sovereign yields in the OECD-MEI-via-FRED form `IRLTLT01{ISO}M156N` already exist for **GB, DE, IT** (`GBR_GILT_10Y` / `DEU_BUND_10Y` / `ITA_BTP_10Y`) plus an India variant; **US** carries only a daily proxy (`DGS10`), not the monthly MEI form. **FR, JP, CA, AU, NL, CH yields are missing, and the equity share-price indices `SPASTT01{ISO}M661N` are missing for all 10 regions.** 1957-continuity is unverified. This is the cheap FRED-CSV-row pattern — no new module. Extends the existing §3.1 long-run note.
+
+**Priority:** CRITICAL — gates regime-AA Phase 0→1; the per-region equity + yield inputs feed regime labels (Phase 1) and the Layer-1 pillar score (Phase 3).
+
+**Scope:**
+- Register monthly equity indices `SPASTT01{ISO}M661N` and 10Y yields `IRLTLT01{ISO}M156N` for US, GB, DE, FR, JP, IT, CA, AU, NL, CH as rows in `data/macro_library_fred.csv` (add the 7 missing-region yields + all 10 equities).
+- Confirm continuity Jan-1957 → current month per (series, region); document breaks / methodology changes.
+- Sister-file safeguard (`*_hist_x.csv`); land in `macro_economic_hist.csv` / `macro_market_hist.csv`; daily cadence.
+
+**Acceptance:** `verify_fred_oecd.py` (regime-aa) returns `retrievable = True` for all priority-five pairs; ≥ 800 monthly obs from 1957-01 for US/UK/DE/FR/JP equities; rows present in the hist outputs and pass the daily audit.
+
+**regime-aa refs:** `src/data_ingestion/verify_fred_oecd.py`, `scripts/run_phase_0_availability.py`. Memo §3.10.
+
+### 3.13 Long-run historical data layer (regime-AA-driven, HIGH)
+
+> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL — mostly NEW.** No `shiller / french / imf_pcps / jst / boe_millennium` modules exist. IMF Primary Commodity Prices is only partly present as scattered per-commodity FRED rows (iron ore, copper, …); the **aggregate index `PALLFNFINDEXM` is not wired**. Shiller CAPE is already a *planned* item in §3.3, and this exact long-run source set is already catalogued in the §3.1 note (`../longrun_assetclass_data_sources.md`). Net: four/five new source modules, de-duped against §3.1 / §3.3 / §3.9.
+
+**Priority:** HIGH — multi-decade depth for Phase 1 regime labels (cross-validation anchors).
+
+**Scope (one source module + library CSV each, per §0.1):**
+- `sources/shiller.py` — monthly US 1871+ (S&P price/div/earnings, US CPI, long rate, CAPE); community JSON mirror as canonical daily path, Yale `ie_data.xls` as periodic cross-check.
+- `sources/french.py` — Ken French factors (US 5-factor + RF 1926+, intl developed 1990+, EM 2000+) via `pandas-datareader` famafrench, direct-ZIP fallback.
+- `sources/imf_pcps.py` — confirm FRED-mirror coverage of aggregate indices; add SDMX-direct fetch for per-commodity series not on FRED.
+- `sources/jst.py` — Jordà-Schularick-Taylor (18 economies × ~10 series × 1870+, annual) via `macrohistory.net` Stata download.
+- `sources/boe_millennium.py` *(optional, lower priority)* — BoE Millennium UK rates / CPI / GDP back to the early 1700s.
+
+**Acceptance:** each module fetches end-to-end on the scheduled run; new `data/macro_library_*.csv` pass the daily audit; regime-aa verifiers (`verify_shiller / french / imf_pcps / jst.py`) can read the produced CSVs.
+
+**regime-aa refs:** Phase 0 test plan §3 Sources 3–6. Memo §3.11. Cross-link: §3.1, §3.3, §3.9.
+
+### 3.14 Monthly z-score sampling alongside daily (regime-AA-driven, CRITICAL — see correction)
+
+> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL + MEMO ERROR.** The memo states the pipeline "publishes daily 252-day rolling z-scores" — it does **not**. `compute_macro_market.py` already standardises on a **156-week (3-year) rolling z-score on the weekly Friday spine** (`ZSCORE_WINDOW = 156`, `ZSCORE_MIN_PERIODS = 52`): the window regime-AA asks for already exists. The genuine gap is **month-end *sampling* + a flat per-(indicator, region) monthly table**, not a new z-score definition. Whether they want the existing weekly 156-week series sampled at month-end vs a native 36-month monthly window needs confirming (flagged in the corrections memo). Relates to `multifreq_plan.md` (Phase 2).
+
+**Priority:** CRITICAL — Phase 2 validation + Phase 3 engine consume the monthly standardisation.
+
+**Scope:** emit a month-end-sampled z-score as a flat per-(indicator, region) table — new `macro_market_monthly_hist.csv` or a `z_score_monthly` column (pipeline-side schema call); retain the daily/weekly z-score unchanged for the Indicator Explorer; document the schema in `manuals/technical_manual.md` for stable downstream import.
+
+**Acceptance:** monthly z-scores at every month-end back to series support; regime-AA Phase 3 Layer-1 reads them without further transform; existing daily output unchanged.
+
+**regime-aa refs:** master plan §3.0 (v2 horizon), §3.5.2 (normalisation). Memo §3.12.
+
+### 3.15 Monthly per-asset EWMA features — Layer 2 (regime-AA-driven, HIGH if Layer 2)
+
+> **Pipeline status (audited 2026-06-10): ❌ NEW — blocked on input.** Not in the pipeline. Cannot be fully specified until regime-AA fixes its **Phase-4 regional asset universe** (~40–75 assets) and the per-region 3-month risk-free list. Defer entirely if Phase 3 settles on macro-only Layer 1.
+
+**Priority:** HIGH (conditional on Layer 2 being built).
+
+**Scope:** per asset — monthly excess return `r_t = R_t − r_f,t/12`; EWMA features at halflives {3, 6, 12} months (downside deviation, EWMA mean, Sortino-style ratio); 8-feature vector standardised vs a rolling 60-month mean/sd → `asset_jm_features_monthly.csv (asset_id, region, date, log_dd_3m, log_dd_12m, ar_3m, ar_6m, ar_12m, sr_3m, sr_6m, sr_12m)`. Plus per-region monthly cross-asset macro features (2y yield Δ, curve slope, slope Δ, VIX log-Δ, 36-month equity-bond corr) → `macro_features_monthly.csv`.
+
+**Acceptance:** 8-feature monthly vector per universe asset from its earliest month-end; cross-asset macro features per region to 1957 (where source supports); regime-AA Phase 3 Layer 2 reads the CSVs directly.
+
+**regime-aa refs:** master plan §3.1.1 (JM features), §3.2.2 (GBDT macro features). Memo §3.13.
+
+### 3.16 Monthly seam-test extension (regime-AA-driven, MEDIUM)
+
+> **Pipeline status (audited 2026-06-10): ❌ NEW — mostly consumer-side.** The daily seam test (`seam_test.py`, 92 indicators) lives in regime-AA and passed 2026-05-07. Pipeline-side work is only to ensure the §3.14 / §3.15 monthly CSVs publish on a cadence the seam test can read. Gated on §3.14 / §3.15.
+
+**Scope / Acceptance:** confirm the monthly CSVs publish on schedule; regime-AA extends `seam_test.py` to report daily + monthly seam counts in `data/outputs/seam_test/summary.csv`. Memo §3.14.
+
+### 3.17 ALFRED vintage-data exposure (regime-AA-driven, LOW)
+
+> **Pipeline status (audited 2026-06-10): ❌ NEW.** `sources/fred.py` fetches revised data only (`file_type=json`, no `realtime_start` / `realtime_end`). No vintage output exists.
+
+**Priority:** LOW — Phase 6 backtest fidelity (vintage-data-neglect mitigation); not blocking earlier phases.
+
+**Scope:** add an optional ALFRED vintage mode to the FRED module (`realtime_start` / `realtime_end`) for backtest-critical series (NBER recession flag, GDP advance vs revised, CPI revisions, …) → `macro_vintage_hist.csv (series_id, observation_date, vintage_date, value)`; document ALFRED's US-centric / sparse-non-US coverage limits.
+
+**Acceptance:** vintage retrievable for ≥ the NBER recession indicator + US CPI back to the ALFRED record start; regime-AA Phase 6 can opt in per series with the limits documented.
+
+**regime-aa refs:** master plan §9.1 (vintage-data neglect), §17.8 (Phase 6). Memo §3.15.
 
 ---
 
