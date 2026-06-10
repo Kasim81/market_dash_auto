@@ -21,3 +21,6 @@ data/*.sqlite
 # HTML builder intermediate payloads (embedded into final HTML in build step)
 docs/payload_main.json
 docs/payload_mkt.json
+
+# Subagent worktree mounts (temporary; per-agent isolated working copies)
+.claude/worktrees/

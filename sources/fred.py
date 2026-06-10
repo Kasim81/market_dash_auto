@@ -213,6 +213,8 @@ def fetch_observations(
     retries: int = DEFAULT_MAX_RETRIES,
     backoff_base: int = DEFAULT_BACKOFF_BASE,
     label: str | None = None,
+    realtime_start: str | None = None,
+    realtime_end: str | None = None,
 ) -> dict | None:
     """
     Fetch observations for a FRED series with exponential backoff.
@@ -222,6 +224,13 @@ def fetch_observations(
     parse_observations() to convert to (date, value) tuples.
 
     Returns None on unrecoverable failure.
+
+    ALFRED vintage mode (forward_plan §3.17): when `realtime_start` /
+    `realtime_end` are passed the API returns the data **as it appeared
+    over that real-time window** — one observation row per (observation
+    date, vintage realtime range). Use parse_observations_vintage() to
+    decode the result. The default (both None) is the standard revised-
+    data path the daily pipeline uses today; nothing else changes.
     """
     if not api_key:
         return None
@@ -238,6 +247,10 @@ def fetch_observations(
         params["observation_end"] = end
     if limit is not None:
         params["limit"] = limit
+    if realtime_start is not None:
+        params["realtime_start"] = realtime_start
+    if realtime_end is not None:
+        params["realtime_end"] = realtime_end
 
     log_label = label or series_id
 
@@ -289,6 +302,43 @@ def parse_observations(data: dict | None) -> list[tuple[str, float]]:
         try:
             out.append((o["date"], float(val)))
         except (TypeError, ValueError, KeyError):
+            continue
+    return out
+
+
+def parse_observations_vintage(data: dict | None) -> list[tuple[str, str, float]]:
+    """
+    Vintage variant of parse_observations (forward_plan §3.17).
+
+    Each FRED ALFRED observation row carries `realtime_start` /
+    `realtime_end` describing the window during which the value was the
+    current vintage. We surface this as a 3-tuple per row:
+        (observation_date, vintage_date, value)
+    where `vintage_date` is the `realtime_start` of that row — i.e. the
+    date the value first became the current vintage for `observation_date`.
+
+    Same drop rules as parse_observations: non-numeric ("."), empty, or
+    missing values are skipped. Rows without a realtime_start are also
+    skipped (cannot place them in time as vintages).
+
+    The output is suitable for a flat `macro_vintage_hist.csv (series_id,
+    observation_date, vintage_date, value)` schema once the regime-AA
+    Phase 6 backtest specifies which series to materialise.
+    """
+    if not data or "observations" not in data:
+        return []
+    out: list[tuple[str, str, float]] = []
+    for o in data["observations"]:
+        val = o.get("value")
+        if val in (".", "", None):
+            continue
+        vintage = o.get("realtime_start")
+        obs_date = o.get("date")
+        if not vintage or not obs_date:
+            continue
+        try:
+            out.append((obs_date, vintage, float(val)))
+        except (TypeError, ValueError):
             continue
     return out
 

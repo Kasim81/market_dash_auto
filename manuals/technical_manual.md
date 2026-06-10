@@ -1107,7 +1107,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 
 **Diagnostic check** for "I added an indicator and it's not in the explorer": `python3 -c "import csv; hdr=next(csv.reader(open('data/macro_market_hist.csv'))); print([c for c in hdr if 'YOUR_ID' in c])"`. If empty → step 4 hasn't happened. If non-empty but still absent in the explorer → step 1's metadata is incomplete (likely missing `group`).
 
-**Forward-plan §3.11** tracks the work to add an automated audit guard that surfaces any indicator-library row missing a corresponding column in `macro_market_hist.csv` — turns step 4 into an explicit alert rather than a silent skip.
+**Audit pre-flight** (forward_plan §3.11 Stage 1, shipped 2026-06-10): `data_audit.py::_check_missing_explorer_indicators()` surfaces step-4 silent skips as a `missing_explorer_indicators` row under Section B static checks. Permanent gaps (5 indicators whose underlying input has no free source — EU_Cr1, AS_CN_R1, DE_ZEW1, JP_PMI1, CN_PMI2, all documented in §1 Known Data Gaps) are allowlisted via `KNOWN_MISSING_INDICATORS` so they don't pollute the daily noise.
 
 **Sidebar layout (post §2.5 v2 restructure, 2026-04-28):** three top-level sections —
 1. **Macro Market Indicators** — Phase E composites; toggleable between By Region (default, the existing region grouping) and By Concept (concept → subcategory).
