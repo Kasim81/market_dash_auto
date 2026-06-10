@@ -1,6 +1,6 @@
-## Daily audit — 2026-06-10 — **44 ISSUES** (1 fetch error, 42 stale series, 1 static-check failure)
+## Daily audit — 2026-06-10 — **41 ISSUES** (1 fetch error, 39 stale series, 1 static-check failure)
 
-_Run: 2026-06-10 11:04 UTC_
+_Run: 2026-06-10 13:51 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,7 +15,7 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (24):
+**EXPIRED** (23):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -39,12 +39,11 @@ Full report attached as `data_audit.txt` in today's commit.
 | `GBR_EMP_RATE` | ONS | Monthly | 2026-01-02 | 159d | 45d |
 | `GBR_UNEMPLOYMENT` | ONS | Monthly | 2026-02-06 | 124d | 45d |
 | `CMRMTSPL` | FRED | Monthly | 2026-03-06 | 96d | 45d |
-| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-03-06 | 96d | 45d |
 | `GBR_AWE_REGPAY_YOY` | ONS | Monthly | 2026-03-06 | 96d | 45d |
 | `T5YIFR` | FRED | Daily | 2026-05-29 | 12d | 5d |
 | `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-29 | 12d | 5d |
 
-**STALE** (18):
+**STALE** (16):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -55,17 +54,15 @@ Full report attached as `data_audit.txt` in today's commit.
 | `ITA_BTP_10Y` | FRED | Monthly | 2026-03-06 | 96d | 90d\* |
 | `IND_GOVT_10Y` | FRED | Monthly | 2026-03-06 | 96d | 90d\* |
 | `CHN_CON_CONF` | FRED | Monthly | 2026-03-06 | 96d | 90d\* |
+| `NLD_DSL_10Y` | FRED | Monthly | 2026-03-06 | 96d | 75d\* |
 | `FRA_UNEMPLOYMENT` | OECD | Monthly | 2026-03-06 | 96d | 75d\* |
 | `GBR_RATE_3M` | OECD | Monthly | 2026-03-06 | 96d | 90d\* |
 | `PERMIT` | FRED | Monthly | 2026-04-03 | 68d | 45d |
-| `USA_CPI_INDEX` | BLS | Monthly | 2026-04-03 | 68d | 45d |
-| `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-04-03 | 68d | 45d |
-| `CAN_CPI` | StatCan | Monthly | 2026-04-03 | 68d | 45d |
 | `CAN_CPI_MEDIAN` | BoC | Monthly | 2026-04-03 | 68d | 45d |
 | `GBR_CPI_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
 | `GBR_CPIH_YOY` | ONS | Monthly | 2026-04-03 | 68d | 45d |
 | `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 68d | 45d |
-| `ITA_IND_PROD` | ISTAT | Monthly | 2026-04-03 | 68d | 45d |
+| `NFCI` | FRED | Weekly | 2026-05-22 | 19d | 14d\* |
 
 </details>
 
