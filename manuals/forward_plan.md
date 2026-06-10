@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-06-09
+> Last updated: 2026-06-10
 
 This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
 
@@ -462,7 +462,7 @@ Once those land, fold them into the per-region `*_INFL1` calculators as a second
 
 | Field | Status | Plan |
 |---|---|---|
-| Global yield curve composite (10Y-2Y average across US / DE / UK / JP) | Partial | US 10Y-2Y ✓ via FRED. DE 2Y wired Stage F (`EZ_GOVT_2Y`). UK has S/M/L par-yield buckets — need specific 2Y/10Y mapping (BoE yield-curve files; deferred — see §3.1.6). JP 2Y missing — needs BoJ row addition (Stage E extension; module exists). |
+| Global yield curve composite (10Y-2Y average across US / DE / UK / JP) | Partial | US 10Y-2Y ✓ via FRED. DE 2Y wired Stage F (`EZ_GOVT_2Y`). UK has S/M/L par-yield buckets — need specific 2Y/10Y mapping (BoE yield-curve files; deferred — see §3.1.6). JP 2Y row shipped 2026-06-10 to `macro_library_boj.csv` as `JPN_JGB_2Y` (sort_key 470, series_id `IR01'IRTBLG02Y` PROVISIONAL — live probe confirmed BoJ Time-Series Data Search does not publish JGB benchmark yields; row registers the gap per §0.1 and the follow-up is either a new `sources/mof_japan.py` T2 module or a DB.nomics OECD/IMF mirror; do NOT wire `_calc_*` against `JPN_JGB_2Y` until the series_id is verified live). |
 | % stocks above 200-day MA — per-index breadth | Not implemented | Compute in-house from constituent daily closes. Candidate indices: S&P 500 (`US_EQ_B1`), Nasdaq 100, Russell 1000, FTSE 100. Adds ~500-1000 daily yfinance pulls per index. Defer until regime work has shape — may not be needed. |
 
 (Other previously-listed calculated fields are now closed — HY/IG ratio = `US_Cr3`, EMFX basket = `FX_EM1`, EEM/IWDA = `GL_G1`, MOVE = `^MOVE`, Global PMI proxy = `GL_PMI1`.)
