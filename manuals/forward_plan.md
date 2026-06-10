@@ -407,9 +407,9 @@ The regime work (now owned by `../regime_AA_master_plan.docx`) uses a per-region
 |---|---|---|---|
 | `US_INFL1` | mean of US headline CPI YoY (`USA_CPI`) + Core PCE YoY (`PCEPILFE`) + 5y5y forward breakeven (`T5YIFR`) | **Headline + Core** blend | L |
 | `UK_INFL1` | UK headline CPI YoY (`GBR_CPI`) | Headline only | L |
-| `EU_INFL1` | Euro-area headline HICP YoY (`EA_HICP`) | Headline only | L |
-| `JP_INFL1` | Japan headline CPI YoY (`JPN_CPI`) | Headline only | L |
-| `CN_INFL1` | mean of China headline CPI YoY + PPI YoY (`CHN_CPI` + `CHN_PPI`) | Headline only | L |
+| `EU_INFL1` | mean of EA headline HICP YoY + core HICP YoY (`EA_HICP` + `EA_HICP_CORE_YOY`) | Headline + Core | L |
+| `JP_INFL1` | mean of JP headline CPI YoY + core CPI YoY ex food&energy (`JPN_CPI` + `JPN_CORE_CPI_YOY`) | Headline + Core | L |
+| `CN_INFL1` | mean of China headline CPI YoY + PPI YoY (`CHN_CPI` + `CHN_PPI`) | Headline + PPI (core still gap) | L |
 | `US_INFEXP1` | z-composite of `T5YIE` + `T10YIE` + `T5YIFR` + `MICH` | Expectations (separate axis) | L (naturally leading) |
 
 Each row's `name` field in `macro_indicator_library.csv` explicitly states *headline / core / blend* so the regime-AA consumer can't confuse a headline-only gauge with the US headline+core blend (#155).
@@ -418,10 +418,10 @@ Each row's `name` field in `macro_indicator_library.csv` explicitly states *head
 
 | Region | Target series | Likely source | Notes |
 |---|---|---|---|
-| UK | ONS CPI excluding energy, food, alcohol & tobacco (CDID `D7G7`) | ONS Time Series API (new T2 module `sources/ons.py` — Stage C delivers this anyway) | The BoE-watched UK core measure |
-| EA | Eurostat HICP, all-items excluding energy & unprocessed food (`prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20`) | DB.nomics Eurostat | Standard ECB "core" definition |
-| JP | Japan CPI excluding fresh food (the BoJ-watched "core CPI") | e-Stat extension (`sources/estat.py`) or FRED `JPNCPICEUNXFFMS` if mirrored | The BoJ's actual policy target |
-| CN | China NBS Core CPI (excluding food and energy) | DB.nomics if available, else direct NBS scrape | NBS publishes monthly; aggregator coverage patchy |
+| UK | ✅ shipped 2026-06-10 — ONS CPI excluding energy, food, alcohol & tobacco (CDID `DKO8`, monthly back to 1989; the original note in this table said `D7G7` but that's headline, confirmed via ONS Zebedee + search). Wired as `GBR_CORE_CPI_YOY` and blended into `UK_INFL1` alongside `GBR_CPI`. | ONS Zebedee /data endpoint via existing `sources/ons.py` | The BoE-watched UK core measure |
+| EA | ✅ shipped 2026-06-10 — Eurostat HICP, overall index excluding energy/food/alcohol/tobacco (`prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20`, 289 obs back to 2001-12; the title is broader than the row originally noted — Eurostat's `TOT_X_NRG_FOOD` is the ECB core HICP). Wired as `EA_HICP_CORE_YOY` and blended into `EU_INFL1` alongside `EA_HICP`. | DB.nomics Eurostat via existing `sources/dbnomics.py` | Standard ECB "core" definition |
+| JP | ✅ shipped 2026-06-10 — OECD COICOP2018 national CPI ex-food-and-energy YoY (`OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_N_TXCP01_NRG/JPN.M.N.CPI.PA._TXCP01_NRG.N.GY`, 844 obs back to 1956-01). FRED `JPNCPICEUNXFFMS` does **not** exist; the FRED / OECD MEI mirror (`CPGRLE01JPM659N`) is frozen at 2021-06; this fresh OECD COICOP2018 series is the cleanest aggregator-mirrored path. Note: this is "ex food + energy" (international core convention), not the BoJ's "ex fresh food" definition — to land the latter would require e-Stat credentials (`ESTAT_APP_ID`) for STATJP/CPIm series 733. Wired as `JPN_CORE_CPI_YOY` and blended into `JP_INFL1` alongside `JPN_CPI`. | DB.nomics OECD via existing `sources/dbnomics.py` | International core convention (ex food+energy); BoJ ex-fresh-food remains a future e-Stat-credentialed upgrade |
+| CN | ❌ accepted gap 2026-06-10 — no free aggregator-mirrored core CPI for China. Probed: IMF/CPI has only 15 CN monthly series (no ex-food-and-energy slice); OECD COICOP2018 N_TXCP01_NRG dataset returns 0 docs for `REF_AREA=CHN`; DB.nomics NBS provider tree has no "excluding food and energy" CPI category (only by-COICOP-group price indices). Direct NBS scrape would need a new source module — deferred. `CN_INFL1` remains headline-CPI + PPI blend; NBS Core CPI to be revisited if a free path appears. | (no free path today) | NBS publishes monthly but aggregator coverage is empty; revisit periodically |
 
 Once those land, fold them into the per-region `*_INFL1` calculators as a second `Core CPI YoY` component (averaged with the headline) so each regional gauge becomes a headline + core blend like `US_INFL1` already is.
 
@@ -750,7 +750,7 @@ Decision deferred — it interacts with the Stage A preservation contract and ne
 
 **Priority:** Medium-High — extends §3.9 from gold-only to the broader `commodity_return` set the regime AA work needs.
 
-**Status:** Not started. Outstanding.
+**Status:** FRED rows landed 2026-06-10. 14 IMF Primary Commodity Prices series added to `data/macro_library_fred.csv` (sort_keys 530-543) covering Industrial Metals (`COPPER_USD`, `ALUM_USD`), Energy (`WTI_USD`, `BRENT_USD`, `NATGAS_HH_USD`), Agriculture (`WHEAT_USD`, `CORN_USD`, `SOYBEAN_USD`, `COFFEE_ARABICA_USD`, `SUGAR_USD`, `COTTON_USD`), Livestock (`BEEF_USD`, `PORK_USD`), and the canonical aggregate (`IMF_PCPS_ALL` via `PALLFNFINDEXM`). Concept `Cross-Asset`, country `GLOBAL`, cycle L — matching the existing `GOLD_USD_PM` precedent. Next daily run pulls them into `macro_economic_hist.csv`. Phase E `GLOBAL_*1` composites (per individual commodity) remain optional — regime-AA can consume the raw `*_USD` columns directly per the §3.9 indicator-spine note.
 
 **Targets** (all should reach ≥ 1990, most ≥ 1980 or earlier):
 
@@ -823,7 +823,7 @@ This is the **WES-Euro** workbook — the Euro-area subset of ifo's World Econom
 
 **Priority:** Medium — documents the integration contract so future indicator additions surface correctly in the explorer + dashboard. Surfaced when the 2026-05-28 inflation composites didn't appear in the explorer (cause: timing — the daily run that would have computed them hadn't yet executed; explorer is correctly CSV/hist-driven).
 
-**Status:** Not started.
+**Status:** Stage 1 shipped 2026-06-10. Tech-manual §9.7 already documents the four-step contract; pre-flight audit check landed as `data_audit.py::_check_missing_explorer_indicators()` (surfaces any `macro_indicator_library` row without a matching `<id>_raw` column in `macro_market_hist.csv` under Section B's `missing_explorer_indicators`). 5 permanent input-gap indicators (EU_Cr1, AS_CN_R1, DE_ZEW1, JP_PMI1, CN_PMI2) allowlisted via `KNOWN_MISSING_INDICATORS` per §1 Known Data Gaps; local audit run is clean. Outstanding: explorer dry-run mode (item 4 below) is optional and deferred unless a CI gate is needed.
 
 **Context.** `docs/build_html.py` builds the explorer by:
 
@@ -873,12 +873,12 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.13 Long-run historical data layer (regime-AA-driven, HIGH)
 
-> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL — mostly NEW.** No `shiller / french / imf_pcps / jst / boe_millennium` modules exist. IMF Primary Commodity Prices is only partly present as scattered per-commodity FRED rows (iron ore, copper, …); the **aggregate index `PALLFNFINDEXM` is not wired**. Shiller CAPE is already a *planned* item in §3.3, and this exact long-run source set is already catalogued in the §3.1 note (`../longrun_assetclass_data_sources.md`). Net: four/five new source modules, de-duped against §3.1 / §3.3 / §3.9.
+> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL — Shiller scaffolded.** Shiller module + library schema landed (commit below); xls parser intentionally stubbed until Yale `ie_data.xls` layout is verified against a live download (sandbox 403s the URL — verification needs a credentialed CI run or a local copy). No `french / imf_pcps / jst / boe_millennium` modules yet. IMF Primary Commodity Prices is only partly present as scattered per-commodity FRED rows (iron ore, copper, …); the **aggregate index `PALLFNFINDEXM` is not wired**. Shiller CAPE is already a *planned* item in §3.3, and this exact long-run source set is already catalogued in the §3.1 note (`../longrun_assetclass_data_sources.md`). Net remaining: four new source modules, de-duped against §3.1 / §3.3 / §3.9.
 
 **Priority:** HIGH — multi-decade depth for Phase 1 regime labels (cross-validation anchors).
 
 **Scope (one source module + library CSV each, per §0.1):**
-- `sources/shiller.py` — monthly US 1871+ (S&P price/div/earnings, US CPI, long rate, CAPE); community JSON mirror as canonical daily path, Yale `ie_data.xls` as periodic cross-check.
+- ✅ `sources/shiller.py` — monthly US 1871+ (S&P price/div/earnings, US CPI, long rate, CAPE) module + `data/macro_library_shiller.csv` schema shipped 2026-06-10 (scaffold; library rows + xls parser implementation deferred). Yale `ie_data.xls` as canonical primary; verify layout on next credentialed CI run before populating library rows.
 - `sources/french.py` — Ken French factors (US 5-factor + RF 1926+, intl developed 1990+, EM 2000+) via `pandas-datareader` famafrench, direct-ZIP fallback.
 - `sources/imf_pcps.py` — confirm FRED-mirror coverage of aggregate indices; add SDMX-direct fetch for per-commodity series not on FRED.
 - `sources/jst.py` — Jordà-Schularick-Taylor (18 economies × ~10 series × 1870+, annual) via `macrohistory.net` Stata download.
@@ -905,7 +905,7 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.15 Monthly per-asset EWMA features — Layer 2 (regime-AA-driven, HIGH if Layer 2)
 
-> **Pipeline status (audited 2026-06-10): ❌ NEW — blocked on input.** Not in the pipeline. Cannot be fully specified until regime-AA fixes its **Phase-4 regional asset universe** (~40–75 assets) and the per-region 3-month risk-free list. Defer entirely if Phase 3 settles on macro-only Layer 1.
+> **Pipeline status (audited 2026-06-10; re-confirmed same day): ❌ NEW — blocked on input.** Not in the pipeline. Cannot be fully specified until regime-AA fixes its **Phase-4 regional asset universe** (~40–75 assets) and the per-region 3-month risk-free list. Defer entirely if Phase 3 settles on macro-only Layer 1. No in-session work today — gate remains the regime-AA universe decision.
 
 **Priority:** HIGH (conditional on Layer 2 being built).
 
@@ -923,13 +923,16 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.17 ALFRED vintage-data exposure (regime-AA-driven, LOW)
 
-> **Pipeline status (audited 2026-06-10): ❌ NEW.** `sources/fred.py` fetches revised data only (`file_type=json`, no `realtime_start` / `realtime_end`). No vintage output exists.
+> **Pipeline status (audited 2026-06-10): 🟡 CAPABILITY IN, WRITER DEFERRED.** `sources/fred.py::fetch_observations()` now accepts optional `realtime_start` / `realtime_end` parameters; new `parse_observations_vintage()` helper surfaces the FRED ALFRED rows as `(observation_date, vintage_date, value)` tuples. The default (both None) is unchanged — the daily pipeline keeps using revised data, no risk of regression. The `macro_vintage_hist.csv` writer is **deferred** until regime-AA Phase 6 specifies which series + realtime windows to materialise; building a wide vintage table without a known consumer just creates dead bytes.
 
 **Priority:** LOW — Phase 6 backtest fidelity (vintage-data-neglect mitigation); not blocking earlier phases.
 
-**Scope:** add an optional ALFRED vintage mode to the FRED module (`realtime_start` / `realtime_end`) for backtest-critical series (NBER recession flag, GDP advance vs revised, CPI revisions, …) → `macro_vintage_hist.csv (series_id, observation_date, vintage_date, value)`; document ALFRED's US-centric / sparse-non-US coverage limits.
+**Scope:**
+- ✅ Add an optional ALFRED vintage mode to the FRED module (`realtime_start` / `realtime_end`).
+- ✅ `parse_observations_vintage()` helper.
+- ⏳ `macro_vintage_hist.csv (series_id, observation_date, vintage_date, value)` writer — deferred pending regime-AA Phase 6's per-series list (NBER recession flag, GDP advance vs revised, CPI revisions, …). Document ALFRED's US-centric / sparse-non-US coverage limits at the same time.
 
-**Acceptance:** vintage retrievable for ≥ the NBER recession indicator + US CPI back to the ALFRED record start; regime-AA Phase 6 can opt in per series with the limits documented.
+**Acceptance:** vintage retrievable for ≥ the NBER recession indicator + US CPI back to the ALFRED record start; regime-AA Phase 6 can opt in per series with the limits documented. Capability satisfied — full acceptance (vintage CSV materialised) waits for Phase 6.
 
 **regime-aa refs:** master plan §9.1 (vintage-data neglect), §17.8 (Phase 6). Memo §3.15.
 
