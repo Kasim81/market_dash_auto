@@ -86,6 +86,13 @@ SNAPSHOT_TAB = "macro_market"
 HIST_TAB     = "macro_market_hist"
 SNAPSHOT_CSV = "data/macro_market.csv"
 HIST_CSV     = "data/macro_market_hist.csv"
+# §3.14 — month-end-sampled view of the weekly 156-week z-score hist for the
+# regime-AA Phase 3 Layer-1 monthly engine. Same column schema as macro_market_hist
+# (<id>_raw / _zscore / _regime / _fwd_regime), but the index is month-end dates
+# and each cell is the last weekly Friday value within that month. The
+# underlying ZSCORE_WINDOW stays 156 weeks — this is sampling, not a new
+# z-score definition (per forward_plan.md §3.14 corrections memo).
+MONTHLY_HIST_CSV = "data/macro_market_monthly_hist.csv"
 
 # Input CSV paths (produced by earlier phases)
 COMP_HIST_CSV       = "data/market_data_comp_hist.csv"
@@ -2212,6 +2219,19 @@ def run_phase_e():
 
     write_hist_with_archive(df_hist.reset_index(), HIST_CSV)
     print(f"  Saved {HIST_CSV}")
+
+    # §3.14 — month-end-sampled hist for regime-AA's monthly seam test.
+    # `.resample('ME').last()` keeps the latest weekly Friday observation in each
+    # month for every column (numeric raw/zscore and string regime/fwd_regime
+    # alike), which is the natural month-end snapshot the Phase 3 Layer-1 engine
+    # consumes alongside the weekly Indicator Explorer feed.
+    df_hist_monthly = df_hist.resample("ME").last()
+    df_hist_monthly.index.name = "Date"
+    write_hist_with_archive(df_hist_monthly.reset_index(), MONTHLY_HIST_CSV)
+    print(
+        f"  Saved {MONTHLY_HIST_CSV}: {df_hist_monthly.shape[0]} month-end rows"
+        f" × {df_hist_monthly.shape[1]} cols"
+    )
 
     # ------------------------------------------------------------------
     # 6. Push to Google Sheets

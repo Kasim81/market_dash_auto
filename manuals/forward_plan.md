@@ -886,13 +886,16 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ### 3.14 Monthly z-score sampling alongside daily (regime-AA-driven, CRITICAL — see correction)
 
-> **Pipeline status (audited 2026-06-10): 🟡 PARTIAL + MEMO ERROR.** The memo states the pipeline "publishes daily 252-day rolling z-scores" — it does **not**. `compute_macro_market.py` already standardises on a **156-week (3-year) rolling z-score on the weekly Friday spine** (`ZSCORE_WINDOW = 156`, `ZSCORE_MIN_PERIODS = 52`): the window regime-AA asks for already exists. The genuine gap is **month-end *sampling* + a flat per-(indicator, region) monthly table**, not a new z-score definition. Whether they want the existing weekly 156-week series sampled at month-end vs a native 36-month monthly window needs confirming (flagged in the corrections memo). Relates to `multifreq_plan.md` (Phase 2).
+> **Pipeline status (audited 2026-06-10; shipped same day): 🟢 SHIPPED.** Confirmed memo error: the pipeline already uses a 156-week (3-year) rolling z-score on the weekly Friday spine (`ZSCORE_WINDOW = 156`, `ZSCORE_MIN_PERIODS = 52`) — not a "daily 252-day" one. Genuine gap was month-end *sampling* + a flat per-(indicator, region) monthly table. Shipped as `data/macro_market_monthly_hist.csv` via `df_hist.resample("ME").last()` in `compute_macro_market.py::run_phase_e` — same wide schema as `macro_market_hist.csv` (`<id>_raw` / `_zscore` / `_regime` / `_fwd_regime`), one row per month-end, each cell = the latest weekly Friday value within that month. ~320 rows × ~376 cols back to 2000-01-31. Sister-file `_x.csv` follows the existing preservation contract. Existing weekly output unchanged.
 
 **Priority:** CRITICAL — Phase 2 validation + Phase 3 engine consume the monthly standardisation.
 
-**Scope:** emit a month-end-sampled z-score as a flat per-(indicator, region) table — new `macro_market_monthly_hist.csv` or a `z_score_monthly` column (pipeline-side schema call); retain the daily/weekly z-score unchanged for the Indicator Explorer; document the schema in `manuals/technical_manual.md` for stable downstream import.
+**Scope:**
+- ✅ Emit a month-end-sampled z-score as a flat per-(indicator, region) table — `macro_market_monthly_hist.csv`. The schema choice (separate file vs `z_score_monthly` column) settled on a separate file for cleanest downstream import.
+- ✅ Retain the daily/weekly z-score unchanged for the Indicator Explorer (weekly `macro_market_hist.csv` writer untouched).
+- ✅ Documented in `manuals/technical_manual.md` §7 file inventory for stable downstream import.
 
-**Acceptance:** monthly z-scores at every month-end back to series support; regime-AA Phase 3 Layer-1 reads them without further transform; existing daily output unchanged.
+**Acceptance:** monthly z-scores at every month-end back to series support; regime-AA Phase 3 Layer-1 reads them without further transform; existing daily output unchanged. ✅ all three satisfied.
 
 **regime-aa refs:** master plan §3.0 (v2 horizon), §3.5.2 (normalisation). Memo §3.12.
 
