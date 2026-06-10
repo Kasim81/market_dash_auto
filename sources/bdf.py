@@ -124,7 +124,16 @@ def fetch_series(
                     print(f"    [BdF] JSON decode failed for {series_id}: {e}")
                     return None
             if resp.status_code in (401, 403):
-                print(f"    [BdF HTTP {resp.status_code}] {series_id} — check BDF_API_KEY")
+                # Capture the upstream message so the post-mortem can
+                # distinguish "Invalid client id" from "Missing client secret"
+                # from "App not subscribed to dataset" — Webstat returns each
+                # as a distinct body even though the status is always 401/403.
+                body = (resp.text or "").strip().replace("\n", " ")[:300]
+                secret_state = "with-secret" if os.environ.get("BDF_API_SECRET", "").strip() else "no-secret"
+                print(
+                    f"    [BdF HTTP {resp.status_code}] {series_id} "
+                    f"({secret_state}) body={body!r}"
+                )
                 return None
             if 500 <= resp.status_code < 600:
                 wait = 2 ** attempt
