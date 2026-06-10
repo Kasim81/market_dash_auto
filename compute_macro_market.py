@@ -1845,18 +1845,47 @@ def _calc_US_INFL1(mu, **_):
 
 
 def _calc_UK_INFL1(mu, **_):
-    """UK CPI YoY (GBR_CPI — already stored YoY %)."""
-    return _to_weekly_friday(_get_col(mu, "GBR_CPI"))
+    """UK inflation: mean of headline CPI YoY and core CPI YoY (both already %).
+    Headline = GBR_CPI; core = GBR_CORE_CPI_YOY (ONS DKO8 — CPI ex energy /
+    food / alcohol / tobacco, the BoE-watched core measure). Same blend
+    shape as US_INFL1 (per §3.1.3 follow-up). Falls back to headline-only
+    if core is absent — preserves behaviour pre-DKO8 wiring."""
+    head = _to_weekly_friday(_get_col(mu, "GBR_CPI"))
+    core = _to_weekly_friday(_get_col(mu, "GBR_CORE_CPI_YOY"))
+    parts = [s for s in (head, core) if s is not None and not s.empty]
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).mean(axis=1)
 
 
 def _calc_EU_INFL1(mu, **_):
-    """Euro-area HICP YoY (EA_HICP — already stored YoY %)."""
-    return _to_weekly_friday(_get_col(mu, "EA_HICP"))
+    """Euro-area inflation: mean of headline HICP YoY and core HICP YoY
+    (both already %). Headline = EA_HICP; core = EA_HICP_CORE_YOY (Eurostat
+    prc_hicp_manr TOT_X_NRG_FOOD — overall index excluding energy / food /
+    alcohol / tobacco, the standard ECB core HICP definition). Same blend
+    shape as US_INFL1 / UK_INFL1 (per §3.1.3 follow-up). Falls back to
+    headline-only if core is absent."""
+    head = _to_weekly_friday(_get_col(mu, "EA_HICP"))
+    core = _to_weekly_friday(_get_col(mu, "EA_HICP_CORE_YOY"))
+    parts = [s for s in (head, core) if s is not None and not s.empty]
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).mean(axis=1)
 
 
 def _calc_JP_INFL1(mu, **_):
-    """Japan CPI YoY (JPN_CPI — already stored YoY %)."""
-    return _to_weekly_friday(_get_col(mu, "JPN_CPI"))
+    """Japan inflation: mean of headline CPI YoY and core CPI YoY (both
+    already %). Headline = JPN_CPI; core = JPN_CORE_CPI_YOY (OECD
+    COICOP2018 national CPI ex-food-and-energy YoY %, the international
+    core convention; replaces the frozen FRED / OECD MEI mirror that
+    stopped updating at 2021-06). Same blend shape as US_INFL1 / UK_INFL1
+    (per §3.1.3 follow-up). Falls back to headline-only if core is absent."""
+    head = _to_weekly_friday(_get_col(mu, "JPN_CPI"))
+    core = _to_weekly_friday(_get_col(mu, "JPN_CORE_CPI_YOY"))
+    parts = [s for s in (head, core) if s is not None and not s.empty]
+    if not parts:
+        return pd.Series(dtype=float)
+    return pd.concat(parts, axis=1).mean(axis=1)
 
 
 def _calc_CN_INFL1(mu, **_):
