@@ -4,18 +4,33 @@ sources/french.py
 Kenneth French Data Library — long-run US/international/EM factor returns.
 
 Wired §3.11 (2026-06-10) as one of the regime-AA-driven long-run sources.
-Provides the canonical US 5-factor monthly returns (Mkt-RF, SMB, HML, RMW,
-CMA) plus the 1-month T-bill risk-free rate back to 1926-07, sourced from
-the same ZIP file published at:
+Provides US factor monthly returns plus the 1-month T-bill risk-free
+rate.  The factors come from two sibling ZIP files published at:
 
     https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/
-        F-F_Research_Data_5_Factors_2x3_CSV.zip
+        F-F_Research_Data_Factors_CSV.zip            (3-Factor, 1926-07+)
+        F-F_Research_Data_5_Factors_2x3_CSV.zip      (5-Factor, 1963-07+)
+
+The 5-Factor file is the canonical Mkt/SMB/HML/RMW/CMA/RF bundle but
+its monthly history only goes back to **1963-07** — RMW and CMA depend
+on Compustat operating-profitability data that is unavailable before
+then (verified against Ken French's f-f_5_factors_2x3.html details
+page).  The 3-Factor file is the long-history source for Mkt-RF, SMB,
+HML, and RF and covers **July 1926 to present**.
+
+The library mixes both: Mkt-RF / SMB / HML / RF point at the 3-Factor
+ZIP (full 1926-07 history) and RMW / CMA point at the 5-Factor ZIP
+(1963-07 history).  Previously every row pointed at the 5-Factor ZIP,
+which silently truncated the four long-history factors to 1963-07 —
+fixed 2026-06-11 by switching the four series and updating notes.
 
 Each ZIP unpacks to a single CSV containing both a monthly block and an
 annual block.  We extract the monthly block only.  Indicator definitions
 live in ``data/macro_library_french.csv`` and the ``series_id`` column
-encodes ``<zip_stem>|<column_name>`` (e.g. ``F-F_Research_Data_5_Factors_2x3|Mkt-RF``)
-so one library row picks exactly one column out of one ZIP.
+encodes ``<zip_stem>|<column_name>`` (e.g. ``F-F_Research_Data_Factors|Mkt-RF``)
+so one library row picks exactly one column out of one ZIP.  The
+per-process ZIP cache means a single run downloads each of the two ZIPs
+at most once even though six library rows reference them.
 
 Access strategy — ZIP-direct only:
   - ``pandas-datareader``'s ``famafrench`` reader hits the same ZIP under
