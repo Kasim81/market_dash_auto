@@ -69,8 +69,8 @@ jobs:
         ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
       run: |
         echo "" >> pipeline.log
-        echo "=== Primary-source smoke tests (BLS, INSEE, BdF, Alpha Vantage, Shiller, Ken French, JST) ===" >> pipeline.log
-        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke -v 2>&1 | tee -a pipeline.log
+        echo "=== Primary-source smoke tests (BLS, INSEE, BdF, Alpha Vantage, Shiller, Ken French, JST, Atlanta Fed) ===" >> pipeline.log
+        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke -v 2>&1 | tee -a pipeline.log
     - name: Rebuild indicator explorer
       run: |
         set -o pipefail
