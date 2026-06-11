@@ -677,6 +677,12 @@ REGIME_RULES = {
         else ("rising-expectations" if r > 1
               else ("falling-expectations" if r < -1 else "anchored"))
     ),
+    # §3.1.4 EZ nowcast: raw is composite z of 4 real-economy + sentiment series.
+    "EU_NOWCAST1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("expansion" if r > 1
+              else ("contraction" if r < -1 else "stable"))
+    ),
 }
 
 
@@ -1372,6 +1378,7 @@ _EU_CALCULATORS = {
     "EU_G1":  _calc_EU_G1,
     "JP_G1":  _calc_JP_G1,
     "FX_2": _calc_FX_2,
+    "EU_NOWCAST1": _calc_EU_NOWCAST1,
 }
 
 
@@ -1817,6 +1824,34 @@ def _calc_GL_PMI1(dbn, mi, **_):
         return pd.Series(dtype=float)
     combined = pd.concat(zscores, axis=1).mean(axis=1)
     return combined
+
+
+def _calc_EU_NOWCAST1(dbn, **_):
+    """Equal-weight Eurozone real-time growth nowcast (§3.1.4).
+    Z-score-normalises each of four real-economy + sentiment components
+    on their own 156-week window, then averages available z-scores. Inputs:
+      - EZ_IND_PROD     (Eurostat teiis080 industrial production index)
+      - EZ_RETAIL_VOL   (Eurostat teiis260 retail volume index)
+      - EU_ESI          (EC Economic Sentiment Indicator)
+      - EU_IND_CONF     (EC Industrial Confidence Indicator)
+    Same z-composite shape as GL_PMI1 / US_INFEXP1 — raw output is the
+    composite z (≈ 0-centred). Degrades gracefully if a component is
+    missing. Equivalent to a home-built Eurocoin proxy at zero new
+    dependencies; flagged as the Phase E composite for §3.1.4 EZ
+    nowcast per forward_plan.md."""
+    components = [
+        _to_weekly_friday(_get_col(dbn, "EZ_IND_PROD")),
+        _to_weekly_friday(_get_col(dbn, "EZ_RETAIL_VOL")),
+        _to_weekly_friday(_get_col(dbn, "EU_ESI")),
+        _to_weekly_friday(_get_col(dbn, "EU_IND_CONF")),
+    ]
+    zscores = []
+    for s in components:
+        if s is not None and not s.empty:
+            zscores.append(_rolling_zscore(s))
+    if not zscores:
+        return pd.Series(dtype=float)
+    return pd.concat(zscores, axis=1).mean(axis=1)
 
 
 # ===========================================================================
