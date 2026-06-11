@@ -697,6 +697,15 @@ REGIME_RULES = {
         else ("above-trend" if r > 2.5
               else ("recession-nowcast" if r < 0 else "near-trend"))
     ),
+    # §3.1.4 UK monthly real GDP nowcast (YoY %). Thresholds are absolute
+    # growth-rate levels — > 2.5 = above-trend (UK trend GDP is ~1.5% real);
+    # < 0 = contraction; in-between is near-trend. Same level-based pattern
+    # as US_GDPNOW1, calibrated to UK trend.
+    "UK_NOWCAST1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("above-trend" if r > 2.5
+              else ("contraction" if r < 0 else "near-trend"))
+    ),
 }
 
 
@@ -1393,6 +1402,7 @@ _EU_CALCULATORS = {
     "JP_G1":  _calc_JP_G1,
     "FX_2": _calc_FX_2,
     "EU_NOWCAST1": _calc_EU_NOWCAST1,
+    "UK_NOWCAST1": _calc_UK_NOWCAST1,
 }
 
 
@@ -1924,6 +1934,25 @@ def _calc_EU_NOWCAST1(dbn, **_):
     if not zscores:
         return pd.Series(dtype=float)
     return pd.concat(zscores, axis=1).mean(axis=1)
+
+
+def _calc_UK_NOWCAST1(mu, **_):
+    """UK growth nowcast (§3.1.4): ONS monthly real GDP (GBR_GDP_MONTHLY,
+    ONS CDID ECY2 — Gross Value Added Monthly Index CVM SA) resampled to
+    weekly Friday and converted to YoY %. ONS publishes monthly with ~6
+    week lag — the cleanest UK nowcast at zero new fetcher cost since
+    sources/ons.py is already wired.
+
+    Single-input passthrough composite — same trivial shape as
+    _calc_US_GDPNOW1; the value of the composite layer is the regime-rule
+    mapping (see REGIME_RULES above), not averaging multiple already-noisy
+    nowcasts. YoY conversion gives a clean economic-growth-rate output so
+    the level-based regime thresholds (>2.5 above-trend, <0 contraction)
+    sit on absolute growth-level buckets calibrated to UK trend (~1.5%)."""
+    monthly_index = _to_weekly_friday(_get_col(mu, "GBR_GDP_MONTHLY"))
+    if monthly_index is None or monthly_index.empty:
+        return pd.Series(dtype=float)
+    return _yoy(monthly_index)
 
 
 # ===========================================================================
