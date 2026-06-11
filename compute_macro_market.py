@@ -683,6 +683,15 @@ REGIME_RULES = {
         else ("expansion" if r > 1
               else ("contraction" if r < -1 else "stable"))
     ),
+    # §3.1.4 US GDPNow real GDP growth nowcast (Q/Q SAAR %). Thresholds are
+    # absolute growth-rate levels, not z-scores — > 2.5 = above-trend (US
+    # trend GDP is ~1.8-2% real); < 0 = recession nowcast; in-between is
+    # mid-cycle / neutral. Same level-based pattern as US_ISM1 / US_PMI1.
+    "US_GDPNOW1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("above-trend" if r > 2.5
+              else ("recession-nowcast" if r < 0 else "near-trend"))
+    ),
 }
 
 
@@ -1968,6 +1977,35 @@ _INFLATION_CALCULATORS = {
 }
 
 
+# ===========================================================================
+# NOWCAST CALCULATORS (§3.1.4) — real-time GDP-growth nowcasts
+#
+# Each one feeds the regime classifier's Growth axis. Composite shape is
+# deliberately trivial when there's exactly one input — the value of the
+# composite layer is the regime-rule mapping (see REGIME_RULES above), not
+# averaging multiple already-noisy nowcasts. EU_NOWCAST1 (Phase E composite
+# of EZ industrial production / retail / ESI / industrial confidence) lives
+# in the European calculators block.
+# ===========================================================================
+
+def _calc_US_GDPNOW1(mu, **_):
+    """Atlanta Fed GDPNow headline nowcast — US real GDP growth, Q/Q SAAR %.
+
+    Single-input passthrough: take `US_GDPNOW` (irregular within-quarter
+    publication-date observations from the Atlanta Fed xlsx), resample to
+    weekly Friday, forward-fill across the quiet windows. The forward-fill
+    is appropriate here because the published vintage *is* the model's
+    current best estimate until the next update; between releases the
+    nowcast is "the most recent reading", not "missing". Same trivial shape
+    as the original _calc_UK_INFL1 (headline-only)."""
+    return _to_weekly_friday(_get_col(mu, "US_GDPNOW"))
+
+
+_NOWCAST_CALCULATORS = {
+    "US_GDPNOW1": _calc_US_GDPNOW1,
+}
+
+
 _PHASE_D_CALCULATORS = {
     "US_PMI1":  _calc_US_PMI1,
     "US_PMI2":  _calc_US_PMI2,
@@ -1992,6 +2030,7 @@ _ALL_CALCULATORS = {
     **_ASIA_REGIONAL_CALCULATORS,
     **_PHASE_D_CALCULATORS,
     **_INFLATION_CALCULATORS,
+    **_NOWCAST_CALCULATORS,
 }
 
 
