@@ -1,13 +1,15 @@
 """Live smoke test for the Ken French source wiring.
 
-Ken French's data library is the canonical source for US 5-factor monthly
+Ken French's data library is the canonical source for US factor monthly
 returns (Mkt-RF, SMB, HML, RMW, CMA) plus the 1-month T-bill risk-free
-rate back to 1926-07.  Wired §3.11 (2026-06-10) as one of the regime-AA
-long-run sources.
+rate.  Wired §3.11 (2026-06-10) as one of the regime-AA long-run sources.
+Mkt-RF / SMB / HML / RF come from the 3-Factor ZIP (1926-07+); RMW / CMA
+come from the 5-Factor 2x3 ZIP (1963-07+) — see ``sources/french.py`` for
+the split rationale.
 
 This test hits ``mba.tuck.dartmouth.edu`` directly to confirm:
 
-  1. The 5-Factor ZIP is reachable AND parses end-to-end.
+  1. The 3-Factor ZIP is reachable AND parses end-to-end.
   2. The monthly Mkt-RF series spans at least 1926-07 → today minus 6 months.
   3. The most-recent value lies in a plausible range for a monthly return
      in percent (i.e. roughly inside [-50, +50]).
@@ -35,7 +37,7 @@ os.environ.setdefault("GOOGLE_CREDENTIALS_JSON", "{}")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sources import french as french_src  # noqa: E402
 
-PROBE_SERIES = "F-F_Research_Data_5_Factors_2x3|Mkt-RF"
+PROBE_SERIES = "F-F_Research_Data_Factors|Mkt-RF"
 
 
 def _reachable() -> pd.Series | None:
