@@ -1,6 +1,6 @@
-## Daily audit — 2026-06-11 — **111 ISSUES** (1 fetch error, 61 stale series, 49 static-check failures)
+## Daily audit — 2026-06-11 — **108 ISSUES** (1 fetch error, 54 stale series, 53 static-check failures)
 
-_Run: 2026-06-11 06:51 UTC_
+_Run: 2026-06-11 11:52 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -15,14 +15,12 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (26):
+**EXPIRED** (21):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
 | `CHN_M2` | FRED | Monthly | 2019-08-02 | 2505d | 45d |
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1287d | 45d |
-| `USA_CAPE` | Shiller | Monthly | 2023-10-06 | 979d | 90d\* |
-| `USA_CPI_SHILLER` | Shiller | Monthly | 2023-10-06 | 979d | 90d\* |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 951d | 45d |
 | `JPN_IND_PROD` | FRED | Monthly | 2024-03-01 | 832d | 45d |
 | `GBR_CPI` | FRED | Monthly | 2025-03-07 | 461d | 45d |
@@ -39,20 +37,18 @@ Full report attached as `data_audit.txt` in today's commit.
 | `ISM_MFG_PMI` | DB.nomics | Monthly | 2026-01-02 | 160d | 45d |
 | `ISM_MFG_NEWORD` | DB.nomics | Monthly | 2026-01-02 | 160d | 45d |
 | `EA_HICP_CORE_YOY` | DB.nomics | Monthly | 2026-01-02 | 160d | 45d |
-| `GBR_EMP_RATE` | ONS | Monthly | 2026-01-02 | 160d | 45d\* |
-| `GBR_UNEMPLOYMENT` | ONS | Monthly | 2026-02-06 | 125d | 45d\* |
 | `CMRMTSPL` | FRED | Monthly | 2026-03-06 | 97d | 45d |
-| `GBR_AWE_REGPAY_YOY` | ONS | Monthly | 2026-03-06 | 97d | 45d\* |
 | `T5YIFR` | FRED | Daily | 2026-05-29 | 13d | 5d |
 | `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-29 | 13d | 5d |
 
-**STALE** (35):
+**STALE** (33):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
 | `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-10-03 | 251d | 180d\* |
 | `EZ_IND_PROD` | DB.nomics | Monthly | 2025-12-05 | 188d | 150d\* |
 | `EZ_RETAIL_VOL` | DB.nomics | Monthly | 2025-12-05 | 188d | 150d\* |
+| `GBR_EMP_RATE` | ONS | Monthly | 2026-01-02 | 160d | 150d\* |
 | `EA19_RATE_3M` | OECD | Monthly | 2026-02-06 | 125d | 90d\* |
 | `ITA_BTP_10Y` | FRED | Monthly | 2026-03-06 | 97d | 90d\* |
 | `IND_GOVT_10Y` | FRED | Monthly | 2026-03-06 | 97d | 90d\* |
@@ -60,17 +56,14 @@ Full report attached as `data_audit.txt` in today's commit.
 | `NLD_DSL_10Y` | FRED | Monthly | 2026-03-06 | 97d | 75d\* |
 | `FRA_UNEMPLOYMENT` | OECD | Monthly | 2026-03-06 | 97d | 75d\* |
 | `GBR_RATE_3M` | OECD | Monthly | 2026-03-06 | 97d | 90d\* |
+| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-03-06 | 97d | 60d\* |
 | `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-06 | 97d | 90d\* |
-| `GBR_IND_PROD` | ONS | Monthly | 2026-03-06 | 97d | 60d\* |
-| `GBR_SERV_PROD` | ONS | Monthly | 2026-03-06 | 97d | 60d\* |
 | `PERMIT` | FRED | Monthly | 2026-04-03 | 69d | 45d |
+| `CAN_CPI` | StatCan | Monthly | 2026-04-03 | 69d | 45d\* |
 | `JPN_SPPI` | BoJ | Monthly | 2026-04-03 | 69d | 45d\* |
 | `CAN_CPI_MEDIAN` | BoC | Monthly | 2026-04-03 | 69d | 45d\* |
-| `GBR_CPI_YOY` | ONS | Monthly | 2026-04-03 | 69d | 45d\* |
-| `GBR_CPIH_YOY` | ONS | Monthly | 2026-04-03 | 69d | 45d\* |
-| `GBR_CORE_CPI_YOY` | ONS | Monthly | 2026-04-03 | 69d | 45d\* |
-| `GBR_RETAIL_VOL` | ONS | Monthly | 2026-04-03 | 69d | 60d\* |
 | `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 69d | 45d\* |
+| `ITA_IND_PROD` | ISTAT | Monthly | 2026-04-03 | 69d | 60d\* |
 | `NFCI` | FRED | Weekly | 2026-05-22 | 20d | 14d\* |
 | `T10Y2Y` | FRED | Daily | 2026-06-05 | 6d | 5d |
 | `T10Y3M` | FRED | Daily | 2026-06-05 | 6d | 5d |
@@ -80,7 +73,9 @@ Full report attached as `data_audit.txt` in today's commit.
 | `DGS10` | FRED | Daily | 2026-06-05 | 6d | 5d |
 | `DFII10` | FRED | Daily | 2026-06-05 | 6d | 5d |
 | `DFII5` | FRED | Daily | 2026-06-05 | 6d | 5d |
-| _… 5 more in `data_audit.txt`_ |  |  |  |  |  |
+| `BAMLH0A0HYM2` | FRED | Daily | 2026-06-05 | 6d | 5d |
+| `BAMLC0A0CM` | FRED | Daily | 2026-06-05 | 6d | 5d |
+| _… 3 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -128,7 +123,7 @@ Full report attached as `data_audit.txt` in today's commit.
 **missing_columns** (1):
 - _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
-**registry_drift** (48):
+**registry_drift** (52):
 - hist column 'AUS_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 - hist column 'AUS_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 - hist column 'AUS_GDP_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
@@ -159,7 +154,7 @@ Full report attached as `data_audit.txt` in today's commit.
 - hist column 'ITA_LTRATE_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 - hist column 'JPN_CPI_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
 - hist column 'JPN_EQUITY_TR_JST' present in macro_economic_hist.csv but no matching row in source-of-truth library (run: python library_sync.py --confirm)
-- _… 18 more in `data_audit.txt`_
+- _… 22 more in `data_audit.txt`_
 
 </details>
 
