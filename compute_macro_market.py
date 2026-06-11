@@ -688,6 +688,14 @@ REGIME_RULES = {
         else ("expansion" if r > 1
               else ("contraction" if r < -1 else "stable"))
     ),
+    # §3.1.4 JP nowcast: raw is composite z of IP / Tankan / Retail Sales /
+    # Machinery Orders. Same level-based bucket as EU_NOWCAST1 since both
+    # are z-composites on a 156w window.
+    "JP_NOWCAST1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("expansion" if r > 1
+              else ("contraction" if r < -1 else "stable"))
+    ),
     # §3.1.4 US GDPNow real GDP growth nowcast (Q/Q SAAR %). Thresholds are
     # absolute growth-rate levels, not z-scores — > 2.5 = above-trend (US
     # trend GDP is ~1.8-2% real); < 0 = recession nowcast; in-between is
@@ -1401,8 +1409,10 @@ _EU_CALCULATORS = {
     "EU_G1":  _calc_EU_G1,
     "JP_G1":  _calc_JP_G1,
     "FX_2": _calc_FX_2,
-    "EU_NOWCAST1": _calc_EU_NOWCAST1,
-    "UK_NOWCAST1": _calc_UK_NOWCAST1,
+    # EU_NOWCAST1 / UK_NOWCAST1 registrations live in _NOWCAST_CALCULATORS
+    # (declared after the calculator functions to avoid a forward reference
+    # at module-import time — both calculator funcs are defined ~500 lines
+    # below this dispatcher dict).
 }
 
 
@@ -1746,6 +1756,34 @@ def _calc_JP_TANKAN_SVC1(mu, **_):
     return nmfg - mfg
 
 
+def _calc_JP_NOWCAST1(mu, **_):
+    """Equal-weight Japan real-time growth nowcast (§3.1.4).
+    Z-score-normalises each of four real-economy + survey components on
+    their own 156-week window, then averages available z-scores. Inputs:
+      - JPN_IND_PROD     (e-Stat METI Indices of Industrial Production)
+      - JP_TANKAN1       (BoJ Tankan Large-Mfg Business Conditions DI)
+      - JPN_RETAIL_SALES (e-Stat METI Current Survey of Commerce)
+      - JPN_MACH_ORDERS  (e-Stat Cabinet Office Machinery Orders)
+    Same z-composite shape as EU_NOWCAST1 / GL_PMI1 — raw output is the
+    composite z (≈ 0-centred). Degrades gracefully if a component is
+    missing (3 of 4 e-Stat inputs are provisional and may not yet be
+    populated). Flagged as the Phase E composite for §3.1.4 JP nowcast
+    per forward_plan.md."""
+    components = [
+        _to_weekly_friday(_get_col(mu, "JPN_IND_PROD")),
+        _to_weekly_friday(_get_col(mu, "JP_TANKAN1")),
+        _to_weekly_friday(_get_col(mu, "JPN_RETAIL_SALES")),
+        _to_weekly_friday(_get_col(mu, "JPN_MACH_ORDERS")),
+    ]
+    zscores = []
+    for s in components:
+        if s is not None and not s.empty:
+            zscores.append(_rolling_zscore(s))
+    if not zscores:
+        return pd.Series(dtype=float)
+    return pd.concat(zscores, axis=1).mean(axis=1)
+
+
 def _calc_JP_TANKAN_FWD1(mu, **_):
     """Tankan Large Mfg Forecast DI minus Actual DI. Quarter-ahead
     leading-indicator signal: the forecast captures next-quarter
@@ -1799,6 +1837,8 @@ _ASIA_REGIONAL_CALCULATORS = {
     "JP_TANKAN_SPREAD1": _calc_JP_TANKAN_SPREAD1,
     "JP_TANKAN_SVC1":    _calc_JP_TANKAN_SVC1,
     "JP_TANKAN_FWD1":    _calc_JP_TANKAN_FWD1,
+    # §3.1.4 Phase E JP nowcast composite (shipped 2026-06-11)
+    "JP_NOWCAST1":       _calc_JP_NOWCAST1,
 }
 
 # ===========================================================================
@@ -2094,7 +2134,15 @@ def _calc_US_GDPNOW1(mu, **_):
 
 
 _NOWCAST_CALCULATORS = {
-    "US_GDPNOW1": _calc_US_GDPNOW1,
+    "US_GDPNOW1":  _calc_US_GDPNOW1,
+    # EU_NOWCAST1 / UK_NOWCAST1 declared here (not in _EU_CALCULATORS) so the
+    # forward reference to their calculator functions resolves — the dispatcher
+    # dict gets evaluated at module-import time, and both calculators are
+    # defined hundreds of lines after _EU_CALCULATORS but well before this
+    # dict. Functionally equivalent: _ALL_CALCULATORS merges every regional
+    # dict, so the indicator id ↔ calculator mapping is unchanged.
+    "EU_NOWCAST1": _calc_EU_NOWCAST1,
+    "UK_NOWCAST1": _calc_UK_NOWCAST1,
 }
 
 
