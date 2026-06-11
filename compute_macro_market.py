@@ -661,6 +661,11 @@ REGIME_RULES = {
     # Long-run gold price (LBMA PM fix, USD/oz). Z-scored on 156w window —
     # high z = safe-haven / inflation hedge bid; low z = risk-on / disinflation.
     "GLOBAL_GOLD1": lambda r, z: _r(r, z, 1, -1, "safe-haven-bid", "risk-on-gold"),
+    # §3.1.2 Stage E — BoJ Tankan spread composites (shipped 2026-06-11).
+    # All three z-thresholded at ±1 on the 156w window via the standard _r helper.
+    "JP_TANKAN_SPREAD1": lambda r, z: _r(r, z, 1, -1, "export-led-cycle", "domestic-demand-cycle"),
+    "JP_TANKAN_SVC1":    lambda r, z: _r(r, z, 1, -1, "services-led",     "mfg-led",               "balanced"),
+    "JP_TANKAN_FWD1":    lambda r, z: _r(r, z, 1, -1, "improving",        "deteriorating"),
     # Inflation composites (§3.1.3) — target-relative buckets on the raw YoY %.
     "US_INFL1":  _infl_regime,
     "UK_INFL1":  _infl_regime,
@@ -1692,6 +1697,60 @@ def _calc_GLOBAL_GOLD1(mu, **_):
 
 
 # ---------------------------------------------------------------------------
+# JP TANKAN SPREAD COMPOSITES (§3.1.2 Stage E, shipped 2026-06-11)
+#
+# Built on the 5 BoJ Tankan sub-DI rows wired in commit a88205f. Each is a
+# quarterly Tankan-derived spread resampled to the weekly-Friday spine and
+# forward-filled within each quarter by _to_weekly_friday. All three inputs
+# are business-conditions DIs (range typically -50..+50, zero neutral); the
+# spread therefore inherits that range, and the framework's 156w rolling
+# z-score handles regime classification.
+# ---------------------------------------------------------------------------
+
+def _calc_JP_TANKAN_SPREAD1(mu, **_):
+    """Tankan Large-Mfg minus Small-Mfg Business Conditions DI spread.
+    The canonical Japan domestic-vs-export-cycle signal: Large enterprises
+    are dominated by exporters (cycle reflects global demand); Small
+    enterprises track domestic demand. Widening Large > Small = export-led
+    cycle (yen-driven, global-cycle-driven); narrowing or Small > Large =
+    domestic-demand-led (consumption / fiscal stimulus driven).
+
+    Resampled to weekly Friday from quarterly Tankan releases."""
+    large = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
+    small = _to_weekly_friday(_get_col(mu, "JP_TANKAN_SMFG"))
+    if large is None or large.empty or small is None or small.empty:
+        return pd.Series(dtype=float)
+    return large - small
+
+
+def _calc_JP_TANKAN_SVC1(mu, **_):
+    """Tankan Large Non-Mfg minus Large Mfg Business Conditions DI spread.
+    Positive spread = services-led economy (typical mature-expansion,
+    consumption-cycle-driven); negative spread = mfg-led (investment-cycle
+    or external-demand-driven). Captures the goods-vs-services rotation
+    that drives regime classification on the BoJ's main framework."""
+    nmfg = _to_weekly_friday(_get_col(mu, "JP_TANKAN_LNFG"))
+    mfg = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
+    if nmfg is None or nmfg.empty or mfg is None or mfg.empty:
+        return pd.Series(dtype=float)
+    return nmfg - mfg
+
+
+def _calc_JP_TANKAN_FWD1(mu, **_):
+    """Tankan Large Mfg Forecast DI minus Actual DI. Quarter-ahead
+    leading-indicator signal: the forecast captures next-quarter
+    expectations, actual captures this-quarter conditions. Widening
+    positive = optimism (cycle turning up); negative = expected
+    deterioration (cycle turning down). Among the cleanest quarterly
+    turning-point detectors for JP."""
+    fwd = _to_weekly_friday(_get_col(mu, "JP_TANKAN_LMFG_FCST"))
+    actual = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
+    if fwd is None or fwd.empty or actual is None or actual.empty:
+        return pd.Series(dtype=float)
+    return fwd - actual
+
+
+# ---------------------------------------------------------------------------
 # DISPATCHER — ASIA & REGIONAL
 # ---------------------------------------------------------------------------
 
@@ -1726,6 +1785,10 @@ _ASIA_REGIONAL_CALCULATORS = {
     "FX_CMD6": _calc_FX_CMD6,
     "FX_CMD3": _calc_FX_CMD3,
     "GLOBAL_GOLD1": _calc_GLOBAL_GOLD1,
+    # §3.1.2 Stage E — BoJ Tankan spread composites (shipped 2026-06-11)
+    "JP_TANKAN_SPREAD1": _calc_JP_TANKAN_SPREAD1,
+    "JP_TANKAN_SVC1":    _calc_JP_TANKAN_SVC1,
+    "JP_TANKAN_FWD1":    _calc_JP_TANKAN_FWD1,
 }
 
 # ===========================================================================
