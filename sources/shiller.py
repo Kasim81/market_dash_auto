@@ -5,8 +5,11 @@ Robert Shiller's long-run US market dataset — S&P 500 composite price,
 dividends, earnings, US CPI, long rate, and the Cyclically Adjusted P/E
 Ratio (CAPE), back to 1871. Monthly cadence.
 
-Canonical primary source: Yale economics homepage,
-    http://www.econ.yale.edu/~shiller/data/ie_data.xls
+Canonical primary source: shillerdata.com (Shiller's commercial site;
+hosted on the GoDaddy wsimg.com blob CDN). The Yale mirror at
+http://www.econ.yale.edu/~shiller/data/ie_data.xls was the canonical
+primary URL for ~20 years but went stale October 2023 — kept as a
+fallback in case Yale catches up some day.
 
 Updated quarterly-ish by Shiller himself. The xls workbook carries:
   - A "Data" sheet with the long-run series
@@ -63,26 +66,38 @@ import requests
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_shiller.csv"
 
-# Canonical Yale URL. Static — Shiller's homepage hasn't moved in 20+ years.
-# The xls is ~1MB; pull weekly at most once the parser is verified.
-SHILLER_XLS_URL = "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
+# Primary URL: shillerdata.com / wsimg.com blob CDN. This is Shiller's own
+# commercial site, which he updates actively. The xls is ~1MB. The Yale
+# academic mirror at econ.yale.edu/~shiller/data/ie_data.xls was the
+# canonical primary URL for ~20 years, but 2026-06-11 investigation found
+# Yale has gone stale since October 2023 (the 2026-06-10 23:43 UTC daily run
+# downloaded Yale's copy and the most-recent CAPE observation was 2023-10).
+# shillerdata.com still publishes fresh — the `?ver=` query string is a
+# Unix-epoch-milliseconds re-upload tag (1780495520681 ≈ 2026-06-04).
+SHILLER_XLS_URL = (
+    "https://img1.wsimg.com/blobby/go/e5e77e0b-59d1-44d9-ab25-4763ac982e53/"
+    "downloads/c9b8cf0f-f01a-49f5-9ea5-d19443390ab2/ie_data.xls?ver=1780495520681"
+)
 
-# Fallback hosts. Order is intentional:
-#   1. Yale (canonical original)
-#   2. shillerdata.com (Shiller's own commercial site — same xls under a
-#      different domain in case Yale's webserver is down)
-#   3. (the community JSON / datahub CSV mirrors are reachable via different
+# Fallback hosts. Order is intentional (revised 2026-06-11):
+#   1. shillerdata.com / wsimg.com blob CDN — Shiller's actively-maintained
+#      commercial site. The actual file lives on GoDaddy's wsimg.com blob
+#      store; the homepage at https://shillerdata.com/ does not serve
+#      /ie_data.xls directly. The blob path was scraped from the "Download"
+#      link on the homepage; the `?ver=` query string changes when Shiller
+#      re-uploads — re-scrape https://shillerdata.com/ if this path 404s in
+#      the future.
+#   2. Yale (econ.yale.edu/~shiller/data/ie_data.xls) — historical mirror,
+#      kept as a fallback only. Was the canonical primary for ~20 years
+#      but went stale October 2023 per the 2026-06-10 23:43 UTC daily run.
+#      If Yale catches back up some day the fallback will silently start
+#      working again; until then, the parser will get stale data here.
+#   3. (Community JSON / datahub CSV mirrors are reachable via different
 #      code paths — they're not the same .xls download, so they're handled
 #      separately by upstream code if/when this module is extended.)
-# shillerdata.com hosts the same workbook but the actual file is on the
-# GoDaddy/wsimg.com blob CDN — the homepage at https://shillerdata.com/
-# does not serve /ie_data.xls directly (that path 404s). The blob path
-# below was scraped from the "Download" link on the homepage on
-# 2026-06-10; the `?ver=` query string changes when Shiller re-uploads,
-# so if this 404s in the future, re-scrape the homepage to refresh.
 SHILLER_XLS_HOSTS = [
-    "http://www.econ.yale.edu/~shiller/data/ie_data.xls",
     "https://img1.wsimg.com/blobby/go/e5e77e0b-59d1-44d9-ab25-4763ac982e53/downloads/c9b8cf0f-f01a-49f5-9ea5-d19443390ab2/ie_data.xls?ver=1780495520681",
+    "http://www.econ.yale.edu/~shiller/data/ie_data.xls",
 ]
 
 # Browser-like UA — Yale's webserver 403s the default python-requests UA.
