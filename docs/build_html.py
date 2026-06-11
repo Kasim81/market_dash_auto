@@ -349,6 +349,8 @@ def build_macro_economic() -> dict:
         "LBMA", "Nasdaq Data Link", "Alpha Vantage",
         # §3.13 long-run sources
         "Shiller", "KenFrench", "JST",
+        # §3.1.4 real-time GDP-growth nowcasts
+        "AtlantaFed", "NYFed",
     })
 
 

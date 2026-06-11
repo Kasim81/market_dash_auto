@@ -705,6 +705,15 @@ REGIME_RULES = {
         else ("above-trend" if r > 2.5
               else ("recession-nowcast" if r < 0 else "near-trend"))
     ),
+    # §3.1.4 NY Fed Staff Nowcast — US real GDP growth (Q/Q SAAR %). Same
+    # absolute-level thresholds as US_GDPNOW1 (US trend GDP ~1.8-2% real):
+    # > 2.5 above-trend, < 0 recession nowcast, else near-trend. Second-
+    # opinion read alongside US_GDPNOW1.
+    "US_NOWCAST1": lambda r, z: (
+        "n/a" if np.isnan(r)
+        else ("above-trend" if r > 2.5
+              else ("recession-nowcast" if r < 0 else "near-trend"))
+    ),
     # §3.1.4 UK monthly real GDP nowcast (YoY %). Thresholds are absolute
     # growth-rate levels — > 2.5 = above-trend (UK trend GDP is ~1.5% real);
     # < 0 = contraction; in-between is near-trend. Same level-based pattern
@@ -2133,8 +2142,20 @@ def _calc_US_GDPNOW1(mu, **_):
     return _to_weekly_friday(_get_col(mu, "US_GDPNOW"))
 
 
+def _calc_US_NOWCAST1(mu, **_):
+    """New York Fed Staff Nowcast headline — US real GDP growth, Q/Q SAAR %.
+
+    Single-input passthrough: take `US_NYFED_NOWCAST` (weekly Friday
+    publication-date observations from the NY Fed xlsx), resample to weekly
+    Friday, forward-fill across the model's quiet windows around BEA's
+    advance estimate. Same trivial shape as _calc_US_GDPNOW1 — provides the
+    second-opinion read on US growth alongside Atlanta Fed GDPNow."""
+    return _to_weekly_friday(_get_col(mu, "US_NYFED_NOWCAST"))
+
+
 _NOWCAST_CALCULATORS = {
     "US_GDPNOW1":  _calc_US_GDPNOW1,
+    "US_NOWCAST1": _calc_US_NOWCAST1,
     # EU_NOWCAST1 / UK_NOWCAST1 declared here (not in _EU_CALCULATORS) so the
     # forward reference to their calculator functions resolves — the dispatcher
     # dict gets evaluated at module-import time, and both calculators are
