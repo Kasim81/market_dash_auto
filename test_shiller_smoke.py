@@ -90,21 +90,25 @@ class ShillerLiveSmokeTest(unittest.TestCase):
         )
 
     def test_series_spans_long_run_window(self):
-        s = shiller_src.fetch_series_as_pandas("S&P Comp. P")
-        self.assertIsNotNone(s, "S&P Comp. P fetch returned None")
-        self.assertFalse(s.empty, "S&P Comp. P series parsed as empty")
+        # Series_id "P" is the workbook's actual column header for the
+        # S&P Composite Price series. (The verbose "S&P Comp. P" is the
+        # README label, NOT the Data sheet header — discovered in the
+        # 2026-06-10 23:43 UTC run, fixed library 2026-06-11.)
+        s = shiller_src.fetch_series_as_pandas("P")
+        self.assertIsNotNone(s, "S&P Composite Price (workbook column 'P') fetch returned None")
+        self.assertFalse(s.empty, "S&P Composite Price series parsed as empty")
         first_dt = s.index[0]
         last_dt = s.index[-1]
         self.assertLessEqual(
             first_dt, pd.Timestamp("1900-01-31"),
-            f"S&P Comp. P first observation {first_dt.date()} > 1900-01 — "
+            f"S&P Composite Price first observation {first_dt.date()} > 1900-01 — "
             f"Shiller's workbook should start at 1871-01 "
             f"(long-run depth regression)"
         )
         cutoff = pd.Timestamp(date.today()) - pd.Timedelta(days=183)
         self.assertGreaterEqual(
             last_dt, cutoff,
-            f"S&P Comp. P last observation {last_dt.date()} more than "
+            f"S&P Composite Price last observation {last_dt.date()} more than "
             f"6 months stale — Shiller updates quarterly so this should "
             f"never be > 6 months behind"
         )

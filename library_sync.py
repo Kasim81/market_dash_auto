@@ -176,9 +176,12 @@ def _macro_econ_expected() -> set[str]:
 
     # Single-column sources (col or series_id): FRED, DB.nomics, ifo, BoE,
     # ECB, BoJ, e-Stat, Nasdaq DL, LBMA, plus the PR1 keyless adapters
-    # (BoC, StatCan, ONS, Bundesbank, ABS, ISTAT).
+    # (BoC, StatCan, ONS, Bundesbank, ABS, ISTAT, BLS), the 2026-06-09 batch
+    # (INSEE, BdF), and the 2026-06-10 §3.13 long-run + §3.3 PE batch
+    # (Alpha Vantage, Shiller, KenFrench, JST).
     for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma",
-                "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls"):
+                "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls",
+                "insee", "bdf", "alpha_vantage", "shiller", "french", "jst"):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue

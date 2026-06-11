@@ -58,20 +58,17 @@ class JSTLiveSmokeTest(unittest.TestCase):
         self.assertFalse(s.empty, "USA|cpi returned empty series")
 
         first_year = s.index.min().year
-        last_year = s.index.max().year
-        today_year = date.today().year
 
         self.assertLessEqual(
             first_year, 1900,
             f"USA|cpi starts at {first_year} — JST should reach back to ≤1900",
         )
-        # JST releases lag the calendar by ~2-5 years. Allow today - 5 as
-        # the floor; tighter than that and a routine release-cycle delay
-        # would flap this smoke.
-        self.assertGreaterEqual(
-            last_year, today_year - 5,
-            f"USA|cpi ends at {last_year} — expected ≥ {today_year - 5}",
-        )
+        # Recency is NOT smoke-checked. JST is a multi-year-cadence academic
+        # dataset (R6 shipped March 2021 with data through 2020; no R7 as
+        # of 2026-06-11); see forward_plan.md §3.13 + the anchor system in
+        # data_audit.py::section_c_staleness which surfaces overdue anchors
+        # in the daily Issue. Smoke would be a duplicate-and-flappier
+        # signal — pull the assertion if the next release cycle slips.
 
     def test_usa_cpi_latest_value_is_finite_and_positive(self):
         s = jst_src.fetch_series_as_pandas("USA|cpi")
