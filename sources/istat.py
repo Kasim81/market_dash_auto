@@ -92,10 +92,17 @@ def _fetch_csv(
     flow: str,
     key: str,
     last_n: int | None = None,
-    timeout: int = 90,
-    retries: int = 6,
+    timeout: int = 30,
+    retries: int = 3,
 ) -> str | None:
-    """GET one ISTAT data CSV; generous retries for the flaky 503 gateway."""
+    """GET one ISTAT data CSV; bounded retries for the flaky 503 gateway.
+
+    Budget tuned 2026-06-12 from (timeout=90, retries=6) to (30, 3) after a
+    full-outage day burned ~60min of pipeline time on 3 stuck series. Worst-
+    case dead-wait per series drops from ~570s to ~97s while still allowing
+    a transient 503 cycle to clear. No process-wide circuit breaker on top:
+    if the gateway flips on between calls, we want to capture whichever
+    series do come back."""
     url = f"{ISTAT_BASE}/{flow}/{key}"
     params = {}
     if last_n is not None and last_n > 0:
