@@ -512,6 +512,16 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 
 ---
 
+### Anti-bot fetching tier
+
+A handful of upstream sources serve anti-bot challenge HTML instead of the expected payload when fetched from a vanilla `requests` client (notably ifo.de's `gsk-{d,e}-YYYYMM.xlsx` workbook URLs — see §11 Pattern 10 and the ifo §5 entry above). The pipeline's policy when this happens:
+
+1. **First try direct.** Every source still attempts a plain `requests.get()` first. If the upstream lifts its anti-bot policy, we don't pay for a routed call.
+2. **Production tier — Bright Data Web Unlocker** (free tier: 5,000 requests/month). When the direct call returns HTML for a binary URL, the fetcher routes the request through Bright Data's Web Unlocker REST API. Credentials: `BRIGHTDATA_API_KEY` GitHub Secret. A per-run budget cap inside the source module prevents a misbehaving retry loop from draining the monthly cap in one workflow run. The free tier covers `scrape_as_markdown`/`scrape_batch` (Web Unlocker) and `search_engine`/`search_engine_batch` (SERP); `ask_brightdata_assistant` is paid-tier and is **not** to be used.
+3. **Dev / fallback tier — Stealth Browser skill** (not currently installed). [`zippoxer/claude-skills`](https://github.com/zippoxer/claude-skills) provides a Claude Code skill built on the `nodriver` library that drives a real Chrome via CDP with anti-detect hardening — solves Cloudflare Turnstile, persists session state across calls, handles multi-step interactive flows. Strengths: free, open-source, downloads binaries natively. Weaknesses: heavier install footprint (Chrome + Python deps), so not currently wired into CI. If we ever exceed Bright Data's free-tier cap, or hit a site Web Unlocker can't crack, install to `~/.claude/skills/` for exploratory work and consider wiring as a CI fallback at that point.
+
+---
+
 ## 6. Google Sheets Tab Map
 
 All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe4_ac`). Active and legacy tab sets are defined as `frozenset`s in `library_utils.py` (`SHEETS_PROTECTED_TABS`, `SHEETS_ACTIVE_TABS`, `SHEETS_LEGACY_TABS_TO_DELETE`); all four writer modules import these constants instead of hardcoding tab names.
