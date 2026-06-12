@@ -34,6 +34,15 @@ jobs:
         NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
         BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
         BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
+        # Bright Data Web Unlocker — used by sources/ifo.py as a fallback
+        # when ifo.de's anti-bot layer serves its 3038-byte HTML challenge
+        # in place of the gsk-*.xlsx workbook (§3 broken-source recovery).
+        # Free tier = 5,000 requests/month; sources/ifo.py caps per-run
+        # spend at 30 calls.  If the secret is unset, the fallback SKIPS
+        # silently and ifo degrades to blank rows (current behaviour).
+        # BRIGHTDATA_ZONE is optional; defaults to "web_unlocker1".
+        BRIGHTDATA_API_KEY: ${{ secrets.BRIGHTDATA_API_KEY }}
+        BRIGHTDATA_ZONE: ${{ secrets.BRIGHTDATA_ZONE }}
         # Unbuffered stdout so the live Actions log + pipeline.log reflect
         # progress in real time (block buffering through `tee` previously
         # hid which step a long run was actually on).

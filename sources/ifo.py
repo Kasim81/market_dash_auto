@@ -8,13 +8,51 @@ name encodes the release year-month as `gsk-<e|d>-YYYYMM.xlsx` (`e` =
 English, `d` = German).
 
 Discovery strategy, in order:
-  1. Scrape https://www.ifo.de/en/ifo-time-series with browser-like
-     headers; grep for gsk-*.xlsx links.
-  2. If the landing page 403s (anti-bot) or returns no matches, fall
-     back to direct URL construction: try the canonical `secure/
-     timeseries/gsk-d-YYYYMM.xlsx` path and the older `YYYY-MM/gsk-
-     e-YYYYMM.xlsx` archive path for the current month and the prior
-     three months.
+  1. Direct `requests.get()` against the canonical `secure/timeseries/`
+     URLs for the current month and the prior 3 months (gsk-e- then
+     gsk-d-).  This is the fast path — if ifo's anti-bot layer ever
+     lets us through, we don't pay for a third-party unlock.
+  2. If every direct candidate returns the 3038-byte HTML challenge
+     page (verified observed behaviour, May-June 2026), fall back to
+     **Bright Data Web Unlocker** via its REST API:
+         POST https://api.brightdata.com/request
+         {"zone": "<zone>", "url": "<ifo url>", "format": "raw"}
+     `format: "raw"` returns the upstream body bytes unmodified, so the
+     xlsx workbook arrives intact (verified via Bright Data docs:
+     `data_format: "screenshot"` + `format: "raw"` is documented as
+     binary PNG output via `--output`).
+
+Bright Data is invoked from production Python via its HTTPS API, NOT
+the MCP tool — the MCP wrapper only exists inside the Claude harness;
+GitHub Actions runs vanilla `requests.post()` straight against the REST
+endpoint.
+
+Required secrets (set in repo → Settings → Secrets and variables →
+Actions, then surfaced to the runner via the workflow `env:` block):
+
+    BRIGHTDATA_API_KEY   account-level API key from Bright Data
+                         (Account settings → API key).  No prefix; pass
+                         it raw as the Bearer token.
+    BRIGHTDATA_ZONE      (optional) the unlocker zone name.  Defaults
+                         to "web_unlocker1" if unset.  Override only if
+                         the user named their zone differently in the
+                         Bright Data dashboard.
+
+If BRIGHTDATA_API_KEY is unset the module SKIPS cleanly (logs a one-
+line notice, raises RuntimeError that callers in
+fetch_macro_economic.py already catch as "fetch failed → blank row").
+This keeps the local sandbox / forked CI working without a Bright Data
+account, while production runs simply route through the unlocker.
+
+Budget guard
+------------
+A module-level counter caps Bright Data invocations at
+`_MAX_BRIGHTDATA_CALLS_PER_RUN = 30` per process to protect the user's
+5,000-call/month free tier from a misbehaving retry loop.  Once at the
+cap, further calls raise `_BudgetExhausted` (a clean exception the
+dispatch handler treats as a SKIP) and a loud `[ifo BUDGET EXHAUSTED]`
+line lands in the log.  Current worst case is 6 URLs × 1 unlock call =
+6, so 30 is generous headroom.
 
 The English workbook stopped being regularly published at some point;
 this module now accepts either language and treats German as the
@@ -28,6 +66,7 @@ the Excel column name, `col` is our canonical output column).
 from __future__ import annotations
 
 import io
+import os
 import pathlib
 import re
 import time
@@ -73,6 +112,116 @@ _XLSX_HEADERS = {
 
 # First bytes of a valid .xlsx (ZIP archive) file.
 _XLSX_MAGIC = b"PK\x03\x04"
+
+# ---------------------------------------------------------------------------
+# BRIGHT DATA WEB UNLOCKER CONFIG
+# ---------------------------------------------------------------------------
+# REST endpoint (verified from docs.brightdata.com/scraping-automation/
+# web-unlocker/send-your-first-request).  Always POSTed with a JSON body;
+# the upstream URL goes in the `url` field, the upstream method defaults to
+# GET, and `format: "raw"` streams the upstream body back unmodified — which
+# is what we need for binary xlsx.
+_BRIGHTDATA_ENDPOINT = "https://api.brightdata.com/request"
+_BRIGHTDATA_DEFAULT_ZONE = "web_unlocker1"
+# Per-run safety cap.  At the limit, _call_brightdata raises
+# _BudgetExhausted and the caller treats it as a clean SKIP.  Bumping this
+# is fine; it exists to stop a misbehaving retry loop from draining the
+# user's 5,000/month free-tier quota in a single workflow run.
+_MAX_BRIGHTDATA_CALLS_PER_RUN = 30
+_BRIGHTDATA_CALLS = 0
+
+
+class _BudgetExhausted(RuntimeError):
+    """Raised when the per-run Bright Data call cap is reached."""
+
+
+def _brightdata_credentials() -> tuple[str, str] | None:
+    """Return (api_key, zone) if BRIGHTDATA_API_KEY is set, else None."""
+    api_key = os.environ.get("BRIGHTDATA_API_KEY", "").strip()
+    if not api_key:
+        return None
+    zone = os.environ.get("BRIGHTDATA_ZONE", "").strip() or _BRIGHTDATA_DEFAULT_ZONE
+    return api_key, zone
+
+
+def _call_brightdata(url: str, timeout: int = 60) -> bytes | None:
+    """
+    Fetch `url` through Bright Data Web Unlocker, returning the raw
+    upstream body bytes on a 2xx response.  Returns None on any failure
+    (non-2xx, network error, or non-xlsx body).  Raises _BudgetExhausted
+    if the per-run call cap is hit before the call is made.
+
+    Network-defensive: every exception is swallowed and logged; the
+    caller's outer loop falls through to "no data → blank row" without
+    crashing the pipeline.
+    """
+    global _BRIGHTDATA_CALLS
+    creds = _brightdata_credentials()
+    if creds is None:
+        # No credentials — caller will already have logged the SKIP.
+        return None
+    api_key, zone = creds
+
+    if _BRIGHTDATA_CALLS >= _MAX_BRIGHTDATA_CALLS_PER_RUN:
+        print(
+            f"  [ifo BUDGET EXHAUSTED] Bright Data per-run cap of "
+            f"{_MAX_BRIGHTDATA_CALLS_PER_RUN} reached; refusing further calls "
+            f"this process.  No data fetched.",
+            flush=True,
+        )
+        raise _BudgetExhausted(
+            f"Bright Data per-run cap of {_MAX_BRIGHTDATA_CALLS_PER_RUN} reached"
+        )
+    _BRIGHTDATA_CALLS += 1
+
+    payload = {"zone": zone, "url": url, "format": "raw"}
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    print(
+        f"  [ifo] Bright Data unlock #{_BRIGHTDATA_CALLS}/"
+        f"{_MAX_BRIGHTDATA_CALLS_PER_RUN}: zone={zone!r} url={url}",
+        flush=True,
+    )
+    try:
+        r = requests.post(_BRIGHTDATA_ENDPOINT, headers=headers, json=payload, timeout=timeout)
+    except requests.exceptions.RequestException as e:
+        print(f"  [ifo] Bright Data POST raised {type(e).__name__}: {e}", flush=True)
+        return None
+
+    if r.status_code != 200:
+        # 401 = bad API key, 403 = target forbids, 502 = upstream fail,
+        # 503 = CAPTCHA/check failed.  Log + give up; the outer loop
+        # will try the next URL candidate.
+        snippet = r.content[:160].replace(b"\n", b" ")
+        print(
+            f"  [ifo] Bright Data HTTP {r.status_code} for {url}; "
+            f"first 160 bytes: {snippet!r}",
+            flush=True,
+        )
+        return None
+
+    if not r.content.startswith(_XLSX_MAGIC):
+        # 200 but body isn't xlsx — Bright Data forwarded a non-xlsx
+        # response (rare; sometimes a 200 challenge page).  Treat as
+        # miss without retrying through Bright Data again on the same
+        # URL — the budget is too precious for that.
+        ct = r.headers.get("Content-Type", "")
+        snippet = r.content[:120].replace(b"\n", b" ")
+        print(
+            f"  [ifo] Bright Data returned {len(r.content)} bytes "
+            f"(ct={ct!r}) not xlsx for {url}; first 120: {snippet!r}",
+            flush=True,
+        )
+        return None
+
+    print(
+        f"  [ifo] Bright Data unlock succeeded for {url} "
+        f"({len(r.content):,} bytes)",
+        flush=True,
+    )
+    return r.content
 
 # Match gsk-<e|d>-YYYYMM.xlsx (6 digits).
 _HREF_RE = re.compile(
@@ -233,20 +382,27 @@ def resolve_workbook() -> tuple[str, bytes]:
 
 def _resolve_workbook_impl() -> tuple[str, bytes]:
     """
-    Find AND download the ifo workbook in a single pass through a shared
-    requests.Session.  Returns (url, xlsx_bytes) on success.
+    Find AND download the ifo workbook.  Returns (url, xlsx_bytes) on
+    success.
 
     Discovery order:
-      1. Scrape the landing page (sets session cookies).  For every
-         gsk-*.xlsx link returned, try to download; keep the first one
-         whose body is a real xlsx.
-      2. Direct URL construction for the current + prior 3 months.
+      1. Landing-page scrape (sets cookies) + direct GET on each link.
+      2. Direct GET on the canonical secure/timeseries/ URLs for the
+         current + prior 3 months.
+      3. **Bright Data Web Unlocker** on each candidate URL — only
+         reached if every direct attempt returned the 3038-byte
+         anti-bot HTML challenge page (or 4xx/5xx).  Skipped silently
+         when BRIGHTDATA_API_KEY is not set in the environment.
 
     Raises RuntimeError if nothing succeeds.
     """
     session = requests.Session()
     session.headers.update(_HTTP_HEADERS)
     tried: list[str] = []
+    # Distinct list for the unlock fallback so we don't waste budget on
+    # landing-page-only URLs (those were one-shot links scraped from
+    # cookied HTML; without that cookie the unlock has nothing to grab).
+    direct_url_candidates: list[str] = []
 
     # Strategy 1: hit landing page (sets cookies) and scrape link(s).
     try:
@@ -278,15 +434,44 @@ def _resolve_workbook_impl() -> tuple[str, bytes]:
     # Strategy 2: direct URL construction, validated per candidate.
     for candidate in _candidate_urls():
         tried.append(candidate)
+        direct_url_candidates.append(candidate)
         content = _try_download_xlsx(session, candidate)
         if content is not None:
             print(f"  [ifo] Direct-URL resolve + validated: {candidate}")
             return candidate, content
 
+    # Strategy 3: Bright Data Web Unlocker.  Only invoked if every direct
+    # attempt above failed.  This is the documented anti-bot bypass; the
+    # ifo challenge layer started blocking the direct path consistently in
+    # May 2026.  Each call costs 1 against the user's 5,000/month
+    # free-tier quota — the _MAX_BRIGHTDATA_CALLS_PER_RUN guard above
+    # caps per-run spend at 30 to absorb a misbehaving retry loop.
+    if _brightdata_credentials() is None:
+        print(
+            "  [ifo] BRIGHTDATA_API_KEY not set — skipping Web Unlocker "
+            "fallback.  Set the secret in GitHub Actions to enable.",
+            flush=True,
+        )
+    else:
+        print(
+            f"  [ifo] Direct fetch exhausted ({len(direct_url_candidates)} "
+            f"candidates); trying Bright Data Web Unlocker.",
+            flush=True,
+        )
+        for candidate in direct_url_candidates:
+            try:
+                content = _call_brightdata(candidate)
+            except _BudgetExhausted:
+                # Don't keep iterating — the cap is final for this run.
+                break
+            if content is not None:
+                print(f"  [ifo] Bright Data resolve + validated: {candidate}")
+                return candidate, content
+
     raise RuntimeError(
         f"Could not resolve a valid ifo workbook.  Tried {len(tried)} URL(s); "
-        f"landing-page scrape either returned no link or served an anti-bot "
-        f"challenge page for every candidate.  Last tried: "
+        f"landing-page scrape, direct fetch, and Bright Data Web Unlocker "
+        f"(if credentialed) all failed.  Last tried: "
         f"{tried[-1] if tried else '(none)'}"
     )
 
