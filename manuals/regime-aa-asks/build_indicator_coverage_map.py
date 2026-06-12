@@ -8,6 +8,9 @@ per region, against the data pipeline's actual coverage:
 
   - data/macro_economic.csv          (296 base economic series)
   - data/macro_indicator_library.csv (107 derived regime composites)
+  - data/macro_market.csv            (computed snapshot of the same 107 composites)
+  - data/index_library.csv           (401 market-data instruments: equities, bonds,
+                                       credit OAS, rates, FX, volatility indices)
 
 Emits one row per (indicator x region) with the metadata needed to decide
 whether the indicator is already covered, missing-but-sourceable, or
@@ -505,7 +508,7 @@ DATA = [
             {"region": "US", "analogue": "US HY OAS", "status": COVERED, "match": "BAMLH0A0HYM2; US_Cr2", "psrc": "FRED", "cand": "", "notes": "5-regime classifier US_Cr2."},
             {"region": "Eurozone", "analogue": "Euro HY OAS", "status": COVERED, "match": "BAMLHE00EHYIOAS; EU_Cr2", "psrc": "FRED", "cand": "", "notes": ""},
             {"region": "UK", "analogue": "GBP HY", "status": PARTIAL, "match": "UK_Cr1 (GBP corp vs gilt)", "psrc": "pipeline composite", "cand": "No standalone free GBP HY OAS", "notes": "GBP corporate-vs-gilt proxy in pipeline; no clean free GBP HY OAS series."},
-            {"region": "Asia", "analogue": "Asia HY", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "FRED BAMLEMRACRPIASIAOAS (Asia EM Corp OAS); BAMLEMHBHYCRPIOAS (EM HY) - free", "notes": "ICE BofA Asia EM Corporate OAS IS free on FRED; not in pipeline."},
+            {"region": "Asia", "analogue": "Asia HY", "status": COVERED, "match": "BAMLEMRACRPIASIAOAS (EM Asia Corp OAS); BAMLEMCBPIOAS (EM Corp); BAMLEM2BRRBBBCRPIOAS (EM BBB)", "psrc": "FRED (index_library)", "cand": "", "notes": "ICE BofA EM Asia Corporate OAS already in the market-data index library."},
         ],
     },
     {
@@ -516,8 +519,8 @@ DATA = [
             {"region": "US", "analogue": "US IG OAS", "status": COVERED, "match": "BAMLC0A0CM; US_Cr1", "psrc": "FRED", "cand": "", "notes": ""},
             {"region": "Eurozone", "analogue": "Euro IG OAS", "status": SOURCEABLE, "match": "EU_Cr1 (corp-govt spread proxy)", "psrc": "FRED", "cand": "FRED BAMLER00ICOAS (Euro Corp OAS) - free", "notes": "ICE Euro Corp OAS free on FRED; EU_Cr1 is a related proxy already in pipeline."},
             {"region": "UK", "analogue": "GBP IG OAS", "status": HARD, "match": "UK_Cr1 (proxy)", "psrc": "pipeline composite", "cand": "No clean free GBP IG OAS", "notes": ""},
-            {"region": "Japan", "analogue": "JPY IG OAS", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": ""},
-            {"region": "China", "analogue": "CNY IG OAS", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": ""},
+            {"region": "Japan", "analogue": "JPY IG OAS", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": "EM Asia Corp OAS (in library) is broad-EM, not JP-specific."},
+            {"region": "China", "analogue": "CNY IG OAS", "status": PARTIAL, "match": "BAMLEMRACRPIASIAOAS (EM Asia Corp OAS); BAMLEMCBPIOAS (EM Corp)", "psrc": "FRED (index_library)", "cand": "", "notes": "Broad EM-Asia corporate OAS in library proxies CN credit; no clean standalone CNY IG OAS."},
         ],
     },
     {
@@ -525,10 +528,10 @@ DATA = [
         "pillar": "Financial Conditions", "sub_group": "Volatility",
         "cycle": "Coincident", "src": "CBOE / daily", "lag": "Real-time",
         "regions": [
-            {"region": "US", "analogue": "VIX", "status": COVERED, "match": "US_V1 (VIX3M-VIX term structure)", "psrc": "market data", "cand": "CBOE VIX - free (FRED VIXCLS)", "notes": "VIX consumed via term-structure composite; also free on FRED (VIXCLS)."},
-            {"region": "Eurozone", "analogue": "VSTOXX (V2X)", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "STOXX VSTOXX/V2X history - free", "notes": "Free history from STOXX (h_vstoxx.txt); not in pipeline. Best Europe equity-vol substitute."},
-            {"region": "UK", "analogue": "VFTSE", "status": HARD, "match": "", "psrc": "", "cand": "VFTSE discontinued; use VSTOXX as Europe proxy", "notes": "No reliable free UK equity-vol index; VFTSE largely discontinued."},
-            {"region": "Asia", "analogue": "Nikkei VI / India VIX / VHSI", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "India VIX (NSE), Nikkei VI/JNIV (JPX), VHSI (HKEX) - free", "notes": "Several Asian vol indices free; not in pipeline."},
+            {"region": "US", "analogue": "VIX", "status": COVERED, "match": "^VIX, ^VIX3M, ^VIX9D, ^VVIX, ^SKEW (index_library); US_V1", "psrc": "yfinance (index_library)", "cand": "", "notes": "Full VIX term-structure suite in the market-data library; US_V1 term-structure composite."},
+            {"region": "Eurozone", "analogue": "VSTOXX (V2X) / VXEFA", "status": COVERED, "match": "^VXEFA (CBOE EAFE Volatility)", "psrc": "yfinance (index_library)", "cand": "STOXX VSTOXX/V2X also free", "notes": "CBOE EAFE vol (^VXEFA) in library is the developed-Europe/Japan equity-vol gauge; dedicated VSTOXX free from STOXX if EZ-specific needed."},
+            {"region": "UK", "analogue": "VFTSE / VXEFA", "status": PARTIAL, "match": "^VXEFA (EAFE incl. UK)", "psrc": "yfinance (index_library)", "cand": "VFTSE discontinued", "notes": "UK is inside the EAFE vol index (^VXEFA) already in library; no clean UK-specific equity-vol index (VFTSE discontinued)."},
+            {"region": "Asia", "analogue": "VXEEM / Nikkei VI / India VIX", "status": COVERED, "match": "^VXEEM (CBOE EM Volatility); ^VXEFA (developed Asia/Japan)", "psrc": "yfinance (index_library)", "cand": "India VIX, Nikkei VI, VHSI also free", "notes": "CBOE EM vol (^VXEEM) covers EM/China; EAFE vol (^VXEFA) covers developed Asia/Japan - both in library."},
         ],
     },
     {
@@ -536,7 +539,7 @@ DATA = [
         "pillar": "Financial Conditions", "sub_group": "Volatility",
         "cycle": "Coincident", "src": "Bloomberg / daily", "lag": "Real-time",
         "regions": [
-            {"region": "US", "analogue": "MOVE", "status": COVERED, "match": "US_V2 (MOVE / VIX)", "psrc": "market data", "cand": "ICE MOVE proprietary (market-data feed); free proxy = Cboe TYVIX history", "notes": "MOVE in pipeline via US_V2; standalone index is proprietary ICE. Cboe TYVIX (discontinued live 2020, historical CSV free) is the closest free Treasury-vol proxy."},
+            {"region": "US", "analogue": "MOVE", "status": COVERED, "match": "^MOVE (index_library); US_V2 (MOVE / VIX)", "psrc": "yfinance (index_library)", "cand": "", "notes": "MOVE index directly in the market-data library (^MOVE) and consumed via US_V2."},
             {"region": "Global", "analogue": "Regional bond-vol", "status": HARD, "match": "", "psrc": "", "cand": "No free regional bond-vol analogue", "notes": "Spec: less-developed regional analogues; none freely available."},
         ],
     },
@@ -545,7 +548,7 @@ DATA = [
         "pillar": "Financial Conditions", "sub_group": "FX",
         "cycle": "Coincident", "src": "Bloomberg / daily", "lag": "Real-time",
         "regions": [
-            {"region": "Global", "analogue": "DXY", "status": COVERED, "match": "FX_CMD2 (dollar); FX momentum composites", "psrc": "FRED / market data", "cand": "ICE DXY proprietary; FRED DTWEXAFEGS (Advanced Foreign Economies $) - free", "notes": "ICE DXY proprietary; closest free substitute is FRED DTWEXAFEGS (or broad DTWEXBGS), consumed via the FX composites."},
+            {"region": "Global", "analogue": "DXY", "status": COVERED, "match": "DX-Y.NYB (index_library); FX_CMD2 (dollar)", "psrc": "yfinance (index_library)", "cand": "", "notes": "DXY index directly in the market-data library (DX-Y.NYB); FRED DTWEXAFEGS is a free fallback."},
         ],
     },
     {
@@ -574,7 +577,7 @@ DATA = [
         "pillar": "Financial Conditions", "sub_group": "FX",
         "cycle": "Coincident", "src": "Bloomberg / daily", "lag": "Real-time",
         "regions": [
-            {"region": "Global", "analogue": "EMFX index", "status": COVERED, "match": "FX_EM1 (EM basket momentum); FX_1; FX_2; FX_CN1", "psrc": "pipeline composite", "cand": "JPM EMFX proprietary; free basket from FRED/exchange spot rates", "notes": "Proprietary index; pipeline builds a free EM-currency basket proxy (FX_EM1)."},
+            {"region": "Global", "analogue": "EMFX index", "status": COVERED, "match": "FX_EM1 (EM basket); USD/CNY, USD/INR, USD/KRW, USD/TWD (index_library); FX_1; FX_2; FX_CN1", "psrc": "yfinance (index_library) / composite", "cand": "JPM EMFX proprietary", "notes": "Proprietary index; pipeline builds a free EM-currency basket (FX_EM1) from the FX pairs in the market-data library."},
         ],
     },
     # ====================== 5.4 MONETARY POLICY ======================
@@ -711,7 +714,9 @@ def write_md(rows, path):
                  "indicator requested in `regime-aa-indicator-req.md` (§5), broken out "
                  "per region, against the data pipeline's actual coverage "
                  "(`data/macro_economic.csv`, 296 base series; "
-                 "`data/macro_indicator_library.csv`, 107 composites).")
+                 "`data/macro_indicator_library.csv` / `data/macro_market.csv`, 107 "
+                 "composites; `data/index_library.csv`, 401 market-data instruments "
+                 "covering equities, bonds, credit OAS, rates, FX and volatility).")
     lines.append("")
     lines.append("**One row per (indicator × region).** Status tells you whether the "
                  "indicator is already in the pipeline, missing but free-sourceable, or "
