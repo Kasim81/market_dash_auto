@@ -82,6 +82,9 @@ SOURCE_BY_LIBRARY = {
     "shiller":   "Shiller",
     "french":    "KenFrench",
     "jst":       "JST",
+    # §3.1.4 real-time GDP-growth nowcasts (single-source primary fetchers)
+    "atlanta_fed": "AtlantaFed",
+    "ny_fed":      "NYFed",
 }
 
 
