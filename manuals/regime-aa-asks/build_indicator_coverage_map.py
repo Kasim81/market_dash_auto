@@ -191,7 +191,7 @@ DATA = [
             {"region": "UK", "analogue": "BoE Credit Conditions Survey", "status": SOURCEABLE,
              "match": "", "psrc": "", "cand": "BoE Credit Conditions Survey - free (published data)", "notes": "Not in pipeline; BoE publishes free, though programmatic access is via spreadsheet, not API."},
             {"region": "Eurozone", "analogue": "ECB Bank Lending Survey", "status": SOURCEABLE,
-             "match": "", "psrc": "", "cand": "ECB Bank Lending Survey (SDW BLS dataset) - free", "notes": "Not in pipeline; ECB BLS free via SDW/Data Portal."},
+             "match": "", "psrc": "", "cand": "ECB BLS dataset (free); exact net-% key pending", "notes": "Free via ECB Data Portal, dataflow BLS (10 dims). Net-% series use BLS_ITEM=APP + agg WFNET (e.g. BLS/Q.U2.ALL.APP.E.O.B6.ST.S.WFNET backward / .F6. forward); BLS_ITEM=LEV gives only count aggregations. Canonical 'net % tightening, enterprises, 3m' not yet pinned — deferred to avoid a wrong series."},
             {"region": "Japan", "analogue": "BoJ Tankan lending attitude", "status": PARTIAL,
              "match": "BoJ Tankan DIs", "psrc": "BoJ", "cand": "BoJ Tankan lending-attitude DI - free", "notes": "Tankan business-conditions DIs in pipeline; the dedicated lending-attitude DI is free but not yet fetched."},
         ],
@@ -452,7 +452,7 @@ DATA = [
         "regions": [
             {"region": "US", "analogue": "US 5y5y forward inflation", "status": COVERED, "match": "T5YIFR; US_INFEXP1", "psrc": "FRED", "cand": "", "notes": "FRED publishes US 5y5y forward (T5YIFR); proprietary swap not needed."},
             {"region": "UK", "analogue": "UK 5y5y", "status": HARD, "match": "", "psrc": "", "cand": "Bloomberg inflation swap proprietary", "notes": "No free UK 5y5y; derivable approximation from linker curve only."},
-            {"region": "Eurozone", "analogue": "EZ 5y5y", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "ECB Data Portal inflation-linked-swap 5y5y - free", "notes": "EZ 5y5y is free via the ECB Data Portal (and DBnomics mirror); not in pipeline."},
+            {"region": "Eurozone", "analogue": "EZ 5y5y", "status": HARD, "match": "", "psrc": "", "cand": "No clean free ECB 5y5y ILS", "notes": "CORRECTION (live ECB API check): the ECB FM dataflow carries only nominal yields, money-market rates and equity indices - no inflation-linked-swap series. EZ 5y5y is proprietary (Bloomberg), like UK/JP. Earlier 'sourceable via ECB' was incorrect."},
             {"region": "Japan", "analogue": "JP 5y5y", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": ""},
         ],
     },
@@ -465,8 +465,8 @@ DATA = [
              "match": "MICH5YR; MICH (1y)", "psrc": "FRED", "cand": "", "notes": "5-10y catalogued (Bucket A, MICH5YR); 1y MICH already present. VERIFY id on first fetch."},
             {"region": "UK", "analogue": "BoE Inflation Attitudes Survey", "status": SOURCEABLE,
              "match": "", "psrc": "", "cand": "BoE/Ipsos Inflation Attitudes Survey - free (quarterly)", "notes": "Not in pipeline; BoE publishes free."},
-            {"region": "Eurozone", "analogue": "ECB Survey of Consumer Expectations", "status": SOURCEABLE,
-             "match": "", "psrc": "", "cand": "ECB SCE - free", "notes": "Not in pipeline; ECB SCE free."},
+            {"region": "Eurozone", "analogue": "ECB Survey of Consumer Expectations", "status": COVERED,
+             "match": "CES/M.Z18.ALL.T.C1120.NUM_VAR.WM", "psrc": "ECB", "cand": "", "notes": "Catalogued (Bucket C): ECB CES euro-area 12m-ahead inflation expectations (weighted median), verified live. 3y-ahead horizon also in CES if a longer anchor is wanted."},
         ],
     },
     {
