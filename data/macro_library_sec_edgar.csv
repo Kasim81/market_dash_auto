@@ -3,23 +3,67 @@ NVDA,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|Sales
 NVDA,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NVDA_EPS_DILUTED,NVIDIA — Diluted EPS,11
 AVGO,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,AVGO_REVENUE,Broadcom — Revenue,20
 AVGO,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,AVGO_EPS_DILUTED,Broadcom — Diluted EPS,21
-PLTR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,PLTR_REVENUE,Palantir Technologies — Revenue,30
-PLTR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,PLTR_EPS_DILUTED,Palantir Technologies — Diluted EPS,31
-NOW,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,NOW_REVENUE,ServiceNow — Revenue,40
-NOW,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NOW_EPS_DILUTED,ServiceNow — Diluted EPS,41
-CRWD,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CRWD_REVENUE,CrowdStrike Holdings — Revenue,50
-CRWD,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CRWD_EPS_DILUTED,CrowdStrike Holdings — Diluted EPS,51
-VRT,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VRT_REVENUE,Vertiv Holdings — Revenue,60
-VRT,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VRT_EPS_DILUTED,Vertiv Holdings — Diluted EPS,61
-ETN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,ETN_REVENUE,Eaton — Revenue,70
-ETN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,ETN_EPS_DILUTED,Eaton — Diluted EPS,71
-EQIX,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,EQIX_REVENUE,Equinix — Revenue,80
-EQIX,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,EQIX_EPS_DILUTED,Equinix — Diluted EPS,81
-DLR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,DLR_REVENUE,Digital Realty Trust — Revenue,90
-DLR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,DLR_EPS_DILUTED,Digital Realty Trust — Diluted EPS,91
-CEG,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CEG_REVENUE,Constellation Energy — Revenue,100
-CEG,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CEG_EPS_DILUTED,Constellation Energy — Diluted EPS,101
-VST,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VST_REVENUE,Vistra — Revenue,110
-VST,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VST_EPS_DILUTED,Vistra — Diluted EPS,111
-TLN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,TLN_REVENUE,Talen Energy — Revenue,120
-TLN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,TLN_EPS_DILUTED,Talen Energy — Diluted EPS,121
+QCOM,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,QCOM_REVENUE,Qualcomm — Revenue,30
+QCOM,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,QCOM_EPS_DILUTED,Qualcomm — Diluted EPS,31
+INTC,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,INTC_REVENUE,Intel — Revenue,40
+INTC,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,INTC_EPS_DILUTED,Intel — Diluted EPS,41
+IBM,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,IBM_REVENUE,IBM — Revenue,50
+IBM,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,IBM_EPS_DILUTED,IBM — Diluted EPS,51
+MSFT,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,MSFT_REVENUE,Microsoft — Revenue,60
+MSFT,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,MSFT_EPS_DILUTED,Microsoft — Diluted EPS,61
+GOOGL,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,GOOGL_REVENUE,Alphabet — Revenue,70
+GOOGL,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,GOOGL_EPS_DILUTED,Alphabet — Diluted EPS,71
+PLTR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,PLTR_REVENUE,Palantir — Revenue,80
+PLTR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,PLTR_EPS_DILUTED,Palantir — Diluted EPS,81
+NOW,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,NOW_REVENUE,ServiceNow — Revenue,90
+NOW,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NOW_EPS_DILUTED,ServiceNow — Diluted EPS,91
+CRM,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CRM_REVENUE,Salesforce — Revenue,100
+CRM,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CRM_EPS_DILUTED,Salesforce — Diluted EPS,101
+CRWD,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CRWD_REVENUE,CrowdStrike — Revenue,110
+CRWD,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CRWD_EPS_DILUTED,CrowdStrike — Diluted EPS,111
+RXRX,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,RXRX_REVENUE,Recursion Pharmaceuticals — Revenue,120
+RXRX,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,RXRX_EPS_DILUTED,Recursion Pharmaceuticals — Diluted EPS,121
+SDGR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,SDGR_REVENUE,Schrodinger — Revenue,130
+SDGR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,SDGR_EPS_DILUTED,Schrodinger — Diluted EPS,131
+IONQ,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,IONQ_REVENUE,IonQ — Revenue,140
+IONQ,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,IONQ_EPS_DILUTED,IonQ — Diluted EPS,141
+EQIX,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,EQIX_REVENUE,Equinix — Revenue,150
+EQIX,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,EQIX_EPS_DILUTED,Equinix — Diluted EPS,151
+DLR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,DLR_REVENUE,Digital Realty — Revenue,160
+DLR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,DLR_EPS_DILUTED,Digital Realty — Diluted EPS,161
+VRT,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VRT_REVENUE,Vertiv — Revenue,170
+VRT,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VRT_EPS_DILUTED,Vertiv — Diluted EPS,171
+ETN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,ETN_REVENUE,Eaton — Revenue,180
+ETN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,ETN_EPS_DILUTED,Eaton — Diluted EPS,181
+CEG,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CEG_REVENUE,Constellation Energy — Revenue,190
+CEG,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CEG_EPS_DILUTED,Constellation Energy — Diluted EPS,191
+VST,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VST_REVENUE,Vistra — Revenue,200
+VST,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VST_EPS_DILUTED,Vistra — Diluted EPS,201
+TLN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,TLN_REVENUE,Talen Energy — Revenue,210
+TLN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,TLN_EPS_DILUTED,Talen Energy — Diluted EPS,211
+GEV,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,GEV_REVENUE,GE Vernova — Revenue,220
+GEV,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,GEV_EPS_DILUTED,GE Vernova — Diluted EPS,221
+LNG,,revenue,Revenues|RevenueFromContractWithCustomerExcludingAssessedTax|SalesRevenueNet,LNG_REVENUE,Cheniere Energy — Revenue,230
+LNG,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,LNG_EPS_DILUTED,Cheniere Energy — Diluted EPS,231
+XOM,,revenue,Revenues|RevenueFromContractWithCustomerExcludingAssessedTax|SalesRevenueNet,XOM_REVENUE,ExxonMobil — Revenue,240
+XOM,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,XOM_EPS_DILUTED,ExxonMobil — Diluted EPS,241
+LMT,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,LMT_REVENUE,Lockheed Martin — Revenue,250
+LMT,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,LMT_EPS_DILUTED,Lockheed Martin — Diluted EPS,251
+MP,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,MP_REVENUE,MP Materials — Revenue,260
+MP,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,MP_EPS_DILUTED,MP Materials — Diluted EPS,261
+FCX,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,FCX_REVENUE,Freeport-McMoRan — Revenue,270
+FCX,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,FCX_EPS_DILUTED,Freeport-McMoRan — Diluted EPS,271
+ALB,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,ALB_REVENUE,Albemarle — Revenue,280
+ALB,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,ALB_EPS_DILUTED,Albemarle — Diluted EPS,281
+MRNA,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,MRNA_REVENUE,Moderna — Revenue,290
+MRNA,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,MRNA_EPS_DILUTED,Moderna — Diluted EPS,291
+NTLA,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,NTLA_REVENUE,Intellia Therapeutics — Revenue,300
+NTLA,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NTLA_EPS_DILUTED,Intellia Therapeutics — Diluted EPS,301
+MRK,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,MRK_REVENUE,Merck — Revenue,310
+MRK,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,MRK_EPS_DILUTED,Merck — Diluted EPS,311
+VRSK,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VRSK_REVENUE,Verisk — Revenue,320
+VRSK,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VRSK_EPS_DILUTED,Verisk — Diluted EPS,321
+CB,,revenue,Revenues|RevenueFromContractWithCustomerExcludingAssessedTax|SalesRevenueNet,CB_REVENUE,Chubb — Revenue,330
+CB,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CB_EPS_DILUTED,Chubb — Diluted EPS,331
+RNR,,revenue,Revenues|RevenueFromContractWithCustomerExcludingAssessedTax|SalesRevenueNet,RNR_REVENUE,RenaissanceRe — Revenue,340
+RNR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,RNR_EPS_DILUTED,RenaissanceRe — Diluted EPS,341
