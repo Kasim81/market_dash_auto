@@ -8,19 +8,7 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 - `VERIFY` — research-derived id; confirm on first fetch (the fetcher has the FRED key)
 - `SOURCE-OK` — free source definitely exists; exact series path to be pinned down during implementation
 
-**31 backlog items** across 3 buckets.
-
-## Bucket A — FRED single-series add (lowest effort)
-
-| Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
-|---|---|---|---|---|---|---|---|
-| Yield Curve (10y minus 2y) | China | Growth | `IRLTLT01CNM156N (10y leg only)` | `data/macro_library_fred.csv` | S | CONFIRMED | Monthly 10y via exact OECD MEI template (10-country precedent). 2y CGB leg still unresolved — slope stays monthly-only. |
-| M2 Money Supply (YoY%) | Eurozone | Growth | `MABMM301EZM189S` | `data/macro_library_fred.csv` | S | VERIFY | ECB M3 via FRED; alternative is ECB BSI direct. |
-| M2 Money Supply (YoY%) | Japan | Growth | `MYAGM2JPM189S` | `data/macro_library_fred.csv` | S | VERIFY | Confirm N vs S suffix (pipeline already has MYAGM2CNM189N for China). |
-| NAHB Housing Market Index | US | Growth | `NAHBSHF` | `data/macro_library_fred.csv` | S | VERIFY | NAHB/Wells Fargo HMI; research says free on FRED. |
-| Trimmed Mean / Median CPI | US | Inflation | `MEDCPIM158SFRBCLE + TRMMEANCPIM158SFRBCLE (+ PCETRIM12M159SFRBDAL)` | `data/macro_library_fred.csv` | S | VERIFY | Cleveland median/trimmed CPI; Dallas trimmed PCE optional. |
-| University of Michigan Inflation Expectations (5-10y) | US | Inflation | `MICH5YR` | `data/macro_library_fred.csv` | S | VERIFY | Long-run UMich expectations; pipeline already has 1y MICH. Spot-check id. |
-| IG Credit Spreads (OAS) | Eurozone | Financial Conditions | `BAMLER00ICOAS` | `data/macro_library_fred.csv` | S | VERIFY | ICE BofA Euro Corp OAS; ICE family already widely fetched (e.g. BAMLEMRACRPIASIAOAS confirmed present). |
+**24 backlog items** across 2 buckets.
 
 ## Bucket C — new / non-FRED endpoint
 
