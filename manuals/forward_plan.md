@@ -344,7 +344,60 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ ifo Bright Data Web Unlocker fallback — `sources/ifo.py` grows from ~390 → 579 lines (PR #194). Third-strategy fallback added: when the direct URL + landing-page strategies both fail, the fetcher routes through Bright Data Web Unlocker (`BRIGHTDATA_API_KEY` + `BRIGHTDATA_ZONE` now in workflow secrets; capped at 30 calls/run; silently skips if unset). See §5 ifo entry in `technical_manual.md`.
 - ✅ ISTAT retry budget tightened — `sources/istat.py` grows from 280 → 287 lines (PR #193). `timeout` 90→30s, `retries` 6→3; worst-case pipeline blockage per series drops from ~570s to ~97s on a fully-down gateway.
 
-Candidate next tracks:
+### §2.A Broken-source & freshness backlog — immediate top of queue (2026-06-15)
+
+Distilled from the 2026-06-15 17:48 UTC daily-audit (`data_audit.txt` Section A FRED HTTP 400 cluster + Section C EXPIRED/STALE buckets) cross-checked against the source-tier audit (`manuals/2026-06-15-source-tier-audit.md`). PR #205 (`UK_INFL1` → ONS `GBR_CPI_YOY`) and PR #208 (`JPN_IND_PROD` / `JPN_MACH_ORDERS` → correct e-Stat tables, plus the `_parse_estat_time` parser fix) close two of the seven fake-cadence violations the audit found; the items below are what remains.
+
+**A1. China inflation cluster (CHN_CPI + CHN_PPI) — investigate IMF IFS replacement.** Both currently read FRED OECD-MEI mirrors (`CHNCPIALLMINMEI`, `CHNPIEATI01GYM`) that have frozen — CN headline CPI hasn't moved since 2025-04-04 (14 months); CN PPI hasn't moved since 2022-12-02 (3.5 years). Both feed `CN_INFL1`, which means the China inflation composite is currently signal-poor. Action: probe `IMF/IFS/M.CN.PCPI_PC_PT_PA_PT` (CN headline CPI inflation rate) and the IFS PPI equivalent via DB.nomics; verify they update monthly with reasonable latency. If found, swap both library rows from FRED to DB.nomics and re-shape `_calc_CN_INFL1` to match the EU/UK pattern. Effort: S (1 session). If IMF IFS is also frozen for CN, document as accepted gap and remove from this list.
+
+**A2. European 10Y yield cluster (ITA_BTP_10Y + NLD_DSL_10Y + IND_GOVT_10Y) — discover ECB SDW replacement.** All three share the FRED `IRLTLT01*M156N` OECD-MEI yield family. All three are STALE at exactly 101d (last value-change 2026-03-06) — the OECD-MEI degradation pattern shown in cluster. Action: for ITA + NLD, find the equivalent monthly 10Y benchmark yield on ECB SDW (the AAA yield curve covers the area but not country-specific BTP/DSL; need country-specific instruments). For IND, probe IMF IFS or RBI direct (no Tier-2 aggregator currently wired for India 10Y). Effort: M (1 session per region — discovery is the work; CSV row swap is trivial). Lower priority than A1 because regime composites consume the aggregate `EU_R*` series, not country-specific BTP/DSL — these matter for explorer coverage and regime-AA region detail, not core composites.
+
+**A3. Eurostat / DB.nomics aggregator-lag cluster — verify whether tolerance settings are too tight.** Seven rows trip the EXPIRED gate but the underlying sources may not actually be dead — Eurostat publishes Eurozone aggregates with a longer lag than the implied tolerance: `EZ_EMPLOYMENT` (255d STALE), `EZ_IND_PROD` (192d STALE), `EZ_RETAIL_VOL` (192d STALE), `EA_HICP` (164d EXPIRED), `EU_ESI` / `EU_IND_CONF` / `EU_SVC_CONF` (164d EXPIRED), `EA_HICP_CORE_YOY` (164d EXPIRED). Action: cross-check Eurostat's published release calendar for each series; if our tolerance is tighter than the calendar, bump the `freshness_override_days` column to the honest cadence (the ONS LMS pattern we applied at §3.1 Stage C). If a series is genuinely past calendar — i.e. Eurostat is itself behind — escalate to source replacement. Effort: S (calendar check) → M (overrides) → L (replacement only if needed).
+
+**A4. US ISM cluster — investigate DB.nomics publisher delay.** Five US ISM series went EXPIRED at the same 164d mark (`ISM/pmi/pm`, `ISM/neword/in`, `ISM/inventories/in`, `ISM/prices/in`, `ISM/nm-pmi/pm` at 283d). DB.nomics ISM mirror appears to have stopped updating around Jan 2026. The US ISM publishes monthly with ~5-day lag from the source, so this is a DB.nomics vs upstream gap. Action: identify whether DB.nomics has fallen behind permanently (provider deprecation?) or transiently; if permanent, replace with FRED `NAPM` / `NAPMNOI` / `NAPMII` / `NAPMPI` / `NMFBAI` (US ISM is published by FRED too — Tier 4 but same-day current). Effort: S (one CSV row swap if FRED carries it).
+
+**A5. FRED persistent 400-error series — accept-as-dead or replace.** Four FRED series return HTTP 400 every run (`BAMLER00ICOAS` Euro IG Corp OAS, `IRLTLT01CNM156N` CN 10Y, `MICH5YR` UMich 5-10y inflation expectations, `NAHBSHF` NAHB Housing). The first two are already documented accepted gaps. `MICH5YR` and `NAHBSHF` need investigation — these are first-class US series that shouldn't be permanently broken at FRED. Action: query the FRED API directly (with `FRED_API_KEY` in the runner) to confirm whether the series IDs were renamed, the series itself was discontinued, or it's transient. Effort: S.
+
+**A6. BdF MIR PROVISIONAL rows (FRA_LOAN_RATE_HOUSE + FRA_LOAN_RATE_NFC) — dataset_id discovery via credentialed BdF probe.** Both rows skip silently in every run. Now `BDF_API_KEY` is in GitHub Secrets, the Opendatasoft Explore v2.1 dataset catalogue can be enumerated to find the MIR dataset and the ODSQL `where=` filters that pin the two SDMX dot-keys. Action: in a credentialed session, hit `/catalog/datasets?q=MFI+interest+rates` on the BdF Opendatasoft instance, walk schemas, translate the dot-keys, commit upgraded library rows. Effort: S.
+
+**A7. BoJ policy rate false-positive (JPN_POLICY_RATE).** Currently flagged EXPIRED at 17d (tolerance 5d) but BoJ has not moved the policy rate since the last decision. Daily rate series are inherently event-driven. Action: bump `freshness_override_days` on this row to ~120d to reflect the policy-decision cadence; do the same scan for `EA_DEPOSIT_RATE`, `CAN_POLICY_RATE`, `CHN_POLICY_RATE`, `GBR_BANK_RATE` (event-driven rates flagged stale because the central bank hasn't moved is honest-signal noise — set per-row overrides). Effort: S (5 CSV edits).
+
+**A8. JPN_RETAIL_SALES calculator-orphan auto-resolution.** Section B flags `_get_col(...,'JPN_RETAIL_SALES')` referenced but absent. PR #208 corrected the e-Stat statsDataId; the column should land on the next credentialed full-history run. Action: no code change needed — verify after the next daily run; if still missing, queue a follow-up to discover the right `cdCat` filters. Effort: 0 (validation only).
+
+### §2.B Regime-AA free-sourceable backlog — 15 indicators (2026-06-15)
+
+Distilled from `manuals/regime-aa-asks/regime-aa-sourcing-backlog.md`. Regime-AA carries 162 requested indicator slots: 98 covered, 24 partial, **15 missing-sourceable** (here), 25 missing-hard (proprietary, deferred). Closing all 15 would lift regime-AA fill rate from 60% to ~69%. Grouped by where the work lands:
+
+**Cheap wins — existing source modules (~6 hours total):**
+
+- **B1. UK M2 Money Supply (BoE M4)** — add series `LPMVWYH` (or equivalent IADB code for M4 broad money) to `data/macro_library_boe.csv` + a notes entry. Existing `sources/boe.py` fetcher needs no changes. M effort but only because BoE M4 has multiple series flavours (M4, M4 ex-OFCs, M4 lending) — pick the canonical headline YoY %.
+- **B2. Eurozone Building Permits (Eurostat `sts_cobp_m`)** — add a `DB.nomics/Eurostat/sts_cobp_m/...` row to `data/macro_library_dbnomics.csv`. Sister series to `EZ_IND_PROD` from the same DB.nomics path. M effort.
+- **B3. Eurozone PPI Final Demand (Eurostat `sts_inpp_m`)** — same shape as B2; one new `data/macro_library_dbnomics.csv` row. M effort.
+
+**Medium effort — existing modules, harder discovery (~1 day each):**
+
+- **B4. UK 5-10y Inflation Expectations (BoE/Ipsos Inflation Attitudes Survey)** — quarterly long-run consumer inflation expectations. Published as spreadsheet on BoE; extraction is the work, not access. New row in `data/macro_library_boe.csv` once the canonical series is pinned.
+- **B5. Eurozone SLOOS (ECB BLS)** — `sources/ecb.py` already fetches the ECB BLS dataflow. Need to pin the canonical net-% tightening enterprises 3-month forward key — combination of `BLS_ITEM=APP`, `WFNET=B6` (backward) or `F6` (forward), `BLS_AGGR=NET`. M effort, one CSV row.
+- **B6. UK SLOOS (BoE Credit Conditions Survey)** — published as spreadsheet. Needs a small Excel-parse path in `sources/boe.py` or a dedicated mini-fetcher. L effort.
+
+**Higher effort — new source paths (~1-2 days each):**
+
+- **B7. UK Building Permits (MHCLG dwelling starts)** — NOT on the ONS Zebedee timeseries API; published by Ministry of Housing, Communities & Local Government separately. Either add a new `sources/mhclg.py` module or wire to the ONS CMD-datasets API (different shape from the classic timeseries). L effort.
+- **B8. UK Nonfarm Payrolls (ONS PAYE RTI)** — PAYE RTI payrolls are on the newer ONS CMD datasets API, not the classic `/timeseries` API our fetcher uses. Needs an ONS CMD path in `sources/ons.py`, or use LFS employment level as a proxy. L effort.
+- **B9. Eurozone 5y TIPS Breakeven (ECB / Eurostat HICP-linked yields)** — limited free coverage; lower priority. L effort.
+
+**Pure-derivative — calculators only on series already in the pipeline:**
+
+- **B10–B13. Taylor Rule Gap (UK / Eurozone / Japan / China)** — derived from policy rate, CPI, output gap. Output-gap inputs weaker for non-US regions but constructable. Once one Taylor calculator is built, the other three come essentially for free. New rows in `data/macro_indicator_library.csv` + helper in `compute_macro_market.py`. M effort each.
+- **B14. Taylor Rule Gap (US)** — BLOCKED: needs a potential-output / output-gap series the pipeline does not carry (CBO potential GDP, or an HP/one-sided filter on real GDP). That is a modelling choice, not a simple calculator. Deferred until a potential-output input is sourced. L effort + design call.
+- **B15. Global Monetary Policy Tracker** — inputs present (FEDFUNDS, ECBDFR, BoE, BoJ, PBoC, BoC). Build a `GL_*` composite = net diffusion of 3m policy-rate changes across central banks. Multi-series cross-frame wiring; deferred because it can't be validated without a full pipeline data run. L effort.
+
+**Suggested sequencing**: B1–B3 in one session (~6 hours, biggest coverage gain per line of code) → B10–B13 Taylor cluster in a second session (pure-calculator, four indicators at once) → ECB BLS (B5) when adding the EZ credit-conditions track → discovery sessions for B4, B6, B7, B8 as separate items.
+
+### Candidate next tracks (broader)
+
+- **§2.A Broken-source & freshness backlog (current top of queue)** — concrete remediation list distilled from the 2026-06-15 17:48 UTC audit + the source-tier audit (`manuals/2026-06-15-source-tier-audit.md`). Detailed above.
+- **§2.B Regime-AA free-sourceable backlog** — the 15 indicators with confirmed free sources but not yet wired, distilled from `manuals/regime-aa-asks/regime-aa-sourcing-backlog.md`. Detailed above.
 - **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here, now detailed and status-reconciled as §3.12 (OECD MEI) and §3.13 (long-run layer) per the regime-AA v2 handoff.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
 - **§3.3 PE Ratio Integration** — small contained feature add.
