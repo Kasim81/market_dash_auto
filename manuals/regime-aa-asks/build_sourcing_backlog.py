@@ -67,8 +67,8 @@ IMPL = {
         ("C", "Eurostat sts_inpp_m", "sources/dbnomics.py + data/macro_library_dbnomics.csv", "M", "SOURCE-OK",
          "Eurostat PPI via DB.nomics."),
     ("Building Permits (SAAR)", "UK"):
-        ("C", "ONS/MHCLG dwelling starts", "sources/ons.py + data/macro_library_ons.csv", "M", "SOURCE-OK",
-         "UK new-build starts; new ONS dataset id."),
+        ("C", "MHCLG dwelling starts", "new MHCLG source + data/macro_library_*.csv", "L", "SOURCE-OK",
+         "NOT on the ONS timeseries (Zebedee) API; published by MHCLG. Needs a new source module or CMD path."),
     ("PPI Final Demand (YoY%)", "UK"):
         ("C", "ONS PPI output/input", "sources/ons.py + data/macro_library_ons.csv", "M", "SOURCE-OK",
          "ONS producer prices."),
@@ -76,8 +76,8 @@ IMPL = {
         ("C", "ONS Claimant Count", "sources/ons.py + data/macro_library_ons.csv", "S", "SOURCE-OK",
          "Monthly (not weekly); ONS labour-market series."),
     ("Nonfarm Payrolls (MoM change)", "UK"):
-        ("C", "ONS HMRC PAYE payrolls", "sources/ons.py + data/macro_library_ons.csv", "S", "SOURCE-OK",
-         "Monthly PAYE RTI payrolled-employees change."),
+        ("C", "ONS PAYE RTI (CMD API)", "ONS CMD-datasets fetch path", "L", "SOURCE-OK",
+         "PAYE RTI payrolls are in the newer ONS CMD datasets API, not the classic timeseries the fetcher uses. Needs a CMD path, or use LFS employment level as a proxy."),
     ("Senior Loan Officer Survey (SLOOS)", "Eurozone"):
         ("C", "ECB BLS (key pending)", "sources/ecb.py + data/macro_library_ecb.csv", "M", "SOURCE-OK",
          "ECB dataflow BLS confirmed reachable. Net-% series = BLS_ITEM APP + agg WFNET (B6 backward / F6 forward); pin the canonical 'net % tightening, enterprises, 3m' key before adding."),
@@ -107,8 +107,8 @@ IMPL = {
          "Limited free coverage; lower-priority."),
 
     ("Taylor Rule Gap", "US"):
-        ("D", "FFR, Core PCE, output gap (all in pipeline)", "compute_macro_market.py + data/macro_indicator_library.csv", "M", "CONFIRMED",
-         "Pure calculator; no fetch. Highest-confidence derived item."),
+        ("D", "FFR + Core PCE present; output gap NOT in pipeline", "compute_macro_market.py + data/macro_indicator_library.csv", "L", "SOURCE-OK",
+         "BLOCKED: needs a potential-output / output-gap series the pipeline does not carry (CBO potential GDP, or an HP/one-sided filter on real GDP). That is a modelling choice, not a simple calculator. Deferred until a potential-output input is sourced."),
     ("Taylor Rule Gap", "UK"):
         ("D", "Bank Rate, CPI, output gap", "compute_macro_market.py + data/macro_indicator_library.csv", "M", "SOURCE-OK",
          "Derived; output-gap input weaker than US."),
@@ -122,18 +122,14 @@ IMPL = {
         ("D", "PBoC rate, CPI, output gap", "compute_macro_market.py + data/macro_indicator_library.csv", "M", "SOURCE-OK",
          "Derived; China output-gap estimate weak."),
     ("Global Monetary Policy Tracker", "Global"):
-        ("D", "BIS central-bank policy-rate panel", "compute_macro_market.py + data/macro_indicator_library.csv", "L", "SOURCE-OK",
-         "Net hikers-minus-cutters diffusion from the free BIS policy-rate panel."),
+        ("D", "Policy rates present (US/UK/EZ/JP/CN/CA)", "compute_macro_market.py + data/macro_indicator_library.csv", "L", "SOURCE-OK",
+         "Inputs present (FEDFUNDS, ECBDFR, BoE, BoJ, PBoC, BoC). Build a GL_* composite = net diffusion of 3m policy-rate changes across CBs. Multi-series cross-frame wiring; deferred because it can't be validated without a full pipeline data run."),
 }
 
 # High-value items not flagged Sourceable but worth carrying in the backlog.
-EXTRA = [
-    {"indicator": "ISM New Orders minus Inventories", "region": "US",
-     "pillar": "Growth", "candidate_free_source": "Both legs now catalogued",
-     "status": "Partial", "_impl":
-        ("D", "ISM/neword/in - ISM/inventories/in", "compute_macro_market.py + data/macro_indicator_library.csv", "S", "CONFIRMED",
-         "Both legs now in the pipeline (Inventories added Bucket C). Remaining work is the spread calculator + a library row.")},
-]
+# ISM New Orders - Inventories spread is now DONE (US_ISM2 composite shipped),
+# so it is no longer carried as a backlog item.
+EXTRA = []
 
 BUCKET_TITLES = {
     "A": "Bucket A — FRED single-series add (lowest effort)",

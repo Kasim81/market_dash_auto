@@ -8,35 +8,32 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 - `VERIFY` — research-derived id; confirm on first fetch (the fetcher has the FRED key)
 - `SOURCE-OK` — free source definitely exists; exact series path to be pinned down during implementation
 
-**18 backlog items** across 2 buckets.
+**15 backlog items** across 2 buckets.
 
 ## Bucket C — new / non-FRED endpoint
 
 | Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
 |---|---|---|---|---|---|---|---|
-| Initial Jobless Claims | UK | Growth | `ONS Claimant Count` | `sources/ons.py + data/macro_library_ons.csv` | S | SOURCE-OK | Monthly (not weekly); ONS labour-market series. |
-| Nonfarm Payrolls (MoM change) | UK | Growth | `ONS HMRC PAYE payrolls` | `sources/ons.py + data/macro_library_ons.csv` | S | SOURCE-OK | Monthly PAYE RTI payrolled-employees change. |
 | M2 Money Supply (YoY%) | UK | Growth | `BoE M4 (IADB LPMVWYH)` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | BoE M4; new series in the existing BoE fetcher. |
-| Building Permits (SAAR) | UK | Growth | `ONS/MHCLG dwelling starts` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | UK new-build starts; new ONS dataset id. |
 | Building Permits (SAAR) | Eurozone | Growth | `Eurostat sts_cobp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat building-permits index via DB.nomics. |
 | Senior Loan Officer Survey (SLOOS) | Eurozone | Growth | `ECB BLS (key pending)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | ECB dataflow BLS confirmed reachable. Net-% series = BLS_ITEM APP + agg WFNET (B6 backward / F6 forward); pin the canonical 'net % tightening, enterprises, 3m' key before adding. |
-| PPI Final Demand (YoY%) | UK | Inflation | `ONS PPI output/input` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | ONS producer prices. |
 | PPI Final Demand (YoY%) | Eurozone | Inflation | `Eurostat sts_inpp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat PPI via DB.nomics. |
 | University of Michigan Inflation Expectations (5-10y) | UK | Inflation | `BoE/Ipsos Inflation Attitudes Survey` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | Quarterly long-run consumer inflation expectations. |
+| Building Permits (SAAR) | UK | Growth | `MHCLG dwelling starts` | `new MHCLG source + data/macro_library_*.csv` | L | SOURCE-OK | NOT on the ONS timeseries (Zebedee) API; published by MHCLG. Needs a new source module or CMD path. |
 | Senior Loan Officer Survey (SLOOS) | UK | Growth | `BoE Credit Conditions Survey` | `sources/boe.py + data/macro_library_boe.csv` | L | SOURCE-OK | Published as spreadsheet — extraction is the work, not access. |
+| Nonfarm Payrolls (MoM change) | UK | Growth | `ONS PAYE RTI (CMD API)` | `ONS CMD-datasets fetch path` | L | SOURCE-OK | PAYE RTI payrolls are in the newer ONS CMD datasets API, not the classic timeseries the fetcher uses. Needs a CMD path, or use LFS employment level as a proxy. |
 | TIPS 5-year Breakeven Rate | Eurozone | Inflation | `ECB / Eurostat HICP-linked yields` | `sources/ecb.py + data/macro_library_ecb.csv` | L | SOURCE-OK | Limited free coverage; lower-priority. |
 
 ## Bucket D — derived-only (calculator, no new fetch)
 
 | Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
 |---|---|---|---|---|---|---|---|
-| ISM New Orders minus Inventories | US | Growth | `ISM/neword/in - ISM/inventories/in` | `compute_macro_market.py + data/macro_indicator_library.csv` | S | CONFIRMED | Both legs now in the pipeline (Inventories added Bucket C). Remaining work is the spread calculator + a library row. |
-| Taylor Rule Gap | US | Monetary Policy | `FFR, Core PCE, output gap (all in pipeline)` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | CONFIRMED | Pure calculator; no fetch. Highest-confidence derived item. |
 | Taylor Rule Gap | UK | Monetary Policy | `Bank Rate, CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived; output-gap input weaker than US. |
 | Taylor Rule Gap | Eurozone | Monetary Policy | `ECB rate, HICP, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived. |
 | Taylor Rule Gap | Japan | Monetary Policy | `BoJ rate, Core CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived. |
 | Taylor Rule Gap | China | Monetary Policy | `PBoC rate, CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived; China output-gap estimate weak. |
-| Global Monetary Policy Tracker | Global | Monetary Policy | `BIS central-bank policy-rate panel` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | Net hikers-minus-cutters diffusion from the free BIS policy-rate panel. |
+| Taylor Rule Gap | US | Monetary Policy | `FFR + Core PCE present; output gap NOT in pipeline` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | BLOCKED: needs a potential-output / output-gap series the pipeline does not carry (CBO potential GDP, or an HP/one-sided filter on real GDP). That is a modelling choice, not a simple calculator. Deferred until a potential-output input is sourced. |
+| Global Monetary Policy Tracker | Global | Monetary Policy | `Policy rates present (US/UK/EZ/JP/CN/CA)` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | Inputs present (FEDFUNDS, ECBDFR, BoE, BoJ, PBoC, BoC). Build a GL_* composite = net diffusion of 3m policy-rate changes across CBs. Multi-series cross-frame wiring; deferred because it can't be validated without a full pipeline data run. |
 
 ## Suggested sequencing
 
