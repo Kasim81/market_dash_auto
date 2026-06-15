@@ -2057,11 +2057,13 @@ def _calc_US_INFL1(mu, **_):
 
 def _calc_UK_INFL1(mu, **_):
     """UK inflation: mean of headline CPI YoY and core CPI YoY (both %).
-    Headline = GBR_CPI (FRED `GBRCPIALLMINMEI` — Index 2015=100, converted
-    to YoY here); core = GBR_CORE_CPI_YOY (ONS DKO8 — already YoY % ex
-    energy / food / alcohol / tobacco). Same blend shape as US_INFL1.
-    Falls back to headline-only if core is absent."""
-    head = _yoy(_to_weekly_friday(_get_col(mu, "GBR_CPI")))       # CPI index → YoY %
+    Headline = GBR_CPI_YOY (ONS D7G7 — All-Items annual rate, already YoY %);
+    core = GBR_CORE_CPI_YOY (ONS DKO8 — already YoY % ex energy / food /
+    alcohol / tobacco). Same blend shape as US_INFL1, now sourced wholly from
+    ONS (Tier 1). Re-pointed off the frozen FRED `GBRCPIALLMINMEI` OECD-MEI
+    mirror (last value-change 2025-03) — see manuals/2026-06-15-source-tier-
+    audit.md. Falls back to headline-only if core is absent."""
+    head = _to_weekly_friday(_get_col(mu, "GBR_CPI_YOY"))        # ONS D7G7 — already YoY %
     core = _to_weekly_friday(_get_col(mu, "GBR_CORE_CPI_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
     if not parts:
