@@ -237,6 +237,7 @@ def _extract_headline_series_from_sheet(df: pd.DataFrame) -> pd.Series | None:
     date_col = _find_date_column(df)
     if date_col is None:
         return None
+    # junk 6703-01-01 row in the GDPTracking xlsx blew up the run on 2026-06-12 — coerce+drop is the bounded fix
     dates = pd.to_datetime(df[date_col], errors="coerce")
     valid = dates.notna()
     if not valid.any():
