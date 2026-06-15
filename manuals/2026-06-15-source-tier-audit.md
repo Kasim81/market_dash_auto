@@ -63,10 +63,10 @@ Sorted by impact — Phase-E composite inputs first.
 
 | # | Col | Lib freq | Empirical / effective cadence | Last real value-change | Age | Current source (tier) | Feeds (Phase E) | Recommended swap |
 |---|-----|----------|-------------------------------|------------------------|----:|-----------------------|-----------------|------------------|
-| 1 | `GBR_CPI` | Monthly | Frozen (no change in 15 mo) | 2025-03-07 | 465d | FRED `GBRCPIALLMINMEI` (T4) | **UK_INFL1** | Re-point UK_INFL1 to **`GBR_CPI_YOY`** — already live from ONS (T1) in the same file |
+| 1 | `GBR_CPI` | Monthly | Frozen (no change in 15 mo) | 2025-03-07 | 465d | FRED `GBRCPIALLMINMEI` (T4) | **UK_INFL1** | ✅ **FIXED 2026-06-15** — `_calc_UK_INFL1` re-pointed to **`GBR_CPI_YOY`** (live ONS, T1). The frozen index's YoY had collapsed to 0.0%, falsely dragging UK headline inflation to zero; ONS leg now reads 2.8% |
 | 2 | `CHN_CPI` | Monthly | Frozen (no change in 14 mo) | 2025-04-04 | 437d | FRED `CHNCPIALLMINMEI` (T4) | **CN_INFL1** | Probe IMF IFS / DB.nomics CN headline CPI (T3); else reaffirm accepted gap |
 | 3 | `CHN_PPI` | Monthly | Frozen (no change in 3.5 yr) | 2022-12-02 | 1291d | FRED `CHNPIEATI01GYM` (T4) | **CN_INFL1** | Probe IMF IFS / DB.nomics CN PPI (T3); else reaffirm accepted gap |
-| 4 | `JPN_IND_PROD` | Monthly | Frozen (no change in 27 mo) | 2024-03-01 | 836d | FRED `JPNPROINDMISMEI` (T4) | **JP_NOWCAST1** | Activate the wired e-Stat path (`statsDataId 0003446463`, METI IIP, T1) |
+| 4 | `JPN_IND_PROD` | Monthly | Frozen (no change in 27 mo) | 2024-03-01 | 836d | FRED `JPNPROINDMISMEI` (T4) | **JP_NOWCAST1** | Add the `cdCatNN` slice filter to the wired e-Stat row (`statsDataId 0003446463`, METI IIP, T1) so its returned series wins the freshness merge |
 | 5 | `JPN_MACH_ORDERS` | Monthly | **Annual** (median gap 364d) | 2025-10-03 | 255d | e-Stat `0003355224` (T1) | **JP_NOWCAST1** | Within-source fix: add `cdCatNN` filter to pin the monthly SA private-ex-volatile slice (currently resolving an annual table) |
 | 6 | `CHN_M2` | Monthly | Frozen (no change in 6.9 yr) | 2019-08-02 | 2509d | FRED `MYAGM2CNM189N` (T4) | — | **No fix** → accepted gap (see below) |
 | 7 | `CHN_IND_PROD` | Monthly | Frozen (no change in 2.6 yr) | 2023-11-03 | 955d | FRED `CHNPRINTO01IXPYM` (T4) | — | **No fix** → accepted gap (see below) |
@@ -78,12 +78,23 @@ Notes:
   composite while a fresh Tier-1 ONS replacement (`GBR_CPI_YOY`, last change 2026-04-03)
   already sits in the same CSV. `UK_INFL1` currently averages `GBR_CPI` (frozen) with
   `GBR_CORE_CPI_YOY` (live ONS) — the headline leg is stale while the core leg is fresh.
-- **#4 `JPN_IND_PROD`**: the e-Stat module *and* library row are already wired
-  (`sources/estat.py`, `macro_library_estat.csv` row `0003446463`), but the live column
-  is still the dead FRED mirror. `pipeline.log` shows both `[FRED/JPN_IND_PROD]` and
-  `[e-Stat/JPN_IND_PROD]` fetch attempts; the FRED value is winning and e-Stat is not
-  populating — consistent with the `ESTAT_APP_ID` credential not being present in the
-  runtime (the sibling provisional e-Stat IDs error `STATUS=300 … does not exist`).
+- **#4 `JPN_IND_PROD`** (root cause corrected 2026-06-15 after code review — *not* a
+  credential gap): the e-Stat module *and* library row are already wired
+  (`sources/estat.py`, `macro_library_estat.csv` row `0003446463`), and the credential
+  *is* present in the runtime — sibling series `JPN_MACH_ORDERS` fetched successfully
+  from e-Stat in the same run, and there is no `no ESTAT_APP_ID … skipping` message in
+  `pipeline.log`. The real reason FRED still wins: `JPN_IND_PROD` is registered on
+  **both** FRED and e-Stat against the same canonical `col`, and `build_hist_df` resolves
+  collisions by **freshness-wins** (`fetch_macro_economic.py` §SOURCE SELECTION). The
+  e-Stat `statsDataId 0003446463` is fetched with **no `cdCatNN` filter**, so the METI
+  IIP table returns *all* dimension slices; `parse_response` then does a first-wins dedupe
+  per period, yielding a series whose latest parseable observation is not fresher than
+  FRED's 2024-03 print (or is empty), so the frozen FRED column is retained. The fix is
+  to pin the monthly "manufacturing total, seasonally adjusted, production index" slice
+  with a `?cdCat01=…` filter on the library `series_id`, which requires one credentialed
+  `getMetaInfo` introspection call to read the table's category codes. The sibling
+  provisional IDs that error `STATUS=300 … does not exist` (`JPN_RETAIL_SALES`,
+  `JPN_HH_EXP`, `JPN_EWS_DI`) are a *separate* wrong-ID problem.
 - **#5 `JPN_MACH_ORDERS`** is the only column the strict median-gap heuristic flags on
   its own: 20 value-changes at a 364-day median. The library note already anticipates
   this ("Still needs `cdCatNN` filter to pin the private-ex-volatile SA slice"). This is
@@ -104,8 +115,8 @@ listed — see the note at the end of this section.
 
 | Col | Current source (tier) | Recommended source (tier) | Wired-and-available evidence | Cost estimate |
 |-----|-----------------------|---------------------------|------------------------------|---------------|
-| `GBR_CPI` | FRED `GBRCPIALLMINMEI` (T4) | **ONS** (T1) | `sources/ons.py` wired; `GBR_CPI_YOY` + `GBR_CORE_CPI_YOY` already live in hist | **CSV/formula row move only** — re-point `UK_INFL1` to `GBR_CPI_YOY` |
-| `JPN_IND_PROD` | FRED `JPNPROINDMISMEI` (T4) | **e-Stat** (T1) | `sources/estat.py` wired; `macro_library_estat.csv` row `0003446463` (METI IIP) present | Credential + priority — module wired, blocked on `ESTAT_APP_ID` in runtime |
+| `GBR_CPI` | FRED `GBRCPIALLMINMEI` (T4) | **ONS** (T1) | `sources/ons.py` wired; `GBR_CPI_YOY` + `GBR_CORE_CPI_YOY` already live in hist | ✅ **DONE 2026-06-15** — `_calc_UK_INFL1` now consumes `GBR_CPI_YOY` directly (no `_yoy()`), matching the EU_INFL1 shape |
+| `JPN_IND_PROD` | FRED `JPNPROINDMISMEI` (T4) | **e-Stat** (T1) | `sources/estat.py` wired; `macro_library_estat.csv` row `0003446463` (METI IIP) present | `cdCatNN` slice discovery — one credentialed `getMetaInfo` call to pin the monthly SA manufacturing-total slice so e-Stat wins the freshness merge |
 | `JPN_MACH_ORDERS` | e-Stat (T1, wrong slice) | e-Stat (T1, correct slice) | Same module/row; needs slice filter | Within-source `cdCatNN` discovery (1 fetch) |
 | `ITA_BTP_10Y` | FRED `IRLTLT01ITM156N` (T4) | Banca d'Italia / ECB SDW (T1/T2) | OECD-MEI-shaped monthly mirror, STALE 101d | **New source_id discovery** — ECB YC carries the AAA curve only, not BTP-specific |
 | `NLD_DSL_10Y` | FRED `IRLTLT01NLM156N` (T4) | ECB SDW (T2) | OECD-MEI-shaped monthly mirror, STALE 101d | **New source_id discovery** (ECB country-specific 10Y) |
