@@ -199,9 +199,9 @@ def parse_response(doc: dict, series_id: str) -> list[tuple[date, float]]:
     if not doc:
         return obs
 
+    stat = doc.get("GET_STATS_DATA", {}).get("STATISTICAL_DATA", {})
     try:
-        values = (doc["GET_STATS_DATA"]["STATISTICAL_DATA"]
-                     ["DATA_INF"]["VALUE"])
+        values = stat["DATA_INF"]["VALUE"]
     except (KeyError, TypeError):
         print(f"    [e-Stat] unexpected JSON schema for {series_id}")
         return obs
@@ -209,12 +209,32 @@ def parse_response(doc: dict, series_id: str) -> list[tuple[date, float]]:
     if isinstance(values, dict):
         values = [values]   # single-obs response is a dict not a list
 
+    # Some tables (e.g. METI's IIP, statsDataId 0004052177) carry an opaque
+    # sequence code in @time rather than a period-encoded one; the readable
+    # period label (e.g. "202603") lives in CLASS_INF. Build a code→label map
+    # so we can fall back to the label when @time isn't itself parseable.
+    time_labels: dict[str, str] = {}
+    class_objs = stat.get("CLASS_INF", {}).get("CLASS_OBJ", [])
+    if isinstance(class_objs, dict):
+        class_objs = [class_objs]
+    for o in class_objs:
+        if o.get("@id") == "time":
+            cl = o.get("CLASS", [])
+            if isinstance(cl, dict):
+                cl = [cl]
+            for c in cl:
+                time_labels[str(c.get("@code"))] = str(c.get("@name", ""))
+            break
+
     for v in values:
         time_raw = str(v.get("@time", "")).strip()
         val_raw = str(v.get("$", "")).strip()
         if not time_raw or not val_raw or val_raw in ("...", "-", "***"):
             continue
         d = _parse_estat_time(time_raw)
+        if d is None:
+            # opaque @time code — resolve via the CLASS_INF period label
+            d = _parse_estat_time(time_labels.get(time_raw, ""))
         if d is None:
             continue
         try:
@@ -238,13 +258,18 @@ def parse_response(doc: dict, series_id: str) -> list[tuple[date, float]]:
 def _parse_estat_time(t: str) -> date | None:
     """Parse e-Stat @time strings → date.
 
-    e-Stat encodes period type in trailing zeros of a 10-digit string:
-        YYYY010000  → annual (year-end mapping)
-        YYYYMM0000  → monthly (month-start mapping)
-        YYYYQ.0000  → quarterly (handled separately by some tables)
-        YYYYMMDDDD  → daily
+    e-Stat encodes the period in a 10-digit 時間軸 code structured as
+    YYYY + period-group(2) + MM(2) + DD(2). Empirically (live METI/Cabinet
+    Office monthly tables) the group digits are "00" and the month is carried
+    in positions 7-8, with the day positions repeating the month:
+        2026000303  → Mar. 2026   (monthly)
+        1985001212  → Dec. 1985   (monthly)
+        YYYY000000  → annual (year-end mapping)
+        YYYY00MMDD  → daily (genuine day in positions 9-10)
 
-    Plain ISO formats are also accepted as a fallback.
+    Plain ISO and bare YYYYMM / YYYYMMDD strings are accepted as fallbacks —
+    notably the human-readable time labels e-Stat returns in CLASS_INF for
+    tables whose @time field is an opaque sequence code (e.g. "202603").
     """
     t = t.strip()
     if not t:
@@ -255,19 +280,18 @@ def _parse_estat_time(t: str) -> date | None:
             return datetime.strptime(t if "-" in t or "/" in t else "", fmt).date()
         except (ValueError, TypeError):
             continue
-    # 10-digit e-Stat @time
+    # 10-digit e-Stat @time (YYYY + group(2) + MM(2) + DD(2)). The previous
+    # YYYYMM0000 reading never matched live data, so every monthly series
+    # parsed to zero observations and the e-Stat path was effectively dead.
     if t.isdigit() and len(t) == 10:
         yr = int(t[:4])
-        mm = int(t[4:6])
-        dd = int(t[6:8])
-        # tail = int(t[8:10])
+        mm = int(t[6:8])
+        dd = int(t[8:10])
         if mm == 0:
-            return None
-        if mm == 1 and dd == 0:
-            # annual marker (YYYY010000) — return year-end
+            # year-only marker (YYYY000000) — return year-end
             return date(yr, 12, 31)
-        if dd == 0:
-            # monthly marker (YYYYMM0000) — return month-start
+        if dd == 0 or dd == mm:
+            # monthly marker — day absent, or merely repeats the month
             try:
                 return date(yr, mm, 1)
             except ValueError:
