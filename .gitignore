@@ -12,6 +12,9 @@ env/
 data/*.db
 data/*.sqlite
 
+# SEC EDGAR local cache (company_tickers.json, 7-day TTL) — re-fetched on demand
+data/.sec_edgar_cache/
+
 # Environment / secrets
 .env
 

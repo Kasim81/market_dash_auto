@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-8 top-level Python modules (incl. `data_audit.py`) + 29-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage) + `docs/build_html.py` + `scripts/` utilities, totalling ~18,500 lines. Configuration: 27 input CSV libraries (1 instrument library + 24 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+8 top-level Python modules (incl. `data_audit.py`) + 30-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed) + `docs/build_html.py` + `scripts/` utilities, totalling ~18,900 lines. Configuration: 28 input CSV libraries (1 instrument library + 25 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -104,7 +104,8 @@ market_dash_auto/
 │   ├── french.py                      # Ken French Data Library ZIP-direct factor reader (413 lines, §3.13)
 │   ├── jst.py                         # Jordà-Schularick-Taylor Macrohistory R6 .dta loader (301 lines, §3.13)
 │   ├── atlanta_fed.py                 # Atlanta Fed GDPNow real-time US Q/Q SAAR GDP nowcast — keyless Excel download (366 lines, §3.1.4)
-│   └── ny_fed.py                      # New York Fed Staff Nowcast — real-time US Q/Q SAAR GDP nowcast — keyless Excel download (348 lines, §3.1.4)
+│   ├── ny_fed.py                      # New York Fed Staff Nowcast — real-time US Q/Q SAAR GDP nowcast — keyless Excel download (348 lines, §3.1.4)
+│   └── sec_edgar.py                   # SEC EDGAR companyfacts equity fundamentals (revenue + diluted EPS, Q+A) — keyless, fair-access UA (≈420 lines, 2026-06-15)
 │
 ├── data/                          # CSV config libraries + pipeline output files
 │   ├── index_library.csv              # Instrument master library (~390 rows, 29 columns)
@@ -138,7 +139,8 @@ market_dash_auto/
 │   ├── macro_library_french.csv       # Ken French ZIP-stem|column keys (6 rows: US 5-factor Mkt-RF/SMB/HML/RMW/CMA + 1m RF)
 │   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
-│   └── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
+│   ├── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
+│   └── macro_library_sec_edgar.csv    # SEC EDGAR fundamentals (24 rows: 12 US pure-plays × revenue+EPS; ticker,cik,metric,gaap_tags,col,name,sort_key)
 │   │
 │   ├── source_fallbacks.csv           # Per-indicator T0/T1/T2/T3 fallback chain (Stage B + §3.9)
 │   ├── manual_splits.csv              # Yahoo-missing split overrides (ticker, ex_date, ratio) — §11 Pattern 11
@@ -161,7 +163,8 @@ market_dash_auto/
 │   ├── macro_economic_hist.csv        # OUTPUT — unified raw-macro weekly history (wide-form, 14 metadata rows)
 │   ├── macro_market.csv               # OUTPUT — macro-market indicator snapshot
 │   ├── macro_market_hist.csv          # OUTPUT — macro-market indicator weekly history
-│   └── macro_market_monthly_hist.csv  # OUTPUT — month-end-sampled view of macro_market_hist (regime-AA Phase 3 input, §3.14)
+│   ├── macro_market_monthly_hist.csv  # OUTPUT — month-end-sampled view of macro_market_hist (regime-AA Phase 3 input, §3.14)
+│   └── equity_fundamentals.csv        # OUTPUT — SEC EDGAR revenue + diluted EPS history (long/tidy, idempotent-merge; isolated phase in fetch_data.py)
 │
 ├── docs/                          # Indicator Explorer generator
 │   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,921 lines)
@@ -469,6 +472,16 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Role:** First-class Phase E indicator `US_GDPNOW1` on the Growth axis — provides a real-time GDP estimate that updates daily/weekly rather than waiting for the official quarterly release (~30-day lag).
 - **Fetcher:** `sources/atlanta_fed.py` (366 lines). Key functions: `load_library()`, `_download_workbook()`, `_resolve_workbook_bytes()` (process-cached — one download per run), `fetch_series_as_pandas(series_id, col_name, ...)`. Smoke test: `test_atlanta_fed_smoke.py` (daily CI step).
 
+### SEC EDGAR — `companyfacts` equity fundamentals (2026-06-15)
+
+- **URLs:** `https://www.sec.gov/files/company_tickers.json` (ticker → CIK map, cached locally with a 7-day TTL under `data/.sec_edgar_cache/`, gitignored) and `https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json` (one document per company carrying every reported XBRL fact). **Keyless and free** — EDGAR requires no API key.
+- **Auth / fair-access (MANDATORY):** the SEC's fair-access policy requires every request to carry a descriptive `User-Agent` naming the caller plus a contact email — without it EDGAR returns HTTP 403. `sources/sec_edgar.py` sets `User-Agent: market_dash_auto/1.0 (<contact>)` (contact overridable via the `SEC_EDGAR_CONTACT` env var) and throttles process-wide to ≤10 req/s (`_MIN_INTERVAL = 0.15s`). Backoff on 429/5xx is delegated to `base.fetch_with_backoff` (extended 2026-06-15 with an optional `headers=` argument — backward-compatible; existing callers unaffected).
+- **Used for:** revenue + diluted-EPS multi-year history for the US-filer pilot pure-plays in `data/macro_library_sec_edgar.csv` (12 tickers: NVDA, AVGO, PLTR, NOW, CRWD, VRT, ETN, EQIX, DLR, CEG, VST, TLN; 24 rows = revenue + EPS each). Non-US names (TSM, ASML) are **out of scope** for EDGAR (they file 20-F, not the us-gaap XBRL facts these tags target).
+- **Tag handling:** revenue tries the us-gaap tags `RevenueFromContractWithCustomerExcludingAssessedTax → Revenues → SalesRevenueNet` in priority order; EPS tries `EarningsPerShareDiluted → EarningsPerShareBasic`. All listed tags are **unioned** to recover the longest history (companies switch concepts over time, e.g. the ASC-606 revenue cut-over), but where one fiscal period is reported under multiple tags the higher-priority tag wins, and within a tag a **restated period keeps the latest-filed value**. Period type is classified by XBRL duration — ~3 months → `Q`, ~12 months → `A` — dropping the 6-/9-month year-to-date cumulative stubs.
+- **Output:** `data/equity_fundamentals.csv` — long/tidy, one row per (ticker, metric, fiscal period). Columns: `ticker, metric (revenue|eps), period_end, period_type (Q|A), value, unit, fy, fp, form (10-K/10-Q), source="SEC EDGAR", retrieved (UTC date)`. Written by an **isolated phase** at the foot of `fetch_data.py` (its own `try/except`, after the macro/market phases) with an idempotent merge keyed on `(ticker, metric, period_end, period_type)`: unchanged periods keep their original `retrieved` (no churn), restated/new periods take the fresh value, and periods missing from a given run (e.g. EDGAR unreachable for one ticker) are preserved — a transient miss never deletes history. The library write side-effect lives in the coordinator (`fetch_data.py`), keeping `sources/sec_edgar.py` side-effect-free like every other source module.
+- **Keyless posture / graceful no-op:** an empty/absent library, an unreachable endpoint (incl. the sandbox-egress `403 Host not in allowlist`), or a missing tag all degrade to a zero-row no-op that leaves the existing CSV untouched — same posture as `sources/alpha_vantage.py` and `sources/bdf.py`. Because it is a per-company financial-statement feed on a 10-Q/10-K cadence (not a Friday-spine macro series), it is **not** wired into the unified `macro_economic` feed, `data_audit.py`'s `SOURCE_BY_LIBRARY`, or `library_sync.py`; it stands alone in `equity_fundamentals.csv`.
+- **Fetcher:** `sources/sec_edgar.py` (≈420 lines). Key functions: `load_library()`, `resolve_cik(ticker)`, `fetch_companyfacts(cik)`, `extract_metric(facts, gaap_tags)`, `build_fundamentals_df(rows=None)`. Smoke test: `test_sec_edgar_smoke.py` (daily CI step — network-gated, resolves NVDA's CIK then asserts non-empty revenue + EPS series and the tidy schema; SKIPs when EDGAR is unreachable).
+
 ### Google Sheets API v4
 
 - **Auth:** Service account JSON in `GOOGLE_CREDENTIALS` environment variable (GitHub Secret)
@@ -622,6 +635,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_market.csv` | ~92 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `macro_market_monthly_hist.csv` | ~320 | compute_macro_market.py | **NEW 2026-06-10 (forward_plan §3.14).** Month-end-sampled view of `macro_market_hist.csv`. Same wide schema (`<id>_raw` / `_zscore` / `_regime` / `_fwd_regime` per indicator), one row per month-end, each cell = the latest weekly Friday observation within that month. Produced via `df_hist.resample("ME").last()` after the weekly write — sampling only, the underlying 156-week z-score window is unchanged. Sister-file `_x.csv` follows the standard preservation contract. Stable schema for regime-AA Phase 3 Layer-1 monthly engine consumption. |
+| `equity_fundamentals.csv` | grows w/ history | fetch_data.py (SEC EDGAR phase) | **NEW 2026-06-15.** Long/tidy SEC EDGAR revenue + diluted-EPS history for the 12 US-filer pilot pure-plays. One row per (ticker, metric, fiscal period): `ticker, metric (revenue\|eps), period_end, period_type (Q\|A), value, unit, fy, fp, form, source="SEC EDGAR", retrieved`. Idempotent-merge keyed on `(ticker, metric, period_end, period_type)` — unchanged periods keep their `retrieved`, restated/new periods take the fresh value, old periods preserved on a transient miss. Isolated phase; keyless (SEC fair-access UA + ≤10 req/s). |
 | `pipeline.log` | n/a | GitHub Actions | Captured stdout+stderr of the most recent run (committed by the `if: always()` step in `update_data.yml` — useful for diagnosing failures without needing to download artefacts) |
 | `data_audit.txt` | n/a | `data_audit.py` (CI) | Full sorted §2.6 v2 audit report (fetch outcomes + static checks + value-change staleness + registry drift). Regenerated each daily run. |
 | `audit_comment.md` | n/a | `data_audit.py` + `audit_writeback.py` (CI) | Markdown body posted to the perpetual `daily-audit` GitHub Issue. First line is the one-sentence ALL CLEAN / N ISSUES summary. `audit_writeback.py` appends a one-line note when streaks are active or rows are flipped to UNAVAILABLE. |

@@ -60,15 +60,21 @@ def fetch_with_backoff(
     retries: int = 5,
     backoff_base: int = 2,
     timeout: int = 30,
+    headers: dict | None = None,
 ) -> dict | str | None:
     """
     Generic HTTP GET with exponential backoff on 429 / 5xx.
 
     Returns parsed JSON (or raw text when accept_csv=True), or None on failure.
+
+    ``headers`` is optional; when supplied it is passed straight to
+    requests.get. Existing callers that omit it keep the previous behaviour
+    (no custom headers). This is required by sources that mandate a header —
+    e.g. SEC EDGAR's fair-access User-Agent with a contact email.
     """
     for attempt in range(retries):
         try:
-            resp = requests.get(url, params=params, timeout=timeout)
+            resp = requests.get(url, params=params, headers=headers, timeout=timeout)
 
             if resp.status_code == 200:
                 return resp.text if accept_csv else resp.json()
