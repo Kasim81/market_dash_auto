@@ -220,8 +220,8 @@ DATA = [
         "cycle": "Leading", "src": "ISM (calculated)", "lag": "1st business day",
         "regions": [
             {"region": "US", "analogue": "ISM New Orders - Inventories", "status": COVERED,
-             "match": "ISM/neword/in; ISM/inventories/in; US_ISM1", "psrc": "DB.nomics",
-             "cand": "", "notes": "Both legs now catalogued (Inventories added, ISM/inventories/in, verified live). Spread = New Orders minus Inventories computable; add the calculator (Bucket D follow-on)."},
+             "match": "US_ISM2 (composite); ISM/neword/in; ISM/inventories/in", "psrc": "DB.nomics / composite",
+             "cand": "", "notes": "Fully implemented (Bucket D): US_ISM2 composite computes the New Orders minus Inventories spread with regime thresholds (orders-outpacing / balanced / inventory-overhang). Populates once the inventories series is first fetched."},
             {"region": "UK", "analogue": "UK PMI sub-indices", "status": HARD,
              "match": "", "psrc": "", "cand": "S&P Global PMI sub-indices proprietary", "notes": "Sub-indices paywalled."},
             {"region": "Eurozone", "analogue": "EZ PMI sub-indices", "status": HARD,

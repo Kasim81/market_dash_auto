@@ -554,6 +554,10 @@ REGIME_RULES = {
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
+    "US_ISM2":   lambda r, z: (
+        "orders-outpacing"    if not np.isnan(r) and r > 2
+        else ("inventory-overhang" if not np.isnan(r) and r < -2 else "balanced")
+    ),
     "US_R6":    lambda r, z: _r(r, z,  1, -1, "mortgage-stress",      "housing-easy"),
     "US_JOBS2":   lambda r, z: _r(r, z,  1, -1, "labour-tight",         "labour-slack"),
     # Europe
@@ -1169,6 +1173,22 @@ def _calc_US_ISM1(dbn, **_):
     return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
 
 
+def _calc_US_ISM2(dbn, **_):
+    """
+    ISM Manufacturing New Orders minus Inventories spread — level form,
+    forward-filled to weekly.  When new orders outpace inventory build the
+    spread is positive, a powerful leading signal of future PMI direction
+    that typically leads the headline ISM by 2-3 months; a negative spread
+    flags an inventory overhang and slowing orders.
+
+    Sources: DB.nomics ISM/neword (ISM_MFG_NEWORD) and ISM/inventories
+    (ISM_MFG_INVENTORIES) on the unified macro_economic_hist.
+    """
+    neword = _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
+    inv    = _to_weekly_friday(_get_col(dbn, "ISM_MFG_INVENTORIES"))
+    return _arith_diff(neword, inv)
+
+
 def _calc_US_R6(mu, **_):
     """
     Mortgage affordability / credit stress: MORTGAGE30US − DGS10.
@@ -1230,6 +1250,7 @@ _US_CALCULATORS = {
     "US_G5":      _calc_US_G5,
     "US_G4":      _calc_US_G4,
     "US_ISM1":    _calc_US_ISM1,
+    "US_ISM2":    _calc_US_ISM2,
     "US_R6":     _calc_US_R6,
     "US_JOBS2":    _calc_US_JOBS2,
 }

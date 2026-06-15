@@ -39,7 +39,7 @@ _Pipeline carries the series (or a direct derivation) for this slot._
 | Senior Loan Officer Survey (SLOOS) | US | DRTSCILM; DRTSCIS; DRTSCLCC; STDSOTHCONS | FRED |
 | ISM Manufacturing PMI | US | ISM/pmi/pm; US_PMI1 | DB.nomics |
 | ISM Manufacturing PMI | Japan | BoJ Tankan; JP_PMI1 | BoJ |
-| ISM New Orders minus Inventories | US | ISM/neword/in; ISM/inventories/in; US_ISM1 | DB.nomics |
+| ISM New Orders minus Inventories | US | US_ISM2 (composite); ISM/neword/in; ISM/inventories/in | DB.nomics / composite |
 | JP Morgan Global Manufacturing PMI | Global | GL_PMI1 | pipeline composite |
 | ISM Services PMI (NMI) | US | ISM/nm-pmi/pm; US_SVC1 | DB.nomics |
 | Philadelphia Fed Manufacturing Survey | US | GACDFSA066MSFRBPHI | FRED |

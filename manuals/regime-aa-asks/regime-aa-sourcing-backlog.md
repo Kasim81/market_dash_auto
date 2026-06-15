@@ -8,7 +8,7 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 - `VERIFY` — research-derived id; confirm on first fetch (the fetcher has the FRED key)
 - `SOURCE-OK` — free source definitely exists; exact series path to be pinned down during implementation
 
-**16 backlog items** across 2 buckets.
+**15 backlog items** across 2 buckets.
 
 ## Bucket C — new / non-FRED endpoint
 
@@ -28,13 +28,12 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 
 | Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
 |---|---|---|---|---|---|---|---|
-| ISM New Orders minus Inventories | US | Growth | `ISM/neword/in - ISM/inventories/in` | `compute_macro_market.py + data/macro_indicator_library.csv` | S | CONFIRMED | Both legs now in the pipeline (Inventories added Bucket C). Remaining work is the spread calculator + a library row. |
-| Taylor Rule Gap | US | Monetary Policy | `FFR, Core PCE, output gap (all in pipeline)` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | CONFIRMED | Pure calculator; no fetch. Highest-confidence derived item. |
 | Taylor Rule Gap | UK | Monetary Policy | `Bank Rate, CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived; output-gap input weaker than US. |
 | Taylor Rule Gap | Eurozone | Monetary Policy | `ECB rate, HICP, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived. |
 | Taylor Rule Gap | Japan | Monetary Policy | `BoJ rate, Core CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived. |
 | Taylor Rule Gap | China | Monetary Policy | `PBoC rate, CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived; China output-gap estimate weak. |
-| Global Monetary Policy Tracker | Global | Monetary Policy | `BIS central-bank policy-rate panel` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | Net hikers-minus-cutters diffusion from the free BIS policy-rate panel. |
+| Taylor Rule Gap | US | Monetary Policy | `FFR + Core PCE present; output gap NOT in pipeline` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | BLOCKED: needs a potential-output / output-gap series the pipeline does not carry (CBO potential GDP, or an HP/one-sided filter on real GDP). That is a modelling choice, not a simple calculator. Deferred until a potential-output input is sourced. |
+| Global Monetary Policy Tracker | Global | Monetary Policy | `Policy rates present (US/UK/EZ/JP/CN/CA)` | `compute_macro_market.py + data/macro_indicator_library.csv` | L | SOURCE-OK | Inputs present (FEDFUNDS, ECBDFR, BoE, BoJ, PBoC, BoC). Build a GL_* composite = net diffusion of 3m policy-rate changes across CBs. Multi-series cross-frame wiring; deferred because it can't be validated without a full pipeline data run. |
 
 ## Suggested sequencing
 
