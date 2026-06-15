@@ -9,10 +9,10 @@
 `Missing-Sourceable` — not currently in the pipeline, but a free/public source exists.
 
 ## Candidate free source
-ECB Bank Lending Survey (SDW BLS dataset) - free
+ECB BLS dataset (free); exact net-% key pending
 
 ## Notes
-Not in pipeline; ECB BLS free via SDW/Data Portal.
+Free via ECB Data Portal, dataflow BLS (10 dims). Net-% series use BLS_ITEM=APP + agg WFNET (e.g. BLS/Q.U2.ALL.APP.E.O.B6.ST.S.WFNET backward / .F6. forward); BLS_ITEM=LEV gives only count aggregations. Canonical 'net % tightening, enterprises, 3m' not yet pinned — deferred to avoid a wrong series.
 
 ---
 *Auto-templated by `scripts/phase_0_coverage_check.py` from the regime-aa

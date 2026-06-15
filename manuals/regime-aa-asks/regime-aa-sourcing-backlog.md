@@ -8,7 +8,7 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 - `VERIFY` — research-derived id; confirm on first fetch (the fetcher has the FRED key)
 - `SOURCE-OK` — free source definitely exists; exact series path to be pinned down during implementation
 
-**20 backlog items** across 2 buckets.
+**18 backlog items** across 2 buckets.
 
 ## Bucket C — new / non-FRED endpoint
 
@@ -19,12 +19,10 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 | M2 Money Supply (YoY%) | UK | Growth | `BoE M4 (IADB LPMVWYH)` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | BoE M4; new series in the existing BoE fetcher. |
 | Building Permits (SAAR) | UK | Growth | `ONS/MHCLG dwelling starts` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | UK new-build starts; new ONS dataset id. |
 | Building Permits (SAAR) | Eurozone | Growth | `Eurostat sts_cobp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat building-permits index via DB.nomics. |
-| Senior Loan Officer Survey (SLOOS) | Eurozone | Growth | `ECB Bank Lending Survey (SDW BLS)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | Quarterly net-tightening series via ECB Data Portal. |
+| Senior Loan Officer Survey (SLOOS) | Eurozone | Growth | `ECB BLS (key pending)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | ECB dataflow BLS confirmed reachable. Net-% series = BLS_ITEM APP + agg WFNET (B6 backward / F6 forward); pin the canonical 'net % tightening, enterprises, 3m' key before adding. |
 | PPI Final Demand (YoY%) | UK | Inflation | `ONS PPI output/input` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | ONS producer prices. |
 | PPI Final Demand (YoY%) | Eurozone | Inflation | `Eurostat sts_inpp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat PPI via DB.nomics. |
-| 5y5y Forward Inflation Swap | Eurozone | Inflation | `ECB Data Portal inflation-linked-swap 5y5y` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | EZ 5y5y free via ECB; UK/JP remain proprietary (Hard). |
 | University of Michigan Inflation Expectations (5-10y) | UK | Inflation | `BoE/Ipsos Inflation Attitudes Survey` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | Quarterly long-run consumer inflation expectations. |
-| University of Michigan Inflation Expectations (5-10y) | Eurozone | Inflation | `ECB Survey of Consumer Expectations` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | ECB SCE. |
 | Senior Loan Officer Survey (SLOOS) | UK | Growth | `BoE Credit Conditions Survey` | `sources/boe.py + data/macro_library_boe.csv` | L | SOURCE-OK | Published as spreadsheet — extraction is the work, not access. |
 | TIPS 5-year Breakeven Rate | Eurozone | Inflation | `ECB / Eurostat HICP-linked yields` | `sources/ecb.py + data/macro_library_ecb.csv` | L | SOURCE-OK | Limited free coverage; lower-priority. |
 

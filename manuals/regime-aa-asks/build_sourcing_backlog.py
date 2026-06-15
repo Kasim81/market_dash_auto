@@ -79,8 +79,8 @@ IMPL = {
         ("C", "ONS HMRC PAYE payrolls", "sources/ons.py + data/macro_library_ons.csv", "S", "SOURCE-OK",
          "Monthly PAYE RTI payrolled-employees change."),
     ("Senior Loan Officer Survey (SLOOS)", "Eurozone"):
-        ("C", "ECB Bank Lending Survey (SDW BLS)", "sources/ecb.py + data/macro_library_ecb.csv", "M", "SOURCE-OK",
-         "Quarterly net-tightening series via ECB Data Portal."),
+        ("C", "ECB BLS (key pending)", "sources/ecb.py + data/macro_library_ecb.csv", "M", "SOURCE-OK",
+         "ECB dataflow BLS confirmed reachable. Net-% series = BLS_ITEM APP + agg WFNET (B6 backward / F6 forward); pin the canonical 'net % tightening, enterprises, 3m' key before adding."),
     ("Senior Loan Officer Survey (SLOOS)", "UK"):
         ("C", "BoE Credit Conditions Survey", "sources/boe.py + data/macro_library_boe.csv", "L", "SOURCE-OK",
          "Published as spreadsheet — extraction is the work, not access."),
