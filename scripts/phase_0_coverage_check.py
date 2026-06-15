@@ -110,10 +110,17 @@ def extract_ids(match_field):
     out = []
     for tok in tokens:
         t = tok.strip()
-        if not t or " " in t or "/" in t:
-            continue  # descriptive phrase or FX-pair shorthand, not a verifiable id
+        if not t or " " in t:
+            continue  # descriptive phrase, not a verifiable id
         if t.upper() in SOURCE_WORDS:
             continue  # provider/source name, not a series id
+        if "/" in t:
+            # ECB SDMX key ('CISS/D.U2...') or DB.nomics path ('ISM/prices/in')
+            # are verifiable ids; FX-pair shorthand ('USD/CNY', one slash, no dot)
+            # is not.
+            if "." in t or t.count("/") >= 2:
+                out.append(t)
+            continue
         if RE_COMPOSITE.match(t) or RE_SERIES_ID.match(t) or RE_TICKER.match(t):
             out.append(t)
     return out

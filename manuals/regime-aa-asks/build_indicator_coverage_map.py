@@ -219,9 +219,9 @@ DATA = [
         "pillar": "Growth", "sub_group": "Business-Cycle Confirmer (Tier 3)",
         "cycle": "Leading", "src": "ISM (calculated)", "lag": "1st business day",
         "regions": [
-            {"region": "US", "analogue": "ISM New Orders - Inventories", "status": PARTIAL,
-             "match": "ISM/neword/in; US_ISM1 (New Orders only)", "psrc": "DB.nomics",
-             "cand": "ISM Inventories sub-index via DB.nomics (ISM licensed; FRED removed ISM post-2016)", "notes": "New Orders already sourced via DB.nomics (ISM/neword/in); Inventories sub-index should be reachable the same way, though ISM data is licensed - verify before fetch. Regional-Fed new-orders/inventory diffusions (Philly/Empire) are free fallbacks."},
+            {"region": "US", "analogue": "ISM New Orders - Inventories", "status": COVERED,
+             "match": "ISM/neword/in; ISM/inventories/in; US_ISM1", "psrc": "DB.nomics",
+             "cand": "", "notes": "Both legs now catalogued (Inventories added, ISM/inventories/in, verified live). Spread = New Orders minus Inventories computable; add the calculator (Bucket D follow-on)."},
             {"region": "UK", "analogue": "UK PMI sub-indices", "status": HARD,
              "match": "", "psrc": "", "cand": "S&P Global PMI sub-indices proprietary", "notes": "Sub-indices paywalled."},
             {"region": "Eurozone", "analogue": "EZ PMI sub-indices", "status": HARD,
@@ -365,7 +365,7 @@ DATA = [
         "regions": [
             {"region": "US", "analogue": "Chicago Fed NFCI", "status": COVERED, "match": "NFCI", "psrc": "FRED", "cand": "", "notes": ""},
             {"region": "UK", "analogue": "BoE FCI", "status": HARD, "match": "", "psrc": "", "cand": "BoE FCI not freely programmatic", "notes": "BoE FCI published only occasionally; no clean free feed."},
-            {"region": "Eurozone", "analogue": "ECB CISS", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "ECB CISS (SDW CISS) - free", "notes": "Systemic-stress composite, free via ECB SDW; not in pipeline."},
+            {"region": "Eurozone", "analogue": "ECB CISS", "status": COVERED, "match": "CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX", "psrc": "ECB", "cand": "", "notes": "Catalogued (Bucket C), ECB CISS, verified live. Shared by the GS-FCI and Bloomberg-FCI EZ rows."},
             {"region": "Japan", "analogue": "(none clean)", "status": HARD, "match": "", "psrc": "", "cand": "No clean free JP FCI", "notes": "Spec: no clean JP analogue."},
             {"region": "China", "analogue": "(none clean)", "status": HARD, "match": "", "psrc": "", "cand": "No clean free CN FCI", "notes": "Spec: no clean CN analogue."},
         ],
@@ -474,8 +474,8 @@ DATA = [
         "pillar": "Inflation", "sub_group": "Inflation-Adjacent / Commodity",
         "cycle": "Leading", "src": "ISM / monthly", "lag": "1st business day",
         "regions": [
-            {"region": "US", "analogue": "ISM Manufacturing Prices Paid", "status": SOURCEABLE,
-             "match": "", "psrc": "", "cand": "ISM Prices sub-index (DB.nomics ISM/prices) - free", "notes": "Not yet in pipeline; ISM prices sub-index free via DB.nomics."},
+            {"region": "US", "analogue": "ISM Manufacturing Prices Paid", "status": COVERED,
+             "match": "ISM/prices/in", "psrc": "DB.nomics", "cand": "", "notes": "Catalogued (Bucket C), ISM/prices/in, verified live."},
             {"region": "UK", "analogue": "UK PMI Prices Paid", "status": HARD, "match": "", "psrc": "", "cand": "S&P Global PMI sub-index proprietary", "notes": ""},
             {"region": "Eurozone", "analogue": "EZ PMI Prices Paid", "status": HARD, "match": "", "psrc": "", "cand": "S&P Global PMI sub-index proprietary", "notes": ""},
         ],
@@ -558,7 +558,7 @@ DATA = [
         "regions": [
             {"region": "US", "analogue": "GS US FCI", "status": HARD, "match": "NFCI (free proxy)", "psrc": "FRED", "cand": "GS FCI proprietary; free proxy = Chicago Fed NFCI / OFR FCI", "notes": "GS FCI paywalled; Chicago Fed NFCI (in pipeline) and OFR FCI are the free substitutes."},
             {"region": "UK", "analogue": "GS UK FCI", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary; no clean free UK FCI", "notes": ""},
-            {"region": "Eurozone", "analogue": "GS EZ FCI", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "ECB CISS - free", "notes": "ECB CISS is the free EZ financial-stress substitute."},
+            {"region": "Eurozone", "analogue": "GS EZ FCI", "status": COVERED, "match": "CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX (ECB CISS)", "psrc": "ECB", "cand": "", "notes": "ECB CISS catalogued (Bucket C) as the free EZ financial-conditions substitute."},
             {"region": "Japan", "analogue": "GS JP FCI", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": ""},
         ],
     },
@@ -569,7 +569,7 @@ DATA = [
         "regions": [
             {"region": "US", "analogue": "Bloomberg US FCI", "status": HARD, "match": "NFCI (free proxy)", "psrc": "FRED", "cand": "Bloomberg FCI proprietary; free proxy = NFCI / OFR FCI", "notes": "Proprietary; NFCI in pipeline is the free substitute."},
             {"region": "UK", "analogue": "Bloomberg UK FCI", "status": HARD, "match": "", "psrc": "", "cand": "Proprietary", "notes": ""},
-            {"region": "Eurozone", "analogue": "Bloomberg EZ FCI", "status": SOURCEABLE, "match": "", "psrc": "", "cand": "ECB CISS - free", "notes": ""},
+            {"region": "Eurozone", "analogue": "Bloomberg EZ FCI", "status": COVERED, "match": "CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX (ECB CISS)", "psrc": "ECB", "cand": "", "notes": "ECB CISS catalogued (Bucket C) as the free EZ financial-conditions substitute."},
         ],
     },
     {
