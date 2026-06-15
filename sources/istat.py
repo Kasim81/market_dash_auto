@@ -25,6 +25,21 @@ leaves the EDITION slot empty (trailing dot) and this module resolves the
 recent observation), then pins it. Dataflows without an EDITION dimension
 (e.g. industrial production 115_333) are fetched verbatim.
 
+The historical resolve-on-every-call strategy used an empty-EDITION
+wildcard probe which the server services by enumerating every vintage
+— that probe routinely times out at 30s+ (see 2026-06-12 ops post-
+mortem). The current strategy is a per-series ``data/istat_edition_cache.csv``
+cache: pin the cached EDITION on every call (fast path); on a 404 (cached
+edition has been superseded by a new release) do ONE wildcard probe to
+discover the freshest EDITION, cache it, then re-fetch pinned. The
+wildcard is fast on a healthy gateway (~2-3s) but only runs on edition
+turnover, so daily runs are dominated by the fast pinned path. EDITION
+labels include an unpredictable per-release suffix (e.g. ``2026M5G29``
+where ``G29`` is the publication day of the release), so brute-forcing
+the next label is infeasible — only the wildcard probe + ``_latest_edition``
+can name the actual vintage. Cache file is committed to the repo so
+daily runs start hot.
+
 Series ID convention: ``<flow>/<key>``. For vintaged dataflows leave the
 final (EDITION) slot empty, e.g. ``151_874/M.IT.UNEM_R.N.1.Y15-74.``
 (trailing dot). For non-vintaged dataflows give the full key,
@@ -36,13 +51,14 @@ from __future__ import annotations
 import io
 import pathlib
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import pandas as pd
 import requests
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_istat.csv"
+_CACHE_CSV = pathlib.Path(__file__).parent.parent / "data" / "istat_edition_cache.csv"
 ISTAT_BASE = "https://esploradati.istat.it/SDMXWS/rest/data"
 DEFAULT_HIST_START = "1990-01-01"
 
@@ -226,6 +242,73 @@ def _pin_edition(key: str, edition: str) -> str:
     return ".".join(parts)
 
 
+def _has_wildcard_edition(key: str) -> bool:
+    """True if the key's last dimension slot is empty (trailing dot) — i.e.
+    a vintaged dataflow where we resolve EDITION at fetch time."""
+    return key.endswith(".")
+
+
+def _infer_freq(key: str) -> str:
+    """SDMX frequency lives in the first dimension: M / Q / A / D."""
+    return key.split(".", 1)[0] if "." in key else ""
+
+
+# ---------------------------------------------------------------------------
+# EDITION CACHE
+# ---------------------------------------------------------------------------
+
+def _load_cache() -> dict[str, str]:
+    """Read `data/istat_edition_cache.csv` → {series_id: last_known_edition}."""
+    if not _CACHE_CSV.exists():
+        return {}
+    try:
+        df = pd.read_csv(_CACHE_CSV, dtype=str, keep_default_na=False)
+        return {
+            row["series_id"]: row["last_known_edition"]
+            for _, row in df.iterrows()
+            if row.get("series_id") and row.get("last_known_edition")
+        }
+    except Exception as e:
+        print(f"    [ISTAT cache] read failed ({e}); treating as empty")
+        return {}
+
+
+def _save_cache(cache: dict[str, str]) -> None:
+    """Persist cache sorted by series_id (stable git diffs). Best-effort —
+    a write failure logs but doesn't bubble."""
+    try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        rows = [
+            {"series_id": k, "last_known_edition": v, "last_resolved_at": today}
+            for k, v in sorted(cache.items())
+        ]
+        pd.DataFrame(rows, columns=["series_id", "last_known_edition", "last_resolved_at"]).to_csv(
+            _CACHE_CSV, index=False
+        )
+    except Exception as e:
+        print(f"    [ISTAT cache] write failed ({e}); continuing")
+
+
+def _wildcard_resolve_edition(flow: str, key: str) -> str | None:
+    """One small wildcard probe (lastN=1 across all editions) to discover
+    the freshest EDITION label, then return it. The probe is fast on a
+    healthy gateway (~2-3s observed) and serves as the cache-miss path —
+    pinning is otherwise impossible because EDITION labels include an
+    unpredictable per-release suffix (e.g. `2026M5G29` where `G29` is the
+    publication day of the release). Returns None on timeout / empty."""
+    text = _fetch_csv(flow, key, last_n=1)
+    if not text:
+        return None
+    df, has_ed = _parse_rows(text)
+    if df is None or not has_ed:
+        return None
+    return _latest_edition(df)
+
+
+# Module-level cache: loaded once per process; mutated as we resolve.
+_EDITION_CACHE: dict[str, str] = _load_cache()
+
+
 # ---------------------------------------------------------------------------
 # PUBLIC FETCH
 # ---------------------------------------------------------------------------
@@ -238,43 +321,30 @@ def fetch_series_as_pandas(
     """Fetch one series and return a date-indexed pd.Series, or None on failure.
 
     last_n: pass a small value (e.g. 3) for snapshot calls. Omit for full
-            history. For vintaged dataflows the latest EDITION is resolved
-            automatically.
-    """
+            history. For vintaged dataflows the EDITION is resolved via the
+            persistent cache → probe-forward fallback (no expensive wildcard
+            probe). See module docstring."""
     if "/" not in series_id:
         print(f"    [ISTAT] invalid series_id {series_id!r} (expected '<FLOW>/<KEY>')")
         return None
     flow, key = series_id.split("/", 1)
 
-    # Snapshot path: a single small query is enough; resolve latest edition
-    # from whatever comes back.
-    if last_n is not None and last_n > 0:
-        df, has_ed = _parse_rows(_fetch_csv(flow, key, last_n=last_n) or "")
+    if not _has_wildcard_edition(key):
+        # Non-vintaged dataflow — direct fetch.
+        df, _ = _parse_rows(_fetch_csv(flow, key, last_n=last_n) or "")
+        if df is None:
+            return None
+        obs = _rows_to_obs(df)
+    else:
+        # Vintaged — try cached EDITION first, fall back to probe-forward.
+        text, edition_used = _resolve_vintaged_csv(flow, key, series_id, last_n)
+        if text is None:
+            return None
+        df, has_ed = _parse_rows(text)
         if df is None:
             return None
         if has_ed and df["EDITION"].nunique() > 1:
-            ed = _latest_edition(df)
-            df = df[df["EDITION"].astype(str) == str(ed)]
-        obs = _rows_to_obs(df)
-    else:
-        # History path: for vintaged dataflows, discover the latest edition
-        # cheaply (lastN=1 across editions), then pull only that edition's
-        # full series — avoids downloading every vintage.
-        probe, has_ed = _parse_rows(_fetch_csv(flow, key, last_n=1) or "")
-        if probe is None:
-            return None
-        if has_ed and probe["EDITION"].nunique() >= 1 and probe["EDITION"].notna().any():
-            ed = _latest_edition(probe)
-            full_key = _pin_edition(key, ed) if ed is not None else key
-            df, _ = _parse_rows(_fetch_csv(flow, full_key) or "")
-            if df is None:
-                return None
-            if "EDITION" in df.columns and df["EDITION"].nunique() > 1:
-                df = df[df["EDITION"].astype(str) == str(ed)]
-        else:
-            df, _ = _parse_rows(_fetch_csv(flow, key) or "")
-            if df is None:
-                return None
+            df = df[df["EDITION"].astype(str) == str(edition_used)]
         obs = _rows_to_obs(df)
 
     if not obs:
@@ -285,3 +355,41 @@ def fetch_series_as_pandas(
     )
     s = s.sort_index()
     return s
+
+
+def _resolve_vintaged_csv(
+    flow: str,
+    key: str,
+    series_id: str,
+    last_n: int | None,
+) -> tuple[str | None, str | None]:
+    """Cache-first EDITION resolution. Fast path: pin the cached EDITION
+    and fetch in one call. Slow path: on cache miss or pinned-fetch 404,
+    do a single wildcard probe to discover the freshest EDITION, cache it,
+    then re-fetch pinned. Returns (csv_text, edition_used)."""
+    cached_ed = _EDITION_CACHE.get(series_id)
+
+    # 1. Fast path — pin cached and fetch.
+    if cached_ed:
+        pinned = _pin_edition(key, cached_ed)
+        text = _fetch_csv(flow, pinned, last_n=last_n)
+        if text:
+            return text, cached_ed
+        # else: cached edition has been superseded → fall through to discovery.
+
+    # 2. Slow path — one wildcard probe to discover the freshest EDITION.
+    fresh_ed = _wildcard_resolve_edition(flow, key)
+    if fresh_ed is None:
+        print(f"    [ISTAT] could not resolve EDITION for {series_id} "
+              f"(cache '{cached_ed or 'cold'}'; wildcard probe failed)")
+        return None, None
+
+    # 3. Cache the discovered edition + re-fetch pinned (full dataset path).
+    if fresh_ed != cached_ed:
+        _EDITION_CACHE[series_id] = fresh_ed
+        _save_cache(_EDITION_CACHE)
+        print(f"    [ISTAT cache] {series_id}: {cached_ed or '(cold)'} → {fresh_ed}")
+
+    pinned = _pin_edition(key, fresh_ed)
+    text = _fetch_csv(flow, pinned, last_n=last_n)
+    return text, fresh_ed

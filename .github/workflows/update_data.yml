@@ -184,6 +184,10 @@ jobs:
         # §3.1 sub-track 3 — audit_writeback artefacts:
         [ -f data/yfinance_failure_streaks.csv ] && git add -f data/yfinance_failure_streaks.csv || true
         [ -f data/index_library.csv ] && git add -f data/index_library.csv || true
+        # sources/istat.py EDITION cache — pinned vintage per series; mutated
+        # by the source module on cache miss / edition turnover, kept on disk
+        # so daily runs start hot.
+        [ -f data/istat_edition_cache.csv ] && git add -f data/istat_edition_cache.csv || true
         # Retired in Stage 2 commit 13 — removals get committed on next run:
         [ -f data/macro_us.csv ] && git rm -f data/macro_us.csv || true
         [ -f data/macro_us_hist.csv ] && git rm -f data/macro_us_hist.csv || true
