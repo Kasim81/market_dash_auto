@@ -9,10 +9,10 @@
 `Missing-Sourceable` — not currently in the pipeline, but a free/public source exists.
 
 ## Candidate free source
-MHCLG/ONS dwelling starts - free
+MHCLG dwelling starts (not on ONS timeseries API)
 
 ## Notes
-Not in pipeline; UK new-build starts published free by MHCLG/ONS.
+UK new-build starts are published by MHCLG, not via the ONS timeseries (Zebedee) API the fetcher uses. Needs a separate MHCLG source or CMD path. Deferred.
 
 ---
 *Auto-templated by `scripts/phase_0_coverage_check.py` from the regime-aa

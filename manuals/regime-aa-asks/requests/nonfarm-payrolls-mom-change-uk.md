@@ -9,10 +9,10 @@
 `Missing-Sourceable` — not currently in the pipeline, but a free/public source exists.
 
 ## Candidate free source
-ONS HMRC PAYE payrolls - free
+ONS PAYE RTI (CMD datasets API, not classic timeseries)
 
 ## Notes
-Payroll change not in pipeline; ONS PAYE RTI free (monthly).
+PAYE RTI payrolls are not in the classic ONS timeseries (Zebedee) API the fetcher uses — they live in the newer CMD datasets API. Needs a CMD-fetch path, or use LFS employment level as a proxy. Deferred.
 
 ---
 *Auto-templated by `scripts/phase_0_coverage_check.py` from the regime-aa

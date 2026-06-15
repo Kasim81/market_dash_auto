@@ -67,8 +67,8 @@ IMPL = {
         ("C", "Eurostat sts_inpp_m", "sources/dbnomics.py + data/macro_library_dbnomics.csv", "M", "SOURCE-OK",
          "Eurostat PPI via DB.nomics."),
     ("Building Permits (SAAR)", "UK"):
-        ("C", "ONS/MHCLG dwelling starts", "sources/ons.py + data/macro_library_ons.csv", "M", "SOURCE-OK",
-         "UK new-build starts; new ONS dataset id."),
+        ("C", "MHCLG dwelling starts", "new MHCLG source + data/macro_library_*.csv", "L", "SOURCE-OK",
+         "NOT on the ONS timeseries (Zebedee) API; published by MHCLG. Needs a new source module or CMD path."),
     ("PPI Final Demand (YoY%)", "UK"):
         ("C", "ONS PPI output/input", "sources/ons.py + data/macro_library_ons.csv", "M", "SOURCE-OK",
          "ONS producer prices."),
@@ -76,8 +76,8 @@ IMPL = {
         ("C", "ONS Claimant Count", "sources/ons.py + data/macro_library_ons.csv", "S", "SOURCE-OK",
          "Monthly (not weekly); ONS labour-market series."),
     ("Nonfarm Payrolls (MoM change)", "UK"):
-        ("C", "ONS HMRC PAYE payrolls", "sources/ons.py + data/macro_library_ons.csv", "S", "SOURCE-OK",
-         "Monthly PAYE RTI payrolled-employees change."),
+        ("C", "ONS PAYE RTI (CMD API)", "ONS CMD-datasets fetch path", "L", "SOURCE-OK",
+         "PAYE RTI payrolls are in the newer ONS CMD datasets API, not the classic timeseries the fetcher uses. Needs a CMD path, or use LFS employment level as a proxy."),
     ("Senior Loan Officer Survey (SLOOS)", "Eurozone"):
         ("C", "ECB BLS (key pending)", "sources/ecb.py + data/macro_library_ecb.csv", "M", "SOURCE-OK",
          "ECB dataflow BLS confirmed reachable. Net-% series = BLS_ITEM APP + agg WFNET (B6 backward / F6 forward); pin the canonical 'net % tightening, enterprises, 3m' key before adding."),
