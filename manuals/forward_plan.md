@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-06-12
+> Last updated: 2026-06-14
 
 This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
 
@@ -338,6 +338,12 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ French 3-Factor ZIP fix — Mkt-RF / SMB / HML / RF rows re-pointed to `F-F_Research_Data_Factors_CSV.zip` (full history from 1926-07). `sources/french.py` grows from 374 → 413 lines.
 - ✅ JST CAN_EQUITY_TR_JST dropped — JST R6 contains no Canadian equity total-return series. `macro_library_jst.csv` shrinks from 40 → 39 rows.
 
+**Recent completed work (session 2026-06-12):**
+- ✅ §3.1.4 US_NOWCAST1 — `sources/ny_fed.py` (348 lines) + `data/macro_library_ny_fed.csv` (1 row) wired. Downloads the NY Fed Staff Nowcast full-history Excel workbook from the medialibrary CDN; rightmost-non-null per publication row tracks the current-vintage headline. `_calc_US_NOWCAST1` in `compute_macro_market.py` forward-fills weekly across the quiet window (~3-5 business days around BEA advance). Confirmed live in the 2026-06-12 run (`raw=2.46`, `regime='near-trend'`). Smoke test: `test_ny_fed_smoke.py` added to the daily CI smoke-tests step.
+- ✅ §3.1.4 JP_NOWCAST1 — `_calc_JP_NOWCAST1` in `compute_macro_market.py` wired: equal-weight z of `JPN_IND_PROD` + `JP_TANKAN1` + `JPN_RETAIL_SALES` + `JPN_MACH_ORDERS`. No new fetchers (all inputs already in the pipeline). Confirmed live in the 2026-06-12 run (`raw=1.008`, `regime='expansion'`).
+- ✅ ifo Bright Data Web Unlocker fallback — `sources/ifo.py` grows from ~390 → 579 lines (PR #194). Third-strategy fallback added: when the direct URL + landing-page strategies both fail, the fetcher routes through Bright Data Web Unlocker (`BRIGHTDATA_API_KEY` + `BRIGHTDATA_ZONE` now in workflow secrets; capped at 30 calls/run; silently skips if unset). See §5 ifo entry in `technical_manual.md`.
+- ✅ ISTAT retry budget tightened — `sources/istat.py` grows from 280 → 287 lines (PR #193). `timeout` 90→30s, `retries` 6→3; worst-case pipeline blockage per series drops from ~570s to ~97s on a fully-down gateway.
+
 Candidate next tracks:
 - **§3.1 Macro & Market Coverage Expansion** — unified track. Stages A / B / D / F shipped 2026-04-30; **§3.1.3 inflation composites done 2026-05-28**. **Outstanding: Stage C** (regional roll-up — UK growth via ONS, JP growth via e-Stat extension), **Stage E** (survey deep-dive against `G20_PMI_Master_Table.docx`), GDP Now wiring (§3.1.4), the §3.1.3 follow-up (core inflation series for UK/EA/JP/CN), the §3.9 follow-up (multi-commodity long-run prices), and **Stage G** closeout. Note: long-run market and macro data sources catalogued in `../longrun_assetclass_data_sources.md` (OECD MEI feed via FRED, Shiller, Ken French, IMF Primary Commodity Prices, BoE Millennium, JST) need wiring into the data pipeline as part of this expansion — driven by master plan Phase 0; data-side work plan tracked here, now detailed and status-reconciled as §3.12 (OECD MEI) and §3.13 (long-run layer) per the regime-AA v2 handoff.
 - **§3.2 Retire the Simple Pipeline** — deprecation track.
@@ -483,16 +489,16 @@ Once those land, fold them into the per-region `*_INFL1` calculators as a second
 
 **Plan — outstanding work:**
 
-1. **Wire Atlanta Fed GDPNow** as `US_GDPNOW1` — `sources/atlanta_fed.py` (~30 lines, simple JSON/CSV fetcher) + row in `macro_library_atlanta_fed.csv` + Phase E indicator. Direct first-class Phase E indicator on the Growth axis.
-2. **Wire NY Fed Nowcast** as `US_NOWCAST1` (same pattern, possibly into `sources/atlanta_fed.py` as it's tiny — or a separate `sources/nyfed.py`).
+1. ✅ **Wire Atlanta Fed GDPNow** as `US_GDPNOW1` — shipped 2026-06-11 (`sources/atlanta_fed.py` 366 lines + `macro_library_atlanta_fed.csv` + Phase E indicator).
+2. ✅ **Wire NY Fed Nowcast** as `US_NOWCAST1` — shipped 2026-06-12 (`sources/ny_fed.py` 348 lines + `macro_library_ny_fed.csv` + Phase E indicator; confirmed `raw=2.46 regime='near-trend'` in the 2026-06-12 daily run).
 3. ✅ **UK monthly GDP** — `UK_NOWCAST1` Phase E indicator shipped 2026-06-11. Composition: weekly-Friday resample of ONS monthly real GDP (CDID ECY2, dataset MGDP — Gross Value Added Monthly Index CVM SA) converted to YoY %. Single-input passthrough — same trivial shape as `US_GDPNOW1`. Calculator `_calc_UK_NOWCAST1` registered in `_EU_CALCULATORS` alongside the other UK indicators; regime rule emits `above-trend` / `near-trend` / `contraction` on absolute YoY-% buckets calibrated to UK trend (~1.5%). New ONS library row: `GBR_GDP_MONTHLY` (sort_key 490, freshness_override 75d — matches the IoP / IoS / RSI band given the ~6-week ONS lag). Will surface in the explorer after the next daily run populates `UK_NOWCAST1_raw` in `macro_market_hist.csv`.
 4. ✅ **Build EZ nowcast composite** — `EU_NOWCAST1` Phase E indicator shipped 2026-06-11. Composition: equal-weight z-scores of `EZ_IND_PROD` + `EZ_RETAIL_VOL` + `EU_ESI` (composite PMI proxy) + `EU_IND_CONF`. All inputs already wired. Pure Phase E work — no new fetchers. Calculator `_calc_EU_NOWCAST1` registered in `_EU_CALCULATORS`; regime rule emits `expansion` / `stable` / `contraction` on the composite z (≈ 0-centred). Will surface in the explorer after the next daily run populates `EU_NOWCAST1_raw` in `macro_market_hist.csv`.
-5. **Build JP nowcast composite** — `JP_NOWCAST1` after Stage C e-Stat extension. Composition: equal-weight z-scores of `JPN_IND_PROD` + `JP_TANKAN1` (Tankan DI) + JP retail sales + JP machinery orders.
+5. ✅ **Build JP nowcast composite** — `JP_NOWCAST1` shipped 2026-06-12 (`_calc_JP_NOWCAST1` in `compute_macro_market.py`; equal-weight z of `JPN_IND_PROD` + `JP_TANKAN1` + `JPN_RETAIL_SALES` + `JPN_MACH_ORDERS`; confirmed `raw=1.008 regime='expansion'` in the 2026-06-12 daily run). Note: `JPN_RETAIL_SALES` and `JPN_MACH_ORDERS` are e-Stat sourced with corrected statsDataIds (still pending cdCat filter verification); the composite degrades gracefully on any absent input.
 6. **Skip CN nowcast** — components mostly proprietary. Document as accepted gap.
 
 **On the Eurocoin question:** if we don't want to maintain a CPB-style monthly download, the home-built EZ composite (item 4) is functionally equivalent for regime work. Decision deferred to implementation — start with the home-built composite (zero new dependencies); add Eurocoin later only if the composite proves noisy.
 
-**Acceptance for §3.1.4:** all 4 nowcast composites (`US_GDPNOW1`, `US_NOWCAST1`, `UK_NOWCAST1`, `EU_NOWCAST1`, `JP_NOWCAST1`) appear in `macro_market.csv` with a clean weekly time series available to the regime classifier's Growth axis (consumer-side work in `../regime_AA_master_plan.docx`).
+**Acceptance for §3.1.4:** ✅ all 5 nowcast composites (`US_GDPNOW1`, `US_NOWCAST1`, `UK_NOWCAST1`, `EU_NOWCAST1`, `JP_NOWCAST1`) appear in `macro_market.csv` with a clean weekly time series available to the regime classifier's Growth axis. Confirmed in the 2026-06-12 daily run. Consumer-side work lives in `../regime_AA_master_plan.docx`.
 
 #### 3.1.5 Outstanding calculated fields
 
@@ -527,7 +533,7 @@ Outstanding-work-only acceptance criteria for §3.1 closure:
 - ✅ Stage F — community-ticker review shipped (`manuals/community_datasets_review.md`); 14 ETF additions in `index_library.csv`.
 - ⏳ **Stage C** — `sources/ons.py` built 2026-05-28; UK GDP + 3 labour series live + 3 main monthly output indices (IoP K222, IoS S2KU, RSI J5EK) shipped 2026-06-10. JP growth column (3/7 → 8/7) via `sources/estat.py` extension shipped 2026-06-10 (5 PROVISIONAL statsDataIds pending live verification once `ESTAT_APP_ID` reaches the runtime). Still outstanding: UK claimant count (canonical `BCJD`/`BCJE` frozen at 2017-01 post-Universal-Credit migration) + UK BICS (not exposed as standard cdid/dataset timeseries). Region scorecard in `manuals/macro_market_indicators_coverage.xlsx` not yet updated.
 - ✅ **Growth + Inflation focus (§3.1.3)** — 5 new per-region inflation regime composites (`US_INFL1` / `UK_INFL1` / `EU_INFL1` / `JP_INFL1` / `CN_INFL1`) + `US_INFEXP1` shipped 2026-05-28 (#152). Core inflation follow-up shipped 2026-06-10 for UK / EA / JP (`GBR_CORE_CPI_YOY` / `EA_HICP_CORE_YOY` / `JPN_CORE_CPI_YOY` blended into the regional `*_INFL1` calculators); CN core remains an accepted gap. JP PPI / Services PPI also shipped 2026-06-10 via BoJ direct (`JPN_PPI` / `JPN_SPPI`).
-- ⏳ **GDP Now (§3.1.4)** — `US_GDPNOW1` (Atlanta Fed) **shipped 2026-06-11**; `EU_NOWCAST1` Phase E composite **shipped 2026-06-11** (equal-weight z of EZ IP / retail / ESI / industrial confidence); `UK_NOWCAST1` (ONS monthly real GDP ECY2 → YoY %) **shipped 2026-06-11**. Outstanding: `US_NOWCAST1` (NY Fed) + `JP_NOWCAST1` (Phase E composite — will follow same shape once Stage C JP growth e-Stat rows resolve their statsDataIds + cdCat filters).
+- ✅ **GDP Now (§3.1.4)** — all 5 nowcast composites shipped: `US_GDPNOW1` (Atlanta Fed, 2026-06-11), `EU_NOWCAST1` (2026-06-11), `UK_NOWCAST1` (2026-06-11), `US_NOWCAST1` (NY Fed Staff Nowcast, 2026-06-12), `JP_NOWCAST1` (equal-weight z of JPN_IND_PROD + JP_TANKAN1 + JPN_RETAIL_SALES + JPN_MACH_ORDERS, 2026-06-12). All confirmed computing in the 2026-06-12 daily run.
 - ⏳ **Stage E** — survey deep-dive: per-country target list distilled from the demand doc; rows added via existing modules where free; documented gaps where proprietary.
 - ⏳ **Stage G** — closeout: refresh `data/source_fallbacks.csv`, refresh `manuals/macro_market_indicators_coverage.xlsx`, archive working notes; this section enters `Status: Done` posture.
 
