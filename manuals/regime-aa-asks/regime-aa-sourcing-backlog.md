@@ -8,19 +8,7 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 - `VERIFY` — research-derived id; confirm on first fetch (the fetcher has the FRED key)
 - `SOURCE-OK` — free source definitely exists; exact series path to be pinned down during implementation
 
-**31 backlog items** across 3 buckets.
-
-## Bucket A — FRED single-series add (lowest effort)
-
-| Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
-|---|---|---|---|---|---|---|---|
-| Yield Curve (10y minus 2y) | China | Growth | `IRLTLT01CNM156N (10y leg only)` | `data/macro_library_fred.csv` | S | CONFIRMED | Monthly 10y via exact OECD MEI template (10-country precedent). 2y CGB leg still unresolved — slope stays monthly-only. |
-| M2 Money Supply (YoY%) | Eurozone | Growth | `MABMM301EZM189S` | `data/macro_library_fred.csv` | S | VERIFY | ECB M3 via FRED; alternative is ECB BSI direct. |
-| M2 Money Supply (YoY%) | Japan | Growth | `MYAGM2JPM189S` | `data/macro_library_fred.csv` | S | VERIFY | Confirm N vs S suffix (pipeline already has MYAGM2CNM189N for China). |
-| NAHB Housing Market Index | US | Growth | `NAHBSHF` | `data/macro_library_fred.csv` | S | VERIFY | NAHB/Wells Fargo HMI; research says free on FRED. |
-| Trimmed Mean / Median CPI | US | Inflation | `MEDCPIM158SFRBCLE + TRMMEANCPIM158SFRBCLE (+ PCETRIM12M159SFRBDAL)` | `data/macro_library_fred.csv` | S | VERIFY | Cleveland median/trimmed CPI; Dallas trimmed PCE optional. |
-| University of Michigan Inflation Expectations (5-10y) | US | Inflation | `MICH5YR` | `data/macro_library_fred.csv` | S | VERIFY | Long-run UMich expectations; pipeline already has 1y MICH. Spot-check id. |
-| IG Credit Spreads (OAS) | Eurozone | Financial Conditions | `BAMLER00ICOAS` | `data/macro_library_fred.csv` | S | VERIFY | ICE BofA Euro Corp OAS; ICE family already widely fetched (e.g. BAMLEMRACRPIASIAOAS confirmed present). |
+**20 backlog items** across 2 buckets.
 
 ## Bucket C — new / non-FRED endpoint
 
@@ -28,20 +16,15 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 |---|---|---|---|---|---|---|---|
 | Initial Jobless Claims | UK | Growth | `ONS Claimant Count` | `sources/ons.py + data/macro_library_ons.csv` | S | SOURCE-OK | Monthly (not weekly); ONS labour-market series. |
 | Nonfarm Payrolls (MoM change) | UK | Growth | `ONS HMRC PAYE payrolls` | `sources/ons.py + data/macro_library_ons.csv` | S | SOURCE-OK | Monthly PAYE RTI payrolled-employees change. |
-| ISM / PMI Prices Paid | US | Inflation | `DB.nomics ISM/prices` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | S | SOURCE-OK | Same DB.nomics path as the ISM PMI / New Orders already fetched. ISM data is licensed — verify. |
-| ISM New Orders minus Inventories | US | Growth | `DB.nomics ISM/inventories` | `sources/dbnomics.py + compute_macro_market.py` | S | SOURCE-OK | New Orders already fetched; add Inventories then derive the spread. Pairs with the ISM Prices-Paid add. |
 | M2 Money Supply (YoY%) | UK | Growth | `BoE M4 (IADB LPMVWYH)` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | BoE M4; new series in the existing BoE fetcher. |
 | Building Permits (SAAR) | UK | Growth | `ONS/MHCLG dwelling starts` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | UK new-build starts; new ONS dataset id. |
 | Building Permits (SAAR) | Eurozone | Growth | `Eurostat sts_cobp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat building-permits index via DB.nomics. |
 | Senior Loan Officer Survey (SLOOS) | Eurozone | Growth | `ECB Bank Lending Survey (SDW BLS)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | Quarterly net-tightening series via ECB Data Portal. |
-| Chicago Fed NFCI | Eurozone | Growth | `ECB CISS` | `sources/ecb.py + data/macro_library_ecb.csv` | M | CONFIRMED | Systemic-stress composite; free via ECB. Reused by GS-FCI and Bloomberg-FCI EZ rows below. |
 | PPI Final Demand (YoY%) | UK | Inflation | `ONS PPI output/input` | `sources/ons.py + data/macro_library_ons.csv` | M | SOURCE-OK | ONS producer prices. |
 | PPI Final Demand (YoY%) | Eurozone | Inflation | `Eurostat sts_inpp_m` | `sources/dbnomics.py + data/macro_library_dbnomics.csv` | M | SOURCE-OK | Eurostat PPI via DB.nomics. |
 | 5y5y Forward Inflation Swap | Eurozone | Inflation | `ECB Data Portal inflation-linked-swap 5y5y` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | EZ 5y5y free via ECB; UK/JP remain proprietary (Hard). |
 | University of Michigan Inflation Expectations (5-10y) | UK | Inflation | `BoE/Ipsos Inflation Attitudes Survey` | `sources/boe.py + data/macro_library_boe.csv` | M | SOURCE-OK | Quarterly long-run consumer inflation expectations. |
 | University of Michigan Inflation Expectations (5-10y) | Eurozone | Inflation | `ECB Survey of Consumer Expectations` | `sources/ecb.py + data/macro_library_ecb.csv` | M | SOURCE-OK | ECB SCE. |
-| Goldman Sachs FCI (US) | Eurozone | Financial Conditions | `ECB CISS (shared with NFCI row)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | CONFIRMED | Same ECB CISS series — one fetch satisfies all three EZ financial-conditions rows. |
-| Bloomberg US FCI | Eurozone | Financial Conditions | `ECB CISS (shared with NFCI row)` | `sources/ecb.py + data/macro_library_ecb.csv` | M | CONFIRMED | Same ECB CISS series. |
 | Senior Loan Officer Survey (SLOOS) | UK | Growth | `BoE Credit Conditions Survey` | `sources/boe.py + data/macro_library_boe.csv` | L | SOURCE-OK | Published as spreadsheet — extraction is the work, not access. |
 | TIPS 5-year Breakeven Rate | Eurozone | Inflation | `ECB / Eurostat HICP-linked yields` | `sources/ecb.py + data/macro_library_ecb.csv` | L | SOURCE-OK | Limited free coverage; lower-priority. |
 
@@ -49,6 +32,7 @@ Actionable plan for the **Missing-Sourceable** rows of `regime-aa-indicator-cove
 
 | Indicator | Region | Pillar | Identifier / source | Target file | Effort | Confidence | Note |
 |---|---|---|---|---|---|---|---|
+| ISM New Orders minus Inventories | US | Growth | `ISM/neword/in - ISM/inventories/in` | `compute_macro_market.py + data/macro_indicator_library.csv` | S | CONFIRMED | Both legs now in the pipeline (Inventories added Bucket C). Remaining work is the spread calculator + a library row. |
 | Taylor Rule Gap | US | Monetary Policy | `FFR, Core PCE, output gap (all in pipeline)` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | CONFIRMED | Pure calculator; no fetch. Highest-confidence derived item. |
 | Taylor Rule Gap | UK | Monetary Policy | `Bank Rate, CPI, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived; output-gap input weaker than US. |
 | Taylor Rule Gap | Eurozone | Monetary Policy | `ECB rate, HICP, output gap` | `compute_macro_market.py + data/macro_indicator_library.csv` | M | SOURCE-OK | Derived. |

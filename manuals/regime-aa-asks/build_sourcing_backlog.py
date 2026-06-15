@@ -129,10 +129,10 @@ IMPL = {
 # High-value items not flagged Sourceable but worth carrying in the backlog.
 EXTRA = [
     {"indicator": "ISM New Orders minus Inventories", "region": "US",
-     "pillar": "Growth", "candidate_free_source": "ISM Inventories sub-index (DB.nomics)",
+     "pillar": "Growth", "candidate_free_source": "Both legs now catalogued",
      "status": "Partial", "_impl":
-        ("C", "DB.nomics ISM/inventories", "sources/dbnomics.py + compute_macro_market.py", "S", "SOURCE-OK",
-         "New Orders already fetched; add Inventories then derive the spread. Pairs with the ISM Prices-Paid add.")},
+        ("D", "ISM/neword/in - ISM/inventories/in", "compute_macro_market.py + data/macro_indicator_library.csv", "S", "CONFIRMED",
+         "Both legs now in the pipeline (Inventories added Bucket C). Remaining work is the spread calculator + a library row.")},
 ]
 
 BUCKET_TITLES = {
