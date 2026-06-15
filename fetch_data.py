@@ -890,3 +890,109 @@ try:
 except Exception as _phase_e_err:
     print(f"[Phase E] Non-fatal import/run error: {_phase_e_err}")
     print("[Phase E] Existing pipeline outputs are unaffected")
+
+# ============================================================
+# SEC EDGAR EQUITY FUNDAMENTALS — data/equity_fundamentals.csv
+# Multi-year revenue + diluted-EPS history (quarterly & annual)
+# materialised from the SEC EDGAR companyfacts API for the
+# US-filer pilot pure-plays in data/macro_library_sec_edgar.csv.
+#
+# Long/tidy schema (one row per fiscal period × metric):
+#   ticker, metric, period_end, period_type (Q|A), value, unit,
+#   fy, fp, form, source="SEC EDGAR", retrieved (UTC date)
+#
+# Keyless and free (SEC fair-access User-Agent + <=10 req/s
+# throttle live in sources/sec_edgar.py). Fully ISOLATED in its
+# own try/except: an EDGAR outage, a missing tag, or an empty
+# library degrades to a zero-row no-op that preserves the
+# existing CSV — it can never affect the macro/market outputs
+# committed above.
+# ============================================================
+
+EQUITY_FUNDAMENTALS_CSV = "data/equity_fundamentals.csv"
+_EQF_KEY_COLS = ["ticker", "metric", "period_end", "period_type"]
+_EQF_DATA_COLS = ["value", "unit", "fy", "fp", "form"]
+_EQF_ALL_COLS = ["ticker", "metric", "period_end", "period_type", "value",
+                 "unit", "fy", "fp", "form", "source", "retrieved"]
+
+
+def _eqf_fmt_value(v) -> str:
+    """Canonical, round-trip-stable string for a fundamentals value so the
+    idempotent merge can compare old vs new without float-formatting jitter
+    (e.g. 7192000000.0 -> '7192000000', 0.88 -> '0.88')."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return str(v).strip()
+    s = ("%.6f" % f).rstrip("0").rstrip(".")
+    return s if s not in ("", "-0") else "0"
+
+
+def _merge_equity_fundamentals(new_df, path):
+    """Idempotent-merge a freshly-fetched fundamentals frame into the existing
+    CSV, like the other library writers.
+
+    Merge rules, keyed by (ticker, metric, period_end, period_type):
+      * period unchanged (same value/unit/fy/fp/form) -> KEEP the existing row,
+        preserving its original `retrieved` date (no churn on re-runs);
+      * period restated / new -> TAKE the new row (fresh value + retrieved);
+      * period present only in the old file (e.g. EDGAR was unreachable for
+        that ticker this run) -> KEEP it, so a transient miss never deletes
+        history.
+    Returns the merged DataFrame, sorted and idempotent across identical runs.
+    """
+    new_df = new_df.copy()
+    new_df["value"] = new_df["value"].map(_eqf_fmt_value)
+    for c in _EQF_ALL_COLS:
+        new_df[c] = new_df[c].astype(str).str.strip() if c in new_df else ""
+    new_df = new_df.reindex(columns=_EQF_ALL_COLS, fill_value="")
+
+    if os.path.exists(path):
+        old_df = pd.read_csv(path, dtype=str, keep_default_na=False)
+        old_df = old_df.reindex(columns=_EQF_ALL_COLS, fill_value="")
+        old_df["value"] = old_df["value"].map(_eqf_fmt_value)
+    else:
+        old_df = pd.DataFrame(columns=_EQF_ALL_COLS)
+
+    old_by_key = {tuple(r[c] for c in _EQF_KEY_COLS): r
+                  for _, r in old_df.iterrows()}
+
+    merged_rows = []
+    seen_keys = set()
+    for _, r in new_df.iterrows():
+        key = tuple(r[c] for c in _EQF_KEY_COLS)
+        seen_keys.add(key)
+        old = old_by_key.get(key)
+        unchanged = old is not None and all(
+            old[c] == r[c] for c in _EQF_DATA_COLS
+        )
+        merged_rows.append(old if unchanged else r)
+    # Preserve old-only rows (periods not returned this run).
+    for key, r in old_by_key.items():
+        if key not in seen_keys:
+            merged_rows.append(r)
+
+    merged = pd.DataFrame(merged_rows, columns=_EQF_ALL_COLS)
+    merged = merged.sort_values(_EQF_KEY_COLS).reset_index(drop=True)
+    return merged
+
+
+try:
+    from sources import sec_edgar as _sec_edgar
+    print("\n" + "=" * 60)
+    print("SEC EDGAR — Equity Fundamentals (revenue + diluted EPS)")
+    print("=" * 60)
+    _eqf_new = _sec_edgar.build_fundamentals_df()
+    if _eqf_new.empty:
+        print("  [SEC EDGAR] no rows fetched this run — "
+              "existing equity_fundamentals.csv left untouched")
+    else:
+        _eqf_merged = _merge_equity_fundamentals(_eqf_new, EQUITY_FUNDAMENTALS_CSV)
+        os.makedirs("data", exist_ok=True)
+        _eqf_merged.to_csv(EQUITY_FUNDAMENTALS_CSV, index=False)
+        print(f"  [SEC EDGAR] wrote {len(_eqf_merged)} rows "
+              f"({_eqf_new['ticker'].nunique()} tickers updated) "
+              f"to {EQUITY_FUNDAMENTALS_CSV}")
+except Exception as _sec_err:
+    print(f"[SEC EDGAR] Non-fatal import/run error: {_sec_err}")
+    print("[SEC EDGAR] Existing pipeline outputs are unaffected")

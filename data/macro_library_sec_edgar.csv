@@ -1,0 +1,25 @@
+ticker,cik,metric,gaap_tags,col,name,sort_key
+NVDA,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,NVDA_REVENUE,NVIDIA — Revenue,10
+NVDA,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NVDA_EPS_DILUTED,NVIDIA — Diluted EPS,11
+AVGO,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,AVGO_REVENUE,Broadcom — Revenue,20
+AVGO,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,AVGO_EPS_DILUTED,Broadcom — Diluted EPS,21
+PLTR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,PLTR_REVENUE,Palantir Technologies — Revenue,30
+PLTR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,PLTR_EPS_DILUTED,Palantir Technologies — Diluted EPS,31
+NOW,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,NOW_REVENUE,ServiceNow — Revenue,40
+NOW,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,NOW_EPS_DILUTED,ServiceNow — Diluted EPS,41
+CRWD,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CRWD_REVENUE,CrowdStrike Holdings — Revenue,50
+CRWD,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CRWD_EPS_DILUTED,CrowdStrike Holdings — Diluted EPS,51
+VRT,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VRT_REVENUE,Vertiv Holdings — Revenue,60
+VRT,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VRT_EPS_DILUTED,Vertiv Holdings — Diluted EPS,61
+ETN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,ETN_REVENUE,Eaton — Revenue,70
+ETN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,ETN_EPS_DILUTED,Eaton — Diluted EPS,71
+EQIX,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,EQIX_REVENUE,Equinix — Revenue,80
+EQIX,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,EQIX_EPS_DILUTED,Equinix — Diluted EPS,81
+DLR,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,DLR_REVENUE,Digital Realty Trust — Revenue,90
+DLR,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,DLR_EPS_DILUTED,Digital Realty Trust — Diluted EPS,91
+CEG,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,CEG_REVENUE,Constellation Energy — Revenue,100
+CEG,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,CEG_EPS_DILUTED,Constellation Energy — Diluted EPS,101
+VST,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,VST_REVENUE,Vistra — Revenue,110
+VST,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,VST_EPS_DILUTED,Vistra — Diluted EPS,111
+TLN,,revenue,RevenueFromContractWithCustomerExcludingAssessedTax|Revenues|SalesRevenueNet,TLN_REVENUE,Talen Energy — Revenue,120
+TLN,,eps,EarningsPerShareDiluted|EarningsPerShareBasic,TLN_EPS_DILUTED,Talen Energy — Diluted EPS,121
