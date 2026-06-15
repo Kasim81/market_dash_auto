@@ -193,6 +193,32 @@ def _resolve_workbook_bytes() -> bytes | None:
 # WORKBOOK PARSER
 # ---------------------------------------------------------------------------
 
+_TS_MIN = pd.Timestamp("1900-01-01")
+_TS_MAX = pd.Timestamp("2200-12-31")
+
+
+def _safe_to_datetime(series: pd.Series) -> pd.Series:
+    """`pd.to_datetime(s, errors='coerce')` hardened against the pandas 2.x
+    edge where `dateutil` produces a Python datetime with a year outside
+    pandas' ~[1677, 2262] nanosecond Timestamp range — the bulk coerce path
+    can either surface `OutOfBoundsDatetime` instead of NaT (newer ns-default
+    builds) or pass it through as an out-of-range Timestamp that blows up
+    later at DatetimeIndex construction (older builds with wider resolution).
+    The Atlanta Fed GDPTracking xlsx contains a junk row at year 6703 that
+    hits exactly this case. Belt-and-braces: try/except around the bulk
+    coerce, fall back to per-element parsing on failure, then post-filter
+    anything outside [1900, 2200] to NaT."""
+    try:
+        parsed = pd.to_datetime(series, errors="coerce")
+    except (pd.errors.OutOfBoundsDatetime, ValueError, TypeError):
+        parsed = series.apply(lambda v: pd.to_datetime(v, errors="coerce"))
+    if parsed.dtype.kind == "M":
+        out_of_range = (parsed < _TS_MIN) | (parsed > _TS_MAX)
+        if out_of_range.any():
+            parsed = parsed.mask(out_of_range, pd.NaT)
+    return parsed
+
+
 def _find_date_column(df: pd.DataFrame) -> str | None:
     """Locate the publication-date column in a tracking sheet.
 
@@ -214,7 +240,7 @@ def _find_date_column(df: pd.DataFrame) -> str | None:
         if col.dtype.kind in ("i", "f", "u"):
             continue
         try:
-            parsed = pd.to_datetime(col, errors="coerce")
+            parsed = _safe_to_datetime(col)
         except Exception:
             continue
         if parsed.notna().sum() >= max(5, int(len(col) * 0.5)):
@@ -237,7 +263,7 @@ def _extract_headline_series_from_sheet(df: pd.DataFrame) -> pd.Series | None:
     date_col = _find_date_column(df)
     if date_col is None:
         return None
-    dates = pd.to_datetime(df[date_col], errors="coerce")
+    dates = _safe_to_datetime(df[date_col])
     valid = dates.notna()
     if not valid.any():
         return None
