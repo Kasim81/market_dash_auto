@@ -1,30 +1,41 @@
-# HANDOVER — Label-vs-Data Audit (2026-06-15)
+# HANDOVER — Label-vs-Data Audit (2026-06-15, updated 2026-06-17)
 
 Status file so the audit can be resumed if this Codespace closes.
 
 ## TL;DR — where we are
 
-**The audit is essentially COMPLETE.** All auditable sources (every keyless
-source + e-Stat, whose key was present + all 333 yfinance market tickers) have
-been probed. The full report is written and committed at:
+**Updated 2026-06-17: the audit is now COMPLETE except BLS (3 macro).** The required
+secrets were mirrored; the 2026-06-17 pass audited **FRED (104 macro + 27 market)**
+and **ifo (26 macro)**, probed **BDF (2, PROVISIONAL)**, reconfirmed the 3 e-Stat
+CRITICALs (unchanged), and classified the **41 market other/none** rows (all
+UNAVAILABLE). The full report is at:
 
-> **`manuals/2026-06-15-label-vs-data-audit.md`**
+> **`manuals/2026-06-15-label-vs-data-audit.md`** (updated in place 2026-06-17).
 
-Branch: **`claude/label-vs-data-audit-2026-06-15`** (pushed to origin).
+Branches: original `claude/label-vs-data-audit-2026-06-15`; the 2026-06-17 doc
+updates are on `claude/label-vs-data-audit-refresh-2026-06-17`.
 
-The ONLY work left is the credential-blocked population — **FRED (104 macro + 27
-market), ifo (26 macro), BLS (3 macro)** — which could not run because those keys
-are not mirrored to this Codespace. They are marked SKIPPED-CREDS. To finish them,
-mirror `FRED_API_KEY`, `BLS_API_KEY`, `BRIGHTDATA_API_KEY` (see
-`manuals/2026-06-15-codespace-secrets-checklist.md`) and re-run using the RESUME
-FROM section at the bottom of the report.
+The ONLY work left is **BLS (3 macro)** — `BLS_API_KEY` is still MISSING from this
+Codespace. Mirror it (see `manuals/2026-06-15-codespace-secrets-checklist.md`) and
+finish via the report's RESUME-FROM marker.
 
-## Credential state at audit start
-- `ESTAT_APP_ID` = SET  → e-Stat audited (the trigger class).
-- `FRED_API_KEY`, `BLS_API_KEY`, `BDF_API_KEY`, `BRIGHTDATA_API_KEY`/`_ZONE`,
-  `NASDAQ_DATA_LINK_API_KEY`, `ALPHAVANTAGE_API_KEY` = ALL MISSING.
+## Credential state (updated 2026-06-17)
+- **SET:** `ESTAT_APP_ID`, `FRED_API_KEY`, `BDF_API_KEY`, `BRIGHTDATA_API_KEY`.
+- **MISSING:** `BLS_API_KEY`, `BRIGHTDATA_ZONE`, `NASDAQ_DATA_LINK_API_KEY`,
+  `ALPHAVANTAGE_API_KEY`.
+- Note: `BRIGHTDATA_ZONE` is unset and the source default `web_unlocker1` does not
+  exist on this account; ifo was fetched via the live zone `mcp_unlocker` (found via
+  `/zone/get_active_zones`). `BDF_API_KEY` authenticates but the BdF Opendatasoft
+  catalogue still exposes only `tableaux_rapports_preetablis` → BDF rows PROVISIONAL.
+- *(At the 2026-06-15 audit start only `ESTAT_APP_ID` was present.)*
 
-## Headline findings (31 CRITICAL: 16 macro, 15 market)
+## Headline findings (37 CRITICAL: 22 macro, 15 market — was 31 at 2026-06-15)
+New 2026-06-17 macro CRITICALs: `GBR_CPI` (frozen OECD-MEI mirror forward-filling a
+15-month-stale value; ONS live alt exists), `CHN_IND_PROD` (WRONG-UNITS: YoY index
+mislabelled 2015=100 SA), and 4 FRED rows with non-existent `series_id`
+(`IRLTLT01CNM156N`, `NAHBSHF`, `MICH5YR`, `BAMLER00ICOAS` — pre-hist, "VERIFY"
+notes). `US_GDPNOW` is now root-cause-fixed by commit `ce1225e` (stale values remain
+in hist pending macro regen). ifo (26) and FRED market (31 ids) came back clean.
 3 highest-priority (next "Japan e-Stat wrong-table" equivalents):
 1. **JPN_RETAIL_SALES** (e-Stat 0003138782) — frozen **2013 annual archive**
    (CYCLE=年次, SURVEY_DATE 201301-201312), mislabelled Monthly Trillion JPY.
@@ -54,8 +65,9 @@ SMALLCAP.NS, NDIA.L, CMOD.L. Full detail + remediation in the report.
    (row0=Column ID, row1=Series ID, row2=Source) to `data/macro_library_*.csv`,
    and computes median days between value-changes per column. (~30 lines of pandas/
    csv; the report Methodology section documents every endpoint used.)
-3. Mirror the missing keys, then work the report's **RESUME FROM** list (FRED →
-   ifo → BLS → 41 other/none market rows).
+3. Mirror `BLS_API_KEY` (the only remaining gap), then work the report's
+   **RESUME FROM** list (BLS — 3 macro). FRED, ifo, BDF, e-Stat reconfirm, and the
+   41 other/none market rows were completed 2026-06-17.
 
 ## Git
 - Branch `claude/label-vs-data-audit-2026-06-15`, identity Claude
