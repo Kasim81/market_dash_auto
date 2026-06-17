@@ -36,11 +36,24 @@ forecasts from the GDPNow model?" FAQ — 2026-06-11):
 
 The headline GDPNow point estimate the homepage cites (e.g. "3.3% — 2026:Q2,
 updated Jun 09 2026") is the most-recent non-null cell on a forecast-date
-row in the TrackingArchives/Tracking tabs. Parser strategy: enumerate every
-sheet, find ones with a `Date` (or `ForecastDate`) column whose values are
-parseable timestamps, take the rightmost non-null GDPNow value per row as
-that publication-date's headline nowcast, concatenate across all sheets,
-de-duplicate keeping the most recent observation.
+row in the TrackingArchives/Tracking tabs. Parser strategy: parse ONLY the
+headline tabs (TrackingArchives / TrackingDeepArchives + any per-quarter live
+tab — see `_is_headline_sheet`), find the `Date` (or `ForecastDate`) column,
+take the rightmost non-null GDPNow value per row as that publication-date's
+headline nowcast, concatenate across those tabs, de-duplicate keeping the most
+recent observation.
+
+  ⚠ The tab allowlist is load-bearing, not cosmetic. The workbook also carries
+  ~20 subcomponent / contribution / model-internal tabs (Consumption, Equipment,
+  …, StateLocal, Contributions, ChangeInContributions, Factor*, PseudoRT*,
+  Table/TableCont). Several have a Date column, so an "enumerate every sheet"
+  strategy ingested them too — and because de-dup keeps `keep="last"` by sheet
+  order, a trailing subcomponent tab (e.g. StateLocal) overwrote the true
+  headline for the most-recent dates. That shipped a bogus ~24% US_GDPNOW1
+  nowcast on 2026-06-17 (real value ~3.3%), masked at the run level because the
+  CI smoke-test step is continue-on-error. Allowlist > denylist here because the
+  workbook gains new component/quarter tabs over time; naming the few tabs we
+  trust is the only stable rule.
 
 Wired §3.1.4 (2026-06-11) as the first §3.1.4 nowcast fetcher — EU_NOWCAST1
 shipped earlier this session as a Phase E composite of already-wired inputs.
@@ -50,6 +63,7 @@ from __future__ import annotations
 
 import io
 import pathlib
+import re
 import time
 
 import pandas as pd
@@ -83,10 +97,29 @@ _HEADERS = {
 # File magic — xlsx is a ZIP (PK\x03\x04).
 _XLSX_MAGIC = b"PK\x03\x04"
 
-# Tabs that are explicitly NOT forecast-by-date series — we skip them.
-# (Cheap robustness against a future tab being added that happens to have a
-# Date column but isn't a vintage track.)
-_SKIP_SHEETS = {"ReadMe", "TrackRecord", "Factor", "Glossary"}
+# Per-quarter live-tab pattern — future-proofing in case the Atlanta Fed ever
+# splits the in-flight quarter into its own tab. Matches a year+quarter token
+# once whitespace / ":" / "_" / "-" separators are stripped, e.g. "2026Q2",
+# "2026:Q2", "2026 Q2", "Q2 2026", "Q2-2026".
+_QUARTER_TAB_RE = re.compile(r"^(?:(?:19|20)\d{2}q[1-4]|q[1-4](?:19|20)\d{2})$")
+
+
+def _is_headline_sheet(name: str) -> bool:
+    """True only for tabs carrying the headline GDPNow point estimate keyed by
+    forecast publication date — TrackingArchives (2014:Q2→), TrackingDeepArchives
+    (2011:Q3–2014:Q1), and any future per-quarter live tab.
+
+    Everything else in the workbook is excluded by omission: subcomponent
+    forecasts (Consumption/Equipment/…/StateLocal), contribution-to-growth tabs
+    (Contributions/ChangeInContributions/ContribArchives), model internals
+    (Factor*/PseudoRT*/ChartCalculation) and the display tables (Table/TableCont).
+    Note "TrackRecord" (the model-vs-BEA scorecard) does NOT match the
+    "tracking" prefix, so it is correctly excluded."""
+    low = str(name).strip().lower()
+    if low.startswith("tracking"):              # TrackingArchives / TrackingDeepArchives
+        return True
+    compact = re.sub(r"[\s:_\-]", "", low)      # "2026:Q2" / "Q2 2026" → "2026q2" / "q22026"
+    return bool(_QUARTER_TAB_RE.fullmatch(compact))
 
 
 # ---------------------------------------------------------------------------
@@ -317,8 +350,10 @@ def _parse_workbook(xlsx_bytes: bytes) -> pd.Series | None:
 
     pieces: list[pd.Series] = []
     sheets_used: list[str] = []
+    skipped: list[str] = []
     for sheet in xf.sheet_names:
-        if sheet in _SKIP_SHEETS:
+        if not _is_headline_sheet(sheet):
+            skipped.append(sheet)
             continue
         try:
             df = xf.parse(sheet)
@@ -333,10 +368,14 @@ def _parse_workbook(xlsx_bytes: bytes) -> pd.Series | None:
         pieces.append(s)
         sheets_used.append(sheet)
 
+    if skipped:
+        print(f"    [AtlantaFed] skipped non-headline tabs: {skipped}")
     if not pieces:
         print(
-            f"    [AtlantaFed] no usable tracking sheets found in workbook "
-            f"(sheets seen: {xf.sheet_names})"
+            f"    [AtlantaFed] no usable headline tracking sheets found in "
+            f"workbook (sheets seen: {xf.sheet_names}) — the headline-tab "
+            f"allowlist (_is_headline_sheet) may need updating for a workbook "
+            f"layout change"
         )
         return None
 
