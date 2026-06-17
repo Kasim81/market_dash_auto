@@ -1,28 +1,21 @@
-## Daily audit — 2026-06-17 — **73 ISSUES** (6 fetch errors, 65 stale series, 2 static-check failures)
+## Daily audit — 2026-06-17 — **65 ISSUES** (1 fetch error, 63 stale series, 1 static-check failure)
 
-_Run: 2026-06-17 05:43 UTC_
+_Run: 2026-06-17 17:08 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**fred_persistent_errors** (4):
-- `HTTP 400 on BAMLER00ICOAS`
-- `HTTP 400 on IRLTLT01CNM156N`
-- `HTTP 400 on MICH5YR`
-- `HTTP 400 on NAHBSHF`
-
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ifo] Workbook fetch/parse failed: Could not resolve a valid ifo workbook.  Tried 6 URL(s); landing-page scrape, direct fetch, and Bright Data Web Unlocker (if credentialed) all failed.  Last tried: https://www.ifo.de/sites/default/files/secure/timeseries/gsk-d-202605.xlsx`
 
 </details>
 
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (25):
+**EXPIRED** (24):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -31,7 +24,6 @@ Full report attached as `data_audit.txt` in today's commit.
 | `CHN_PPI` | FRED | Monthly | 2022-12-02 | 1293d | 45d |
 | `MABMM301EZM189S` | FRED | Monthly | 2023-11-03 | 957d | 45d |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-03 | 957d | 45d |
-| `GBR_CPI` | FRED | Monthly | 2025-03-07 | 467d | 45d |
 | `CHN_CPI` | FRED | Monthly | 2025-04-04 | 439d | 45d |
 | `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-06 | 376d | 45d |
 | `EA_DEPOSIT_RATE` | ECB | Daily | 2025-06-13 | 369d | 30d\* |
@@ -52,7 +44,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `JPN_POLICY_RATE` | BoJ | Daily | 2026-05-29 | 19d | 5d |
 | `BAMLC0A0CM` | FRED | Daily | 2026-06-05 | 12d | 5d |
 
-**STALE** (40):
+**STALE** (39):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -77,7 +69,6 @@ Full report attached as `data_audit.txt` in today's commit.
 | `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-04-03 | 75d | 60d\* |
 | `CAN_CPI_MEDIAN` | BoC | Monthly | 2026-04-03 | 75d | 45d\* |
 | `GBR_CLAIMANT_COUNT` | ONS | Monthly | 2026-04-03 | 75d | 40d\* |
-| `GBR_PPI_OUTPUT` | ONS | Monthly | 2026-04-03 | 75d | 40d\* |
 | `AUS_PART_RATE` | ABS | Monthly | 2026-04-03 | 75d | 45d\* |
 | `ITA_IND_PROD` | ISTAT | Monthly | 2026-04-03 | 75d | 60d\* |
 | `PERMIT` | FRED | Monthly | 2026-05-01 | 47d | 45d |
@@ -86,7 +77,8 @@ Full report attached as `data_audit.txt` in today's commit.
 | `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 47d | 45d |
 | `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 47d | 45d |
 | `FEDFUNDS` | FRED | Monthly | 2026-05-01 | 47d | 45d |
-| _… 10 more in `data_audit.txt`_ |  |  |  |  |  |
+| `GACDFSA066MSFRBPHI` | FRED | Monthly | 2026-05-01 | 47d | 45d |
+| _… 9 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -131,8 +123,7 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Static-check failures</summary>
 
 
-**missing_columns** (2):
-- _get_col(...,'DE_IFO') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
+**missing_columns** (1):
 - _get_col(...,'JPN_RETAIL_SALES') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
