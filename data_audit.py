@@ -912,6 +912,127 @@ def section_d_history_preservation() -> dict:
 
 
 # =============================================================================
+# Section E — Value plausibility (forward_plan §2.6)
+# =============================================================================
+# Catches the class of regression where a column carries a *present, fresh* but
+# physically implausible value — e.g. a parser column-mapping bug surfacing a
+# GDP subcomponent or an index level in a growth-rate slot. Section C only sees
+# staleness; a wrong-but-still-moving value sails straight through it. The
+# Atlanta Fed GDPNow parser shipped a ~24% US_GDPNOW1 nowcast on 2026-06-17
+# (real value ~3.3%) that no audit section caught — this section is the backstop
+# for that whole failure class.
+#
+# Bands are (min, max), inclusive, on the latest observed value. The built-in
+# table below covers the headline growth nowcasts; any per-source library CSV
+# row may also declare optional `plausible_min` / `plausible_max` columns to add
+# a band declaratively without editing this file.
+
+# col_id -> (min, max). Keep this short and physically motivated.
+PLAUSIBILITY_BANDS_BY_COL: dict[str, tuple[float, float]] = {
+    # Atlanta Fed GDPNow — Q/Q SAAR real GDP growth (%). Normal-cycle range is
+    # ~[-10, +15]; this band is deliberately a touch wider than
+    # test_atlanta_fed_smoke's [-10, 15] live-fetch tripwire so the audit (a
+    # backstop on the *committed* value) and the smoke test (the tighter live
+    # guard) aren't identical channels. A genuine pandemic-scale print (±35)
+    # trips this — which is exactly when an operator should look.
+    "US_GDPNOW": (-15.0, 20.0),
+}
+
+
+def load_plausibility_bands() -> dict[str, tuple[float, float]]:
+    """Built-in bands overlaid with optional per-row `plausible_min` /
+    `plausible_max` declarations from any macro_library_*.csv (library wins)."""
+    bands = dict(PLAUSIBILITY_BANDS_BY_COL)
+    for lib_name in SOURCE_BY_LIBRARY:
+        path = DATA / f"macro_library_{lib_name}.csv"
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            for row in csv.DictReader(f):
+                col = (row.get("col") or "").strip()
+                lo = (row.get("plausible_min") or "").strip()
+                hi = (row.get("plausible_max") or "").strip()
+                if col and lo and hi:
+                    try:
+                        bands[col] = (float(lo), float(hi))
+                    except ValueError:
+                        pass
+    return bands
+
+
+def load_latest_macro_values() -> dict[str, dict]:
+    """Return {col_id: {series_id, source, value, date}} for the latest
+    non-empty cell per data column in macro_economic_hist.csv.
+
+    Unlike load_macro_hist() (which tracks the last *value-change* date for the
+    staleness check), this reports the actual most-recent numeric value — the
+    quantity the plausibility band is checked against. Non-numeric columns fall
+    out silently."""
+    path = DATA / "macro_economic_hist.csv"
+    with path.open(newline="") as f:
+        rows = list(csv.reader(f))
+    if len(rows) <= MACRO_HIST_META_ROWS:
+        return {}
+
+    labels = [r[0] for r in rows[:MACRO_HIST_META_ROWS]]
+    label_idx = {label: i for i, label in enumerate(labels)}
+    n_cols = len(rows[0])
+    data_rows = rows[MACRO_HIST_META_ROWS:]
+
+    out: dict[str, dict] = {}
+    for ci in range(1, n_cols):
+        last_val: str | None = None
+        last_date = ""
+        for dr in data_rows:
+            if ci >= len(dr):
+                continue
+            cell = dr[ci].strip()
+            if cell == "":
+                continue
+            last_val = cell
+            last_date = dr[0].strip()
+        if last_val is None:
+            continue
+        try:
+            fval = float(last_val)
+        except ValueError:
+            continue
+        col_id = rows[label_idx["Column ID"]][ci].strip()
+        out[col_id] = {
+            "series_id": rows[label_idx["Series ID"]][ci].strip(),
+            "source":    rows[label_idx["Source"]][ci].strip(),
+            "value":     fval,
+            "date":      last_date,
+        }
+    return out
+
+
+def section_e_plausibility() -> dict:
+    """Flag columns whose latest committed value falls outside its plausibility
+    band. Returns {"implausible": [ {col_id, series_id, source, value, date,
+    min, max}, ... ]}."""
+    bands = load_plausibility_bands()
+    latest = load_latest_macro_values()
+    issues: list[dict] = []
+    for col_id, (lo, hi) in sorted(bands.items()):
+        rec = latest.get(col_id)
+        if rec is None:
+            continue
+        v = rec["value"]
+        if v < lo or v > hi:
+            issues.append({
+                "col_id":    col_id,
+                "series_id": rec["series_id"],
+                "source":    rec["source"],
+                "value":     v,
+                "date":      rec["date"],
+                "min":       lo,
+                "max":       hi,
+            })
+    return {"implausible": issues}
+
+
+# =============================================================================
 # Report rendering
 # =============================================================================
 
@@ -1015,6 +1136,21 @@ def render_report(sections: dict) -> str:
             lines.append(f"  ALERT  {issue}")
     lines.append("")
 
+    # Section E — Value plausibility
+    e = sections.get("e", {"implausible": []})
+    n_e = len(e["implausible"])
+    lines.append(f"--- Section E: Value plausibility ({n_e} issues) ---")
+    if n_e == 0:
+        lines.append("  (none)")
+    else:
+        for r in e["implausible"]:
+            lines.append(
+                f"  IMPLAUSIBLE  {r['col_id']:32s}  src={r['source']:11s}  "
+                f"series={r['series_id']:24s}  value={r['value']:g}  "
+                f"band=[{r['min']:g}, {r['max']:g}]  last_obs={r['date'] or '—'}"
+            )
+    lines.append("")
+
     lines.append("Footer:")
     lines.append("  * = per-row override applied (freshness_override_days column)")
     lines.append("  STALE   = age between 1x and 2x tolerance — investigate")
@@ -1035,7 +1171,9 @@ def render_comment(sections: dict) -> str:
     n_anchors_overdue = len(c.get("anchors_overdue", []))
     n_anchors_active  = len(c.get("anchors_active", []))
     n_d = len(d["issues"])
-    total = n_a + n_b + n_stale + n_anchors_overdue + n_d
+    e = sections.get("e", {"implausible": []})
+    n_e = len(e["implausible"])
+    total = n_a + n_b + n_stale + n_anchors_overdue + n_d + n_e
 
     lines: list[str] = []
     if total == 0:
@@ -1056,6 +1194,8 @@ def render_comment(sections: dict) -> str:
             parts.append(f"{n_b} static-check failure{'s' if n_b != 1 else ''}")
         if n_d:
             parts.append(f"{n_d} history-preservation issue{'s' if n_d != 1 else ''}")
+        if n_e:
+            parts.append(f"{n_e} implausible value{'s' if n_e != 1 else ''}")
         lines.append(
             f"## Daily audit — {TODAY.isoformat()} — **{total} ISSUE{'S' if total != 1 else ''}** "
             f"({', '.join(parts)})"
@@ -1162,6 +1302,19 @@ def render_comment(sections: dict) -> str:
                 lines.append(f"- {issue}")
         lines.append("\n</details>\n")
 
+    # Section E — Value plausibility. A breach is a real alert (a fresh but
+    # physically-wrong value), so render it open.
+    if n_e:
+        lines.append("<details open><summary>Implausible values — likely a parser / unit regression</summary>\n")
+        lines.append("| Column | Source | Series | Value | Plausible band | Last obs |")
+        lines.append("|---|---|---|---|---|---|")
+        for r in e["implausible"]:
+            lines.append(
+                f"| `{r['col_id']}` | {r['source']} | `{r['series_id']}` | "
+                f"**{r['value']:g}** | [{r['min']:g}, {r['max']:g}] | {r['date'] or '—'} |"
+            )
+        lines.append("\n</details>\n")
+
     return "\n".join(lines) + "\n"
 
 
@@ -1173,6 +1326,7 @@ def main() -> int:
         "b": section_b_static_checks(),
         "c": section_c_staleness(),
         "d": section_d_history_preservation(),
+        "e": section_e_plausibility(),
     }
 
     OUT_REPORT.write_text(render_report(sections))
