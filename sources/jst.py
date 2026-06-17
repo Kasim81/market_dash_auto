@@ -16,7 +16,7 @@ per indicator from the cached DataFrame — same pattern as
 Series-ID convention
 --------------------
 Each library row's `series_id` is a composite of `<country_iso>|<column>`,
-e.g. `USA|cpi` for US CPI or `GBR|gdp` for UK real GDP. The fetcher splits
+e.g. `USA|cpi` for US CPI or `GBR|gdp` for UK nominal GDP. The fetcher splits
 on `|` to know which (country, column) pair to slice from the cached
 DataFrame.  JST's wide-format schema has columns: `year`, `iso` (3-letter
 country code), `country` (full name), plus one column per series — `cpi`,
@@ -29,7 +29,7 @@ Role in regime AA
 -----------------
 Per the 2026-06-10 regime-AA v2 handoff memo §3.11: JST is a "confirmatory
 pre-1950 cross-validation anchor, not as primary regime-engine input." It
-gives us 1870+ depth on CPI / real GDP / equity TR / long-rate for the
+gives us 1870+ depth on CPI / nominal GDP / equity TR / long-rate for the
 priority-5 regions (USA/GBR/DEU/FRA/JPN) so downstream regime-label work
 can be validated against pre-WWII history without depending on FRED or
 OECD post-1957 coverage.
