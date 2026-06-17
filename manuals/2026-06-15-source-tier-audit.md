@@ -1,4 +1,10 @@
-# Source-Tier & Freshness-Cadence Audit — 2026-06-15
+# Source-Tier & Freshness-Cadence Audit — 2026-06-15 (updated 2026-06-17)
+
+> **Updated 2026-06-17:** fake-cadence items **#4 `JPN_IND_PROD`** and **#5
+> `JPN_MACH_ORDERS`** are marked RESOLVED by PR #208 — the real cause was wrong e-Stat
+> tables (+ a `_parse_estat_time` bug), not a missing slice filter. CHN items
+> (#2/#3/#6/#7) are unchanged (accepted gaps). `GBR_CPI` remains frozen at the
+> raw-column level (FRED `GBRCPIALLMINMEI`).
 
 Full-population audit of every economic indicator column in
 `data/macro_economic_hist.csv` against two dimensions: **actual freshness cadence**
@@ -66,8 +72,8 @@ Sorted by impact — Phase-E composite inputs first.
 | 1 | `GBR_CPI` | Monthly | Frozen (no change in 15 mo) | 2025-03-07 | 465d | FRED `GBRCPIALLMINMEI` (T4) | **UK_INFL1** | ✅ **FIXED 2026-06-15** — `_calc_UK_INFL1` re-pointed to **`GBR_CPI_YOY`** (live ONS, T1). The frozen index's YoY had collapsed to 0.0%, falsely dragging UK headline inflation to zero; ONS leg now reads 2.8% |
 | 2 | `CHN_CPI` | Monthly | Frozen (no change in 14 mo) | 2025-04-04 | 437d | FRED `CHNCPIALLMINMEI` (T4) | **CN_INFL1** | Probe IMF IFS / DB.nomics CN headline CPI (T3); else reaffirm accepted gap |
 | 3 | `CHN_PPI` | Monthly | Frozen (no change in 3.5 yr) | 2022-12-02 | 1291d | FRED `CHNPIEATI01GYM` (T4) | **CN_INFL1** | Probe IMF IFS / DB.nomics CN PPI (T3); else reaffirm accepted gap |
-| 4 | `JPN_IND_PROD` | Monthly | Frozen (no change in 27 mo) | 2024-03-01 | 836d | FRED `JPNPROINDMISMEI` (T4) | **JP_NOWCAST1** | Add the `cdCatNN` slice filter to the wired e-Stat row (`statsDataId 0003446463`, METI IIP, T1) so its returned series wins the freshness merge |
-| 5 | `JPN_MACH_ORDERS` | Monthly | **Annual** (median gap 364d) | 2025-10-03 | 255d | e-Stat `0003355224` (T1) | **JP_NOWCAST1** | Within-source fix: add `cdCatNN` filter to pin the monthly SA private-ex-volatile slice (currently resolving an annual table) |
+| 4 | `JPN_IND_PROD` | Monthly | Frozen (no change in 27 mo) | 2024-03-01 | 836d | FRED `JPNPROINDMISMEI` (T4) | **JP_NOWCAST1** | ✅ **RESOLVED by PR #208** — the wired e-Stat id `0003446463` was the *wrong table* (Cabinet Office Composite Index, not the IIP); repointed to METI IIP **`0004052177?cdCat01=0001000&lang=J`**. Real cause was wrong table + a `_parse_estat_time` monthly-parser bug, not just a missing slice filter. e-Stat now wins the merge (live, last obs 2026-xx) |
+| 5 | `JPN_MACH_ORDERS` | Monthly | **Annual** (median gap 364d) | 2025-10-03 | 255d | e-Stat `0003355224` (T1) | **JP_NOWCAST1** | ✅ **RESOLVED by PR #208** — `0003355224` was the *wrong table* (annual fiscal-year series); repointed to the monthly machinery-orders table **`0003355222?cdCat01=160&cdCat02=100`**, plus the `_parse_estat_time` fix. Now monthly, not annual |
 | 6 | `CHN_M2` | Monthly | Frozen (no change in 6.9 yr) | 2019-08-02 | 2509d | FRED `MYAGM2CNM189N` (T4) | — | **No fix** → accepted gap (see below) |
 | 7 | `CHN_IND_PROD` | Monthly | Frozen (no change in 2.6 yr) | 2023-11-03 | 955d | FRED `CHNPRINTO01IXPYM` (T4) | — | **No fix** → accepted gap (see below) |
 
@@ -78,8 +84,15 @@ Notes:
   composite while a fresh Tier-1 ONS replacement (`GBR_CPI_YOY`, last change 2026-04-03)
   already sits in the same CSV. `UK_INFL1` currently averages `GBR_CPI` (frozen) with
   `GBR_CORE_CPI_YOY` (live ONS) — the headline leg is stale while the core leg is fresh.
-- **#4 `JPN_IND_PROD`** (root cause corrected 2026-06-15 after code review — *not* a
-  credential gap): the e-Stat module *and* library row are already wired
+- **#4 `JPN_IND_PROD` — ✅ RESOLVED by PR #208 (2026-06-15).** The fix was *not* a
+  `cdCatNN` slice filter on `0003446463`: that id was the **wrong table entirely**
+  (Cabinet Office Composite Index of Business Conditions, stat 00100406 — not the METI
+  IIP). PR #208 repointed the row to the live METI IIP table
+  **`0004052177?cdCat01=0001000&lang=J`** and fixed a `_parse_estat_time` monthly-code
+  bug; e-Stat now wins the freshness merge (live, last obs current). The pre-#208
+  analysis below is retained for context but its premise (slice filter on `0003446463`)
+  was superseded — the table itself was wrong.
+  <br>*(Pre-#208 analysis, superseded):* the e-Stat module *and* library row are already wired
   (`sources/estat.py`, `macro_library_estat.csv` row `0003446463`), and the credential
   *is* present in the runtime — sibling series `JPN_MACH_ORDERS` fetched successfully
   from e-Stat in the same run, and there is no `no ESTAT_APP_ID … skipping` message in
@@ -95,10 +108,11 @@ Notes:
   `getMetaInfo` introspection call to read the table's category codes. The sibling
   provisional IDs that error `STATUS=300 … does not exist` (`JPN_RETAIL_SALES`,
   `JPN_HH_EXP`, `JPN_EWS_DI`) are a *separate* wrong-ID problem.
-- **#5 `JPN_MACH_ORDERS`** is the only column the strict median-gap heuristic flags on
-  its own: 20 value-changes at a 364-day median. The library note already anticipates
-  this ("Still needs `cdCatNN` filter to pin the private-ex-volatile SA slice"). This is
-  a within-source correction, not a tier change.
+- **#5 `JPN_MACH_ORDERS` — ✅ RESOLVED by PR #208 (2026-06-15).** The 364-day median gap
+  was because id `0003355224` was the **wrong table** (an annual fiscal-year machinery
+  series), not merely a wrong slice of the right table. PR #208 repointed the row to the
+  monthly table **`0003355222?cdCat01=160&cdCat02=100`** and applied the same
+  `_parse_estat_time` fix; the column is now genuinely monthly.
 - **#2 / #3 (China CPI & PPI)** feed `CN_INFL1` and are badly stale (PPI for 3.5 years),
   but China headline inflation has no currently-wired free Tier-1/2 path. IMF IFS carries
   CN monthly CPI series (per `forward_plan` §3.1.3) and is worth a probe for the headline;
@@ -116,8 +130,8 @@ listed — see the note at the end of this section.
 | Col | Current source (tier) | Recommended source (tier) | Wired-and-available evidence | Cost estimate |
 |-----|-----------------------|---------------------------|------------------------------|---------------|
 | `GBR_CPI` | FRED `GBRCPIALLMINMEI` (T4) | **ONS** (T1) | `sources/ons.py` wired; `GBR_CPI_YOY` + `GBR_CORE_CPI_YOY` already live in hist | ✅ **DONE 2026-06-15** — `_calc_UK_INFL1` now consumes `GBR_CPI_YOY` directly (no `_yoy()`), matching the EU_INFL1 shape |
-| `JPN_IND_PROD` | FRED `JPNPROINDMISMEI` (T4) | **e-Stat** (T1) | `sources/estat.py` wired; `macro_library_estat.csv` row `0003446463` (METI IIP) present | `cdCatNN` slice discovery — one credentialed `getMetaInfo` call to pin the monthly SA manufacturing-total slice so e-Stat wins the freshness merge |
-| `JPN_MACH_ORDERS` | e-Stat (T1, wrong slice) | e-Stat (T1, correct slice) | Same module/row; needs slice filter | Within-source `cdCatNN` discovery (1 fetch) |
+| `JPN_IND_PROD` | FRED `JPNPROINDMISMEI` (T4) | **e-Stat** (T1) | `sources/estat.py` wired; `macro_library_estat.csv` repointed to `0004052177?cdCat01=0001000&lang=J` (METI IIP) | ✅ **DONE (PR #208)** — `0003446463` was the wrong table (Cabinet Office Composite Index); repointed + `_parse_estat_time` fix; e-Stat now wins the merge |
+| `JPN_MACH_ORDERS` | e-Stat (T1, **wrong table**) | e-Stat (T1, correct monthly table) | Same module/row; repointed `0003355224`→`0003355222?cdCat01=160&cdCat02=100` | ✅ **DONE (PR #208)** — was an annual table, now monthly |
 | `ITA_BTP_10Y` | FRED `IRLTLT01ITM156N` (T4) | Banca d'Italia / ECB SDW (T1/T2) | OECD-MEI-shaped monthly mirror, STALE 101d | **New source_id discovery** — ECB YC carries the AAA curve only, not BTP-specific |
 | `NLD_DSL_10Y` | FRED `IRLTLT01NLM156N` (T4) | ECB SDW (T2) | OECD-MEI-shaped monthly mirror, STALE 101d | **New source_id discovery** (ECB country-specific 10Y) |
 | `CHN_CON_CONF` | FRED `CSCICP02CNM460S` (T4) | OECD SDMX direct (T2) | `sources/oecd.py` wired; OECD-MEI consumer-confidence series | **New oecd_key discovery** (lower confidence — OECD MEI may be the only path) |
@@ -159,7 +173,10 @@ rows, the live Tier-1/Tier-2 estate is behaving as expected:
 Net: the audit confirms 7 of the 9 historical "stale FRED forcing-function rows"
 (`forward_plan` §284) have genuinely been resolved onto fresher tiers; only the two
 documented China accepted-gaps remain on dead FRED, plus the newly-surfaced `GBR_CPI`
-and the e-Stat-credential-blocked `JPN_IND_PROD`.
+column (still frozen on FRED `GBRCPIALLMINMEI` at the raw-column level — see the
+2026-06-17 label-vs-data audit M13). **`JPN_IND_PROD` is no longer an exception —
+it was RESOLVED by PR #208** (wrong-table repoint to METI IIP `0004052177` +
+`_parse_estat_time` fix), confirmed live on the 2026-06-17 pass.
 
 ---
 

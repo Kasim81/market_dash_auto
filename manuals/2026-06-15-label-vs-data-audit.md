@@ -1,4 +1,9 @@
-# Label-vs-Data Audit — 2026-06-15
+# Label-vs-Data Audit — 2026-06-15 (updated 2026-06-17)
+
+> **Updated 2026-06-17:** credential-blocked population completed — FRED (104 macro +
+> 27 market) and ifo (26 macro) audited, BDF (2) probed (PROVISIONAL), the 3 e-Stat
+> CRITICALs reconfirmed unchanged, and the 41 market other/none rows classified. Only
+> BLS (3 macro) remains SKIPPED-CREDS. New findings are tagged *added 2026-06-17*.
 
 Wrong-table / wrong-slice / wrong-units / frozen-mirror audit across the full
 macro + market pipeline. Triggered by PR #208 (two e-Stat registrations pointed
@@ -13,43 +18,60 @@ READ-ONLY research report. No source files, CSVs, or modules were modified.
 
 ## Codespace credential snapshot
 
-Checked at audit start via `env | grep`. Only ONE key was present.
+**Updated 2026-06-17 (audit-completion pass).** The required secrets were mirrored
+into the Codespace after the 2026-06-15 pass; this table reflects the current state.
+Presence checked via `os.environ.get` — values never read. The 2026-06-15 snapshot
+had only `ESTAT_APP_ID` present.
 
-| Secret | State | Effect on audit |
-|--------|-------|-----------------|
-| `ESTAT_APP_ID` | **SET** | e-Stat fully audited (the trigger class) ✓ |
-| `FRED_API_KEY` | MISSING | **FRED 104 macro + 27 market tickers SKIPPED-CREDS** |
-| `BLS_API_KEY` | MISSING | BLS 3 macro tickers SKIPPED-CREDS |
-| `BDF_API_KEY` | MISSING | (no BdF tickers currently in hist) |
-| `BRIGHTDATA_API_KEY` / `_ZONE` | MISSING | **ifo 26 macro tickers SKIPPED-CREDS** |
+| Secret | State (2026-06-17) | Effect on audit |
+|--------|--------------------|-----------------|
+| `ESTAT_APP_ID` | **SET** | e-Stat fully audited (5 regs) ✓ |
+| `FRED_API_KEY` | **SET** (newly mirrored) | **FRED 104 macro + 27 market now audited** ✓ |
+| `BDF_API_KEY` | **SET** (newly mirrored) | BdF catalogue reachable; 2 PROVISIONAL rows still blocked upstream (catalogue exposes only `tableaux_rapports_preetablis`) |
+| `BRIGHTDATA_API_KEY` | **SET** (newly mirrored) | **ifo 26 macro now audited** ✓ — fetched via the account's live zone `mcp_unlocker` |
+| `BRIGHTDATA_ZONE` | MISSING | the source's default `web_unlocker1` does **not** exist on this account; the live unlocker zone `mcp_unlocker` was discovered via `/zone/get_active_zones` and used for the ifo workbook fetch |
+| `BLS_API_KEY` | **MISSING** | **BLS 3 macro remain SKIPPED-CREDS** |
 | `NASDAQ_DATA_LINK_API_KEY` | MISSING | (0 NDL tickers in hist) |
 | `ALPHAVANTAGE_API_KEY` | MISSING | (0 AV tickers in hist) |
 
-All other macro sources (OECD, ECB, ONS, DB.nomics, Bundesbank, BoE, ABS, ISTAT,
+All keyless macro sources (OECD, ECB, ONS, DB.nomics, Bundesbank, BoE, ABS, ISTAT,
 BoC, StatCan, INSEE, IMF, World Bank, JST, Shiller, KenFrench/French, LBMA,
-AtlantaFed, NYFed, BoJ) and all yfinance market tickers are **keyless** and were
-audited. **133 macro + 27 market tickers are blocked on the next mirror-the-secret
-pass** (mainly FRED + ifo). See the secrets checklist at
-`manuals/2026-06-15-codespace-secrets-checklist.md` — the 3 keys to mirror for
-full coverage are `FRED_API_KEY`, `BLS_API_KEY`, `BRIGHTDATA_API_KEY`.
+AtlantaFed, NYFed, BoJ) and all 333 yfinance market tickers were audited in the
+2026-06-15 pass. **As of 2026-06-17 the credential-blocked population is cleared
+except BLS (3 macro):** FRED (104 macro + 27 market) and ifo (26 macro) are now
+audited; BDF (2) is reachable but its MFI rate series remain unpublished on the BdF
+Opendatasoft catalogue, so those 2 rows stay PROVISIONAL (not a credential gap). The
+only key still to mirror for full coverage is `BLS_API_KEY`. See
+`manuals/2026-06-15-codespace-secrets-checklist.md`.
 
 ---
 
 ## Executive summary
 
+**Updated 2026-06-17.** The 2026-06-17 pass added FRED (104 macro + 27 market), ifo
+(26 macro), BDF (2, PROVISIONAL) and reconfirmed the 3 e-Stat CRITICALs + classified
+the 41 market other/none rows. Counts below are the cumulative totals.
+
 | | Audited | SKIPPED-CREDS | CRITICAL | WARNING | OK |
 |--|--|--|--|--|--|
-| **Macro** (299 hist cols + 3 not-yet-fetched e-Stat regs) | ~166 + 3 regs | 133 (FRED 104, ifo 26, BLS 3) | **16** | 6 | ~144 |
-| **Market** (401 rows) | 333 (yfinance) | 27 (FRED) + 41 (other/none) | **15** | ~25 | ~293 |
-| **TOTAL** | **~499** | **201** | **31** | **~31** | **~437** |
+| **Macro** (299 hist cols + 3 not-yet-fetched e-Stat regs) | ~296 + 3 regs | 3 (BLS) | **22** | 9 | ~265 |
+| **Market** (401 rows) | 360 (333 yfinance + 27 FRED) | 0 | **15** | ~26 | ~319 |
+| **TOTAL** | **~656** | **3** | **37** | **~35** | **~584** |
+
+The 41 market "other/none" rows are all `data_source=UNAVAILABLE` and absent from
+hist (no resolvable ticker → no data served) — classified, 0 findings; they are
+declared-unavailable placeholders, not credential-blocked.
 
 Flag breakdown (CRITICAL+WARNING): WRONG-TABLE/INSTRUMENT 14 · WRONG-CADENCE 1 ·
-WRONG-UNITS 13 (incl. 11 JST + base-year/pence) · WRONG-SLICE 2 · WRONG-DATA
-(parser) 1 · currency/pence factor-100 ~12 · dead/stale ~4.
+WRONG-UNITS 16 (incl. 11 JST + base-year/pence + 3 FRED OECD-MEI level-vs-YoY +
+CHN_IND_PROD) · WRONG-SLICE 2 · WRONG-DATA/frozen-serving 2 (US_GDPNOW parser +
+GBR_CPI frozen mirror) · broken-registration 4 (FRED non-existent series_id) ·
+currency/pence factor-100 ~12 · dead/stale ~4.
 
-**The audit of all auditable (keyed-present + keyless) sources is COMPLETE.**
-The only outstanding work is the credential-blocked population (FRED, ifo, BLS) —
-see the "Source coverage matrix" and run again once those keys are mirrored.
+**The audit is now COMPLETE for every source except BLS (3 macro, key still
+MISSING).** FRED, ifo, and the e-Stat reconfirmation closed the 2026-06-15
+credential-blocked backlog. See "Source coverage matrix" and the shrunk
+"RESUME FROM marker".
 
 ---
 
@@ -104,16 +126,52 @@ composites). **Remediation:** either re-point to a JST real-GDP variable
 consistent with a 2025 base (a 2015 base would read ~125). Identity/cadence/key
 all correct. **Remediation:** update units to "Index 2025=100".
 
-**6. `US_GDPNOW` (AtlantaFed) — PARSER CONTAMINATION, WRONG-DATA SERVED NOW.**
-The endpoint and label are right, but `sources/atlanta_fed.py` parses ~23 sheets
+**6. `US_GDPNOW` (AtlantaFed) — PARSER CONTAMINATION. ROOT-CAUSE-FIXED 2026-06-17.**
+The endpoint and label are right, but `sources/atlanta_fed.py` parsed ~23 sheets
 of the GDPNow workbook (including subcomponent/contribution tabs) and a
-rightmost-non-null heuristic grabs a non-headline column. Confirmed in hist:
+rightmost-non-null heuristic grabbed a non-headline column. Confirmed in hist:
 recent `US_GDPNOW` = **32.3, 29.5, 28.3** (2026-05-29→06-12) vs the correct
 GDPNow 2026-Q2 nowcast of ~3.3% (the 2026-05-08 value 3.29 was right, then it
 breaks). Cadence (weekly, gap 7) is fine; the *values are not the nowcast*.
-**Remediation:** restrict parsing to the genuine forecast tab + explicit
-headline-column mapping; add subcomponent tabs to `_SKIP_SHEETS`. (NYFed twin is
-OK only because its workbook lacks those tabs — the shared parser is fragile.)
+**Status (updated 2026-06-17):** root cause fixed at the code level by commit
+`ce1225e` — `sources/atlanta_fed.py` now uses a headline-tab allowlist
+(`_is_headline_sheet`: TrackingArchives/TrackingDeepArchives + a per-quarter
+live-tab pattern) instead of a narrow skip-set, and `data_audit.py` gained a
+Section E value-plausibility band (`US_GDPNOW = [-15, 20]`) as a backstop. **The
+contaminated ~28/29/24 values still sit in the committed `macro_economic_hist.csv`
+and will not clear until the next clean macro regeneration** (code fixed, data not
+yet). (NYFed twin was OK only because its workbook lacks those tabs.)
+
+### Macro — added 2026-06-17 (FRED, now credentialed)
+
+**M13. `GBR_CPI` (FRED `GBRCPIALLMINMEI`) — FROZEN OECD-MEI MIRROR SERVING STALE.**
+Identity and units are correct (UK CPI, Index 2015=100, Monthly), but the FRED
+OECD-MEI series **stopped updating at 2025-03** (`observation_end=2025-03-01`,
+value 136.1) and `GBR_CPI` is the **active source** for this column — the weekly
+spine has forward-filled the frozen 136.1 unchanged since March 2025 (~15 months;
+last distinct value `2025-03-07 = 136.1`). Unlike the CHN OECD-MEI mirrors this is
+**not an accepted gap**: ONS publishes UK CPI live and the pipeline already uses
+ONS for other UK series. **Remediation:** repoint `GBR_CPI` to the live ONS CPIH/CPI
+series (or the OECD live SDMX flow) so a fresh source wins the merge.
+
+**M14. `CHN_IND_PROD` (FRED `CHNPRINTO01IXPYM`) — WRONG-UNITS.** Library claims
+`Index 2015=100 (SA)`, but FRED units are **"Index, same period previous year =
+100"** — i.e. a YoY growth index, *not* a fixed-2015-base level and *not* seasonally
+adjusted. Charting it as a 2015=100 SA level is wrong (the hist value ~106.6 is a
+~6.6% YoY reading, not a level vs 2015). Series is also frozen (`obs_end 2023-11`,
+already a documented China accepted-gap), but the units mislabel is a distinct,
+active defect. **Remediation:** relabel units to "Index, same period prev year=100
+(YoY)"; drop "(SA)".
+
+**M15. 4× FRED rows with NON-EXISTENT `series_id` — BROKEN REGISTRATION (pre-hist).**
+All four `/fred/series` calls return HTTP 400 *"The series does not exist."* and all
+four carry a library note flagging "VERIFY id on first fetch"; none is in hist (no
+`col` assigned), so they serve no data — but they would silently never populate:
+`IRLTLT01CNM156N` (China 10Y govt yield — OECD MEI has no China long-term-rate
+series), `NAHBSHF` (NAHB Housing Market Index), `MICH5YR` (UMich 5-10y inflation
+expectations), `BAMLER00ICOAS` (ICE BofA Euro Corporate IG OAS). **Remediation:**
+find the correct FRED id for each or drop the row; none of these four indices is
+published on FRED under the registered id.
 
 ### Market (yfinance)
 
@@ -163,15 +221,21 @@ LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
 | `^MERV` | yfinance | no currency field | ARS unconfirmable (yf returns no `currency`); data present, name matches. |
 | `^SP500-151050` | yfinance | empty history | `.info` OK but 5d history empty (thin/discontinued sub-industry). |
 | `^SP500-203030` | yfinance | DEAD | 404, blank library name (former Marine Transportation, removed in 2023 GICS). Remove/repoint. |
+| `CHN_M2` | FRED `MYAGM2CNM189N` | WRONG-UNITS | *(added 2026-06-17)* Library "Percent Change YoY" but FRED units = "National Currency" — a level, not a YoY %. Active in hist (last value ~1.9e9 = a level). Also frozen 2019-08 (China accepted-gap). |
+| `JPN_M2` `EZ_M3` | FRED `MYAGM2JPM189S` / `MABMM301EZM189S` | WRONG-UNITS, pre-hist | *(added 2026-06-17)* Library "Percent Change YoY" but FRED units are levels ("National Currency" / "Euro"); both frozen (2017-02 / 2023-11) and both have empty `col` + "VERIFY id on first fetch" notes — not yet in hist, so not serving, but would mislabel if activated. |
+| 2× "Global Corporate" + "Global High Yield" | FRED `BAMLCC0A0CMTRIV` / `BAMLHYH0A0HYM2TRIV` | proxy labelling | *(added 2026-06-17)* "ICE BofA Global Corporate Bond Index" (×2) and "Global High Yield Bond Index" are served by the **US** Corporate/High-Yield total-return indices. `proxy_flag=True` is set (intentional), but the row names don't say "(proxy)". Consider relabelling. All other 31 FRED market ids resolve, are fresh, and match their labels. |
 
 ---
 
 ## Source coverage matrix
 
+Updated 2026-06-17 (FRED / ifo / BDF rows revised; market FRED + other/none closed).
+
 | Source | In hist | Audited | SKIPPED-CREDS | CRITICAL | WARNING |
 |--------|--------:|--------:|--------------:|---------:|--------:|
-| FRED | 104 | 0 | **104** | – | – |
-| ifo | 26 | 0 | **26** | – | – |
+| FRED | 98 (104 lib) | 104 | 0 | **6** | 3 |
+| ifo | 26 | 26 | 0 | 0 | 0 |
+| BDF | 0 (2 lib) | 2 | 0 | 0 | 0 |
 | BLS | 3 | 0 | **3** | – | – |
 | e-Stat | 2 (+3 regs) | 5 | 0 | **3** | 0 |
 | JST | 39 | 39 | 0 | **11** | 0 |
@@ -194,8 +258,8 @@ LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
 | AtlantaFed | 1 | 1 | 0 | **1** | 0 |
 | NYFed | 1 | 1 | 0 | 0 | 0 |
 | **Market: yfinance** | 333 | 333 | 0 | **15** | ~25 |
-| **Market: FRED** | 27 | 0 | **27** | – | – |
-| **Market: other/none** | 41 | 0 | 0 (no probe) | – | – |
+| **Market: FRED** | 27 | 27 | 0 | 0 | 1 |
+| **Market: other/none** | 41 | 41 (classified) | 0 | 0 | 0 |
 
 ---
 
@@ -205,8 +269,23 @@ LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
   &statsDataId=<id>`. Parsed `TABLE_INF/{STAT_NAME,TITLE,GOV_ORG,CYCLE,SURVEY_DATE}`
   for identity+cadence; enumerated `CLASS_INF/CLASS_OBJ` to count unfilled `cdCat`
   dims for slice. PR #208 `_parse_estat_time` fix is on main (audited against it).
-- **FRED:** `/fred/series?series_id&api_key&file_type=json` → `title,frequency,units`.
-  *Not run — key missing.*
+- **FRED:** `/fred/series?series_id&api_key&file_type=json` → `title,frequency,units,
+  observation_end`. *Run 2026-06-17* across all 104 macro + 31 distinct market ids;
+  compared title/units/frequency to the library and used `observation_end` to detect
+  frozen OECD-MEI mirrors. 4 macro ids returned HTTP 400 "series does not exist".
+- **ifo:** *Run 2026-06-17.* The current workbook `gsk-e-202605.xlsx` (Index +
+  Sectors sheets) was fetched through Bright Data — default zone `web_unlocker1` is
+  absent on this account, so the live zone `mcp_unlocker` (from `/zone/get_active_zones`)
+  was used. Verified every `(sheet_index, excel_col)` mapping against the sheet
+  headers (Industry+Trade index/balance + Manufacturing/Services/Trade/Wholesaling/
+  Retailing/Construction balances; Uncertainty index; Cycle-Tracer probability).
+- **BDF:** *Probed 2026-06-17.* `BDF_API_KEY` authenticates against the Opendatasoft
+  catalogue (`webstat.banque-france.fr/api/explore/v2.1`), but it still exposes only
+  `tableaux_rapports_preetablis` — the MFI interest-rate series are not published, so
+  both rows stay PROVISIONAL (upstream gap, not a credential gap).
+- **Market other/none:** *Classified 2026-06-17.* All 41 rows are
+  `data_source=UNAVAILABLE` / `validation_status=UNAVAILABLE` with no resolvable
+  yfinance/FRED ticker and absent from hist — nothing to probe, nothing served.
 - **OECD:** SDMX `sdmx.oecd.org/public/rest/dataflow/<AGENCY>/<DFID>/<VER>?references=all`;
   compared dataflow Name + content-constraint codes to `oecd_key_template` slots.
 - **DB.nomics:** `api.db.nomics.world/v22/series/<prov>/<ds>/<series>` → `series_name,
@@ -245,17 +324,13 @@ LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
 
 ## RESUME FROM marker
 
-The auditable population is **fully covered**. To complete the credential-blocked
-remainder on a future pass (after mirroring `FRED_API_KEY`, `BLS_API_KEY`,
-`BRIGHTDATA_API_KEY` per the secrets checklist):
+**Updated 2026-06-17 — only BLS remains.** FRED (104 macro + 27 market), ifo (26),
+and the e-Stat reconfirmation are done; BDF (2) is probed (PROVISIONAL, upstream
+gap); the 41 market other/none rows are classified (all UNAVAILABLE). The single
+outstanding item:
 
-1. **FRED — 104 macro** (`macro_library_fred.csv`) **+ 27 market**
-   (`index_library.csv` `ticker_fred_*`): `/fred/series` identity+frequency+units.
-2. **ifo — 26 macro** (`macro_library_ifo.csv`): needs Bright Data (upstream blocks
-   vanilla requests); verify the ifo survey component each column maps to.
-3. **BLS — 3 macro** (`macro_library_bls.csv`): `api.bls.gov/publicAPI/v2/...
-   ?catalog=true` catalogue title + units.
-4. **Market other/none — 41 rows** in `index_library.csv` with no yfinance/FRED
-   ticker resolved: classify their data_source and probe accordingly.
+1. **BLS — 3 macro** (`macro_library_bls.csv`): mirror `BLS_API_KEY` (still MISSING),
+   then `api.bls.gov/publicAPI/v2/...?registrationkey=&catalog=true` for catalogue
+   title + units per series.
 
 Everything else in this report is final.

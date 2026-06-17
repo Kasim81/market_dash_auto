@@ -1,9 +1,16 @@
 # Codespace Secrets Checklist — mirror Actions → Codespaces
 
-Date: 2026-06-15. Purpose: the exact list of GitHub **Repository Codespaces
-secrets** to mirror from the Actions secret store before running the
-label-vs-data audit. Actions and Codespaces have separate stores; GitHub does
-not auto-sync them. This is a discovery report — no code was modified.
+Date: 2026-06-15 (**updated 2026-06-17**). Purpose: the exact list of GitHub
+**Repository Codespaces secrets** to mirror from the Actions secret store before
+running the label-vs-data audit. Actions and Codespaces have separate stores; GitHub
+does not auto-sync them. This is a discovery report — no code was modified.
+
+> **Update 2026-06-17:** `FRED_API_KEY`, `BDF_API_KEY`, and `BRIGHTDATA_API_KEY` have
+> now been mirrored and the audit ran against them. **`BLS_API_KEY` is still MISSING
+> — it is the only remaining REQUIRED gap.** Note `BRIGHTDATA_ZONE` is unset and the
+> source default `web_unlocker1` does **not** exist on this account; the live zone is
+> `mcp_unlocker` (set `BRIGHTDATA_ZONE=mcp_unlocker` to make the ifo fetcher work
+> without relying on zone discovery).
 
 Sources reconciled: `.github/workflows/update_data.yml` (every `${{ secrets.X }}`)
 and all `os.environ.get/[...]` reads under `sources/*.py`, `fetch_*.py`,
@@ -14,16 +21,18 @@ and all `os.environ.get/[...]` reads under `sources/*.py`, `fetch_*.py`,
 Sorted MISSING-but-needed first. Presence checked via `os.environ.get(name)` —
 values never read.
 
-| Secret | SET in Codespace? | In update_data.yml? | Class |
+Sorted MISSING-but-needed first. State column updated 2026-06-17.
+
+| Secret | SET in Codespace? (2026-06-17) | In update_data.yml? | Class |
 |--------|-------------------|---------------------|-------|
-| `FRED_API_KEY`              | **MISSING** | yes | REQUIRED |
-| `BLS_API_KEY`               | **MISSING** | yes | REQUIRED |
-| `BDF_API_KEY`               | **MISSING** | yes | REQUIRED |
+| `BLS_API_KEY`               | **MISSING** | yes | REQUIRED (only remaining gap) |
+| `FRED_API_KEY`              | **SET** (mirrored 2026-06-17) | yes | REQUIRED |
+| `BDF_API_KEY`               | **SET** (mirrored 2026-06-17) | yes | REQUIRED |
 | `ESTAT_APP_ID`              | SET (already mirrored) | yes | REQUIRED |
+| `BRIGHTDATA_API_KEY`        | **SET** (mirrored 2026-06-17) | yes | OPTIONAL |
+| `BRIGHTDATA_ZONE`           | MISSING (default `web_unlocker1` absent; use `mcp_unlocker`) | yes | OPTIONAL (default broken on this account) |
 | `ALPHAVANTAGE_API_KEY`      | MISSING | yes | OPTIONAL |
 | `NASDAQ_DATA_LINK_API_KEY`  | MISSING | yes | OPTIONAL |
-| `BRIGHTDATA_API_KEY`        | MISSING | yes | OPTIONAL |
-| `BRIGHTDATA_ZONE`           | MISSING | yes | OPTIONAL (has default) |
 | `INSEE_API_KEY`             | MISSING | **no** | SKIP (keyless) — asymmetry |
 | `FMP_API_KEY`               | MISSING | yes | SKIP (orphan) — asymmetry |
 | `GOOGLE_CREDENTIALS`        | MISSING | yes | SKIP (complex credential) |
@@ -31,26 +40,28 @@ values never read.
 
 ### REQUIRED for the label-vs-data audit
 
-These gate metadata endpoints the audit must hit. **You must mirror the three
-MISSING ones below before kicking off the audit** (`ESTAT_APP_ID` is already
-present).
+These gate metadata endpoints the audit must hit. **As of 2026-06-17 only
+`BLS_API_KEY` is still MISSING** — mirror it to finish the BLS rows; `FRED_API_KEY`,
+`BDF_API_KEY`, and `ESTAT_APP_ID` are present.
 
 - **`FRED_API_KEY`** — unlocks `/fred/series` metadata for FRED. Backs the
   largest source: **122 tickers** (`data/macro_library_fred.csv`), read in
   `fetch_data.py:28`, `fetch_hist.py:60`, `fetch_macro_economic.py:68`.
-  **Status: MISSING.** Actions value: Settings → Secrets and variables →
-  Actions → `FRED_API_KEY`.
+  **Status: SET (mirrored 2026-06-17)** — 104 macro + 27 market audited.
 - **`ESTAT_APP_ID`** — Japan e-Stat `getMetaInfo`/`getStatsData`, **5 tickers**
   (`data/macro_library_estat.csv`), read in `sources/estat.py:121`.
   **Status: already SET in this Codespace** — no action needed.
 - **`BLS_API_KEY`** — BLS metadata, **4 tickers** (`data/macro_library_bls.csv`),
   read in `sources/bls.py:172`. v1 is keyless but heavily rate-limited; the key
   (v2) is needed for a reliable audit pass. Gates `test_bls_smoke.py`.
-  **Status: MISSING.** Actions value: Actions → `BLS_API_KEY`.
+  **Status: STILL MISSING (2026-06-17)** — the only remaining REQUIRED gap; BLS 3
+  macro rows stay SKIPPED-CREDS. Actions value: Actions → `BLS_API_KEY`.
 - **`BDF_API_KEY`** — Banque de France / Webstat, key-gated, **2 tickers**
   (`data/macro_library_bdf.csv`), read in `sources/bdf.py:155`. Gates
-  `test_bdf_smoke.py` (confirmed: skips with "BDF_API_KEY not set").
-  **Status: MISSING.** Actions value: Actions → `BDF_API_KEY`.
+  `test_bdf_smoke.py`. **Status: SET (mirrored 2026-06-17)** — the key now
+  authenticates against the Opendatasoft catalogue, but the BdF catalogue still
+  exposes only `tableaux_rapports_preetablis`; the MFI rate series remain
+  unpublished, so both rows stay PROVISIONAL (upstream gap, not a credential gap).
 
 ### OPTIONAL but recommended
 
@@ -65,12 +76,14 @@ testing or if the audit's scope is widened to these sources.
   affects rate-limiting; **0 tickers** in `macro_library_nasdaqdl.csv`. Without
   it calls are rate-limited, not blocked. Actions → `NASDAQ_DATA_LINK_API_KEY`.
 - **`BRIGHTDATA_API_KEY`** — `sources/ifo.py:140`. Scraping proxy that gates the
-  **ifo source (26 tickers**, `data/macro_library_ifo.csv`). It's a fetch proxy,
-  not a clean metadata API, so it's not in the audit's core set — but if the
-  audit is extended to ifo labels you'll need it. Actions → `BRIGHTDATA_API_KEY`.
-- **`BRIGHTDATA_ZONE`** — `sources/ifo.py:143`. Optional; defaults to
-  `web_unlocker1`. Mirror only if your Bright Data account uses a non-default
-  zone. Actions → `BRIGHTDATA_ZONE`.
+  **ifo source (26 tickers**, `data/macro_library_ifo.csv`). **Status: SET
+  (mirrored 2026-06-17)** — used to fetch the ifo workbook and audit all 26 rows
+  (came back clean). Actions → `BRIGHTDATA_API_KEY`.
+- **`BRIGHTDATA_ZONE`** — `sources/ifo.py:143`. Defaults to `web_unlocker1`.
+  **Status: MISSING, and the default is broken on this account** — `/zone/get_active_zones`
+  shows the live unlocker zone is `mcp_unlocker`, not `web_unlocker1`. Set
+  `BRIGHTDATA_ZONE=mcp_unlocker` so the ifo fetcher works without zone discovery.
+  Actions → `BRIGHTDATA_ZONE`.
 
 ### Skip — not needed
 
@@ -93,8 +106,8 @@ testing or if the audit's scope is widened to these sources.
 
 ### Mirror procedure (copy-paste)
 
-For each REQUIRED secret currently MISSING — **`FRED_API_KEY`, `BLS_API_KEY`,
-`BDF_API_KEY`**:
+As of 2026-06-17 only **`BLS_API_KEY`** is still MISSING (FRED/BDF/BrightData were
+mirrored). For it (and re-use these steps for any future MISSING secret):
 
 1. Open the Actions value: GitHub repo → **Settings → Secrets and variables →
    Actions** → click the secret name → copy its value (you set it; GitHub won't
