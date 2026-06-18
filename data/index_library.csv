@@ -51,7 +51,7 @@ Hang Seng Index,Equity,Equity,Index,,Asia Pacific,Hong Kong,,,,,,HKD,False,,Fals
 S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,,,,,,,,1997-07-01,True
 Nifty 50,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^NSEI,NIFTYBEES.NS,,,,,,,2007-09-17,True
 Nifty Midcap 100,Equity,Equity,Index,Equity Mid Cap,Asia Pacific,India,,Mid,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CRSMID,MID150BEES.NS,,,,,,,2007-09-17,False
-Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance TR,CONFIRMED,,SMALLCAP.NS,,,,,,,2024-03-18,False
+Nifty Smallcap 100,Equity,Equity,Index,Equity Small Cap,Asia Pacific,India,,Small,,,,INR,False,,False,,yfinance TR,UNAVAILABLE,,SMALLCAP.NS,,,,,,,2024-03-18,False
 Bovespa (IBOVESPA),Equity,Equity,Index,,Latin America,Brazil,,,,,,BRL,False,,False,,yfinance PR,CONFIRMED,^BVSP,BOVA11.SA,,,,,,,1993-04-27,False
 KOSPI,Equity,Equity,Index,,Asia Pacific,South Korea,,,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS11,069500.KS,,,,,,,1996-12-11,False
 KOSPI 200,Equity,Equity,Index,Equity Large Cap,Asia Pacific,South Korea,,Large,,,,KRW,False,,False,,yfinance PR,CONFIRMED,^KS200,069500.KS,,,,,,,1996-03-20,False
@@ -101,7 +101,7 @@ S&P 500 Technology Hardware & Equipment,Equity,Equity,Index,Equity Industry Grou
 S&P 500 Semiconductors & Equipment,Equity,Equity,Index,Equity Industry Group,North America,United States,Equity Industry Group,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-4530,,,,,,,,2003-05-02,False
 S&P 500 Telecommunication Services,Equity,Equity,Index,Equity Industry Group,North America,United States,Equity Industry Group,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-5010,,,,,,,,1994-12-30,False
 S&P 500 Media & Entertainment,Equity,Equity,Index,Equity Industry Group,North America,United States,Equity Industry Group,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-5020,,,,,,,,2000-01-07,False
-S&P 500 Equity Real Estate Investment Trusts,Equity,Equity,Index,Equity Industry Group,North America,United States,Equity Industry Group,Large,,,,USD,False,,False,,yfinance PR,UNAVAILABLE,^SP500-6020,,,,,,,,,False
+S&P 500 Equity Real Estate Investment Trusts,Equity,Equity,Index,Equity Industry Group,North America,United States,Equity Industry Group,Large,,,,USD,False,,False,,yfinance PR,CONFIRMED,^SP500-6010,,,,,,,,,False
 Nifty IT,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXIT,,,,,,,,2007-09-17,False
 Nifty Auto,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^CNXAUTO,,,,,,,,2011-07-12,False
 Nifty Bank,Equity,Equity,Index,,Asia Pacific,India,,,,,,INR,False,,False,,yfinance PR,CONFIRMED,^NSEBANK,,,,,,,,2007-09-17,False
@@ -328,21 +328,21 @@ China Government Bond Index (USD Hedged),Fixed Income,Bonds,Index,Govt Bond,Asia
 India Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,India,,,,Government,,INR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 India Government Bond Index (USD Hedged),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,India,,,,Government,,INR,True,USD,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Bonds,Index,Govt Bond,Latin America,Brazil,,,,Government,,BRL,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Brazil Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,BRL,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Brazil Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,BRL,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 South Korea Government Bond Index (KTBs),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,South Korea,,,,Government,,KRW,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-South Korea Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,KRW,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+South Korea Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,KRW,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Mexico Government Bond Index (Bonos M),Fixed Income,Bonds,Index,Govt Bond,Latin America,Mexico,,,,Government,,MXN,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Mexico Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,MXN,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Mexico Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,MXN,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Indonesia Government Bond Index (SBN),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,Indonesia,,,,Government,,IDR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Indonesia Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,IDR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Indonesia Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,IDR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Bonds,Index,Govt Bond,Middle East & Africa,Saudi Arabia,,,,Government,,SAR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,SAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,SAR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 South Africa Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Middle East & Africa,South Africa,,,,Government,,ZAR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-South Africa Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ZAR,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+South Africa Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ZAR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Turkey Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Europe,Turkey,,,,Government,,TRY,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Turkey Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,TRY,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Turkey Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,TRY,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Argentina Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Latin America,Argentina,,,,Government,,ARS,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Argentina Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ARS,True,USD,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+Argentina Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ARS,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 ICE BofA Global Corporate Bond Index,Fixed Income,Bonds,Price,Corp IG,Global,Global,,,Broad,Corp IG,,USD,False,,True,ETF,FRED,CONFIRMED,,VCIT,,BAMLCC0A0CMTRIV,,,,,2009-11-23,False
 ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp IG,Global,Global,,,,Corp IG,,USD,True,USD,True,FRED,FRED,CONFIRMED,,,,BAMLCC0A0CMTRIV,,,,,1972-12-31,False
 ICE BofA Euro Corporate Bond Index,Fixed Income,Bonds,Price,Corp IG,Europe,Europe,,,,Corp IG,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IBCX.L,,,,,,,2008-01-02,False
@@ -382,10 +382,10 @@ iShares Core MSCI World UCITS ETF,Equity,Equity,Index,Equity Broad,Global,Global
 Vanguard FTSE Emerging Markets UCITS ETF,Equity,Equity,Index,Equity Broad,Emerging Markets,Emerging Markets,Blend,Broad,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,VFEM.L,,,,,,,2012-05-22,True
 iShares MSCI South Korea ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,South Korea,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EWY,,,,,,,2000-05-12,True
 iShares MSCI Taiwan ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,Taiwan,Blend,Broad,,,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EWT,,,,,,,2000-06-23,True
-iShares India 50 ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,India,Blend,Large,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,NDIA.L,,,,,,,2009-07-08,True
+iShares India 50 ETF,Equity,Equity,Index,Equity Broad,Asia Pacific,India,Blend,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,INDY,,,,,,,2009-07-08,True
 iShares MSCI World Value Factor UCITS ETF,Equity,Equity,Price,Factor,Global,Global,Value,Broad,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,IWFV.L,,,,,,,2014-10-03,True
 iShares International Treasury Bond ETF,Fixed Income,Bonds,Price,Government,Global,Global,,,Broad,Investment Grade,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,IGOV,,,,,,,2009-01-22,True
-L&G All Commodities UCITS ETF,Commodity,Commodities,Price,Commodity,Global,Global,,,,,Broad,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,CMOD.L,,,,,,,2016-02-04,True
+L&G All Commodities UCITS ETF,Commodity,Commodities,Price,Commodity,Global,Global,,,,,Broad,USD,False,,False,,yfinance TR,CONFIRMED,,BCOM.L,,,,,,,2016-02-04,True
 iShares Core € Corp Bond UCITS ETF,Fixed Income,Bonds,Index,Corporate Bond,Europe,Europe,,,,Investment Grade,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IEAC.L,,,,,,,2003-03-19,False
 VanEck China AMC China Bond ETF,Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,China,,,,Government,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,CBON,,,,,,,2014-12-15,False
 iShares UK Dividend UCITS ETF,Equity,Equity,Index,Equity Dividend,UK,United Kingdom,Value,Broad,,,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,IUKD.L,,,,,,,2005-12-12,False
