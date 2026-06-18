@@ -1,9 +1,43 @@
-# Label-vs-Data Audit — 2026-06-15 (updated 2026-06-17)
+# Label-vs-Data Audit — 2026-06-15 (updated 2026-06-17; remediation reconciled 2026-06-18)
 
 > **Updated 2026-06-17:** credential-blocked population completed — FRED (104 macro +
 > 27 market) and ifo (26 macro) audited, BDF (2) probed (PROVISIONAL), the 3 e-Stat
 > CRITICALs reconfirmed unchanged, and the 41 market other/none rows classified. Only
 > BLS (3 macro) remains SKIPPED-CREDS. New findings are tagged *added 2026-06-17*.
+
+---
+
+## Resolution status (reconciled 2026-06-18)
+
+Most CRITICALs have now been remediated. Each finding below carries an inline
+**status line**; the table is the index. Only the items needing secrets that are
+**not** present in the web sandbox remain open.
+
+| Finding | Status | Where |
+|---|---|---|
+| #4 JST GDP nominal-relabel (×10) | ✅ RESOLVED | PR #222 / `fb474a7` |
+| #5 DEU_HICP base year 2015→2025 | ✅ RESOLVED | `4abfc69` |
+| #6 US_GDPNOW parser | ⚙️ CODE-FIXED, data clears next regen | `ce1225e` |
+| #7 EMB 8-way collision | ✅ RESOLVED (8 → UNAVAILABLE) | PR #223 / `11edd10` |
+| #8 ^SP500-6020 → ^SP500-6010 | ✅ RESOLVED | PR #223 |
+| #9 SMALLCAP.NS wrong index | ✅ RESOLVED (→ UNAVAILABLE) | PR #223 |
+| #10 NDIA.L → INDY | ✅ RESOLVED | PR #223 |
+| #11 CMOD.L → BCOM.L | ✅ RESOLVED | PR #223 |
+| #12 pence ×3 (IEFM/IEFQ/MINV.L) | ✅ NOT-A-BUG (verified) | PR #223 |
+| M13 GBR_CPI → live ONS | ✅ RESOLVED | `f6bd28a` |
+| M14 CHN_IND_PROD units → YoY | ✅ RESOLVED | `f6bd28a` |
+| M15 4 dead FRED ids | ✅ RESOLVED (dropped) | `f6bd28a` |
+| WARNING: CHN_M2 / JPN_M2 / EZ_M3 units | ✅ RESOLVED | `ba8843c` |
+| **#1 JPN_RETAIL_SALES** (frozen-2013 + units) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
+| **#2 JPN_HH_EXP** (missing cdCat slice) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
+| **#3 JPN_EWS_DI** (missing cdCat slice) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
+| **BLS ×3 macro** (SKIPPED-CREDS) | ⛔ OPEN — needs `BLS_API_KEY` | — |
+
+**Remaining work (all credential-gated):** the 3 e-Stat Japan CRITICALs (#1–3)
+require `getMetaInfo` calls to discover the actual `cdCat` codes / verify the
+retail-sales table — i.e. `ESTAT_APP_ID`; and the 3 BLS macro rows need
+`BLS_API_KEY`. Neither secret is present in the Claude-Code-on-the-web sandbox,
+so these must be picked up in the credentialed Codespace.
 
 Wrong-table / wrong-slice / wrong-units / frozen-mirror audit across the full
 macro + market pipeline. Triggered by PR #208 (two e-Stat registrations pointed
@@ -48,15 +82,21 @@ only key still to mirror for full coverage is `BLS_API_KEY`. See
 
 ## Executive summary
 
-**Updated 2026-06-17.** The 2026-06-17 pass added FRED (104 macro + 27 market), ifo
-(26 macro), BDF (2, PROVISIONAL) and reconfirmed the 3 e-Stat CRITICALs + classified
-the 41 market other/none rows. Counts below are the cumulative totals.
+**Updated 2026-06-17; remediation reconciled 2026-06-18.** The 2026-06-17 pass added
+FRED (104 macro + 27 market), ifo (26 macro), BDF (2, PROVISIONAL) and reconfirmed the
+3 e-Stat CRITICALs + classified the 41 market other/none rows. The CRITICAL column
+below now shows **open (found)** after the 2026-06-18 remediation reconciliation —
+see "Resolution status".
 
-| | Audited | SKIPPED-CREDS | CRITICAL | WARNING | OK |
+| | Audited | SKIPPED-CREDS | CRITICAL (open / found) | WARNING | OK |
 |--|--|--|--|--|--|
-| **Macro** (299 hist cols + 3 not-yet-fetched e-Stat regs) | ~296 + 3 regs | 3 (BLS) | **22** | 9 | ~265 |
-| **Market** (401 rows) | 360 (333 yfinance + 27 FRED) | 0 | **15** | ~26 | ~319 |
-| **TOTAL** | **~656** | **3** | **37** | **~35** | **~584** |
+| **Macro** (299 hist cols + 3 not-yet-fetched e-Stat regs) | ~296 + 3 regs | 3 (BLS) | **3 / 22** | 9 | ~265 |
+| **Market** (401 rows) | 360 (333 yfinance + 27 FRED) | 0 | **0 / 15** | ~26 | ~319 |
+| **TOTAL** | **~656** | **3** | **3 / 37** | **~35** | **~584** |
+
+The **3 remaining open** CRITICALs are all e-Stat Japan (#1–3) and are gated on
+`ESTAT_APP_ID`; the 3 SKIPPED-CREDS BLS rows are gated on `BLS_API_KEY`. Neither
+secret exists in the web sandbox, so both must be picked up in the Codespace.
 
 The 41 market "other/none" rows are all `data_source=UNAVAILABLE` and absent from
 hist (no resolvable ticker → no data served) — classified, 0 findings; they are
@@ -119,12 +159,19 @@ series is nominal but the dashboard treats it as real (the repo coverage map use
 `USA|gdp` as the "Real GDP" analogue — error propagates into Phase E regime
 composites). **Remediation:** either re-point to a JST real-GDP variable
 (`rgdpmad`/derive gdp÷cpi) or relabel all 11 rows as Nominal GDP and drop "(real)".
+> ✅ **RESOLVED** (PR #222 / `fb474a7`, 2026-06-17): all 10 `<ISO>_GDP_JST` rows
+> relabelled Nominal GDP, units `(real)`→`(nominal)`, plus the `sources/jst.py`
+> docstring. Re-point to a real series was rejected — no live calculator consumes
+> these columns (verified), so a label fix was correct. *(Audit said "11×"; there
+> are exactly 10 `|gdp` rows.)*
 
 **5. `DEU_HICP_INDEX` (Bundesbank `BBDP1/M.DE.N.HVPI.C.A00000.I.A`) — WRONG-UNITS
 (stale base year).** Library says "Index 2015=100"; upstream `BBK_UNIT` now reads
 **"2025=100"** (HICP rebased in early 2026). Latest level 102.55 @ 2026-05 is
 consistent with a 2025 base (a 2015 base would read ~125). Identity/cadence/key
 all correct. **Remediation:** update units to "Index 2025=100".
+> ✅ **RESOLVED** (`4abfc69`, 2026-06-17): units updated to "Index 2025=100" in the
+> Bundesbank library; verified live (102.55 @ 2026-05 is consistent with a 2025 base).
 
 **6. `US_GDPNOW` (AtlantaFed) — PARSER CONTAMINATION. ROOT-CAUSE-FIXED 2026-06-17.**
 The endpoint and label are right, but `sources/atlanta_fed.py` parsed ~23 sheets
@@ -153,6 +200,8 @@ last distinct value `2025-03-07 = 136.1`). Unlike the CHN OECD-MEI mirrors this 
 **not an accepted gap**: ONS publishes UK CPI live and the pipeline already uses
 ONS for other UK series. **Remediation:** repoint `GBR_CPI` to the live ONS CPIH/CPI
 series (or the OECD live SDMX flow) so a fresh source wins the merge.
+> ✅ **RESOLVED** (`f6bd28a`, 2026-06-17): `GBR_CPI` repointed to a live source so a
+> fresh series wins the merge (frozen OECD-MEI mirror no longer serves stale).
 
 **M14. `CHN_IND_PROD` (FRED `CHNPRINTO01IXPYM`) — WRONG-UNITS.** Library claims
 `Index 2015=100 (SA)`, but FRED units are **"Index, same period previous year =
@@ -162,6 +211,8 @@ adjusted. Charting it as a 2015=100 SA level is wrong (the hist value ~106.6 is 
 already a documented China accepted-gap), but the units mislabel is a distinct,
 active defect. **Remediation:** relabel units to "Index, same period prev year=100
 (YoY)"; drop "(SA)".
+> ✅ **RESOLVED** (`f6bd28a`, 2026-06-17): units relabelled to "Index, same period
+> prev year=100 (YoY)" and "(SA)" dropped in both the FRED library and `macro_economic.csv`.
 
 **M15. 4× FRED rows with NON-EXISTENT `series_id` — BROKEN REGISTRATION (pre-hist).**
 All four `/fred/series` calls return HTTP 400 *"The series does not exist."* and all
@@ -172,6 +223,8 @@ series), `NAHBSHF` (NAHB Housing Market Index), `MICH5YR` (UMich 5-10y inflation
 expectations), `BAMLER00ICOAS` (ICE BofA Euro Corporate IG OAS). **Remediation:**
 find the correct FRED id for each or drop the row; none of these four indices is
 published on FRED under the registered id.
+> ✅ **RESOLVED** (`f6bd28a`, 2026-06-17): all 4 non-existent FRED ids dropped from
+> the library (they served no data and had no valid upstream id).
 
 ### Market (yfinance)
 
@@ -182,25 +235,42 @@ Indonesia/IDR, Saudi/SAR, S.Africa/ZAR, Turkey/TRY, Argentina/ARS) all map to th
 aggregate). All 8 would show identical USD data under wrong local-currency labels.
 **Remediation:** repoint each to a country-specific bond ETF/index, or if these
 are intentional proxies set `proxy_flag`/relabel as "USD EM agg (proxy)".
+> ✅ **RESOLVED** (PR #223 / `11edd10`, 2026-06-17): no country-specific free tickers
+> exist, so the 8 country rows were set `validation_status=UNAVAILABLE` (stop serving
+> 8 identical EMB copies); the canonical EMB row stays CONFIRMED.
 
 **8. `^SP500-6020` "S&P 500 Equity REITs" — WRONG-SUBINDEX.** yfinance resolves
 to "S&P 500 Real Estate Management & Development" (GICS 6020). Equity REITs is
 GICS 6010. **Remediation:** repoint to the 6010 sub-index.
+> ✅ **RESOLVED** (PR #223, 2026-06-17): repointed to `^SP500-6010` (verified =
+> "S&P 500 Equity REITs", full history); flipped UNAVAILABLE→CONFIRMED.
 
 **9. `SMALLCAP.NS` "Nifty Smallcap 100" — WRONG-INSTRUMENT.** Resolves to "Mirae
 Asset Nifty Smallcap 250 Momentum Quality 100 ETF" — a factor-tilted different
 index. **Remediation:** use `^CNXSC` / `NIFTYSMLCAP100.NS`.
+> ✅ **RESOLVED** (PR #223, 2026-06-17): the true index `^CNXSC` returns only 1 usable
+> yfinance obs (no clean full-history source), so set `validation_status=UNAVAILABLE`
+> rather than ship a broken repoint.
 
 **10. `NDIA.L` "iShares India 50 ETF" — WRONG-INSTRUMENT + currency.** Resolves
 to "iShares MSCI India UCITS ETF" (different index) and currency GBP vs lib USD.
+> ✅ **RESOLVED** (PR #223, 2026-06-17): repointed to `INDY` (= the genuine iShares
+> India 50 ETF, 124 obs); currency GBP→USD, proxy_flag cleared.
 
 **11. `CMOD.L` "L&G All Commodities UCITS ETF" — WRONG-ISSUER.** Resolves to
 "Invesco Bloomberg Commodity UCITS ETF" (different issuer/fund) + GBP vs USD.
+> ✅ **RESOLVED** (PR #223, 2026-06-17): repointed to `BCOM.L` (= the genuine L&G All
+> Commodities UCITS ETF, 124 obs); currency GBP→USD, proxy_flag cleared.
 
 **12. 3× pence factor-100 — `IEFM.L`, `IEFQ.L`, `MINV.L`.** Library currency GBP
 but yfinance quotes **GBp (pence)** → prices ~100× off in any GBP math. (Sibling
 LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
 **Remediation:** divide by 100 or set currency to GBp and convert.
+> ✅ **NOT-A-BUG** (PR #223 investigation, 2026-06-17): `fetch_data.py:529` already
+> divides any `.L` quote by 100 only when its median > 50. Live check: IEFM/IEFQ/MINV
+> quote GBp at ~1366/1027/5544 → correctly /100 to GBP; `UKDV.L` (GBP, median ~13) is
+> correctly left untouched. The original flag was a raw-currency-label comparison that
+> didn't account for this heuristic. **No change made.**
 
 ---
 
@@ -221,8 +291,8 @@ LSE rows like `UKDV.L` correctly return GBP, so handling is inconsistent.)
 | `^MERV` | yfinance | no currency field | ARS unconfirmable (yf returns no `currency`); data present, name matches. |
 | `^SP500-151050` | yfinance | empty history | `.info` OK but 5d history empty (thin/discontinued sub-industry). |
 | `^SP500-203030` | yfinance | DEAD | 404, blank library name (former Marine Transportation, removed in 2023 GICS). Remove/repoint. |
-| `CHN_M2` | FRED `MYAGM2CNM189N` | WRONG-UNITS | *(added 2026-06-17)* Library "Percent Change YoY" but FRED units = "National Currency" — a level, not a YoY %. Active in hist (last value ~1.9e9 = a level). Also frozen 2019-08 (China accepted-gap). |
-| `JPN_M2` `EZ_M3` | FRED `MYAGM2JPM189S` / `MABMM301EZM189S` | WRONG-UNITS, pre-hist | *(added 2026-06-17)* Library "Percent Change YoY" but FRED units are levels ("National Currency" / "Euro"); both frozen (2017-02 / 2023-11) and both have empty `col` + "VERIFY id on first fetch" notes — not yet in hist, so not serving, but would mislabel if activated. |
+| `CHN_M2` | FRED `MYAGM2CNM189N` | WRONG-UNITS | ✅ **RESOLVED** (`ba8843c`): M2/M3 trio repointed to live YoY sources; frozen FRED level mirrors dropped. |
+| `JPN_M2` `EZ_M3` | FRED `MYAGM2JPM189S` / `MABMM301EZM189S` | WRONG-UNITS, pre-hist | ✅ **RESOLVED** (`ba8843c`): repointed to live YoY; frozen FRED level mirrors dropped. |
 | 2× "Global Corporate" + "Global High Yield" | FRED `BAMLCC0A0CMTRIV` / `BAMLHYH0A0HYM2TRIV` | proxy labelling | *(added 2026-06-17)* "ICE BofA Global Corporate Bond Index" (×2) and "Global High Yield Bond Index" are served by the **US** Corporate/High-Yield total-return indices. `proxy_flag=True` is set (intentional), but the row names don't say "(proxy)". Consider relabelling. All other 31 FRED market ids resolve, are fresh, and match their labels. |
 
 ---
@@ -324,13 +394,26 @@ Updated 2026-06-17 (FRED / ifo / BDF rows revised; market FRED + other/none clos
 
 ## RESUME FROM marker
 
-**Updated 2026-06-17 — only BLS remains.** FRED (104 macro + 27 market), ifo (26),
-and the e-Stat reconfirmation are done; BDF (2) is probed (PROVISIONAL, upstream
-gap); the 41 market other/none rows are classified (all UNAVAILABLE). The single
-outstanding item:
+**Updated 2026-06-18 — remediation reconciled; only credential-gated work remains.**
+All 15 market CRITICALs and 19 of 22 macro CRITICALs are remediated (see "Resolution
+status"). `US_GDPNOW` is code-fixed; its contaminated values clear on the next clean
+macro regeneration. The outstanding items, **both gated on secrets absent from the web
+sandbox** (do these in the credentialed Codespace):
 
-1. **BLS — 3 macro** (`macro_library_bls.csv`): mirror `BLS_API_KEY` (still MISSING),
+1. **e-Stat Japan — 3 macro CRITICALs** (`macro_library_estat.csv`), needs
+   `ESTAT_APP_ID`:
+   - **#1 `JPN_RETAIL_SALES` (`0003138782`)** — verify whether this is the frozen-2013
+     annual archive (check `last_obs`); if so re-point to the live monthly METI headline
+     (stat-search/files `stat_infid=000040274818`), and fix units to "Index (SA)".
+   - **#2 `JPN_HH_EXP` (`0002070001`)** — run `getMetaInfo` to read the `cdCat` codes,
+     then pin `cdCat01=<消費支出>&cdCat02=<二人以上>&…&area=<全国>` in the series_id.
+   - **#3 `JPN_EWS_DI` (`0003348427`)** — run `getMetaInfo`, then pin `@tab=<DI>` plus
+     判断/分野/地域 = 合計/合計/全国.
+   - After each fix, run a credentialed fetch and confirm the column populates in
+     `macro_economic_hist.csv` with the right cadence/units.
+
+2. **BLS — 3 macro** (`macro_library_bls.csv`): mirror `BLS_API_KEY` (still MISSING),
    then `api.bls.gov/publicAPI/v2/...?registrationkey=&catalog=true` for catalogue
    title + units per series.
 
-Everything else in this report is final.
+Everything else in this report is remediated or final.
