@@ -1,25 +1,25 @@
 ============================================================
-Market Dashboard Data Fetch — 2026-06-17 16:50 UTC
+Market Dashboard Data Fetch — 2026-06-18 05:20 UTC
 ============================================================
 Fetching comprehensive FX rates...
-  GBP (GBPUSD=X): OK (5861 rows)
-  EUR (EURUSD=X): OK (5849 rows)
-  AUD (AUDUSD=X): OK (5225 rows)
-  JPY (USDJPY=X): OK (7683 rows)
-  CNY (CNY=X): OK (6251 rows)
-  INR (INR=X): OK (5846 rows)
-  KRW (KRW=X): OK (5847 rows)
-  TWD (TWD=X): OK (5354 rows)
-  CAD (USDCAD=X): OK (5917 rows)
-  BRL (USDBRL=X): OK (5431 rows)
-  HKD (USDHKD=X): OK (6306 rows)
-  MXN (USDMXN=X): OK (5870 rows)
-  IDR (USDIDR=X): OK (6303 rows)
-  RUB (USDRUB=X): OK (5740 rows)
-  SAR (USDSAR=X): OK (5844 rows)
-  ZAR (USDZAR=X): OK (5863 rows)
-  TRY (USDTRY=X): OK (5578 rows)
-  ARS (USDARS=X): OK (5937 rows)
+  GBP (GBPUSD=X): OK (5862 rows)
+  EUR (EURUSD=X): OK (5850 rows)
+  AUD (AUDUSD=X): OK (5226 rows)
+  JPY (USDJPY=X): OK (7684 rows)
+  CNY (CNY=X): OK (6252 rows)
+  INR (INR=X): OK (5847 rows)
+  KRW (KRW=X): OK (5848 rows)
+  TWD (TWD=X): OK (5355 rows)
+  CAD (USDCAD=X): OK (5918 rows)
+  BRL (USDBRL=X): OK (5432 rows)
+  HKD (USDHKD=X): OK (6308 rows)
+  MXN (USDMXN=X): OK (5871 rows)
+  IDR (USDIDR=X): OK (6304 rows)
+  RUB (USDRUB=X): OK (5741 rows)
+  SAR (USDSAR=X): OK (5845 rows)
+  ZAR (USDZAR=X): OK (5864 rows)
+  TRY (USDTRY=X): OK (5579 rows)
+  ARS (USDARS=X): OK (5938 rows)
 
 ============================================================
 SIMPLE DASHBOARD (market_data)
@@ -504,7 +504,7 @@ Pushing data to Google Sheets...
   ✓ Written 350 rows to 'market_data_comp' tab
 ✓ Google Sheets export complete.
 
-✓ Completed at 2026-06-17 16:53 UTC
+✓ Completed at 2026-06-18 05:24 UTC
 
 --- market_data asset class breakdown ---
 
@@ -547,7 +547,7 @@ Assembling market_data_comp_hist DataFrame...
   [market_data_comp_hist] Written 11 metadata rows + 3,989 data rows × 696 cols to data/market_data_comp_hist.csv
   [market_data_comp_hist] Written 4001 rows to 'market_data_comp_hist'
 
-Comp historical build completed in 75.7s
+Comp historical build completed in 94.6s
 
 ============================================================
 macro_economic — Unified Economic Data Coordinator
@@ -556,16 +556,16 @@ macro_economic — Unified Economic Data Coordinator
 ── macro_economic indicator index ─────────────────────────────────
   total indicators: 290
   by source:
-    FRED         118
+    FRED         115
     JST          39
     ifo          26
-    DB.nomics    17
+    DB.nomics    18
     ONS          14
-    BoJ          9
+    BoJ          10
     BoE          7
+    ECB          6
     Shiller      6
     KenFrench    6
-    ECB          5
     e-Stat       5
     BoC          5
     ABS          5
@@ -686,15 +686,12 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/GBR_CPI]
   [FRED/GBR_BANK_RATE]
   [FRED/DEU_IND_PROD]
-  [FRED/MABMM301EZM189S]
   [FRED/EA_HICP]
   [FRED/EA_DEPOSIT_RATE]
-  [FRED/MYAGM2JPM189S]
   [FRED/JPN_REER]
   [FRED/JPN_IND_PROD]
   [FRED/JPN_CPI]
   [FRED/JPN_POLICY_RATE]
-  [FRED/CHN_M2]
   [FRED/CHN_POLICY_RATE]
   [FRED/CHN_CPI]
   [FRED/CHN_PPI]
@@ -754,6 +751,7 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/ISM_MFG_PRICES]
   [DB.nomics/ISM_SVC_PMI]
   [DB.nomics/EZ_IND_PROD]
+    [DB.nomics timeout] Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20 — backing off 2s
   [DB.nomics/EZ_RETAIL_VOL]
   [DB.nomics/EZ_EMPLOYMENT]
   [DB.nomics/DEU_IND_PROD]
@@ -761,6 +759,7 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/EA_HICP_CORE_YOY]
   [DB.nomics/JPN_CORE_CPI_YOY]
   [DB.nomics/JPN_POLICY_RATE]
+  [DB.nomics/CHN_M2]
   [DB.nomics/CHN_POLICY_RATE]
   [BoE/GBR_BANK_RATE]
   [BoE/GBR_SONIA]
@@ -770,10 +769,12 @@ macro_economic — Unified Economic Data Coordinator
   [BoE/GBR_GILT_MZ]
   [BoE/GBR_GILT_LZ]
   [ECB/EZ_CISS]
+  [ECB/EZ_M3]
   [ECB/EZ_INFL_EXP_12M]
   [ECB/EA_DEPOSIT_RATE]
   [ECB/EZ_GOVT_2Y]
   [ECB/EZ_GOVT_30Y]
+  [BoJ/JPN_M2]
   [BoJ/JPN_POLICY_RATE]
   [BoJ/JP_TANKAN1]
   [BoJ/JPN_PPI]
@@ -954,7 +955,6 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/RSXFS/hist]
   [FRED/RSFSXMV/hist]
   [FRED/DRTSCILM/hist]
-  [FRED] HTTP 500 on DRTSCILM — backoff 2s (attempt 1/5)
   [FRED/NFCI/hist]
   [FRED/USA_CPI_INDEX/hist]
   [FRED/USA_CORE_CPI_INDEX/hist]
@@ -1016,15 +1016,12 @@ macro_economic — Unified Economic Data Coordinator
   [FRED/GBR_CPI/hist]
   [FRED/GBR_BANK_RATE/hist]
   [FRED/DEU_IND_PROD/hist]
-  [FRED/MABMM301EZM189S/hist]
   [FRED/EA_HICP/hist]
   [FRED/EA_DEPOSIT_RATE/hist]
-  [FRED/MYAGM2JPM189S/hist]
   [FRED/JPN_REER/hist]
   [FRED/JPN_IND_PROD/hist]
   [FRED/JPN_CPI/hist]
   [FRED/JPN_POLICY_RATE/hist]
-  [FRED/CHN_M2/hist]
   [FRED/CHN_POLICY_RATE/hist]
   [FRED/CHN_CPI/hist]
   [FRED/CHN_PPI/hist]
@@ -1098,6 +1095,7 @@ macro_economic — Unified Economic Data Coordinator
   [DB.nomics/JPN_CORE_CPI_YOY/hist]
   [DB.nomics/JPN_POLICY_RATE/hist]
     [merge] JPN_POLICY_RATE: replaced FRED (last=2023-12-01) with DB.nomics (last=2025-07-31)
+  [DB.nomics/CHN_M2/hist]
   [DB.nomics/CHN_POLICY_RATE/hist]
     [merge] CHN_POLICY_RATE: replaced FRED (last=2023-11-01) with DB.nomics (last=2025-06-30)
   [ifo/DE_IFO/hist]
@@ -1138,13 +1136,15 @@ macro_economic — Unified Economic Data Coordinator
   [BoE/GBR_GILT_MZ/hist]
   [BoE/GBR_GILT_LZ/hist]
   [ECB/EZ_CISS/hist]
+  [ECB/EZ_M3/hist]
   [ECB/EZ_INFL_EXP_12M/hist]
   [ECB/EA_DEPOSIT_RATE/hist]
-    [merge] EA_DEPOSIT_RATE: replaced FRED (last=2026-06-17) with ECB (last=2026-06-17)
+    [merge] EA_DEPOSIT_RATE: replaced FRED (last=2026-06-17) with ECB (last=2026-06-18)
   [ECB/EZ_GOVT_2Y/hist]
   [ECB/EZ_GOVT_30Y/hist]
+  [BoJ/JPN_M2/hist]
   [BoJ/JPN_POLICY_RATE/hist]
-    [merge] JPN_POLICY_RATE: replaced DB.nomics (last=2025-07-31) with BoJ (last=2026-06-15)
+    [merge] JPN_POLICY_RATE: replaced DB.nomics (last=2025-07-31) with BoJ (last=2026-06-16)
   [BoJ/JP_TANKAN1/hist]
   [BoJ/JPN_PPI/hist]
   [BoJ/JPN_SPPI/hist]
@@ -1174,7 +1174,6 @@ macro_economic — Unified Economic Data Coordinator
   [StatCan/CAN_UNEMPLOYMENT/hist]
     [merge] CAN_UNEMPLOYMENT: kept OECD (last=2026-05-31) over StatCan (last=2026-05-01)
   [StatCan/CAN_EMPLOYMENT/hist]
-    [StatCan timeout] v2062811 — backing off 1s
   [StatCan/CAN_GDP_MONTHLY/hist]
   [ONS/GBR_CPI/hist]
     [merge] GBR_CPI: replaced FRED (last=2025-03-01) with ONS (last=2026-05-01)
@@ -1193,7 +1192,7 @@ macro_economic — Unified Economic Data Coordinator
   [ONS/GBR_CLAIMANT_COUNT/hist]
   [ONS/GBR_PPI_OUTPUT/hist]
   [Bundesbank/DEU_BUND_10Y/hist]
-    [merge] DEU_BUND_10Y: replaced FRED (last=2026-05-01) with Bundesbank (last=2026-06-16)
+    [merge] DEU_BUND_10Y: replaced FRED (last=2026-05-01) with Bundesbank (last=2026-06-17)
   [Bundesbank/DEU_BUND_1_2Y/hist]
   [Bundesbank/DEU_HICP_YOY/hist]
   [Bundesbank/DEU_HICP_INDEX/hist]
@@ -1283,12 +1282,12 @@ macro_economic — Unified Economic Data Coordinator
   Written 4147 rows + 14 metadata rows to data/macro_economic_hist.csv
   [macro_economic_hist] Written 4162 rows to 'macro_economic_hist'
 
-  macro_economic run completed in 716.6s
+  macro_economic run completed in 559.3s
 
 === Phase E: Macro-Market Indicators ===
   Loading input CSVs …
   [load] comp_hist: 1380 rows × 696 cols (2000-01-07 → 2026-06-12)
-  [load] macro_economic_hist: 1380 rows × 305 cols (2000-01-07 → 2026-06-12)
+  [load] macro_economic_hist: 1380 rows × 307 cols (2000-01-07 → 2026-06-12)
   Fetching Euro IG spread (ECB SDW + unified hist) …
   [ECB] AAA euro govt yield: 5566 obs
   [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1320,7 +1319,7 @@ macro_economic — Unified Economic Data Coordinator
   [compute] UK_R2: raw=0.1248  z=-0.92  regime='neutral'  fwd='stable'  (2026-06-12)
   [compute] UK_Cr1: raw=-2.0693  z=1.5  regime='credit-appetite'  fwd='stable'  (2026-06-12)
   [compute] EU_G4: raw=-0.0349  z=-1.09  regime='EU-strain'  fwd='stable'  (2026-06-12)
-  [compute] AS_CN_G3: raw=0.0344  z=1.39  regime='mid-cap-lead'  fwd='stable'  (2026-06-19)
+  [compute] AS_CN_G3: raw=0.0482  z=1.52  regime='mid-cap-lead'  fwd='stable'  (2026-06-19)
   [compute] AS_CN_G2: raw=0.9448  z=1.98  regime='China-outperform'  fwd='stable'  (2026-06-12)
   [compute] AS_IN_G1: raw=2.9987  z=-1.14  regime='large-cap-safety'  fwd='stable'  (2026-06-12)
   [compute] AS_CN_R1: raw=n/a  z=n/a  regime='n/a'  fwd='n/a'  (n/a)
@@ -1536,7 +1535,7 @@ test_eps_series_non_empty (test_sec_edgar_smoke.SecEdgarLiveSmokeTest.test_eps_s
 test_revenue_series_non_empty (test_sec_edgar_smoke.SecEdgarLiveSmokeTest.test_revenue_series_non_empty) ... ok
 
 ----------------------------------------------------------------------
-Ran 20 tests in 11.166s
+Ran 20 tests in 7.581s
 
 OK (skipped=1)
   [JST] Resolved .dta from https://www.macrohistory.net/app/download/9834512469/JSTdatasetR6.dta (2718 rows × 59 cols)
@@ -1554,7 +1553,7 @@ Building macro_economic payload (merged: FRED + OECD + WB + IMF + DB.nomics + if
 Building market_comp payload...
 
 Writing output files...
-  indicator_explorer.html  : 13.38 MB
+  indicator_explorer.html  : 13.30 MB
   indicator_explorer_mkt.js: 16.27 MB
 
 ── Summary ──────────────────────────────────────────────────────
@@ -1564,10 +1563,10 @@ countries      : 14 codes from macro_library_countries.csv
 market_comp    : 696 series across 7 asset classes
   asset classes: ['Equity', 'Bonds', 'Commodities', 'FX', 'Crypto', 'Macro-Market Indicators', 'Other']
 
-Total output: 29.65 MB  (13.38 MB HTML + 16.27 MB companion JS)
+Total output: 29.57 MB  (13.30 MB HTML + 16.27 MB companion JS)
 
 
-=== Data audit @ 2026-06-17 ===
+=== Data audit @ 2026-06-18 ===
 
 --- Section A: Fetch outcomes (1 issues) ---
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
@@ -1575,72 +1574,97 @@ Total output: 29.65 MB  (13.38 MB HTML + 16.27 MB companion JS)
 --- Section B: Static checks (1 issues) ---
   MISSING_COLUMNS             _get_col(...,'JPN_RETAIL_SALES') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
---- Section C: Value-change staleness (FRESH 200  STALE 39  EXPIRED 24  ANCHORS 39  OVERDUE-ANCHORS 0) ---
-  EXPIRED (24):
-    Monthly     MYAGM2JPM189S                     src=FRED         series=MYAGM2JPM189S             last_obs=2017-02-03  age=3421d     tolerance=45d
-    Monthly     CHN_M2                            src=FRED         series=MYAGM2CNM189N             last_obs=2019-08-02  age=2511d     tolerance=45d
-    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1293d     tolerance=45d
-    Monthly     MABMM301EZM189S                   src=FRED         series=MABMM301EZM189S           last_obs=2023-11-03  age=957d      tolerance=45d
-    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=957d      tolerance=45d
-    Monthly     CHN_CPI                           src=FRED         series=CHNCPIALLMINMEI           last_obs=2025-04-04  age=439d      tolerance=45d
-    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=376d      tolerance=45d
-    Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=369d      tolerance=30d*
-    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=285d      tolerance=60d*
-    Daily       CAN_POLICY_RATE                   src=BoC          series=V39079                    last_obs=2025-10-31  age=229d      tolerance=7d*
-    Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=194d      tolerance=45d
-    Monthly     ISM_MFG_PRICES                    src=DB.nomics    series=ISM/prices/in             last_obs=2025-12-05  age=194d      tolerance=45d
-    Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     ISM_MFG_INVENTORIES               src=DB.nomics    series=ISM/inventories/in        last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     EA_HICP_CORE_YOY                  src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20  last_obs=2026-01-02  age=166d      tolerance=45d
-    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-03-06  age=103d      tolerance=45d
-    Monthly     EZ_INFL_EXP_12M                   src=ECB          series=CES/M.Z18.ALL.T.C1120.NUM_VAR.WM  last_obs=2026-03-06  age=103d      tolerance=40d*
-    Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-29  age=19d       tolerance=5d
-    Daily       BAMLC0A0CM                        src=FRED         series=BAMLC0A0CM                last_obs=2026-06-05  age=12d       tolerance=5d
-  STALE (39):
-    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=257d      tolerance=180d*
-    Monthly     EZ_IND_PROD                       src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20  last_obs=2025-12-05  age=194d      tolerance=150d*
-    Monthly     EZ_RETAIL_VOL                     src=DB.nomics    series=Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20  last_obs=2025-12-05  age=194d      tolerance=150d*
-    Quarterly   JP_TANKAN_LNFG                    src=BoJ          series=CO'TK99F2000601GCQ01000   last_obs=2026-01-02  age=166d      tolerance=100d*
-    Quarterly   JP_TANKAN_SMFG                    src=BoJ          series=CO'TK99F1000601GCQ03000   last_obs=2026-01-02  age=166d      tolerance=100d*
-    Quarterly   JP_TANKAN_SNFG                    src=BoJ          series=CO'TK99F2000601GCQ03000   last_obs=2026-01-02  age=166d      tolerance=100d*
-    Monthly     GBR_EMP_RATE                      src=ONS          series=employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms  last_obs=2026-01-02  age=166d      tolerance=150d*
-    Monthly     EA19_RATE_3M                      src=OECD         series=RATE_3M                   last_obs=2026-02-06  age=131d      tolerance=90d*
-    Quarterly   JP_TANKAN_LMFG_FCST               src=BoJ          series=CO'TK99F1000601GCQ11000   last_obs=2026-02-06  age=131d      tolerance=100d*
-    Quarterly   JP_TANKAN_LNFG_FCST               src=BoJ          series=CO'TK99F2000601GCQ11000   last_obs=2026-02-06  age=131d      tolerance=100d*
-    Monthly     JPN_IND_PROD                      src=e-Stat       series=0004052177?cdCat01=0001000&lang=J  last_obs=2026-03-06  age=103d      tolerance=60d*
-    Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-03-06  age=103d      tolerance=75d*
-    Monthly     GBR_RATE_3M                       src=OECD         series=RATE_3M                   last_obs=2026-03-06  age=103d      tolerance=90d*
-    Monthly     CAN_GDP_MONTHLY                   src=StatCan      series=65201210                  last_obs=2026-03-06  age=103d      tolerance=60d*
-    Quarterly   GBR_GDP_REAL                      src=ONS          series=economy/grossdomesticproductgdp/timeseries/abmi/pn2  last_obs=2026-03-06  age=103d      tolerance=90d*
-    Monthly     PCETRIM12M159SFRBDAL              src=FRED         series=PCETRIM12M159SFRBDAL      last_obs=2026-04-03  age=75d       tolerance=45d
-    Monthly     CAN_CPI                           src=StatCan      series=41690973                  last_obs=2026-04-03  age=75d       tolerance=45d*
-    Monthly     JPN_SPPI                          src=BoJ          series=PR02'PRCS20_5200000000    last_obs=2026-04-03  age=75d       tolerance=45d*
-    Monthly     JPN_MACH_ORDERS                   src=e-Stat       series=0003355222?cdCat01=160&cdCat02=100  last_obs=2026-04-03  age=75d       tolerance=60d*
-    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-04-03  age=75d       tolerance=45d*
-    Monthly     GBR_CLAIMANT_COUNT                src=ONS          series=employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcjd/unem  last_obs=2026-04-03  age=75d       tolerance=40d*
-    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-04-03  age=75d       tolerance=45d*
-    Monthly     ITA_IND_PROD                      src=ISTAT        series=115_333/M.IT.IND_PROD_21.Y.0020  last_obs=2026-04-03  age=75d       tolerance=60d*
-    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     USA_CPI_INDEX                     src=BLS          series=CUSR0000SA0               last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     USA_CORE_CPI_INDEX                src=BLS          series=CUSR0000SA0L1E            last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     MEDCPIM158SFRBCLE                 src=FRED         series=MEDCPIM158SFRBCLE         last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     TRMMEANCPIM158SFRBCLE             src=FRED         series=TRMMEANCPIM158SFRBCLE     last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     GACDFSA066MSFRBPHI                src=FRED         series=GACDFSA066MSFRBPHI        last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     BACTUAMFRBDAL                     src=FRED         series=BACTUAMFRBDAL             last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     FRA_BUS_CONF                      src=INSEE        series=SERIES_BDM/001565530      last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     JPN_CORE_CPI_YOY                  src=DB.nomics    series=OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_N_TXCP01_NRG/JPN.M.N.CPI.PA._TXCP01_NRG.N.GY  last_obs=2026-05-01  age=47d       tolerance=45d
-    Monthly     JPN_PPI                           src=BoJ          series=PR01'PRCG20_2200000000    last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     CAN_EMPLOYMENT                    src=StatCan      series=2062811                   last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     GBR_PPI_OUTPUT                    src=ONS          series=economy/inflationandpriceindices/timeseries/gd6y/ppi  last_obs=2026-05-01  age=47d       tolerance=40d*
-    Monthly     DEU_HICP_YOY                      src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.VGJ.LV  last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     DEU_HICP_INDEX                    src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.I.A  last_obs=2026-05-01  age=47d       tolerance=45d*
-    Monthly     USA_AVG_HOURLY_EARN               src=BLS          series=CES0500000003             last_obs=2026-05-01  age=47d       tolerance=45d*
+--- Section C: Value-change staleness (FRESH 175  STALE 67  EXPIRED 21  ANCHORS 39  OVERDUE-ANCHORS 0) ---
+  EXPIRED (21):
+    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-02  age=1294d     tolerance=45d
+    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-03  age=958d      tolerance=45d
+    Monthly     CHN_CPI                           src=FRED         series=CHNCPIALLMINMEI           last_obs=2025-04-04  age=440d      tolerance=45d
+    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-06  age=377d      tolerance=45d
+    Daily       EA_DEPOSIT_RATE                   src=ECB          series=FM/D.U2.EUR.4F.KR.DFR.LEV  last_obs=2025-06-13  age=370d      tolerance=30d*
+    Monthly     ISM_SVC_PMI                       src=DB.nomics    series=ISM/nm-pmi/pm             last_obs=2025-09-05  age=286d      tolerance=60d*
+    Daily       CAN_POLICY_RATE                   src=BoC          series=V39079                    last_obs=2025-10-31  age=230d      tolerance=7d*
+    Monthly     DEU_IND_PROD                      src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE  last_obs=2025-12-05  age=195d      tolerance=45d
+    Monthly     ISM_MFG_PRICES                    src=DB.nomics    series=ISM/prices/in             last_obs=2025-12-05  age=195d      tolerance=45d
+    Monthly     EA_HICP                           src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20  last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     EU_ESI                            src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ESI-I.SA.EA20  last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     EU_IND_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-ICI-BAL.SA.EA20  last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     EU_SVC_CONF                       src=DB.nomics    series=Eurostat/ei_bssi_m_r2/M.BS-SCI-BAL.SA.EA20  last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     ISM_MFG_PMI                       src=DB.nomics    series=ISM/pmi/pm                last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     ISM_MFG_NEWORD                    src=DB.nomics    series=ISM/neword/in             last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     ISM_MFG_INVENTORIES               src=DB.nomics    series=ISM/inventories/in        last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     EA_HICP_CORE_YOY                  src=DB.nomics    series=Eurostat/prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20  last_obs=2026-01-02  age=167d      tolerance=45d
+    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-03-06  age=104d      tolerance=45d
+    Monthly     EZ_INFL_EXP_12M                   src=ECB          series=CES/M.Z18.ALL.T.C1120.NUM_VAR.WM  last_obs=2026-03-06  age=104d      tolerance=40d*
+    Daily       JPN_POLICY_RATE                   src=BoJ          series=FM01'STRDCLUCON           last_obs=2026-05-29  age=20d       tolerance=5d
+    Daily       BAMLC0A0CM                        src=FRED         series=BAMLC0A0CM                last_obs=2026-06-05  age=13d       tolerance=5d
+  STALE (67):
+    Quarterly   EZ_EMPLOYMENT                     src=DB.nomics    series=Eurostat/namq_10_a10_e/Q.THS_PER.TOTAL.SCA.EMP_DC.EA20  last_obs=2025-10-03  age=258d      tolerance=180d*
+    Monthly     EZ_IND_PROD                       src=DB.nomics    series=Eurostat/teiis080/M.PRD.B-D.I21_SCA.EA20  last_obs=2025-12-05  age=195d      tolerance=150d*
+    Monthly     EZ_RETAIL_VOL                     src=DB.nomics    series=Eurostat/teiis260/M.VOL_SLS.G47_NFOOD_X_G473.I21_SCA.EA20  last_obs=2025-12-05  age=195d      tolerance=150d*
+    Quarterly   JP_TANKAN_LNFG                    src=BoJ          series=CO'TK99F2000601GCQ01000   last_obs=2026-01-02  age=167d      tolerance=100d*
+    Quarterly   JP_TANKAN_SMFG                    src=BoJ          series=CO'TK99F1000601GCQ03000   last_obs=2026-01-02  age=167d      tolerance=100d*
+    Quarterly   JP_TANKAN_SNFG                    src=BoJ          series=CO'TK99F2000601GCQ03000   last_obs=2026-01-02  age=167d      tolerance=100d*
+    Monthly     GBR_EMP_RATE                      src=ONS          series=employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms  last_obs=2026-01-02  age=167d      tolerance=150d*
+    Monthly     EA19_RATE_3M                      src=OECD         series=RATE_3M                   last_obs=2026-02-06  age=132d      tolerance=90d*
+    Quarterly   JP_TANKAN_LMFG_FCST               src=BoJ          series=CO'TK99F1000601GCQ11000   last_obs=2026-02-06  age=132d      tolerance=100d*
+    Quarterly   JP_TANKAN_LNFG_FCST               src=BoJ          series=CO'TK99F2000601GCQ11000   last_obs=2026-02-06  age=132d      tolerance=100d*
+    Monthly     JPN_IND_PROD                      src=e-Stat       series=0004052177?cdCat01=0001000&lang=J  last_obs=2026-03-06  age=104d      tolerance=60d*
+    Monthly     FRA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-03-06  age=104d      tolerance=75d*
+    Monthly     GBR_RATE_3M                       src=OECD         series=RATE_3M                   last_obs=2026-03-06  age=104d      tolerance=90d*
+    Monthly     CAN_GDP_MONTHLY                   src=StatCan      series=65201210                  last_obs=2026-03-06  age=104d      tolerance=60d*
+    Quarterly   GBR_GDP_REAL                      src=ONS          series=economy/grossdomesticproductgdp/timeseries/abmi/pn2  last_obs=2026-03-06  age=104d      tolerance=90d*
+    Monthly     M2SL                              src=FRED         series=M2SL                      last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     USA_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     PCETRIM12M159SFRBDAL              src=FRED         series=PCETRIM12M159SFRBDAL      last_obs=2026-04-03  age=76d       tolerance=45d
+    Monthly     MICH                              src=FRED         series=MICH                      last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     UMCSENT                           src=FRED         series=UMCSENT                   last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     AWHMAN                            src=FRED         series=AWHMAN                    last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     CFNAI                             src=FRED         series=CFNAI                     last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     ITA_BUS_CONF                      src=FRED         series=BSCICP02ITM460S           last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     JPN_REER                          src=FRED         series=RBJPBIS                   last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     NLD_DSL_10Y                       src=FRED         series=IRLTLT01NLM156N           last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     DEU_UNEMPLOYMENT                  src=OECD         series=UNEMPLOYMENT              last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     CAN_CPI                           src=StatCan      series=41690973                  last_obs=2026-04-03  age=76d       tolerance=45d*
+    Monthly     EZ_M3                             src=ECB          series=BSI/M.U2.Y.V.M30.X.I.U2.2300.Z01.A  last_obs=2026-04-03  age=76d       tolerance=45d*
+    Monthly     JPN_SPPI                          src=BoJ          series=PR02'PRCS20_5200000000    last_obs=2026-04-03  age=76d       tolerance=45d*
+    Monthly     JPN_MACH_ORDERS                   src=e-Stat       series=0003355222?cdCat01=160&cdCat02=100  last_obs=2026-04-03  age=76d       tolerance=60d*
+    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-04-03  age=76d       tolerance=45d*
+    Monthly     GBR_CPI_YOY                       src=ONS          series=economy/inflationandpriceindices/timeseries/d7g7/mm23  last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     GBR_CPIH_YOY                      src=ONS          series=economy/inflationandpriceindices/timeseries/l55o/mm23  last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     GBR_GDP_MONTHLY                   src=ONS          series=economy/grossdomesticproductgdp/timeseries/ecy2/mgdp  last_obs=2026-04-03  age=76d       tolerance=75d*
+    Monthly     GBR_CLAIMANT_COUNT                src=ONS          series=employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcjd/unem  last_obs=2026-04-03  age=76d       tolerance=40d*
+    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-04-03  age=76d       tolerance=45d*
+    Monthly     ITA_IND_PROD                      src=ISTAT        series=115_333/M.IT.IND_PROD_21.Y.0020  last_obs=2026-04-03  age=76d       tolerance=60d*
+    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     USA_CPI_INDEX                     src=BLS          series=CUSR0000SA0               last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     USA_CORE_CPI_INDEX                src=BLS          series=CUSR0000SA0L1E            last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     MEDCPIM158SFRBCLE                 src=FRED         series=MEDCPIM158SFRBCLE         last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     TRMMEANCPIM158SFRBCLE             src=FRED         series=TRMMEANCPIM158SFRBCLE     last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     GACDFSA066MSFRBPHI                src=FRED         series=GACDFSA066MSFRBPHI        last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     BACTUAMFRBDAL                     src=FRED         series=BACTUAMFRBDAL             last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     FRA_BUS_CONF                      src=INSEE        series=SERIES_BDM/001565530      last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     JPN_CORE_CPI_YOY                  src=DB.nomics    series=OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_N_TXCP01_NRG/JPN.M.N.CPI.PA._TXCP01_NRG.N.GY  last_obs=2026-05-01  age=48d       tolerance=45d
+    Monthly     JPN_M2                            src=BoJ          series=MD02'MAM1YAM2M2MO         last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     JPN_PPI                           src=BoJ          series=PR01'PRCG20_2200000000    last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     CAN_EMPLOYMENT                    src=StatCan      series=2062811                   last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     GBR_PPI_OUTPUT                    src=ONS          series=economy/inflationandpriceindices/timeseries/gd6y/ppi  last_obs=2026-05-01  age=48d       tolerance=40d*
+    Monthly     DEU_HICP_YOY                      src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.VGJ.LV  last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     DEU_HICP_INDEX                    src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.I.A  last_obs=2026-05-01  age=48d       tolerance=45d*
+    Monthly     USA_AVG_HOURLY_EARN               src=BLS          series=CES0500000003             last_obs=2026-05-01  age=48d       tolerance=45d*
+    Daily       T10Y2Y                            src=FRED         series=T10Y2Y                    last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       T10Y3M                            src=FRED         series=T10Y3M                    last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       T5YIE                             src=FRED         series=T5YIE                     last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       T10YIE                            src=FRED         series=T10YIE                    last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       T5YIFR                            src=FRED         series=T5YIFR                    last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       DGS2                              src=FRED         series=DGS2                      last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       DGS10                             src=FRED         series=DGS10                     last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       DFII10                            src=FRED         series=DFII10                    last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       DFII5                             src=FRED         series=DFII5                     last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       BAMLH0A0HYM2                      src=FRED         series=BAMLH0A0HYM2              last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       BAMLC0A0CMEY                      src=FRED         series=BAMLC0A0CMEY              last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       BAMLCC0A0CMTRIV                   src=FRED         series=BAMLCC0A0CMTRIV           last_obs=2026-06-12  age=6d        tolerance=5d
+    Daily       BAMLHE00EHYIOAS                   src=FRED         series=BAMLHE00EHYIOAS           last_obs=2026-06-12  age=6d        tolerance=5d
   ANCHORS-ACTIVE (39) — historical anchors, no frequency-based staleness check (release cadence intrinsic):
     Annual      USA_CPI_JST                       src=JST          series=USA|cpi                   last_obs=2021-01-01  next_expected_release=2026-12-31
     Annual      USA_GDP_JST                       src=JST          series=USA|gdp                   last_obs=2021-01-01  next_expected_release=2026-12-31
