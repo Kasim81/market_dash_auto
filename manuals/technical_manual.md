@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-20
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -65,7 +65,7 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,488 lines)
 ├── compute_macro_market.py        # 108 macro-market composite indicators + monthly-hist writer (2,546 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (627 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,188 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
@@ -979,7 +979,7 @@ ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB
 
 60s default timeout (FM dataset is sometimes slow on first hit).
 
-#### 9.5.11 `sources/boj.py` (~270 lines, Stage D)
+#### 9.5.11 `sources/boj.py` (320 lines, Stage D)
 
 Bank of Japan Time-Series Data Search fetcher. Programmatic API launched February 2026.
 
@@ -1007,7 +1007,7 @@ Statistics Bureau of Japan e-Stat fetcher. JSON REST API; reads `ESTAT_APP_ID` f
 | `_parse_estat_time(t)` | Parse e-Stat's 10-digit `@time` encoding: `YYYY + group(2) + MM(2) + DD(2)`. **2026-06-15 (PR #208):** corrected for monthly series — the group digits are `00` and the month repeats in the day position (e.g. `2026000303` → March 2026). The previous implementation read `YYYYMM0000` (trailing-zero pattern) which never matched live data, silently returning zero observations for every monthly series. |
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
-Falls back gracefully if `ESTAT_APP_ID` env var is missing.
+Falls back gracefully if `ESTAT_APP_ID` env var is missing. Offline regression test: `test_estat_parse.py` (76 lines, 2026-06-15) — deterministic no-network suite guarding `_parse_estat_time` and `parse_response` against the two bugs fixed by PR #208 (`YYYY000000` monthly pattern; opaque `@time` sequence codes resolved via `CLASS_INF`).
 
 #### 9.5.13 `sources/boc.py` (183 lines, 2026-05-28)
 
@@ -1345,7 +1345,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
-### 9.8 `data_audit.py` (1,188 lines)
+### 9.8 `data_audit.py` (1,342 lines)
 
 **Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
 

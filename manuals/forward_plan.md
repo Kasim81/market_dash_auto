@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-20
 
 This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
 
@@ -385,6 +385,11 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ **CHN_IND_PROD units fix:** library row relabelled "Index 2015=100 (SA)" → "Index, same period prev year=100 (YoY)" to match NBS methodology (the series reports YoY % relative to the same period in the prior year, not a fixed-base level).
 - ✅ **4 dead FRED IDs dropped (PR #217, closes A5):** `IRLTLT01CNM156N` (CHN 10Y), `NAHBSHF` (NAHB Housing), `MICH5YR` (UMich 5-10Y inflation exp.), `BAMLER00ICOAS` (Euro IG OAS) — all return HTTP 400 `"The series does not exist."` on FRED. Combined with the 3 M2/M3 mirrors removed by PR #221, `macro_library_fred.csv` shrinks ~122 → ~115 rows.
 - ✅ **devcontainer added (commit `c99a2cd`):** `.devcontainer/devcontainer.json` committed — Python 3.11 image + Node LTS feature; `postCreateCommand` installs `requirements.txt` + `@anthropic-ai/claude-code`.
+
+**Recent completed work (session 2026-06-18):**
+- ✅ **PR #222 (commit `fb474a7`) — JST GDP relabelled as Nominal:** `data/macro_library_jst.csv` updated to correct the series label for JST GDP entries to "Nominal GDP" (audit finding #4 from the label-vs-data reconciliation).
+- ✅ **PR #223 (commit `11edd10`) — Critical ticker→instrument errors fixed:** `data/index_library.csv` corrected to resolve mismatched ticker-to-instrument mappings found during the label-vs-data audit.
+- ✅ **PR #225 (commit `65d42df`) — Label-vs-data audit reconciled with shipped remediations:** `data_audit.py` grew from 1,188 → 1,342 lines (+154); Section E plausibility checks and audit commentary updated across all previously-reported audit findings to reflect their resolution status. `data/macro_economic.csv` updated (603-line delta); `audit_comment.md` updated (118 lines).
 
 ### §2.A Broken-source & freshness backlog — immediate top of queue (2026-06-15)
 
