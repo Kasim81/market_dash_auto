@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-21
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -65,11 +65,11 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,488 lines)
 ├── compute_macro_market.py        # 108 macro-market composite indicators + monthly-hist writer (2,546 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (627 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,188 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
-├── library_sync.py                # Operator-gated hist↔library prune utility — archives orphan columns then drops them; covers 3 pairs (comp / macro_economic / macro_market) (~396 lines). `MACRO_LIBS` covers all 25 single-source registries (was 21 pre-2026-06-10).
+├── library_sync.py                # Operator-gated hist↔library prune utility — archives orphan columns then drops them; covers 3 pairs (comp / macro_economic / macro_market) (~402 lines). `MACRO_LIBS` covers all 25 single-source registries (was 21 pre-2026-06-10).
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -82,7 +82,7 @@ market_dash_auto/
 │   ├── oecd.py                        # OECD SDMX REST API fetcher (191 lines)
 │   ├── worldbank.py                   # World Bank WDI fetcher (193 lines)
 │   ├── imf.py                         # IMF DataMapper v1 fetcher (153 lines)
-│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (~245 lines)
+│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (224 lines)
 │   ├── ifo.py                         # ifo Institute Excel-workbook fetcher with retry + cache + month-walk + Bright Data fallback (579 lines)
 │   ├── boe.py                         # Bank of England IADB CSV fetcher (264 lines)
 │   ├── ecb.py                         # ECB Data Portal SDMX fetcher
@@ -137,7 +137,7 @@ market_dash_auto/
 │   ├── macro_library_alpha_vantage.csv # Header-only — Alpha Vantage OVERVIEW scaffolding (§3.3, population deferred)
 │   ├── macro_library_shiller.csv      # Yale ie_data.xls column headers (6 rows: CAPE, S&P composite price/dividend/earnings, US CPI 1871+, 10Y long rate 1871+)
 │   ├── macro_library_french.csv       # Ken French ZIP-stem|column keys (6 rows: US 5-factor Mkt-RF/SMB/HML/RMW/CMA + 1m RF)
-│   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
+│   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp (nominal)/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
 │   ├── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
 │   └── macro_library_sec_edgar.csv    # SEC EDGAR fundamentals (68 rows: 34 US pure-plays × revenue+EPS; ticker,cik,metric,gaap_tags,col,name,sort_key)
@@ -462,7 +462,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 
 - **URL:** Single Stata-format download from `https://www.macrohistory.net/database/` (current release as of 2026-06: R6, `JSTdatasetR6.dta`). The file is small (~5 MB compressed, ~50 MB in memory) so the whole DataFrame is process-cached and sliced per indicator.
 - **Auth:** None required. `www.macrohistory.net` is on the pipeline allow-list; the sandbox edge sometimes still returns `host_not_allowed` 403s. The smoke test SKIPs cleanly in that case.
-- **Used for:** 40 annual rows = 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi`, `gdp`, `eq_tr` equity total return, `ltrate` long-term rate). 1870+ depth. Library: `data/macro_library_jst.csv`. **Role:** confirmatory pre-1950 cross-validation anchor per the §3.13 handoff memo — not a regime-engine primary input. Column names like `USA_CPI_JST` / `GBR_GDP_JST` deliberately don't shadow the modern aggregator canonicals.
+- **Used for:** 40 annual rows = 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi`, `gdp` nominal GDP (local currency millions, current prices), `eq_tr` equity total return, `ltrate` long-term rate). 1870+ depth. Library: `data/macro_library_jst.csv`. **Role:** confirmatory pre-1950 cross-validation anchor per the §3.13 handoff memo — not a regime-engine primary input. Column names like `USA_CPI_JST` / `GBR_GDP_JST` deliberately don't shadow the modern aggregator canonicals.
 - **Series-ID convention:** `<iso>|<column>`, e.g. `USA|cpi`, `GBR|gdp`. The fetcher splits on `|` to slice the (country, column) cell out of the cached wide-format DataFrame.
 - **Read engine:** `pandas.read_stata` — no `pyreadstat` dependency.
 - **Fetcher:** `sources/jst.py` (301 lines). Smoke test: `test_jst_smoke.py` (daily CI step — SKIPs when `macrohistory.net` is unreachable).
@@ -600,7 +600,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 
 | File | Rows | Consumed By | Purpose |
 |---|---|---|---|
-| `index_library.csv` | ~401 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag. 22 dead yfinance tickers retired across 4 batches in §3.1 sub-track 4 (2026-04-28); see `data/removed_tickers.csv` for the per-ticker disposition. **Stage F (2026-05-01) added 14 instruments:** 5 fixed-income (IEAC.L Euro IG corp, CBON CN govt bond, IUKD.L UK Dividend, VGOV.L UK Gilt, IBGM.L Eur Govt 7-10yr) + 9 equity (EWZ/EWW/INDA/EZA/TUR/EIS/MCHI/FXI/DXJ — EM regional + Japan hedged). |
+| `index_library.csv` | ~401 | fetch_data.py, fetch_hist.py, compute_macro_market.py | Master instrument registry — tickers, metadata, data source assignments, `simple_dash` flag. 22 dead yfinance tickers retired across 4 batches in §3.1 sub-track 4 (2026-04-28); see `data/removed_tickers.csv` for the per-ticker disposition. **Stage F (2026-05-01) added 14 instruments:** 5 fixed-income (IEAC.L Euro IG corp, CBON CN govt bond, IUKD.L UK Dividend, VGOV.L UK Gilt, IBGM.L Eur Govt 7-10yr) + 9 equity (EWZ/EWW/INDA/EZA/TUR/EIS/MCHI/FXI/DXJ — EM regional + Japan hedged). **2026-06-18 (PR #223):** 3 wrong-instrument tickers corrected (NDIA.L → INDY, CMOD.L → BCOM.L, ^SP500-6020 → ^SP500-6010 now CONFIRMED); 9 tickers set UNAVAILABLE (8 EMB country-bond proxies all serving identical data + SMALLCAP.NS resolving to wrong instrument). |
 | `level_change_tickers.csv` | 14 | fetch_data.py | Vol/level tickers that report absolute point change, not % return |
 | `macro_library_countries.csv` | 14 | sources/countries.py, docs/build_html.py | 14 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND, NLD, GLOBAL) + canonical / WB / IMF code mappings. NLD added 2026-06-10 to bring the regime-AA §3.12 priority-10 yields/equities row complete. Also drives the explorer's "Economic Data" By-Country sidebar grouping + country-filter dropdown (§2.5 v2). |
 | `macro_library_fred.csv` | 115 | sources/fred.py | FRED series IDs (US + international, including 6 supplementals from the 2026-04-26 refactor). 2026-04-27: `BAMLEC0A0RMEY` removed. 2026-04-29: `RSFSXMV` + `CHNPIEATI01GYM` (CHN_PPI) added; bogus `CHNPPIALLMINMEI` corrected to `CHNPIEATI01GYM`; 3 OECD-mirror confidence rows removed. **2026-06-10 §3.12 OECD MEI batch (+17):** 7 long-rate yields `IRLTLT01<ISO>M156N` for USA/FRA/JPN/CAN/AUS/NLD/CHE + 10 share-price reference indices `SPASTT01<ISO>M661N` for the priority-10. **2026-06-10 §3.9.1 commodity batch (+14):** IMF PCPS rows — copper, aluminum, WTI, Brent, nat gas, wheat, corn, soybeans, coffee, sugar, cotton, beef, pork, plus the aggregate `PALLFNFINDEXM`. **2026-06-15 Bucket A (+9, PR #201):** `IRLTLT01CNM156N` (CHN_GOVT_10Y), `MABMM301EZM189S` (EZ M3), `MYAGM2JPM189S` (JPN M2), `NAHBSHF` (NAHB Housing Market Index), `MEDCPIM158SFRBCLE` (Cleveland Median CPI), `TRMMEANCPIM158SFRBCLE` (Cleveland Trimmed Mean CPI), `PCETRIM12M159SFRBDAL` (Dallas Trimmed Mean PCE), `MICH5YR` (UMich 5-10Y inflation expectations), `BAMLER00ICOAS` (Euro IG OAS). **2026-06-17 (−7):** 4 dead FRED IDs dropped (PR #217 A5: `IRLTLT01CNM156N`, `NAHBSHF`, `MICH5YR`, `BAMLER00ICOAS` — all return HTTP 400 "series does not exist") + 3 frozen M2/M3 mirrors replaced by live central-bank sources (PR #221: `MABMM301EZM189S` → ECB BSI, `MYAGM2JPM189S` → BoJ MD02, `MYAGM2CNM189N` → DB.nomics NBS). Library ~122 → ~115 rows. |
@@ -627,7 +627,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_alpha_vantage.csv` | 0 | sources/alpha_vantage.py | **NEW 2026-06-10 (§3.3 scaffolding).** Header-only. Alpha Vantage OVERVIEW endpoint serves snapshot PE / forward PE / PEG / dividend yield / EPS / book value via `?function=OVERVIEW&symbol=<SYM>`. Free-tier cap (25 req/day) is too thin for a daily comp fan-out; population deferred per `manuals/alpha_vantage_evaluation.md`. The schema header is in place so the day the storage shape lands, only CSV rows need to be added. |
 | `macro_library_shiller.csv` | 6 | sources/shiller.py | **NEW 2026-06-10 (§3.13).** Yale `ie_data.xls` column headers: `CAPE` → USA_CAPE, `S&P Comp. P` → USA_SP500_SHILLER, `Dividend D` → USA_SP500_DIV_SHILLER, `Earnings E` → USA_SP500_EPS_SHILLER, `CPI` → USA_CPI_SHILLER, `Long Interest Rate GS10` → USA_TREAS_10Y_SHILLER. Monthly from 1871. Distinct from the modern BLS/FRED canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. |
 | `macro_library_french.csv` | 6 | sources/french.py | **NEW 2026-06-10 (§3.13).** Ken French Data Library `<zip_stem>|<column>` keys against `F-F_Research_Data_5_Factors_2x3_CSV.zip`: Mkt-RF / SMB / HML / RMW / CMA + 1-month T-bill RF. US 5-factor monthly returns from 1926-07 (RMW + CMA from 1963-07). Mapped to columns USA_FF_MKT_RF / USA_FF_SMB / USA_FF_HML / USA_FF_RMW / USA_FF_CMA / USA_FF_RF. International (Developed_5_Factors) + emerging (Emerging_5_Factors) extensions deferred. |
-| `macro_library_jst.csv` | 39 | sources/jst.py | **NEW 2026-06-10 (§3.13); −1 2026-06-11.** JST Macrohistory R6 `<iso>|<column>` keys: 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi` / `gdp` / `eq_tr` / `ltrate`). Annual cadence, 1870+ depth. **2026-06-11:** CAN_EQUITY_TR_JST row dropped (JST R6 does not carry a Canadian equity total-return series). Column names like USA_CPI_JST / GBR_GDP_JST deliberately don't shadow modern canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. |
+| `macro_library_jst.csv` | 39 | sources/jst.py | **NEW 2026-06-10 (§3.13); −1 2026-06-11.** JST Macrohistory R6 `<iso>|<column>` keys: 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi` / `gdp` (nominal, local currency millions, current prices) / `eq_tr` / `ltrate`). Annual cadence, 1870+ depth. **2026-06-11:** CAN_EQUITY_TR_JST row dropped (JST R6 does not carry a Canadian equity total-return series). Column names like USA_CPI_JST / GBR_GDP_JST deliberately don't shadow modern canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. **2026-06-18 (PR #222):** all 10 `<ISO>_GDP_JST` rows relabeled from "Real GDP" to "Nominal GDP" (name) and units corrected from "<ccy> millions (real)" to "<ccy> millions (nominal)"; `sources/jst.py` docstring updated. |
 | `macro_library_atlanta_fed.csv` | 1 | sources/atlanta_fed.py | **NEW 2026-06-11 (§3.1.4).** Atlanta Fed GDPNow series. Single row: `gdpnow_us_qoq_saar` → `US_GDPNOW` (Atlanta Fed GDPNow — US Real GDP Growth Q/Q SAAR, daily, 2014+; freshness_override 14d). Keyless — no API key required. |
 | `macro_library_ny_fed.csv` | 1 | sources/ny_fed.py | **NEW 2026-06-12 (§3.1.4).** NY Fed Staff Nowcast series. Single row: `ny_fed_nowcast_us_qoq_saar` → `US_NYFED_NOWCAST` (New York Fed Staff Nowcast — US Real GDP Growth Q/Q SAAR, weekly, 2002+; freshness_override 14d). Keyless — no API key required. |
 | `macro_library_sec_edgar.csv` | 68 | fetch_data.py (SEC EDGAR isolated phase) | **NEW 2026-06-15.** SEC EDGAR equity-fundamentals registry. 68 rows = 34 US-filer pure-plays × 2 metrics (revenue + diluted EPS). Schema: `ticker, cik, metric, gaap_tags, col, name, sort_key`. Not wired into the unified Phase ME pipeline — consumed only by the isolated `sec_edgar` phase in `fetch_data.py`; output written to `data/equity_fundamentals.csv`. Keyless (fair-access UA required). |
@@ -930,7 +930,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `parse_response(data, indicator, label)` | IMF DataMapper v1 JSON → `dict` |
 | `fetch_indicator(indicator, …)` | Single-call full-history fetch (IMF returns whole panels in one shot) |
 
-#### 9.5.7 `sources/dbnomics.py` (180 lines)
+#### 9.5.7 `sources/dbnomics.py` (224 lines)
 
 | Function | Purpose |
 |---|---|
@@ -952,7 +952,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition: (1) direct URL, (2) landing-page scrape, (3) Bright Data fallback if creds available |
 | `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
 
-#### 9.5.9 `sources/boe.py` (~210 lines, Stage D)
+#### 9.5.9 `sources/boe.py` (264 lines, Stage D)
 
 Bank of England Interactive Statistical Database (IADB) fetcher. Direct CSV download with multi-line title preamble.
 
@@ -979,7 +979,7 @@ ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB
 
 60s default timeout (FM dataset is sometimes slow on first hit).
 
-#### 9.5.11 `sources/boj.py` (~270 lines, Stage D)
+#### 9.5.11 `sources/boj.py` (320 lines, Stage D)
 
 Bank of Japan Time-Series Data Search fetcher. Programmatic API launched February 2026.
 
@@ -1345,7 +1345,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
-### 9.8 `data_audit.py` (1,188 lines)
+### 9.8 `data_audit.py` (1,342 lines)
 
 **Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
 
@@ -1404,7 +1404,7 @@ OECD multi-country fan-out conflicts (one library row → many fanned-out column
 
 The 117d cluster (PERMIT, FEDFUNDS, CMRMTSPL, FRA/DEU_UNEMPLOYMENT, EU_ESI/IND/SVC_CONF, ISM_MFG_PMI/NEWORD) was deliberately **not** widened — 117d for monthly publishers is too long for normal lag; widening would mask a real fetch or publisher issue. Those 10 series remain EXPIRED as forcing functions.
 
-### 9.9 `library_sync.py` (~396 lines)
+### 9.9 `library_sync.py` (~402 lines)
 
 **Role:** Operator-gated companion to `data_audit.py`'s Section B `registry_drift` check (forward_plan §0 / §3.1). The library CSVs are the source of truth for what the pipeline fetches; this utility keeps the hist files aligned with them after a library row has been edited or removed.
 
