@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-22
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -65,7 +65,7 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,488 lines)
 ├── compute_macro_market.py        # 108 macro-market composite indicators + monthly-hist writer (2,546 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (627 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,188 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
@@ -82,7 +82,7 @@ market_dash_auto/
 │   ├── oecd.py                        # OECD SDMX REST API fetcher (191 lines)
 │   ├── worldbank.py                   # World Bank WDI fetcher (193 lines)
 │   ├── imf.py                         # IMF DataMapper v1 fetcher (153 lines)
-│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (~245 lines)
+│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (~224 lines)
 │   ├── ifo.py                         # ifo Institute Excel-workbook fetcher with retry + cache + month-walk + Bright Data fallback (579 lines)
 │   ├── boe.py                         # Bank of England IADB CSV fetcher (264 lines)
 │   ├── ecb.py                         # ECB Data Portal SDMX fetcher
@@ -930,7 +930,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `parse_response(data, indicator, label)` | IMF DataMapper v1 JSON → `dict` |
 | `fetch_indicator(indicator, …)` | Single-call full-history fetch (IMF returns whole panels in one shot) |
 
-#### 9.5.7 `sources/dbnomics.py` (180 lines)
+#### 9.5.7 `sources/dbnomics.py` (224 lines)
 
 | Function | Purpose |
 |---|---|
@@ -952,7 +952,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition: (1) direct URL, (2) landing-page scrape, (3) Bright Data fallback if creds available |
 | `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
 
-#### 9.5.9 `sources/boe.py` (~210 lines, Stage D)
+#### 9.5.9 `sources/boe.py` (264 lines, Stage D)
 
 Bank of England Interactive Statistical Database (IADB) fetcher. Direct CSV download with multi-line title preamble.
 
@@ -979,7 +979,7 @@ ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB
 
 60s default timeout (FM dataset is sometimes slow on first hit).
 
-#### 9.5.11 `sources/boj.py` (~270 lines, Stage D)
+#### 9.5.11 `sources/boj.py` (320 lines, Stage D)
 
 Bank of Japan Time-Series Data Search fetcher. Programmatic API launched February 2026.
 
@@ -1801,7 +1801,7 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 ### Workflow-level configuration
 
 - **`PYTHONUNBUFFERED=1`** (set in `.github/workflows/update_data.yml` env block, 2026-05-27). Block-buffered stdout through `tee pipeline.log` previously masked which step a long run was actually on (the ifo stall investigation). Unbuffered output ensures the live Actions log + the committed `pipeline.log` reflect progress in real time. Cost: zero; preserve this permanently.
-- **Primary-source smoke tests step (2026-06-09, extended 2026-06-10/11/12).** A `if: always()` + `continue-on-error: true` CI step runs `python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke -v` and tees output into `pipeline.log`. Each test skips gracefully when the source endpoint is unreachable — a transient outage never blocks the daily commit. A genuine regression (e.g. a changed BLS response schema) surfaces as a loud warning in the daily audit Issue. BLS_API_KEY is optional; INSEE needs no key; BdF is expected to skip until the secret is provisioned; ALPHAVANTAGE_API_KEY is optional; the §3.13 long-run trio (Shiller / Ken French / JST) SKIPs cleanly when the sandbox edge blocks the Yale / Dartmouth / Macrohistory hosts (these reach the production runner but not the local dev sandbox). `test_ny_fed_smoke` SKIPs when the NY Fed medialibrary CDN is unreachable.
+- **Primary-source smoke tests step (2026-06-09, extended 2026-06-10/11/12/15).** A `if: always()` + `continue-on-error: true` CI step runs `python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke test_sec_edgar_smoke -v` and tees output into `pipeline.log`. Each test skips gracefully when the source endpoint is unreachable — a transient outage never blocks the daily commit. A genuine regression (e.g. a changed BLS response schema) surfaces as a loud warning in the daily audit Issue. BLS_API_KEY is optional; INSEE needs no key; BdF is expected to skip until the secret is provisioned; ALPHAVANTAGE_API_KEY is optional; the §3.13 long-run trio (Shiller / Ken French / JST) SKIPs cleanly when the sandbox edge blocks the Yale / Dartmouth / Macrohistory hosts (these reach the production runner but not the local dev sandbox). `test_ny_fed_smoke` SKIPs when the NY Fed medialibrary CDN is unreachable. `test_sec_edgar_smoke` SKIPs when EDGAR is unreachable (added 2026-06-15 — resolves NVDA's CIK then asserts non-empty revenue + EPS series and the tidy schema).
 
 ---
 
