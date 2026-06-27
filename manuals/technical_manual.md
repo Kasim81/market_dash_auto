@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-27
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-8 top-level Python modules (incl. `data_audit.py`) + 30-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed) + `docs/build_html.py` + `scripts/` utilities, totalling ~20,650 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 31 input CSV libraries (1 instrument library + 28 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+8 top-level Python modules (incl. `data_audit.py`) + 30-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed) + `docs/build_html.py` + `scripts/` utilities, totalling ~20,800 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 31 input CSV libraries (1 instrument library + 28 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -65,7 +65,7 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,488 lines)
 ├── compute_macro_market.py        # 108 macro-market composite indicators + monthly-hist writer (2,546 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (627 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,188 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
@@ -76,13 +76,13 @@ market_dash_auto/
 │
 ├── sources/                       # Per-source raw-macro fetchers (called by fetch_macro_economic.py)
 │   ├── __init__.py
-│   ├── base.py                        # Shared HTTP/Sheets/CSV plumbing (220 lines)
-│   ├── countries.py                   # 12-country code registry (54 lines)
+│   ├── base.py                        # Shared HTTP/Sheets/CSV plumbing (226 lines)
+│   ├── countries.py                   # 14-country code registry (54 lines)
 │   ├── fred.py                        # FRED REST API fetcher (423 lines)
 │   ├── oecd.py                        # OECD SDMX REST API fetcher (191 lines)
 │   ├── worldbank.py                   # World Bank WDI fetcher (193 lines)
 │   ├── imf.py                         # IMF DataMapper v1 fetcher (153 lines)
-│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (~245 lines)
+│   ├── dbnomics.py                    # DB.nomics REST API fetcher with fail-fast circuit breaker (224 lines)
 │   ├── ifo.py                         # ifo Institute Excel-workbook fetcher with retry + cache + month-walk + Bright Data fallback (579 lines)
 │   ├── boe.py                         # Bank of England IADB CSV fetcher (264 lines)
 │   ├── ecb.py                         # ECB Data Portal SDMX fetcher
@@ -167,13 +167,15 @@ market_dash_auto/
 │   └── equity_fundamentals.csv        # OUTPUT — SEC EDGAR revenue + diluted EPS history (long/tidy, idempotent-merge; isolated phase in fetch_data.py)
 │
 ├── docs/                          # Indicator Explorer generator
-│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,921 lines)
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,923 lines)
 │   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
 │   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
 │
 ├── scripts/                       # Operator utilities (not in the daily run)
 │   ├── backadjust_hist_splits.py      # One-off back-adjustment of committed hist + sister CSVs for splits in manual_splits.csv (§11 Pattern 11; idempotent)
-│   └── phase_0_coverage_check.py      # Phase 0 regime-AA coverage diagnostic — builds the indicator × region fill matrix and sourcing backlog (2026-06-15)
+│   ├── phase_0_coverage_check.py      # Phase 0 regime-AA coverage diagnostic — builds the indicator × region fill matrix and sourcing backlog (2026-06-15)
+│   ├── ifo_probe.py                   # Reusable ifo-fetch diagnostic — standalone probe that exercises the ifo.py strategies and dumps the result (157 lines)
+│   └── build_review_workbook.py       # Builds the indicator-review Excel workbook for manual QA cycles (339 lines)
 │
 ├── manuals/                       # Documentation
 │   ├── technical_manual.md            # This file — the authoritative record of current code state
@@ -861,7 +863,7 @@ Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → i
 
 **Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → alpha_vantage → shiller → french → jst → atlanta_fed → ny_fed`. Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Last writer wins per `col` — this is the implicit fallback mechanism documented in `data/source_fallbacks.csv`.
 
-#### 9.5.1 `sources/base.py` (220 lines)
+#### 9.5.1 `sources/base.py` (226 lines)
 
 Shared plumbing used by every fetcher and coordinator.
 
@@ -877,7 +879,7 @@ Shared plumbing used by every fetcher and coordinator.
 
 #### 9.5.2 `sources/countries.py` (54 lines)
 
-Single source of truth for the 12 country codes and their per-source mappings, driven by `data/macro_library_countries.csv`.
+Single source of truth for the 14 country codes and their per-source mappings, driven by `data/macro_library_countries.csv`.
 
 | Function | Purpose |
 |---|---|
@@ -930,7 +932,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `parse_response(data, indicator, label)` | IMF DataMapper v1 JSON → `dict` |
 | `fetch_indicator(indicator, …)` | Single-call full-history fetch (IMF returns whole panels in one shot) |
 
-#### 9.5.7 `sources/dbnomics.py` (180 lines)
+#### 9.5.7 `sources/dbnomics.py` (224 lines)
 
 | Function | Purpose |
 |---|---|
@@ -952,7 +954,7 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `resolve_workbook()` / `resolve_workbook_url()` / `download_workbook(url)` | Top-level workbook acquisition: (1) direct URL, (2) landing-page scrape, (3) Bright Data fallback if creds available |
 | `parse_workbook(xlsx_bytes, indicators)` | Extract every registered series via its `(sheet_index, excel_col)` from `macro_library_ifo.csv` into a wide DataFrame |
 
-#### 9.5.9 `sources/boe.py` (~210 lines, Stage D)
+#### 9.5.9 `sources/boe.py` (264 lines, Stage D)
 
 Bank of England Interactive Statistical Database (IADB) fetcher. Direct CSV download with multi-line title preamble.
 
@@ -979,7 +981,7 @@ ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB
 
 60s default timeout (FM dataset is sometimes slow on first hit).
 
-#### 9.5.11 `sources/boj.py` (~270 lines, Stage D)
+#### 9.5.11 `sources/boj.py` (320 lines, Stage D)
 
 Bank of Japan Time-Series Data Search fetcher. Programmatic API launched February 2026.
 
@@ -1290,7 +1292,7 @@ Each indicator goes through:
 | `_PHASE_D_CALCULATORS` | dict | Survey-derived indicators (ISM, ifo, Eurostat) — historical naming, all now read from the unified hist |
 | `_ALL_CALCULATORS` | dict | Merged union of the above four dicts |
 
-### 9.7 `docs/build_html.py` (2,921 lines)
+### 9.7 `docs/build_html.py` (2,923 lines)
 
 **Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a 3-section sidebar. Reads the freshly-written CSVs at the end of each pipeline run.
 
@@ -1320,7 +1322,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 |---|---|
 | `_clean(val)` / `_series_to_list(s)` / `_date_range(dates, values)` / `_parse_date_col(df)` | Internal helpers for value coercion and date-axis construction |
 | `load_indicator_meta()` | Load `macro_indicator_library.csv` → dict keyed by id with category, group, sub_group, **concept, subcategory**, formula, interpretation, regime description, leading flag, cycle_timing (L/C/G) |
-| `load_countries()` | Read `data/macro_library_countries.csv` and surface the 12-row registry (code + name + region) into `MAIN_DATA.countries`. Drives the By-Country sidebar grouping + the country-filter dropdown ordering. (§0 of forward_plan.md: country list lives in the CSV, never in JS.) |
+| `load_countries()` | Read `data/macro_library_countries.csv` and surface the 14-row registry (code + name + region) into `MAIN_DATA.countries`. Drives the By-Country sidebar grouping + the country-filter dropdown ordering. (§0 of forward_plan.md: country list lives in the CSV, never in JS.) |
 | `build_macro_market(ind_meta)` | Load `macro_market_hist.csv`; emits `groups` (region tree) + `groupsByConcept` (concept tree) for the toggleable sidebar |
 | `_load_unified_hist_once()` | Cache the unified `macro_economic_hist` DataFrame + per-column metadata (read once, reused). Adds lowercase `concept` / `subcategory` aliases so JS uses one key style across both Phase E and raw-macro payloads. |
 | `_build_payload(keep_column)` | Generic payload builder that filters the cached unified hist by a per-column predicate |
@@ -1345,7 +1347,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
-### 9.8 `data_audit.py` (1,188 lines)
+### 9.8 `data_audit.py` (1,342 lines)
 
 **Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
 
