@@ -1,6 +1,6 @@
 # Market Dashboard — Forward Plan
 
-> Last updated: 2026-06-18
+> Last updated: 2026-06-28
 
 This is the project's forward-looking working doc for the **data pipeline only**. §0 sets the architecture rules every Claude session must read before touching data-layer code. §1 is the standalone phase / data-layer summary. §2 is the prioritised work queue. §3 captures feature roadmap items not yet on the queue. §4 holds the project chronology task. §5 cross-references `multifreq_plan.md` for the larger Phase 2 (multi-frequency) rebuild. The current code state lives in `manuals/technical_manual.md`; this doc and the technical manual are the only two contributor docs you need for **data pipeline work**.
 
@@ -385,6 +385,9 @@ These are cases where a planned series is unavailable from any free source we ac
 - ✅ **CHN_IND_PROD units fix:** library row relabelled "Index 2015=100 (SA)" → "Index, same period prev year=100 (YoY)" to match NBS methodology (the series reports YoY % relative to the same period in the prior year, not a fixed-base level).
 - ✅ **4 dead FRED IDs dropped (PR #217, closes A5):** `IRLTLT01CNM156N` (CHN 10Y), `NAHBSHF` (NAHB Housing), `MICH5YR` (UMich 5-10Y inflation exp.), `BAMLER00ICOAS` (Euro IG OAS) — all return HTTP 400 `"The series does not exist."` on FRED. Combined with the 3 M2/M3 mirrors removed by PR #221, `macro_library_fred.csv` shrinks ~122 → ~115 rows.
 - ✅ **devcontainer added (commit `c99a2cd`):** `.devcontainer/devcontainer.json` committed — Python 3.11 image + Node LTS feature; `postCreateCommand` installs `requirements.txt` + `@anthropic-ai/claude-code`.
+
+**Recent completed work (session 2026-06-18):**
+- ✅ **`index_library.csv` ticker corrections (PR #223, commit `c1acb5a`):** 3 repoints — NDIA.L → INDY (iShares India 50 ETF, was pointing to the wrong UK-listed ticker), CMOD.L → BCOM.L (L&G All Commodities ETF, correct UK-listed ticker), ^SP500-6020 → ^SP500-6010 (S&P 500 Equity REITs, corrected GICS sector code, status flipped UNAVAILABLE → CONFIRMED). 9 rows set UNAVAILABLE — 8 country-bond EM rows (BR/KR/MX/ID/SA/ZA/TR/AR) that all mapped to the same aggregate EMB ticker (not country-specific bond data), and SMALLCAP.NS which pointed to the wrong index.
 
 ### §2.A Broken-source & freshness backlog — immediate top of queue (2026-06-15)
 
