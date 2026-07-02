@@ -19,7 +19,7 @@ This is the project's forward-looking working doc for the **data pipeline only**
 There are multiple source-of-truth CSVs — one per data source — not a single registry. The full inventory is in **§1 Data-Layer Registry**, but the active set today is:
 
 - `data/index_library.csv` — comp pipeline tickers (~401 yfinance instruments)
-- `data/macro_library_countries.csv` — 12 country codes + WB / IMF mappings
+- `data/macro_library_countries.csv` — 14 country codes + WB / IMF mappings
 - `data/macro_library_fred.csv` — every FRED series ID
 - `data/macro_library_oecd.csv` — every OECD SDMX dataflow / dimension key
 - `data/macro_library_worldbank.csv` — every WB WDI indicator code
@@ -168,7 +168,7 @@ Phase D's "Tier 3 FMP calendar" track was paywalled and rejected on 2026-04-23 �
 - **Atlanta Fed GDPNow** (2026-06-11, §3.1.4) — 1 US series: `US_GDPNOW` (real-time Q/Q SAAR GDP growth nowcast, daily, 2014+). Keyless Excel download — no API key required. Library: `data/macro_library_atlanta_fed.csv`. Feeds the `US_GDPNOW1` Phase E indicator on the Growth axis.
 - **New York Fed Staff Nowcast** (2026-06-12, §3.1.4) — 1 US series: `US_NYFED_NOWCAST` (weekly real-time Q/Q SAAR GDP nowcast, 2014+). Keyless Excel download from the NY Fed medialibrary CDN; rightmost-non-null per publication row tracks the current-vintage headline. Library: `data/macro_library_ny_fed.csv`. Feeds the `US_NOWCAST1` Phase E indicator — second-opinion read on US growth alongside `US_GDPNOW1`. Quiet window of ~3-5 business days between final-of-Q and initial-of-Q+1 nowcasts; `_calc_US_NOWCAST1` forward-fills across the gap.
 
-**Country registry:** `data/macro_library_countries.csv` is the single source of truth for the 12 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND) and their WB / IMF code mappings. `IND` was added in the 2026-04-26 supplemental refactor for the India 10Y bond yield, with empty `wb_code` / `imf_code` so it doesn't fan out into multi-country queries.
+**Country registry:** `data/macro_library_countries.csv` is the single source of truth for the 14 country codes (USA, GBR, DEU, FRA, ITA, JPN, CHN, AUS, CAN, CHE, EA19, IND, NLD, GLOBAL) and their WB / IMF code mappings. `IND` was added in the 2026-04-26 supplemental refactor for the India 10Y bond yield, with empty `wb_code` / `imf_code` so it doesn't fan out into multi-country queries. `NLD` was added 2026-06-10 for the §3.12 priority-10 yields/equities coverage; `GLOBAL` carries cross-country aggregate series.
 
 **Architecture invariant (per §0):** every fetched identifier lives in `data/macro_library_*.csv`. As of the 2026-04-26 supplemental refactor `compute_macro_market.py` contains zero direct API contact — every series the calculators read is provisioned through the unified hist.
 

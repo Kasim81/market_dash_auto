@@ -77,7 +77,7 @@ market_dash_auto/
 ├── sources/                       # Per-source raw-macro fetchers (called by fetch_macro_economic.py)
 │   ├── __init__.py
 │   ├── base.py                        # Shared HTTP/Sheets/CSV plumbing (226 lines)
-│   ├── countries.py                   # 12-country code registry (54 lines)
+│   ├── countries.py                   # 14-country code registry (54 lines)
 │   ├── fred.py                        # FRED REST API fetcher (423 lines)
 │   ├── oecd.py                        # OECD SDMX REST API fetcher (191 lines)
 │   ├── worldbank.py                   # World Bank WDI fetcher (193 lines)
@@ -139,7 +139,7 @@ market_dash_auto/
 │   ├── macro_library_alpha_vantage.csv # Header-only — Alpha Vantage OVERVIEW scaffolding (§3.3, population deferred)
 │   ├── macro_library_shiller.csv      # Yale ie_data.xls column headers (6 rows: CAPE, S&P composite price/dividend/earnings, US CPI 1871+, 10Y long rate 1871+)
 │   ├── macro_library_french.csv       # Ken French ZIP-stem|column keys (6 rows: US 5-factor Mkt-RF/SMB/HML/RMW/CMA + 1m RF)
-│   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
+│   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp (nominal)/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
 │   ├── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
 │   └── macro_library_sec_edgar.csv    # SEC EDGAR fundamentals (68 rows: 34 US pure-plays × revenue+EPS; ticker,cik,metric,gaap_tags,col,name,sort_key)
@@ -466,7 +466,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 
 - **URL:** Single Stata-format download from `https://www.macrohistory.net/database/` (current release as of 2026-06: R6, `JSTdatasetR6.dta`). The file is small (~5 MB compressed, ~50 MB in memory) so the whole DataFrame is process-cached and sliced per indicator.
 - **Auth:** None required. `www.macrohistory.net` is on the pipeline allow-list; the sandbox edge sometimes still returns `host_not_allowed` 403s. The smoke test SKIPs cleanly in that case.
-- **Used for:** 40 annual rows = 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi`, `gdp`, `eq_tr` equity total return, `ltrate` long-term rate). 1870+ depth. Library: `data/macro_library_jst.csv`. **Role:** confirmatory pre-1950 cross-validation anchor per the §3.13 handoff memo — not a regime-engine primary input. Column names like `USA_CPI_JST` / `GBR_GDP_JST` deliberately don't shadow the modern aggregator canonicals.
+- **Used for:** 39 annual rows = 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi`, `gdp`, `eq_tr` equity total return, `ltrate` long-term rate), less the Canadian `eq_tr` series (dropped 2026-06-11 — JST R6 carries no Canadian equity total-return series). 1870+ depth. Library: `data/macro_library_jst.csv`. **Role:** confirmatory pre-1950 cross-validation anchor per the §3.13 handoff memo — not a regime-engine primary input. Column names like `USA_CPI_JST` / `GBR_GDP_JST` deliberately don't shadow the modern aggregator canonicals.
 - **Note (2026-06-17, PR #222):** The JST R6 `gdp` column is **nominal GDP** (current prices, local currency) — not chain-linked real GDP. All 10 `<ISO>_GDP_JST` rows were relabelled 'Real GDP' → 'Nominal GDP' in `data/macro_library_jst.csv` after empirical verification (USA nominal GDP grew ~64× 1950→2015, consistent with nominal; real grew only ~6×). `sources/jst.py` docstring updated to match.
 - **Series-ID convention:** `<iso>|<column>`, e.g. `USA|cpi`, `GBR|gdp`. The fetcher splits on `|` to slice the (country, column) cell out of the cached wide-format DataFrame.
 - **Read engine:** `pandas.read_stata` — no `pyreadstat` dependency.
@@ -882,7 +882,7 @@ Shared plumbing used by every fetcher and coordinator.
 
 #### 9.5.2 `sources/countries.py` (54 lines)
 
-Single source of truth for the 12 country codes and their per-source mappings, driven by `data/macro_library_countries.csv`.
+Single source of truth for the 14 country codes and their per-source mappings, driven by `data/macro_library_countries.csv`.
 
 | Function | Purpose |
 |---|---|
@@ -1820,7 +1820,7 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 ### Workflow-level configuration
 
 - **`PYTHONUNBUFFERED=1`** (set in `.github/workflows/update_data.yml` env block, 2026-05-27). Block-buffered stdout through `tee pipeline.log` previously masked which step a long run was actually on (the ifo stall investigation). Unbuffered output ensures the live Actions log + the committed `pipeline.log` reflect progress in real time. Cost: zero; preserve this permanently.
-- **Primary-source smoke tests step (2026-06-09, extended 2026-06-10/11/12).** A `if: always()` + `continue-on-error: true` CI step runs `python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke -v` and tees output into `pipeline.log`. Each test skips gracefully when the source endpoint is unreachable — a transient outage never blocks the daily commit. A genuine regression (e.g. a changed BLS response schema) surfaces as a loud warning in the daily audit Issue. BLS_API_KEY is optional; INSEE needs no key; BdF is expected to skip until the secret is provisioned; ALPHAVANTAGE_API_KEY is optional; the §3.13 long-run trio (Shiller / Ken French / JST) SKIPs cleanly when the sandbox edge blocks the Yale / Dartmouth / Macrohistory hosts (these reach the production runner but not the local dev sandbox). `test_ny_fed_smoke` SKIPs when the NY Fed medialibrary CDN is unreachable.
+- **Primary-source smoke tests step (2026-06-09, extended 2026-06-10/11/12/15).** A `if: always()` + `continue-on-error: true` CI step runs `python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke test_sec_edgar_smoke -v` and tees output into `pipeline.log`. Each test skips gracefully when the source endpoint is unreachable — a transient outage never blocks the daily commit. A genuine regression (e.g. a changed BLS response schema) surfaces as a loud warning in the daily audit Issue. BLS_API_KEY is optional; INSEE needs no key; BdF is expected to skip until the secret is provisioned; ALPHAVANTAGE_API_KEY is optional; the §3.13 long-run trio (Shiller / Ken French / JST) SKIPs cleanly when the sandbox edge blocks the Yale / Dartmouth / Macrohistory hosts (these reach the production runner but not the local dev sandbox). `test_ny_fed_smoke` SKIPs when the NY Fed medialibrary CDN is unreachable; `test_sec_edgar_smoke` (added 2026-06-15) resolves NVDA's CIK and asserts non-empty revenue + EPS series, SKIPping when EDGAR is unreachable.
 
 ---
 
