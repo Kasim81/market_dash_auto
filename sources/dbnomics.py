@@ -25,6 +25,17 @@ DBNOMICS_BASE = "https://api.db.nomics.world/v22"
 # LIBRARY LOADER
 # ---------------------------------------------------------------------------
 
+def _opt_float(row, key: str) -> float | None:
+    """Parse an optional numeric library cell; blank / unparseable -> None."""
+    raw = (row.get(key, "") or "").strip()
+    if raw == "":
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
 def load_library() -> list[dict]:
     """Load DB.nomics indicator definitions from macro_library_dbnomics.csv."""
     df = pd.read_csv(_LIBRARY_CSV, dtype=str, keep_default_na=False)
@@ -46,6 +57,12 @@ def load_library() -> list[dict]:
             "frequency":    row["frequency"].strip(),
             "notes":        row["notes"].strip(),
             "sort_key":     float(row["sort_key"]),
+            # Optional plausibility band (blank unless declared). Drives the
+            # fetch-time guard in fetch_macro_economic._fetch_dbnomics_* and
+            # mirrors the same columns data_audit Section E reads for the
+            # committed-value backstop.
+            "plausible_min": _opt_float(row, "plausible_min"),
+            "plausible_max": _opt_float(row, "plausible_max"),
             # Legacy alias for existing fetch_macro_dbnomics callers:
             "series_id":    row["series_id"].strip(),
         })
@@ -169,6 +186,44 @@ def parse_observations(doc: dict) -> list[tuple[str, float]]:
             continue
     pairs.sort(key=lambda x: x[0])
     return pairs
+
+
+def filter_plausible(
+    obs: list[tuple[str, float]],
+    lo: float | None,
+    hi: float | None,
+    col: str = "",
+) -> list[tuple[str, float]]:
+    """Drop observations whose value falls outside [lo, hi] (inclusive).
+
+    A plausibility guard for the fetch layer: some DB.nomics mirrors publish
+    physically impossible values when their upstream scrape breaks (e.g. the
+    ISM Manufacturing PMI mirror returned ~10 for a 0-100 diffusion index in
+    late 2025 where the real prints were ~48-53). Filtering rather than failing
+    means one corrupted tail can't poison the series — the pipeline degrades to
+    the last plausible observation, exactly as it does for a missing point.
+
+    Bounds are optional; a None bound disables that side. Dropped observations
+    are logged so a persistent upstream break is visible in pipeline.log.
+    """
+    if lo is None and hi is None:
+        return obs
+    kept: list[tuple[str, float]] = []
+    dropped: list[tuple[str, float]] = []
+    for p, v in obs:
+        if (lo is not None and v < lo) or (hi is not None and v > hi):
+            dropped.append((p, v))
+        else:
+            kept.append((p, v))
+    if dropped:
+        band = f"[{lo}, {hi}]"
+        preview = ", ".join(f"{p}={v}" for p, v in dropped[-6:])
+        print(
+            f"    [DB.nomics PLAUSIBILITY] {col or '?'}: dropped "
+            f"{len(dropped)} obs outside {band} (most recent: {preview})",
+            flush=True,
+        )
+    return kept
 
 
 def parse_period_to_date(period: str) -> datetime | None:
