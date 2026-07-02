@@ -937,8 +937,19 @@ Single source of truth for the 12 country codes and their per-source mappings, d
 | `load_library()` | Read `data/macro_library_dbnomics.csv` |
 | `fetch_series(series_path, …)` | DB.nomics REST call |
 | `parse_observations(doc)` | DB.nomics JSON → `list[(date, float)]` |
+| `filter_plausible(obs, lo, hi, col)` | **Plausibility guard (added 2026-07-02).** Drops observations outside `[lo, hi]` before they reach the committed history. Bounds come from the optional `plausible_min` / `plausible_max` columns on `macro_library_dbnomics.csv` (surfaced by `load_library()`) — the same columns `data_audit` Section E reads. Born from the DB.nomics ISM Manufacturing PMI mirror shipping ~10 for a 0-100 diffusion index across late 2025 (real prints ~48-53); the 5 ISM diffusion rows carry a `[20, 80]` band. Applied in `fetch_macro_economic._guarded_dbnomics_obs`. |
 | `parse_period_to_date(period)` | Handles annual / quarterly / monthly / daily DB.nomics period strings |
 | `obs_to_series(obs, col_name)` | `list[(date, float)]` → named pandas Series |
+
+**ISM staleness/corruption fallback (added 2026-07-02).** The DB.nomics ISM mirror also lags the real release ~4-8 months. `fetch_macro_economic._maybe_ism_fallback` splices the current month straight from ISM's official PR Newswire release (`sources/ism_prnewswire.py`) when it is newer than the guarded mirror series — for the 5 ISM columns only. Retrieval routes through the shared Bright Data Web Unlocker (`sources/brightdata.py`); **without `BRIGHTDATA_API_KEY` set it is a clean no-op** and the series simply forward-fills the last plausible mirror value. See §9.5.7b / §9.5.8b below.
+
+#### 9.5.7b `sources/brightdata.py` (new 2026-07-02)
+
+Shared Bright Data Web Unlocker client — `credentials()`, `available()`, `unlock(url, tag)` / `unlock_text(url, tag)`, with a process-wide call cap. Extracted so any source needing bot-protection bypass (ISM press releases; ifo has an older equivalent client it can adopt later) draws from one budget. No-op returning `None` when `BRIGHTDATA_API_KEY` is unset, so local/fork runs never touch the network.
+
+#### 9.5.8b `sources/ism_prnewswire.py` (new 2026-07-02)
+
+Fallback source for the ISM PMI headline + sub-indexes, read from the **official ISM press releases** on PR Newswire. `discover_latest_url(kind)` finds the newest manufacturing/services release from ISM's newsroom listing (the release URL carries an unconstructable numeric id), `parse_report(text, col_map)` reads the summary table (exact-label matching disambiguates `Inventories` from `Customers' Inventories`), and `latest_value_for_col(col)` is the convenience wrapper the fetch layer splices with. Per-process caches keep it to one listing fetch + one release fetch per kind. Only reads the current headline values into the existing series — it does not republish ISM's report (ISM restricts redistributing an *index* of its content).
 
 #### 9.5.8 `sources/ifo.py` (579 lines; Bright Data fallback added 2026-06-12)
 

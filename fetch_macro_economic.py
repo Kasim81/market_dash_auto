@@ -30,6 +30,7 @@ import pandas as pd
 
 from sources import countries as countries_src
 from sources import dbnomics as dbn_src
+from sources import ism_prnewswire as ism_src
 from sources import fred as fred_src
 from sources import ifo as ifo_src
 from sources import imf as imf_src
@@ -365,12 +366,65 @@ def _fetch_imf_snapshot(indic: dict, fetched_at: str) -> list[dict]:
 
 # -- DB.nomics snapshot --
 
+def _guarded_dbnomics_obs(indic: dict, doc: dict) -> list[tuple[str, float]]:
+    """Parse DB.nomics observations, drop any outside the indicator's declared
+    plausibility band, then (for ISM columns only) splice the latest official
+    ISM press-release point on top when it's newer than the mirror. The band +
+    the ISM fallback are the two-part fix for the DB.nomics ISM mirror going
+    both corrupted (values ~10 for a 0-100 index) and chronically stale."""
+    obs = dbn_src.parse_observations(doc)
+    obs = dbn_src.filter_plausible(
+        obs, indic.get("plausible_min"), indic.get("plausible_max"), indic["col"]
+    )
+    return _maybe_ism_fallback(indic, obs)
+
+
+def _maybe_ism_fallback(
+    indic: dict, obs: list[tuple[str, float]]
+) -> list[tuple[str, float]]:
+    """For an ISM column, replace/append the current month from ISM's official
+    release when it is newer than the last DB.nomics observation. No-op for
+    non-ISM columns or when the release fetch is unavailable (no Bright Data
+    credentials, discovery/parse miss) — the series is returned unchanged."""
+    fresh = ism_src.latest_value_for_col(indic["col"])
+    if fresh is None:
+        return obs
+    f_period, f_val = fresh
+    f_date = dbn_src.parse_period_to_date(f_period)
+    if f_date is None:
+        return obs
+    f_ym = f_date.strftime("%Y-%m")
+    # Drop any mirror obs from the same month — the official value wins.
+    kept = [
+        (p, v) for (p, v) in obs
+        if (dbn_src.parse_period_to_date(p) or datetime.min).strftime("%Y-%m") != f_ym
+    ]
+    last_date = dbn_src.parse_period_to_date(kept[-1][0]) if kept else None
+    if last_date is not None and f_date <= last_date:
+        # Official release is not newer than the mirror — leave obs untouched.
+        return obs
+    spliced = kept + [(f_period, f_val)]
+    spliced.sort(key=lambda pv: dbn_src.parse_period_to_date(pv[0]) or datetime.min)
+    print(
+        f"    [ISM fallback] {indic['col']}: using official release point "
+        f"{f_period}={f_val} (last DB.nomics obs: "
+        f"{obs[-1][0] if obs else 'none'})",
+        flush=True,
+    )
+    return spliced
+
+
 def _fetch_dbnomics_snapshot(indic: dict, fetched_at: str) -> list[dict]:
     doc = dbn_src.fetch_series(indic["source_id"])
     time.sleep(DBN_DELAY)
     if doc is None:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    obs = dbn_src.parse_observations(doc)
+        # Even with the mirror down, an ISM column may still refresh from the
+        # official release (guard/fallback handle the empty-obs case).
+        obs = _maybe_ism_fallback(indic, [])
+        if not obs:
+            return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
+    else:
+        obs = _guarded_dbnomics_obs(indic, doc)
     if not obs:
         return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
     latest = obs[-1][1]
@@ -948,8 +1002,12 @@ def _fetch_dbnomics_history(indic: dict) -> dict[str, pd.Series]:
     doc = dbn_src.fetch_series(indic["source_id"])
     time.sleep(DBN_DELAY)
     if doc is None:
+        # Mirror down: an ISM column may still refresh from the official release.
+        obs = _maybe_ism_fallback(indic, [])
+    else:
+        obs = _guarded_dbnomics_obs(indic, doc)
+    if not obs:
         return {}
-    obs = dbn_src.parse_observations(doc)
     s = dbn_src.obs_to_series(obs, indic["col"])
     if s.empty:
         return {}
