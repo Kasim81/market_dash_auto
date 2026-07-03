@@ -22,7 +22,9 @@ added in S2.C7, S2.C8, and S2.C10 respectively.
 from __future__ import annotations
 
 import csv as _csv
+import glob
 import os
+import re
 import time
 from datetime import date, datetime, timezone
 
@@ -139,7 +141,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(jst_src.load_library())
     indicators.extend(atlanta_fed_src.load_library())
     indicators.extend(ny_fed_src.load_library())
-    return indicators
+    return _attach_tiers(indicators)
 
 
 def summarize(indicators: list[dict]) -> None:
@@ -223,6 +225,9 @@ def _make_row(
         "Last Period":  last_period or "",
         "Notes":        indic["notes"],
         "Fetched At":   fetched_at,
+        # internal only (dropped by SNAPSHOT_COLUMNS on CSV write) — carries
+        # declared source authority into _dedupe_snapshot_rows.
+        "_tier":        int(indic.get("tier", 0) or 0),
     }
 
 
@@ -257,12 +262,140 @@ def _source_rank(source: str) -> int:
     return 1 if source in PRIMARY_SOURCES else 0
 
 
-def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
-    """Collapse rows that share a (Country, Col) to a single winning source.
+# ---------------------------------------------------------------------------
+# TIER (declared source authority) — read from the `tier` column in each
+# macro_library_*.csv. 0 = primary/national/direct; 1 = aggregator (FRED,
+# OECD, IMF, World Bank, DB.nomics); 2 = last-resort. Absent column ⇒ 0.
+# ---------------------------------------------------------------------------
+_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-    Winner = (has a value) > (most recent Last Period) > (primary over
-    aggregator). Group order follows first appearance so output stays stable.
+# filename stem -> the `source` label the loaders emit (for the tier join)
+_FILE_SOURCE = {
+    "abs": "ABS", "alpha_vantage": "Alpha Vantage", "atlanta_fed": "AtlantaFed",
+    "bdf": "Banque de France", "bls": "BLS", "boc": "BoC", "boe": "BoE",
+    "boj": "BoJ", "bundesbank": "Bundesbank", "dbnomics": "DB.nomics", "ecb": "ECB",
+    "estat": "e-Stat", "fred": "FRED", "french": "KenFrench", "ifo": "ifo", "imf": "IMF",
+    "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
+    "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
+    "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
+}
+
+
+def _load_tier_map() -> dict[tuple[str, str], int]:
+    """Map (source_label, series_id) -> tier by reading every library CSV."""
+    tiers: dict[tuple[str, str], int] = {}
+    for path in glob.glob(os.path.join(_DATA_DIR, "macro_library_*.csv")):
+        stem = os.path.basename(path)[len("macro_library_"):-len(".csv")]
+        src = _FILE_SOURCE.get(stem)
+        if not src:
+            continue
+        try:
+            with open(path, newline="") as fh:
+                rdr = _csv.DictReader(fh)
+                if "tier" not in (rdr.fieldnames or []):
+                    continue
+                for row in rdr:
+                    sid = (row.get("series_id") or "").strip()
+                    t = (row.get("tier") or "").strip()
+                    if sid and t:
+                        try:
+                            tiers[(src, sid)] = int(t)
+                        except ValueError:
+                            pass
+        except FileNotFoundError:
+            continue
+    return tiers
+
+
+def _attach_tiers(indicators: list[dict]) -> list[dict]:
+    """Set indic['tier'] from the library tier map (default 0)."""
+    tiers = _load_tier_map()
+    for ind in indicators:
+        ind["tier"] = tiers.get((ind.get("source", ""), ind.get("source_id", "")), 0)
+    return indicators
+
+
+# ---- measure-kind / cadence / period helpers for winner selection ----
+_CAD_ORDER = {"daily": 0, "business daily": 0, "weekly": 1, "monthly": 2,
+              "quarterly": 3, "annual": 4, "annually": 4, "yearly": 4}
+
+
+def _cad_rank(freq: str) -> int:
+    return _CAD_ORDER.get((freq or "").strip().lower(), 5)
+
+
+def _cad_days(freq: str) -> int:
+    return {0: 3, 1: 8, 2: 31, 3: 93, 4: 366, 5: 93}[_cad_rank(freq)]
+
+
+def _measure_kind(units: str) -> str:
+    """Coarse measure classification so we never let an index compete with a
+    YoY rate for the same column (the JPN_CPI class of bug)."""
+    u = (units or "").lower()
+    if any(k in u for k in ("%", "percent", "change", "year-on-year", "yoy", "growth")):
+        return "rate"
+    if "index" in u:
+        return "index"
+    if any(k in u for k in ("per annum", "bp", "basis point", "yield")):
+        return "rate"
+    return "level"
+
+
+def _period_to_date(p: str):
+    """Parse a Last Period string to a comparable date (period end)."""
+    p = (p or "").strip()
+    if not p:
+        return None
+    m = re.match(r"^(\d{4})-Q([1-4])$", p)
+    if m:
+        y, q = int(m.group(1)), int(m.group(2))
+        return date(y, q * 3, 28)
+    m = re.match(r"^(\d{4})[-/](\d{2})[-/](\d{2})$", p)
+    if m:
+        return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"^(\d{4})[-/](\d{2})$", p) or re.match(r"^(\d{4})(\d{2})$", p)
+    if m:
+        return date(int(m.group(1)), int(m.group(2)), 28)
+    m = re.match(r"^(\d{4})$", p)
+    if m:
+        return date(int(m.group(1)), 12, 31)
+    return None
+
+
+def _select_winner(cands: list[dict]) -> dict:
+    """Pick the winning candidate for one (Country, Col) group.
+
+    Each cand: {has_data, kind, cad_rank, cad_days, last(date|None),
+    tier, rank(primary=1), order, payload}.
+
+    Rule (per the 2026-06-18 precedence policy):
+      * candidates that mix measure-kinds (e.g. index vs YoY) are a DEFINITION
+        collision — do NOT guess; fall back to the legacy freshest→primary pick
+        so behaviour is unchanged until the column is split by definition.
+      * otherwise finest cadence wins, then lowest tier, then freshest — but a
+        candidate stale by >2× its own cadence relative to the freshest in the
+        group is dropped first (so a fresh coarser/fallback source takes over).
     """
+    withdata = [c for c in cands if c["has_data"]]
+    if not withdata:
+        return cands[0]
+    if len({c["kind"] for c in withdata}) > 1:
+        # definition collision → legacy behaviour (freshest, then primary)
+        return max(withdata, key=lambda c: (c["last"] or date.min, c["rank"], -c["order"]))
+    dated = [c["last"] for c in withdata if c["last"]]
+    best = max(dated) if dated else None
+    fresh = [c for c in withdata
+             if c["last"] is None or best is None
+             or (best - c["last"]).days <= 2 * c["cad_days"]]
+    pool = fresh or withdata
+    return min(pool, key=lambda c: (
+        c["cad_rank"], c["tier"],
+        -(c["last"].toordinal() if c["last"] else 0), c["order"]))
+
+
+def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
+    """Collapse rows that share a (Country, Col) to a single winning source
+    using the tier-aware, cadence-first, staleness-fallback policy."""
     order: list[tuple[str, str]] = []
     groups: dict[tuple[str, str], list[dict]] = {}
     for r in rows:
@@ -272,15 +405,24 @@ def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
             order.append(key)
         groups[key].append(r)
 
-    def _key(r: dict):
-        has_val = 0 if r.get("Latest Value") is None else 1
-        last_period = r.get("Last Period") or ""
-        return (has_val, last_period, _source_rank(r.get("Source", "")))
-
     out: list[dict] = []
     for key in order:
         grp = groups[key]
-        out.append(grp[0] if len(grp) == 1 else max(grp, key=_key))
+        if len(grp) == 1:
+            out.append(grp[0])
+            continue
+        cands = [{
+            "has_data":  r.get("Latest Value") is not None,
+            "kind":      _measure_kind(r.get("Units", "")),
+            "cad_rank":  _cad_rank(r.get("Frequency", "")),
+            "cad_days":  _cad_days(r.get("Frequency", "")),
+            "last":      _period_to_date(r.get("Last Period", "")),
+            "tier":      int(r.get("_tier", 0) or 0),
+            "rank":      _source_rank(r.get("Source", "")),
+            "order":     i,
+            "payload":   r,
+        } for i, r in enumerate(grp)]
+        out.append(_select_winner(cands)["payload"])
     return out
 
 
@@ -1312,10 +1454,10 @@ def build_hist_df(
 
     ifo_indicators = [i for i in indicators if i["source"] == "ifo"]
 
-    columns: dict[str, pd.Series] = {}
-    provenance: dict[str, dict] = {}
-    last_obs: dict[str, pd.Timestamp] = {}
-
+    # Collect every candidate series per column, then pick one winner with the
+    # tier-aware, cadence-first, staleness-fallback policy (_select_winner).
+    cand_lists: dict[str, list[dict]] = {}
+    col_order: list[str] = []
     for indic in indicators:
         label = f"{indic['source']}/{indic['col']}/hist"
         print(f"  [{label}]")
@@ -1330,42 +1472,34 @@ def build_hist_df(
             combined = (
                 s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
             )
-            if col_name not in columns:
-                columns[col_name] = combined
-                provenance[col_name] = indic
-                last_obs[col_name] = new_last
-                continue
+            if col_name not in cand_lists:
+                cand_lists[col_name] = []
+                col_order.append(col_name)
+            cand_lists[col_name].append({
+                "has_data":  pd.notna(new_last),
+                "kind":      _measure_kind(indic.get("units", "")),
+                "cad_rank":  _cad_rank(indic.get("frequency", "")),
+                "cad_days":  _cad_days(indic.get("frequency", "")),
+                "last":      (new_last.date() if pd.notna(new_last) else None),
+                "tier":      int(indic.get("tier", 0) or 0),
+                "rank":      _source_rank(indic["source"]),
+                "order":     len(cand_lists[col_name]),
+                "payload":   {"indic": indic, "series": combined, "last": new_last},
+            })
 
-            cur_last = last_obs[col_name]
-            cur_src = provenance[col_name]["source"]
-            # Data quality first: the source with the most recent observation
-            # wins (higher cadence ⇒ fresher). On a tie (equal latest period),
-            # prefer the ultimate/primary source over an aggregator.
-            fresher = pd.notna(new_last) and (
-                pd.isna(cur_last) or new_last > cur_last
-            )
-            tie = (
-                pd.notna(new_last) and pd.notna(cur_last) and new_last == cur_last
-            )
-            tie_to_primary = tie and (
-                _source_rank(indic["source"]) > _source_rank(cur_src)
-            )
-            new_wins = fresher or tie_to_primary
-            cur_str = cur_last.date().isoformat() if pd.notna(cur_last) else "NaT"
-            new_str = new_last.date().isoformat() if pd.notna(new_last) else "NaT"
-            if new_wins:
-                print(
-                    f"    [merge] {col_name}: replaced {cur_src} (last={cur_str}) "
-                    f"with {indic['source']} (last={new_str})"
-                )
-                columns[col_name] = combined
-                provenance[col_name] = indic
-                last_obs[col_name] = new_last
-            else:
-                print(
-                    f"    [merge] {col_name}: kept {cur_src} (last={cur_str}) "
-                    f"over {indic['source']} (last={new_str})"
-                )
+    columns: dict[str, pd.Series] = {}
+    provenance: dict[str, dict] = {}
+    for col_name in col_order:
+        cands = cand_lists[col_name]
+        win = _select_winner(cands)["payload"]
+        columns[col_name] = win["series"]
+        provenance[col_name] = win["indic"]
+        if len(cands) > 1:
+            others = ", ".join(sorted({c["payload"]["indic"]["source"] for c in cands}
+                                      - {win["indic"]["source"]}))
+            wl = win["last"].date().isoformat() if pd.notna(win["last"]) else "NaT"
+            print(f"    [merge] {col_name}: chose {win['indic']['source']} "
+                  f"(tier={win['indic'].get('tier',0)}, last={wl}) over [{others}]")
 
     hist = pd.DataFrame(columns, index=spine)
     hist.index.name = "Date"

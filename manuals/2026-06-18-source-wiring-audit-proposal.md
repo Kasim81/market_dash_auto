@@ -114,3 +114,55 @@ to the daily run) so the source map never drifts from reality again.
 - **Collisions-\*** — pre-filtered action lists.
 
 All sheets have frozen headers + autofilter for sort/filter review.
+
+---
+
+## 6. P1 implementation — shipped 2026-06-18
+
+P1 (explicit precedence + runtime enforcement) is implemented for macro. The
+runtime no longer decides precedence by a bare "most-recent wins" heuristic.
+
+**Decisions taken** (with the maintainer):
+- Precedence lives in a **`tier` column** added to every `macro_library_*.csv`
+  (0 = national/primary/direct; 1 = aggregator — FRED/OECD/IMF/World Bank/
+  DB.nomics; 2 = last-resort — Nasdaq Data Link/Alpha Vantage).
+- The primary yields to the next tier when it is **missing or stale** (no obs
+  within **2× its cadence**).
+- **Granularity wins:** among definition-matching candidates the **finest
+  cadence wins**, then lowest tier, then freshest. If the finest candidate is an
+  aggregator while a coarser national source exists, that is flagged
+  `PRIMARY_CADENCE_GAP` — a signal to register the finer *national* ticker
+  (per the maintainer's insight). Currently: **`FRA_UNEMPLOYMENT`**.
+
+**Selection rule** (`fetch_macro_economic._select_winner`, applied in both the
+snapshot dedupe and the history merge):
+1. candidates with no data are ignored; a sole candidate wins regardless of tier.
+2. if candidates **mix measure-kinds** (index vs YoY vs level) it is a
+   *definition collision* — the runtime does **not** guess; it falls back to the
+   legacy freshest→primary pick so behaviour is unchanged until the column is
+   split. Flagged `FLAG_definition_collision`.
+3. otherwise: drop candidates stale by >2× their cadence vs the freshest, then
+   pick finest-cadence → lowest-tier → freshest.
+
+Covered by `test_tier_merge.py` (9 tests: cadence-first, tier tie-break,
+staleness fallback, sole-candidate, definition-collision guard, period parsing).
+
+### The one thing P1 does NOT fix on its own — the CPI columns (→ Codespace)
+
+The 5 `_CPI` columns are **definition collisions**: a monthly **index**
+(national/FRED) and the World Bank **annual YoY** share one column, so they serve
+different measures across countries (`JPN_CPI`=YoY because its index feed froze;
+`CHN/GBR/CAN/AUS_CPI`=index). Precedence can't fix this and the kind-guard
+deliberately leaves them untouched (no regression).
+
+**Decided fix: split by definition** — `<C>_CPI_INDEX` (national monthly index) +
+`<C>_CPI_YOY` (monthly YoY), repoint the inflation composites (`JP_INFL1`,
+`US_INFL1`, …) to `_CPI_YOY`, retire the World Bank annual CPI. This needs a
+monthly-YoY source per country (**OECD COICOP2018 all-items YoY** via DB.nomics,
+mirroring the working `*_CORE_CPI_YOY`) and a **keyed regen to validate** — both
+only available in the Codespace. **This is what finally fixes `JP_INFL1`.**
+
+**Validation note:** the merge change alters what wins for ~14 columns; confirming
+the served output requires a full macro regen with API keys, which runs in the
+Codespace/CI, not the web sandbox. The logic is unit-tested here; end-to-end
+validation is the first step after merge.

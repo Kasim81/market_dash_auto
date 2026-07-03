@@ -31,6 +31,16 @@ FILE_SOURCE = {
 FANOUT = {"World Bank", "OECD", "IMF"}
 SKIP_FILES = {"countries", "sec_edgar"}  # not macro sources / different schema
 
+_CAD_ORDER = {"daily": 0, "business daily": 0, "weekly": 1, "monthly": 2,
+              "quarterly": 3, "annual": 4, "annually": 4, "yearly": 4}
+def _cad_rank(freq): return _CAD_ORDER.get((freq or "").strip().lower(), 5)
+def _kind(units):
+    u = (units or "").lower()
+    if any(k in u for k in ("%", "percent", "change", "year-on-year", "yoy", "growth")): return "rate"
+    if "index" in u: return "index"
+    if any(k in u for k in ("per annum", "yield", "basis point")): return "rate"
+    return "level"
+
 # ---- country prefixes for fan-out matching ----
 ctry = list(csv.DictReader(open(f"{DATA}/macro_library_countries.csv")))
 COUNTRIES = [r["code"] for r in ctry if r["code"] != "GLOBAL"]
@@ -69,6 +79,7 @@ for path in sorted(glob.glob(f"{DATA}/macro_library_*.csv")):
             cycle_timing=(row.get("cycle_timing") or "").strip(),
             country=(row.get("country") or "").strip(),
             notes=(row.get("notes") or "").strip(),
+            tier=int(row.get("tier") or 0) if (row.get("tier") or "").strip() else 0,
             file=stem,
         )
         # resolve served column candidate(s)
@@ -153,6 +164,19 @@ for col in universe:
     cad_mis = len(freqs) > 1
     unit_mis = len(units) > 1
     served_ne_prim = bool(sv and prim and prim != "AMBIGUOUS" and served_si != prim)
+    # definition collision: declared candidates disagree on measure-kind
+    kinds = {_kind(d["units"]) for d in decl_u if d["units"]}
+    def_coll = len(kinds) > 1
+    # primary-cadence-gap: the finest-cadence candidate is an aggregator (tier>0)
+    # while a tier-0/national source exists at a COARSER cadence → we've likely
+    # registered the wrong (coarse) national ticker (per the 2026-06-18 rule).
+    prim_cad_gap = ""
+    if len(decl_u) > 1 and not def_coll:
+        finest = min(_cad_rank(d["frequency"]) for d in decl_u)
+        fine_cands = [d for d in decl_u if _cad_rank(d["frequency"]) == finest]
+        coarser_primary = [d for d in decl_u if d["tier"] == 0 and _cad_rank(d["frequency"]) > finest]
+        if all(d["tier"] > 0 for d in fine_cands) and coarser_primary:
+            prim_cad_gap = "Y"
     # metadata: prefer served, else first declared
     md = sv or (decl_u[0] if decl_u else {})
     def g(key_sv, key_md): return (sv.get(key_sv) if sv else "") or (md.get(key_md, "") if isinstance(md, dict) else "")
@@ -174,13 +198,15 @@ for col in universe:
         Actually_served=served_si,
         Num_declared_sources=len(decl_u),
         FLAG_collision=("Y" if collision else ""),
+        FLAG_definition_collision=("Y" if def_coll else ""),
         FLAG_cadence_mismatch=("Y" if cad_mis else ""),
         FLAG_units_mismatch=("Y" if unit_mis else ""),
+        FLAG_primary_cadence_gap=prim_cad_gap,
         FLAG_served_ne_primary=("Y" if served_ne_prim else ""),
         FLAG_not_served=("Y" if col not in SERVED_COLS else ""),
         Declared_cadences=" | ".join(sorted(freqs)),
         Declared_units=" | ".join(sorted(units)),
-        All_declared="; ".join(f"{d['source']}/{d['series_id']}[{d['frequency']}|{d['units']}]" for d in decl_u),
+        All_declared="; ".join(f"{d['source']}/{d['series_id']}[{d['frequency']}|{d['units']}|t{d['tier']}]" for d in decl_u),
         Fallback_notes=(fbc["notes"] if fbc else ""),
     ))
 
@@ -263,7 +289,8 @@ mkt_df = pd.DataFrame(mkt_rows)
 
 # ---- collisions action list ----
 coll = macro_df[(macro_df.FLAG_collision=="Y")|(macro_df.FLAG_cadence_mismatch=="Y")|
-                (macro_df.FLAG_units_mismatch=="Y")|(macro_df.FLAG_served_ne_primary=="Y")].copy()
+                (macro_df.FLAG_units_mismatch=="Y")|(macro_df.FLAG_served_ne_primary=="Y")|
+                (macro_df.FLAG_definition_collision=="Y")|(macro_df.FLAG_primary_cadence_gap=="Y")].copy()
 coll.insert(0, "Type", "macro")
 cc = comp_df[comp_df.FLAG_mixed_cadence=="Y"][["Composite_id","Concept","Component_cadences","Colliding_components"]].copy()
 mc = mkt_df[mkt_df.FLAG_shared_ticker=="Y"][["Instrument","Declared_primary","Shared_tickers"]].copy()
