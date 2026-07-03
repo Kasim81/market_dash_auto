@@ -71,10 +71,20 @@ def calls_made() -> int:
     return _CALLS
 
 
-def unlock(url: str, tag: str = "brightdata", timeout: int = 60) -> bytes | None:
+def unlock(
+    url: str,
+    tag: str = "brightdata",
+    timeout: int = 60,
+    data_format: str | None = None,
+) -> bytes | None:
     """Fetch ``url`` through Bright Data Web Unlocker, returning the raw
     upstream body bytes on HTTP 200, or None on any failure / no-credentials /
     budget exhausted.
+
+    ``data_format`` maps to the Web Unlocker ``data_format`` field. Left unset
+    the endpoint returns the raw page (HTML for a web page, binary for a file);
+    pass ``"markdown"`` to have Bright Data convert the page to Markdown before
+    returning it — far easier to parse than the raw HTML for text-heavy pages.
 
     Network-defensive: every exception is swallowed and logged so a caller in
     the daily pipeline can fall through to "no data → last-known" without
@@ -97,6 +107,8 @@ def unlock(url: str, tag: str = "brightdata", timeout: int = 60) -> bytes | None
     _CALLS += 1
 
     payload = {"zone": zone, "url": url, "format": "raw"}
+    if data_format:
+        payload["data_format"] = data_format
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -124,9 +136,14 @@ def unlock(url: str, tag: str = "brightdata", timeout: int = 60) -> bytes | None
     return r.content
 
 
-def unlock_text(url: str, tag: str = "brightdata", timeout: int = 60) -> str | None:
+def unlock_text(
+    url: str,
+    tag: str = "brightdata",
+    timeout: int = 60,
+    data_format: str | None = None,
+) -> str | None:
     """unlock() decoded as UTF-8 text (errors replaced). None on failure."""
-    body = unlock(url, tag=tag, timeout=timeout)
+    body = unlock(url, tag=tag, timeout=timeout, data_format=data_format)
     if body is None:
         return None
     return body.decode("utf-8", errors="replace")

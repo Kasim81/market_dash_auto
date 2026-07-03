@@ -67,8 +67,19 @@ class LibraryBandTest(unittest.TestCase):
     def test_loader_surfaces_ism_bands(self):
         lib = {r["col"]: r for r in dbn.load_library()}
         row = lib["ISM_MFG_PMI"]
-        self.assertEqual(row["plausible_min"], 20.0)
-        self.assertEqual(row["plausible_max"], 80.0)
+        # Bands widened to [15, 99] so real ISM values (Prices Paid reached ~92
+        # in 2021, ~18 in 2008) are never clipped, while the ~10 flatline
+        # corruption is still caught.
+        self.assertEqual(row["plausible_min"], 15.0)
+        self.assertEqual(row["plausible_max"], 99.0)
+
+    def test_prices_band_does_not_clip_2021_highs(self):
+        # Regression: the original [20, 80] band dropped legitimate 2021-22
+        # Prices Paid readings (81-92). [15, 99] must keep them.
+        lib = {r["col"]: r for r in dbn.load_library()}
+        lo, hi = lib["ISM_MFG_PRICES"]["plausible_min"], lib["ISM_MFG_PRICES"]["plausible_max"]
+        for real in (81.2, 85.7, 87.1, 92.1):
+            self.assertTrue(lo <= real <= hi, f"{real} wrongly outside band")
 
     def test_rows_without_band_are_none(self):
         lib = {r["col"]: r for r in dbn.load_library()}
@@ -81,7 +92,7 @@ class LibraryBandTest(unittest.TestCase):
 class AuditSectionEWiringTest(unittest.TestCase):
     def test_bands_reach_audit(self):
         bands = data_audit.load_plausibility_bands()
-        self.assertEqual(bands.get("ISM_MFG_PMI"), (20.0, 80.0))
+        self.assertEqual(bands.get("ISM_MFG_PMI"), (15.0, 99.0))
 
     def test_section_e_flags_implausible(self):
         # Inject a corrupted latest value and confirm Section E catches it.

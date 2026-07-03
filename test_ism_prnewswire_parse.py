@@ -127,15 +127,58 @@ SYNTHETIC_LISTING = r"""
 """
 
 
+# The production Bright Data path may return the release as raw HTML, a
+# Markdown pipe table, or line-per-cell Markdown depending on data_format and
+# the page. The parser must handle all three; these fixtures cover the two the
+# line-per-cell SYNTHETIC_MFG above does not.
+SYNTHETIC_MFG_HTML = r"""<html><body>
+<h1>Manufacturing PMI&#174; at 53.3%</h1>
+<p>The Manufacturing PMI registered 53.3 percent, up from May.</p>
+<table>
+<tr><th>Index</th><th>Jun</th><th>May</th></tr>
+<tr><td>Manufacturing PMI&#174;</td><td>53.3</td><td>54.0</td></tr>
+<tr><td>New Orders</td><td>56.0</td><td>56.8</td></tr>
+<tr><td>Inventories</td><td>51.4</td><td>49.9</td></tr>
+<tr><td>Customers' Inventories</td><td>42.3</td><td>42.7</td></tr>
+<tr><td>Prices</td><td>73.0</td><td>82.1</td></tr>
+</table></body></html>"""
+
+SYNTHETIC_MFG_PIPE = r"""# June 2026 Report
+| Index | Jun | May | Change |
+|---|---|---|---|
+| Manufacturing PMI® | 53.3 | 54.0 | -0.7 |
+| New Orders | 56.0 | 56.8 | -0.8 |
+| Inventories | 51.4 | 49.9 | +1.5 |
+| Customers' Inventories | 42.3 | 42.7 | -0.4 |
+| Prices | 73.0 | 82.1 | -9.1 |
+"""
+
+_EXPECTED_MFG = {
+    "ISM_MFG_PMI": 53.3,
+    "ISM_MFG_NEWORD": 56.0,
+    "ISM_MFG_INVENTORIES": 51.4,
+    "ISM_MFG_PRICES": 73.0,
+}
+
+
 class ParseReportTest(unittest.TestCase):
     def test_manufacturing_values(self):
         vals = ism.parse_report(SYNTHETIC_MFG, ism.MANUFACTURING_COL_MAP)
-        self.assertEqual(vals, {
-            "ISM_MFG_PMI": 53.3,
-            "ISM_MFG_NEWORD": 56.0,
-            "ISM_MFG_INVENTORIES": 51.4,
-            "ISM_MFG_PRICES": 73.0,
-        })
+        self.assertEqual(vals, _EXPECTED_MFG)
+
+    def test_html_table_format(self):
+        # format:raw returns HTML — the normaliser must strip tags/entities.
+        vals = ism.parse_report(SYNTHETIC_MFG_HTML, ism.MANUFACTURING_COL_MAP)
+        self.assertEqual(vals, _EXPECTED_MFG)
+
+    def test_markdown_pipe_table_format(self):
+        vals = ism.parse_report(SYNTHETIC_MFG_PIPE, ism.MANUFACTURING_COL_MAP)
+        self.assertEqual(vals, _EXPECTED_MFG)
+
+    def test_inventories_disambiguation_holds_across_formats(self):
+        for fixture in (SYNTHETIC_MFG, SYNTHETIC_MFG_HTML, SYNTHETIC_MFG_PIPE):
+            vals = ism.parse_report(fixture, ism.MANUFACTURING_COL_MAP)
+            self.assertEqual(vals["ISM_MFG_INVENTORIES"], 51.4)
 
     def test_inventories_not_confused_with_customers_inventories(self):
         vals = ism.parse_report(SYNTHETIC_MFG, ism.MANUFACTURING_COL_MAP)
@@ -150,6 +193,35 @@ class ParseReportTest(unittest.TestCase):
     def test_missing_label_yields_empty(self):
         vals = ism.parse_report("no table here", ism.MANUFACTURING_COL_MAP)
         self.assertEqual(vals, {})
+
+
+class HeadlineFromSlugTest(unittest.TestCase):
+    def test_decimal(self):
+        self.assertEqual(
+            ism._headline_from_slug(
+                "manufacturing-pmi-at-53-3-june-2026-ism-manufacturing-pmi-report-1.html"
+            ),
+            53.3,
+        )
+
+    def test_integer(self):
+        self.assertEqual(
+            ism._headline_from_slug(
+                "manufacturing-pmi-at-54-may-2026-ism-manufacturing-pmi-report-1.html"
+            ),
+            54.0,
+        )
+
+    def test_services(self):
+        self.assertEqual(
+            ism._headline_from_slug(
+                "services-pmi-at-54-5-may-2026-ism-services-pmi-report-1.html"
+            ),
+            54.5,
+        )
+
+    def test_no_match(self):
+        self.assertIsNone(ism._headline_from_slug("some-unrelated-release.html"))
 
 
 class PeriodFromSlugTest(unittest.TestCase):
@@ -222,7 +294,7 @@ class FetchLatestWithStubbedUnlockTest(unittest.TestCase):
         ism._LISTING_FETCHED = False
         self._orig = bd.unlock_text
 
-        def fake(url, tag="x", timeout=60):
+        def fake(url, tag="x", timeout=60, data_format=None):
             if url.endswith("/institute-for-supply-management/"):
                 return SYNTHETIC_LISTING
             if "manufacturing-pmi" in url:
@@ -246,6 +318,42 @@ class FetchLatestWithStubbedUnlockTest(unittest.TestCase):
         self.assertEqual(rep["period"], "2026-06-30")
         self.assertEqual(rep["values"]["ISM_MFG_PMI"], 53.3)
         self.assertEqual(ism.latest_value_for_col("ISM_MFG_PMI"), ("2026-06-30", 53.3))
+
+
+class FetchLatestSlugRecoveryTest(unittest.TestCase):
+    """If the release body is unparseable, the headline still comes from the
+    slug — the corrupted column (ISM_MFG_PMI) is never left stale."""
+
+    def setUp(self):
+        os.environ["BRIGHTDATA_API_KEY"] = "stub"
+        ism._REPORT_CACHE.clear()
+        ism._LISTING_CACHE = None
+        ism._LISTING_FETCHED = False
+        self._orig = bd.unlock_text
+
+        def fake(url, tag="x", timeout=60, data_format=None):
+            if url.endswith("/institute-for-supply-management/"):
+                return SYNTHETIC_LISTING
+            if "manufacturing-pmi" in url:
+                return "<html><body>unexpected layout, no table</body></html>"
+            return None
+
+        bd.unlock_text = fake
+        ism.brightdata.unlock_text = fake
+
+    def tearDown(self):
+        bd.unlock_text = self._orig
+        ism.brightdata.unlock_text = self._orig
+        os.environ.pop("BRIGHTDATA_API_KEY", None)
+        ism._REPORT_CACHE.clear()
+        ism._LISTING_CACHE = None
+        ism._LISTING_FETCHED = False
+
+    def test_headline_recovered_from_slug(self):
+        rep = ism.fetch_latest("manufacturing")
+        self.assertIsNotNone(rep)
+        # Body parse failed, but the slug (…-at-53-3-june-2026…) still gives it.
+        self.assertEqual(rep["values"].get("ISM_MFG_PMI"), 53.3)
 
 
 if __name__ == "__main__":
