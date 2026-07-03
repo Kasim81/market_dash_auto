@@ -11,9 +11,12 @@ description: >-
 # Refresh the contributor manuals
 
 You are updating this repo's two hand-written contributor manuals so they keep
-tracking the live codebase, then opening **one pull request** for human review.
-When run as a scheduled routine you are autonomous — be thorough and decisive,
-but stay strictly within the scope below.
+tracking the live codebase, then maintaining **a single rolling pull request**
+for human review — and only when the manuals are actually stale. When run as a
+scheduled routine you are autonomous — be thorough and decisive, but stay
+strictly within the scope below. There must never be more than one open
+manual-refresh PR; reuse the rolling branch and PR rather than opening a new one
+each run.
 
 ## Files you may modify — and only these
 - `manuals/technical_manual.md` — authoritative record of current code state.
@@ -68,13 +71,31 @@ and edit only where they diverge:
 - Bump the "> Last updated: YYYY-MM-DD" stamp (UTC) on any manual you change.
 - Keep the diff tight — change only what is genuinely stale.
 
-## Step 4 — output
-- **If nothing is materially stale:** make no changes, open no PR, and report a
-  one-line note that the manuals are already current.
-- **Otherwise:** create a `claude/`-prefixed branch (e.g.
-  `claude/manual-refresh-<YYYY-MM-DD>`), commit **only** the two manual files
-  with a clear message, push, and open a pull request titled
-  `Docs: refresh technical manual & forward plan (<YYYY-MM-DD>)`. The PR body
-  must list the concrete changes grouped by manual and section, each with a
-  one-line reason tied to a code fact (file/commit). Do not merge the PR and do
-  not push to the default branch.
+## Step 4 — output: one rolling PR, only when stale
+Never open more than one manual-refresh PR, and never open one that isn't
+warranted. Reuse a single rolling branch and PR rather than minting a new one
+each run.
+
+- **If nothing is materially stale** — the reconciliation produces no diff
+  against the default branch — make no changes and open no PR. Report a one-line
+  note that the manuals are already current. A bump of the `> Last updated:`
+  stamp is **not** by itself a material change: if the stamp is the only thing
+  that would change, leave it and treat the manuals as current. If a rolling PR
+  happens to be open but its diff against the default branch is now empty (e.g.
+  the drift was fixed elsewhere), close it so nothing stale lingers.
+- **If there are material changes:**
+  1. Use the single fixed rolling branch **`refresh-manuals/rolling`** — never a
+     dated branch. Reset it onto the latest default branch so it never
+     accumulates stale history or conflicts:
+     `git fetch origin <default> && git checkout -B refresh-manuals/rolling origin/<default>`,
+     apply the edits, then commit **only** the two manual files with a clear
+     message.
+  2. Force-push it: `git push -f -u origin refresh-manuals/rolling`.
+  3. If an open PR from `refresh-manuals/rolling` into the default branch already
+     exists, the force-push updates it in place — do **not** open another. Only
+     if none is open, open **one** PR titled `Docs: rolling manual refresh`
+     (check first with `gh pr list --head refresh-manuals/rolling --state open`,
+     or the GitHub MCP tools if `gh` is unavailable). Either way the body lists
+     the concrete changes grouped by manual and section, each with a one-line
+     reason tied to a code fact (file/commit).
+- Never merge the PR yourself and never push to the default branch.
