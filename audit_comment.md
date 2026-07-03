@@ -1,16 +1,8 @@
-## Daily audit — 2026-07-03 — **69 ISSUES** (1 fetch error, 66 stale series, 2 static-check failures)
+## Daily audit — 2026-07-03 — **70 ISSUES** (66 stale series, 2 static-check failures, 2 history-preservation issues)
 
-_Run: 2026-07-03 04:47 UTC_
+_Run: 2026-07-03 13:09 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
-
-<details><summary>Fetch errors</summary>
-
-
-**other_warnings** (1):
-- `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-
-</details>
 
 <details><summary>Stale series</summary>
 
@@ -130,8 +122,12 @@ Full report attached as `data_audit.txt` in today's commit.
 | File | Live rows | Sister rows | Union | Live range | Sister range |
 |---|---|---|---|---|---|
 | `market_data_comp_hist.csv` | 3,992 | 3,992 | 3,992 | 1950-01-06 → 2026-07-03 | 1950-01-06 → 2026-07-03 |
-| `macro_economic_hist.csv` | 4,150 | 4,150 | 4,150 | 1946-12-27 → 2026-07-03 | 1946-12-27 → 2026-07-03 |
-| `macro_market_hist.csv` | 1,383 | 1,383 | 1,383 | 2000-01-07 → 2026-07-03 | 2000-01-07 → 2026-07-03 |
+| `macro_economic_hist.csv` | 4,150 | 4,140 | 4,150 | 1946-12-27 → 2026-07-03 | 1946-12-27 → 2026-04-24 |
+| `macro_market_hist.csv` | 1,383 | 1,374 | 1,383 | 2000-01-07 → 2026-07-03 | 2000-01-07 → 2026-05-01 |
+
+**ALERTS** (2):
+- macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4150) — sister may have been rewritten incorrectly
+- macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1383) — sister may have been rewritten incorrectly
 
 </details>
 

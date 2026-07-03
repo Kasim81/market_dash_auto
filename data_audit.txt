@@ -1,7 +1,7 @@
 === Data audit @ 2026-07-03 ===
 
---- Section A: Fetch outcomes (1 issues) ---
-  OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
+--- Section A: Fetch outcomes (0 issues) ---
+  (none)
 
 --- Section B: Static checks (2 issues) ---
   MISSING_COLUMNS             _get_col(...,'EZ_RETAIL_VOL') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
@@ -117,10 +117,13 @@
     Annual      CHE_EQUITY_TR_JST                 src=JST          series=CHE|eq_tr                 last_obs=2021-01-01  next_expected_release=2026-12-31
     Annual      CHE_LTRATE_JST                    src=JST          series=CHE|ltrate                last_obs=2021-01-01  next_expected_release=2026-12-31
 
---- Section D: History preservation (0 issues) ---
+--- Section D: History preservation (2 issues) ---
   market_data_comp_hist.csv         live= 3992 rows (1950-01-06→2026-07-03)  sister= 3992 rows (1950-01-06→2026-07-03)  union= 3992
-  macro_economic_hist.csv           live= 4150 rows (1946-12-27→2026-07-03)  sister= 4150 rows (1946-12-27→2026-07-03)  union= 4150
-  macro_market_hist.csv             live= 1383 rows (2000-01-07→2026-07-03)  sister= 1383 rows (2000-01-07→2026-07-03)  union= 1383
+  macro_economic_hist.csv           live= 4150 rows (1946-12-27→2026-07-03)  sister= 4140 rows (1946-12-27→2026-04-24)  union= 4150
+  macro_market_hist.csv             live= 1383 rows (2000-01-07→2026-07-03)  sister= 1374 rows (2000-01-07→2026-05-01)  union= 1383
+
+  ALERT  macro_economic_hist.csv: sister rows are a strict subset of live (4140 ⊂ 4150) — sister may have been rewritten incorrectly
+  ALERT  macro_market_hist.csv: sister rows are a strict subset of live (1374 ⊂ 1383) — sister may have been rewritten incorrectly
 
 --- Section E: Value plausibility (0 issues) ---
   (none)
