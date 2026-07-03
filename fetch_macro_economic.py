@@ -274,7 +274,7 @@ _FILE_SOURCE = {
     "abs": "ABS", "alpha_vantage": "Alpha Vantage", "atlanta_fed": "AtlantaFed",
     "bdf": "Banque de France", "bls": "BLS", "boc": "BoC", "boe": "BoE",
     "boj": "BoJ", "bundesbank": "Bundesbank", "dbnomics": "DB.nomics", "ecb": "ECB",
-    "estat": "e-Stat", "fred": "FRED", "french": "French", "ifo": "ifo", "imf": "IMF",
+    "estat": "e-Stat", "fred": "FRED", "french": "KenFrench", "ifo": "ifo", "imf": "IMF",
     "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
     "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
     "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
