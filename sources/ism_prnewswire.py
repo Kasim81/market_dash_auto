@@ -37,6 +37,7 @@ lists releases newest-first:
 
 from __future__ import annotations
 
+import html as _htmllib
 import re
 from datetime import datetime, timedelta
 
@@ -83,6 +84,16 @@ _PERIOD_RE = re.compile(
     r"october|november|december)-(\d{4})-ism-",
     re.IGNORECASE,
 )
+# The headline value is baked into the slug too: "manufacturing-pmi-at-53-3-..."
+# → 53.3, "manufacturing-pmi-at-54-may-..." → 54.0. This is a robust secondary
+# source for the headline PMI even if the release body parse fails.
+_SLUG_HEADLINE_RE = re.compile(
+    r"(?:manufacturing|services)-pmi-at-(\d+)(?:-(\d+))?-(?:january|february|"
+    r"march|april|may|june|july|august|september|october|november|december)-",
+    re.IGNORECASE,
+)
+# Which column each report kind's headline slug value belongs to.
+_HEADLINE_COL = {"manufacturing": "ISM_MFG_PMI", "services": "ISM_SVC_PMI"}
 
 # Diffusion indexes live in [0, 100]; the value line we accept for a label must
 # fall in this range, which skips stray "Months"/trend integers and dashes.
@@ -95,11 +106,36 @@ _LISTING_FETCHED = False
 _REPORT_CACHE: dict[str, dict | None] = {}
 
 
+def _normalize_document(text: str) -> list[str]:
+    """Flatten an ISM release into a list of one-token-per-line "cells",
+    regardless of whether Bright Data returned raw HTML, a Markdown pipe table,
+    or line-per-cell Markdown.
+
+    The label→value parser below assumes each index label and each numeric
+    reading sit on their own line. Bright Data's Web Unlocker may return any of
+    three shapes depending on the ``data_format`` and the page, so we normalise
+    all of them to that shape:
+      * HTML: entity-unescape, drop <script>/<style>, turn block/cell/row close
+        tags and <br> into newlines, strip remaining tags.
+      * Markdown pipe tables ("| Manufacturing PMI | 53.3 | ..."): split on '|'.
+      * Line-per-cell Markdown: already in the target shape.
+    Over-splitting is harmless — the parser scans forward for the first numeric
+    after an exact label match.
+    """
+    t = _htmllib.unescape(text)
+    if "<" in t and ">" in t:
+        t = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", t)
+        t = re.sub(r"(?i)<(br|/td|/th|/tr|/p|/div|/li|/h[1-6])\s*/?>", "\n", t)
+        t = re.sub(r"<[^>]+>", " ", t)
+    t = t.replace("|", "\n")
+    return t.splitlines()
+
+
 def _normalize_label(line: str) -> str:
     """Strip markdown / trademark noise so a table label line compares cleanly.
     'Manufacturing PMI\\*\\*®\\*\\*' -> 'manufacturing pmi'."""
     s = line.replace("\\", "")
-    s = re.sub(r"[*®™™®]", "", s)
+    s = re.sub(r"[*®™#]", "", s)
     s = re.sub(r"\s+", " ", s)
     return s.strip().lower()
 
@@ -138,10 +174,12 @@ def _parse_index_value(lines: list[str], label: str) -> float | None:
 def parse_report(text: str, col_map: dict[str, str]) -> dict[str, float]:
     """Parse an ISM release into {col_id: value} using `col_map`.
 
-    Returns only the columns found. An empty dict means the parse failed (a
-    layout change) and the caller should keep last-known data.
+    Accepts raw HTML, Markdown pipe tables, or line-per-cell Markdown — the
+    input is normalised first. Returns only the columns found; an empty dict
+    means the parse failed (a layout change) and the caller should keep
+    last-known data.
     """
-    lines = text.splitlines()
+    lines = _normalize_document(text)
     out: dict[str, float] = {}
     for label, col in col_map.items():
         v = _parse_index_value(lines, label)
@@ -165,11 +203,26 @@ def _period_end_from_slug(slug: str) -> str | None:
     return end.strftime("%Y-%m-%d")
 
 
+def _headline_from_slug(slug: str) -> float | None:
+    """'manufacturing-pmi-at-53-3-june-...' -> 53.3; '...-at-54-may-...' ->
+    54.0. Robust headline recovery that doesn't depend on the release body."""
+    m = _SLUG_HEADLINE_RE.search(slug)
+    if not m:
+        return None
+    whole, frac = m.group(1), m.group(2)
+    try:
+        return float(f"{whole}.{frac}") if frac else float(whole)
+    except ValueError:
+        return None
+
+
 def _get_listing() -> str | None:
     global _LISTING_CACHE, _LISTING_FETCHED
     if not _LISTING_FETCHED:
         _LISTING_FETCHED = True
-        _LISTING_CACHE = brightdata.unlock_text(_NEWSROOM_URL, tag=_TAG)
+        _LISTING_CACHE = brightdata.unlock_text(
+            _NEWSROOM_URL, tag=_TAG, data_format="markdown"
+        )
     return _LISTING_CACHE
 
 
@@ -200,31 +253,43 @@ def fetch_latest(kind: str = "manufacturing") -> dict | None:
     if brightdata.available():
         url = discover_latest_url(kind)
         if url:
-            text = brightdata.unlock_text(url, tag=_TAG)
-            if text:
-                col_map = (
-                    MANUFACTURING_COL_MAP if kind == "manufacturing"
-                    else SERVICES_COL_MAP
+            text = brightdata.unlock_text(url, tag=_TAG, data_format="markdown")
+            period = _period_end_from_slug(url)
+            col_map = (
+                MANUFACTURING_COL_MAP if kind == "manufacturing"
+                else SERVICES_COL_MAP
+            )
+            values = parse_report(text, col_map) if text else {}
+            # Guaranteed headline recovery from the slug, even if the body
+            # parse comes back empty (e.g. an unexpected release layout).
+            headline_col = _HEADLINE_COL.get(kind)
+            if headline_col and headline_col not in values:
+                hv = _headline_from_slug(url)
+                if hv is not None:
+                    values[headline_col] = hv
+                    print(
+                        f"  [{_TAG}] {kind} headline recovered from slug: "
+                        f"{headline_col}={hv}",
+                        flush=True,
+                    )
+            if values and period:
+                result = {
+                    "kind":   kind,
+                    "url":    url,
+                    "period": period,
+                    "values": values,
+                }
+                print(
+                    f"  [{_TAG}] parsed {kind} release {period}: {values}",
+                    flush=True,
                 )
-                values = parse_report(text, col_map)
-                period = _period_end_from_slug(url)
-                if values and period:
-                    result = {
-                        "kind":   kind,
-                        "url":    url,
-                        "period": period,
-                        "values": values,
-                    }
-                    print(
-                        f"  [{_TAG}] parsed {kind} release {period}: {values}",
-                        flush=True,
-                    )
-                else:
-                    print(
-                        f"  [{_TAG}] {kind} release parse yielded no usable "
-                        f"data (period={period}, values={values})",
-                        flush=True,
-                    )
+            else:
+                print(
+                    f"  [{_TAG}] {kind} release parse yielded no usable "
+                    f"data (period={period}, values={values}, "
+                    f"text_len={len(text) if text else 0})",
+                    flush=True,
+                )
     _REPORT_CACHE[kind] = result
     return result
 
