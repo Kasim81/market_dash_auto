@@ -623,10 +623,6 @@ REGIME_RULES = {
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
     ),
-    "US_PMI2": lambda r, z: (
-        "expansion"   if not np.isnan(r) and r > 52
-        else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
-    ),
     "US_SVC1": lambda r, z: (
         "expansion"   if not np.isnan(r) and r > 52
         else ("contraction" if not np.isnan(r) and r < 48 else "neutral")
@@ -1895,9 +1891,9 @@ def _calc_US_PMI1(dbn, **_):
     """ISM Manufacturing PMI composite — raw level, 156w z-score. Source: DB.nomics ISM/pmi."""
     return _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI"))
 
-def _calc_US_PMI2(dbn, **_):
-    """ISM Manufacturing New Orders — raw New Orders level. Source: DB.nomics ISM/neword."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
+# US_PMI2 (ISM New Orders) was removed 2026-07-03: it duplicated US_ISM1 exactly
+# (both _to_weekly_friday(ISM_MFG_NEWORD)). New Orders is kept as US_ISM1, which
+# pairs with the US_ISM2 New-Orders-minus-Inventories spread.
 
 def _calc_US_SVC1(dbn, **_):
     """ISM Services PMI composite — raw level, 156w z-score. Source: DB.nomics ISM/nm-pmi."""
@@ -2192,7 +2188,6 @@ _NOWCAST_CALCULATORS = {
 
 _PHASE_D_CALCULATORS = {
     "US_PMI1":  _calc_US_PMI1,
-    "US_PMI2":  _calc_US_PMI2,
     "US_SVC1":  _calc_US_SVC1,
     "EU_PMI1":  _calc_EU_PMI1,
     "EU_PMI2":  _calc_EU_PMI2,
