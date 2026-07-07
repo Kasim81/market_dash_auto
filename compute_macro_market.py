@@ -2083,12 +2083,14 @@ def _calc_EU_INFL1(mu, **_):
 
 def _calc_JP_INFL1(mu, **_):
     """Japan inflation: mean of headline CPI YoY and core CPI YoY (both %).
-    Headline = JPN_CPI (FRED `JPNCPIALLMINMEI` — Index 2015=100, converted
-    to YoY here); core = JPN_CORE_CPI_YOY (OECD COICOP2018 national CPI
-    ex-food-and-energy — already YoY %; replaces the frozen FRED / OECD
-    MEI mirror that stopped updating at 2021-06). Falls back to
+    Headline = JPN_CPI_YOY (OECD COICOP2018 national all-items CPI growth
+    over 1 year — already YoY %, monthly); core = JPN_CORE_CPI_YOY (OECD
+    COICOP2018 ex-food-and-energy — already YoY %). Re-pointed 2026-07-07
+    off the old `_yoy(JPN_CPI index)` path: FRED `JPNCPIALLMINMEI` was
+    discontinued (dead since 2022-04), which had frozen this composite at a
+    flat ~8.49. Both components are now fresh monthly OECD YoY. Falls back to
     headline-only if core is absent."""
-    head = _yoy(_to_weekly_friday(_get_col(mu, "JPN_CPI")))       # CPI index → YoY %
+    head = _to_weekly_friday(_get_col(mu, "JPN_CPI_YOY"))        # OECD all-items — already YoY %
     core = _to_weekly_friday(_get_col(mu, "JPN_CORE_CPI_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
     if not parts:
@@ -2098,11 +2100,17 @@ def _calc_JP_INFL1(mu, **_):
 
 def _calc_CN_INFL1(mu, **_):
     """China inflation: mean of CPI YoY and PPI YoY (both %).
-    Headline = CHN_CPI (FRED `CHNCPIALLMINMEI` — Index 2015=100, converted
-    to YoY here); PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — already YoY %).
+    Headline = CHN_CPI_INDEX (FRED `CHNCPIALLMINMEI` — Index 2015=100,
+    converted to YoY here); PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — already
+    YoY %). Re-pointed 2026-07-07 to the renamed CHN_CPI_INDEX column (was
+    CHN_CPI) as part of the CPI-definition split — behaviour unchanged (same
+    FRED series). No fresh monthly CN CPI-YoY aggregator exists (OECD
+    COICOP2018 has no CHN coverage; IMF IFS mirror is ~1yr stale on
+    DB.nomics; NBS exposes no clean ex-food-energy national YoY), so
+    CHN_CPI_YOY carries only the WB annual fallback and is not used here.
     China runs no hard 2% target and is deflation-prone, so it gets its own
     reflation/stable/deflation-risk regime rather than the G10 target buckets."""
-    cpi = _yoy(_to_weekly_friday(_get_col(mu, "CHN_CPI")))        # CPI index → YoY %
+    cpi = _yoy(_to_weekly_friday(_get_col(mu, "CHN_CPI_INDEX")))  # CPI index → YoY %
     ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))              # already YoY %
     parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
     if not parts:

@@ -166,3 +166,48 @@ only available in the Codespace. **This is what finally fixes `JP_INFL1`.**
 the served output requires a full macro regen with API keys, which runs in the
 Codespace/CI, not the web sandbox. The logic is unit-tested here; end-to-end
 validation is the first step after merge.
+
+---
+
+## Resolution — CPI-definition split shipped (2026-07-07)
+
+Executed per `manuals/2026-06-18-cpi-split-codespace-spec.md` in the credentialed
+Codespace. Branch `claude/cpi-split-infl1-2026-07-07` (off `main`; P1 already merged).
+
+**Sourcing decided per country (verified live on DB.nomics 2026-07-07):**
+
+| Country | `<C>_CPI_YOY` source | series_id | last obs | tier |
+|---|---|---|---|---|
+| JPN | OECD COICOP2018 all-items | `OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_ALL/JPN.M.N.CPI.PA._T.N.GY` | 2026-04 = 1.4% | 1 |
+| CAN | OECD COICOP2018 all-items | `…/CAN.M.N.CPI.PA._T.N.GY` | 2026-04 = 2.82% | 1 |
+| CHE | OECD COICOP2018 all-items | `…/CHE.M.N.CPI.PA._T.N.GY` | 2026-05 = 0.62% | 1 |
+| FRA | OECD COICOP2018 all-items | `…/FRA.M.N.CPI.PA._T.N.GY` | 2026-04 = 2.16% | 1 |
+| ITA | OECD COICOP2018 all-items | `…/ITA.M.N.CPI.PA._T.N.GY` | 2026-04 = 2.7% | 1 |
+| NLD | OECD COICOP2018 all-items | `…/NLD.M.N.CPI.PA._T.N.GY` | 2026-05 = 3.50% | 1 |
+| DEU | OECD COICOP2018 all-items **(HICP)** | `…/DEU.M.HICP.CPI.PA._T.N.GY` | 2026-05 = 2.7% | 1 |
+| GBR | ONS D7G7 (already in library) | `economy/…/d7g7/mm23` | 2026-04 = 2.8% | 0 |
+| USA, CHN, AUS, EA19, + others | **WB annual fallback only** (no fresh monthly aggregator found) | `FP.CPI.TOTL.ZG` (fan-out) | 2023 (WB mirror frozen) | 1 |
+
+**Rejected sources (documented so they aren't re-probed):** OECD `_T` monthly is
+**absent for USA / GBR / CHN / AUS / EA19** in the DB.nomics OECD mirror; Eurostat
+HICP for GBR **stops 2020-11** (Brexit); OECD KEI / MEI legacy CPI **frozen at
+2023-12**; IMF IFS `PCPI_PC_CP_A_PT` mirror **~1yr stale** (2025-06/07); FRED
+`CPALTT01USM659N` (OECD-MEI YoY) **frozen 2025-04**; NBS China exposes only
+"=100" category indices with recent NAs (no clean national ex-food-energy YoY).
+
+**Deviations from the spec (guardrail §6 — never make a regressing repoint):**
+- **US_INFL1 / UK_INFL1 were already correct** — their calculators already read
+  `USA_CPI_INDEX` (BLS monthly → YoY inline) and `GBR_CPI_YOY` (ONS D7G7). No
+  calculator change; the spec's §1 table was stale. US_INFL1 was **not** actually
+  blending an annual series.
+- **CN_INFL1** kept on `CHN_CPI_INDEX` (renamed from `CHN_CPI`, same FRED series,
+  YoY computed in `_calc_CN_INFL1`) rather than repointed to the WB-annual
+  `CHN_CPI_YOY` — the WB mirror is frozen at 2023, staler than the current path, so
+  the literal §2 repoint would have regressed freshness. `CHN_CPI_YOY` exists as
+  the WB fallback but is not consumed.
+- The only composite whose *behaviour* changes is **`JP_INFL1`**, repointed off the
+  discontinued FRED `JPNCPIALLMINMEI` index (dead 2022-04, had frozen the raw at a
+  flat ~8.49) onto the fresh OECD all-items `JPN_CPI_YOY`.
+
+See the PR for the before/after `JP_INFL1` tail and the `build_source_inventory.py`
+collision-flag delta.
