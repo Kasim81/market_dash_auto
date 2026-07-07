@@ -1784,21 +1784,22 @@ def _calc_JP_TANKAN_SVC1(mu, **_):
 
 def _calc_JP_NOWCAST1(mu, **_):
     """Equal-weight Japan real-time growth nowcast (§3.1.4).
-    Z-score-normalises each of four real-economy + survey components on
-    their own 156-week window, then averages available z-scores. Inputs:
+    Z-score-normalises each real-economy + survey component on its own
+    156-week window, then averages available z-scores. Inputs:
       - JPN_IND_PROD     (e-Stat METI Indices of Industrial Production)
       - JP_TANKAN1       (BoJ Tankan Large-Mfg Business Conditions DI)
-      - JPN_RETAIL_SALES (e-Stat METI Current Survey of Commerce)
       - JPN_MACH_ORDERS  (e-Stat Cabinet Office Machinery Orders)
     Same z-composite shape as EU_NOWCAST1 / GL_PMI1 — raw output is the
     composite z (≈ 0-centred). Degrades gracefully if a component is
-    missing (3 of 4 e-Stat inputs are provisional and may not yet be
-    populated). Flagged as the Phase E composite for §3.1.4 JP nowcast
-    per forward_plan.md."""
+    missing. JPN_RETAIL_SALES was dropped 2026-07-07: the METI Current
+    Survey of Commerce (商業動態統計) live monthly headline is Excel/file-only
+    and not exposed via the e-Stat getStatsData API (every DB table is a
+    vintaged archive ending 2013/2019; the OECD MEI mirror is frozen at
+    2023-10) — see label-vs-data audit #1 and forward_plan Known Data Gaps.
+    Flagged as the Phase E composite for §3.1.4 JP nowcast."""
     components = [
         _to_weekly_friday(_get_col(mu, "JPN_IND_PROD")),
         _to_weekly_friday(_get_col(mu, "JP_TANKAN1")),
-        _to_weekly_friday(_get_col(mu, "JPN_RETAIL_SALES")),
         _to_weekly_friday(_get_col(mu, "JPN_MACH_ORDERS")),
     ]
     zscores = []

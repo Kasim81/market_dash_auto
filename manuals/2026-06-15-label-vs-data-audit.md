@@ -28,16 +28,40 @@ Most CRITICALs have now been remediated. Each finding below carries an inline
 | M14 CHN_IND_PROD units → YoY | ✅ RESOLVED | `f6bd28a` |
 | M15 4 dead FRED ids | ✅ RESOLVED (dropped) | `f6bd28a` |
 | WARNING: CHN_M2 / JPN_M2 / EZ_M3 units | ✅ RESOLVED | `ba8843c` |
-| **#1 JPN_RETAIL_SALES** (frozen-2013 + units) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
-| **#2 JPN_HH_EXP** (missing cdCat slice) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
-| **#3 JPN_EWS_DI** (missing cdCat slice) | ⛔ OPEN — needs `ESTAT_APP_ID` | — |
-| **BLS ×3 macro** (SKIPPED-CREDS) | ⛔ OPEN — needs `BLS_API_KEY` | — |
+| **#1 JPN_RETAIL_SALES** (frozen-2013 + units) | ✅ RESOLVED (accepted file-only gap; registration + nowcast ref dropped) | `estat-bls-audit-remediation` |
+| **#2 JPN_HH_EXP** (missing cdCat slice) | ✅ RESOLVED (slice pinned + units corrected) | `estat-bls-audit-remediation` |
+| **#3 JPN_EWS_DI** (missing cdCat slice) | ✅ RESOLVED (DI slice pinned) | `estat-bls-audit-remediation` |
+| **BLS ×3 macro** (SKIPPED-CREDS) | ✅ RESOLVED (4 rows re-verified live, keyed) | `estat-bls-audit-remediation` |
 
-**Remaining work (all credential-gated):** the 3 e-Stat Japan CRITICALs (#1–3)
-require `getMetaInfo` calls to discover the actual `cdCat` codes / verify the
-retail-sales table — i.e. `ESTAT_APP_ID`; and the 3 BLS macro rows need
-`BLS_API_KEY`. Neither secret is present in the Claude-Code-on-the-web sandbox,
-so these must be picked up in the credentialed Codespace.
+**All open items closed 2026-07-07 (credentialed Codespace).** Resolution detail:
+
+- **#1 `JPN_RETAIL_SALES` — accepted file-only gap.** `getMetaInfo` on `0003138782`
+  confirmed it is the frozen 2013 annual archive (`CYCLE=年次`, `@time` H19–H25).
+  Exhaustive `getStatsList` search of 商業動態統計 found **no live monthly
+  getStatsData table** — every 業種別商業販売額 / 指数 table is a vintaged archive
+  ending 2013/2019 (the live monthly METI headline is Excel/file-only), and the
+  OECD MEI mirror on DB.nomics is frozen at 2023-10. Rather than build a one-off
+  Excel-download path, the broken registration was **dropped** from
+  `macro_library_estat.csv` and its dead `_get_col` reference removed from
+  `_calc_JP_NOWCAST1` (which never received the column — it always ran on 3
+  components). Recorded as a Known Data Gap in `forward_plan.md`; also auto-clears
+  the Section-B calculator-orphan flag (`forward_plan` §2.A A8).
+- **#2 `JPN_HH_EXP` — slice pinned + units corrected.** `getMetaInfo` gave the codes;
+  pinned `cdTab=01&cdCat01=059(消費支出)&cdCat02=03(二人以上)&cdArea=00000(全国)&lang=J`.
+  `@tab` exposes only `01 金額`, so the table is a **nominal-yen monthly LEVEL**,
+  not a real-YoY index — units corrected `YoY % (real)` → `JPY per month (nominal)`
+  and the name de-"real"-ed. Verified live via the adapter: 317 obs 2000-01 → 2026-05
+  = 320,345 JPY.
+- **#3 `JPN_EWS_DI` — DI slice pinned.** `cdTab=140(ＤＩ)&cdCat01=100(合計)&cdCat02=100
+  (現状判断・方向性)&cdCat03=100(分野合計)&cdArea=00000(全国)&lang=J`. Verified live:
+  305 obs 2001-01 → 2026-05 = 43.1.
+- **BLS ×3 (really 4 lib rows) — re-verified live with `BLS_API_KEY`.** `CUSR0000SA0`
+  = 333.979, `CUSR0000SA0L1E` = 336.121 (both @ 2026-05); `LNS14000000` = 4.2%,
+  `CES0500000003` = 37.64 (both @ 2026-06). Identity / units / cadence all confirmed;
+  library notes updated. **No CRITICALs — SKIPPED-CREDS cleared.**
+
+**The label-vs-data audit is now fully closed** (all macro + market CRITICALs and
+credential-gated items resolved).
 
 Wrong-table / wrong-slice / wrong-units / frozen-mirror audit across the full
 macro + market pipeline. Triggered by PR #208 (two e-Stat registrations pointed
