@@ -199,14 +199,15 @@ market_dash_auto/
 │   └── devcontainer.json          # Dev Container config — Python 3.11 image + Node LTS feature; postCreateCommand installs requirements.txt + @anthropic-ai/claude-code (added 2026-06-17)
 │
 └── .github/workflows/
-    └── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits the log + audit + data CSVs
+    ├── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits the log + audit + data CSVs + Pattern-9 sister archives (sisters added to the commit list 2026-07-08)
+    └── ci.yml                     # Offline unit-test gate on pull_request + push-to-main — 7 deterministic modules, no network/keys (forward_plan §2.C C5, 2026-07-08)
 ```
 
 ---
 
 ## 3. Execution Flow
 
-GitHub Actions runs `python fetch_data.py` once per day. The file is structured as `main()` (simple + comp pipelines + Sheets push) followed by three module-level `try/except` blocks that import and run the downstream phases. Each block is fully independent — a failure anywhere downstream cannot affect tabs already written.
+GitHub Actions runs `python fetch_data.py` once per day. The file is structured as `main()` (simple + comp pipelines + Sheets push) followed by `run_downstream_phases()` — four `try/except`-isolated phase blocks (comp hist, Phase ME, Phase E, SEC EDGAR), each fully independent so a failure anywhere downstream cannot affect tabs already written. Both are invoked only under `if __name__ == "__main__":` (since 2026-07-08, forward_plan §2.C C4 — previously the phase blocks ran at module level, so `import fetch_data` executed the whole pipeline).
 
 ```
 fetch_data.py
