@@ -2070,10 +2070,10 @@ def _calc_UK_INFL1(mu, **_):
 
 def _calc_EU_INFL1(mu, **_):
     """Euro-area inflation: mean of headline HICP YoY and core HICP YoY
-    (both already %). Headline = EA_HICP (FRED `EA19CPALTT01GYM` —
-    already YoY %); core = EA_HICP_CORE_YOY (Eurostat
-    prc_hicp_manr TOT_X_NRG_FOOD — the standard ECB core HICP YoY
-    definition). Falls back to headline-only if core is absent."""
+    (both already %). Headline = EA_HICP (ECB Data Portal `HICP` dataset
+    all-items annual rate — already YoY %); core = EA_HICP_CORE_YOY (same
+    dataset, ex energy/food — the standard ECB core HICP YoY definition).
+    Falls back to headline-only if core is absent."""
     head = _to_weekly_friday(_get_col(mu, "EA_HICP"))             # already YoY %
     core = _to_weekly_friday(_get_col(mu, "EA_HICP_CORE_YOY"))    # already YoY %
     parts = [s for s in (head, core) if s is not None and not s.empty]
