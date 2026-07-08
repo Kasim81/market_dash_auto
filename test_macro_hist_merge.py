@@ -19,7 +19,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fetch_macro_economic as fme  # noqa: E402
 
 
-def _indic(source: str, col: str, series: pd.Series, country: str = "JPN") -> dict:
+def _indic(source: str, col: str, series: pd.Series, country: str = "JPN",
+           tier: int = 0) -> dict:
+    # Production indicators always pass through _attach_tiers, which reads
+    # the declared `tier` column off the library CSV. Fixtures declare it
+    # directly (0 = primary/direct, 1 = aggregator) — see PR #246.
     return {
         "source": source,
         "col": col,
@@ -33,6 +37,7 @@ def _indic(source: str, col: str, series: pd.Series, country: str = "JPN") -> di
         "units": "",
         "frequency": "",
         "notes": "",
+        "tier": tier,
         "_series": {col if country else col: series},
     }
 
@@ -108,13 +113,15 @@ class HistMergeFreshnessTest(unittest.TestCase):
 
     def test_tie_prefers_primary_over_aggregator(self):
         # Equal latest observation, but one source is the ultimate/primary
-        # vendor (BLS) and the other an aggregator that republishes it (FRED).
-        # The primary must win even though the aggregator registered first.
+        # vendor (BLS, declared tier 0) and the other an aggregator that
+        # republishes it (FRED, declared tier 1). The primary must win even
+        # though the aggregator registered first. Since PR #246 the tie-break
+        # is the declared library tier (was: PRIMARY_SOURCES rank).
         fred = self._series(["2024-02-09", "2024-02-16"], [3.0, 3.0])
         bls = self._series(["2024-02-09", "2024-02-16"], [3.1, 3.1])
         _, prov = fme.build_hist_df([
-            _indic("FRED", "USA_CPI_INDEX", fred, country="USA"),
-            _indic("BLS", "USA_CPI_INDEX", bls, country="USA"),
+            _indic("FRED", "USA_CPI_INDEX", fred, country="USA", tier=1),
+            _indic("BLS", "USA_CPI_INDEX", bls, country="USA", tier=0),
         ])
         self.assertEqual(prov["USA_CPI_INDEX"]["source"], "BLS")
 
