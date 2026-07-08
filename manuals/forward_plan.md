@@ -469,8 +469,10 @@ Distilled from `manuals/regime-aa-asks/regime-aa-sourcing-backlog.md`. Regime-AA
 
 ### §2.C Architecture & repo-hygiene backlog — Fable review (2026-07-07; merged into this plan 2026-07-08)
 
-> Source: the 2026-07-07 full-repo architecture review (root `fable recommendations.md`,
-> now an archived pointer — evidence line numbers refer to the tree at commit `08e7026`).
+> Source: the 2026-07-07 full-repo architecture review (formerly root
+> `fable recommendations.md`, deleted 2026-07-08 after this merge — original text
+> in git history at that path; evidence line numbers refer to the tree at commit
+> `08e7026`).
 > The review's **live-data items were already absorbed into §2.A** — its 0.1 = **A10**
 > (EU_INFL1 freeze), 0.2 = **A11** (freshness-honesty pass), 0.3 = **A1** (China
 > cluster) — so this section carries only the *structural* track: changes that stop
