@@ -28,11 +28,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_ecb.csv"
@@ -109,28 +109,11 @@ def fetch_series(
     url = "&".join(url_parts)
     headers = {"Accept": "text/csv"}
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, headers=headers, timeout=timeout)
-            if resp.status_code == 200 and resp.text.strip():
-                return resp.text
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [ECB HTTP {resp.status_code}] {series_id} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [ECB HTTP {resp.status_code}] {series_id} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [ECB timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [ECB request error] {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [ECB FAIL] {series_id} — {retries} attempts exhausted")
-    return None
+    text = fetch_with_backoff(
+        url, label=f"ECB {series_id}", accept_csv=True,
+        retries=retries, timeout=timeout, headers=headers,
+    )
+    return text if isinstance(text, str) and text.strip() else None
 
 
 # ---------------------------------------------------------------------------

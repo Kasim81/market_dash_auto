@@ -28,11 +28,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_abs.csv"
@@ -100,28 +100,11 @@ def fetch_series(
     if last_n is not None and last_n > 0:
         params["lastNObservations"] = last_n
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text.strip():
-                return resp.text
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [ABS HTTP {resp.status_code}] {series_id} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [ABS HTTP {resp.status_code}] {series_id} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [ABS timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [ABS request error] {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [ABS FAIL] {series_id} — {retries} attempts exhausted")
-    return None
+    text = fetch_with_backoff(
+        url, params=params, label=f"ABS {series_id}", accept_csv=True,
+        retries=retries, timeout=timeout, headers=_HEADERS,
+    )
+    return text if isinstance(text, str) and text.strip() else None
 
 
 # ---------------------------------------------------------------------------
