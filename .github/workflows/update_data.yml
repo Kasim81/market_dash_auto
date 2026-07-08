@@ -181,6 +181,13 @@ jobs:
         [ -f data/macro_market_hist.csv ] && git add -f data/macro_market_hist.csv || true
         [ -f data/macro_economic.csv ] && git add -f data/macro_economic.csv || true
         [ -f data/macro_economic_hist.csv ] && git add -f data/macro_economic_hist.csv || true
+        # Pattern-9 sister archives (history preservation) — these were
+        # missing from this list until 2026-07-08, so sister updates only
+        # persisted when a push-conflict retry's `git add -A` caught them;
+        # on the happy path they were silently discarded each run.
+        [ -f data/market_data_comp_hist_x.csv ] && git add -f data/market_data_comp_hist_x.csv || true
+        [ -f data/macro_economic_hist_x.csv ] && git add -f data/macro_economic_hist_x.csv || true
+        [ -f data/macro_market_hist_x.csv ] && git add -f data/macro_market_hist_x.csv || true
         # SEC EDGAR equity fundamentals (revenue + diluted EPS), isolated phase:
         [ -f data/equity_fundamentals.csv ] && git add -f data/equity_fundamentals.csv || true
         # §3.1 sub-track 3 — audit_writeback artefacts:
