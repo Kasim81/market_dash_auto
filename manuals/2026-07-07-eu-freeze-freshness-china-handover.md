@@ -8,6 +8,12 @@
 > now tracked as §2.A **A12** (covers the sentiment trio + EZ real-economy rows
 > this doc's P0 §4 asked about). **P2 (China) remains open** — the A1 leads
 > below are still the work order.
+>
+> **P1 amendment (2026-07-08, operator decision):** the `JPN_CPI_INDEX` drop this
+> doc recommended was reversed the same day — the column is reinstated on the
+> live OECD COICOP2018 index measure (T1, 1955+), with the Statistics Bureau
+> e-Stat CPI table `0003427113` queued as the tier-0 upgrade (§2.A **A13**).
+> Only the dead FRED registration stays dropped.
 
 > Created 2026-07-07 (UTC) after the CPI-definition split (PR #249) and the
 > label-vs-data audit closure (PR #250) landed and the daily workflow re-ran
