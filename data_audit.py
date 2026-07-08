@@ -175,11 +175,20 @@ def load_macro_hist() -> list[dict]:
     """Read data/macro_economic_hist.csv. Return one dict per data column with
     {col_id, series_id, source, frequency, last_obs}.
 
-    `last_obs` is the date of the last *value-change* in the column — i.e. the
-    date when the most recent novel observation arrived.  This is *not* simply
-    the last non-null cell, because the unified hist is built on a Friday spine
-    with forward-fill: a series whose publisher stopped emitting in Jan 2024
-    will still have non-null cells on every Friday since.
+    `last_obs` (forward_plan §2.A A15): preferred source is the
+    **"Last Observation" metadata row** the bounded-fill writer records —
+    the exact date of the column's last *real raw observation*, known at
+    write time. This is ground truth: value-change archaeology cannot
+    distinguish a held policy rate (real daily observations at an unchanged
+    value) from a dead series, which is the false-positive class that forced
+    the wide A11 event-driven-rate overrides.
+
+    **Fallback — value-change archaeology** — when the metadata row is
+    absent (a pre-2026-07-08 file generation) or the cell is blank (a column
+    missing from today's provenance, e.g. an intermittent ifo fetch failure
+    where the sister still carries history): the date of the last value
+    change in the column. Not simply the last non-null cell, because the
+    spine carries (bounded) forward-fill.
     """
     path = DATA / "macro_economic_hist.csv"
     with path.open(newline="") as f:
@@ -191,29 +200,34 @@ def load_macro_hist() -> list[dict]:
 
     labels = [r[0] for r in meta_rows]
     label_idx = {label: i for i, label in enumerate(labels)}
+    lo_idx = label_idx.get("Last Observation")
 
     n_cols = len(rows[0])
 
     out: list[dict] = []
     for ci in range(1, n_cols):
-        last_change_date = ""
-        prev_val: str | None = None
-        for dr in data_rows:
-            if ci >= len(dr):
-                continue
-            cell = dr[ci].strip()
-            if cell == "":
-                continue
-            if prev_val is None or cell != prev_val:
-                last_change_date = dr[0].strip()
-                prev_val = cell
+        last_obs = ""
+        if lo_idx is not None and ci < len(meta_rows[lo_idx]):
+            last_obs = meta_rows[lo_idx][ci].strip()
+        if not last_obs:
+            # Archaeology fallback: date of the last value change.
+            prev_val: str | None = None
+            for dr in data_rows:
+                if ci >= len(dr):
+                    continue
+                cell = dr[ci].strip()
+                if cell == "":
+                    continue
+                if prev_val is None or cell != prev_val:
+                    last_obs = dr[0].strip()
+                    prev_val = cell
 
         out.append({
             "col_id":    meta_rows[label_idx["Column ID"]][ci].strip(),
             "series_id": meta_rows[label_idx["Series ID"]][ci].strip(),
             "source":    meta_rows[label_idx["Source"]][ci].strip(),
             "frequency": meta_rows[label_idx["Frequency"]][ci].strip(),
-            "last_obs":  last_change_date,
+            "last_obs":  last_obs,
         })
     return out
 

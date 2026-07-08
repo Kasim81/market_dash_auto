@@ -187,3 +187,63 @@ class ToWeeklyFridayTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SectionCLastObservationTest(unittest.TestCase):
+    """forward_plan §2.A A15 — data_audit.load_macro_hist prefers the
+    'Last Observation' metadata row (writer ground truth) and falls back to
+    value-change archaeology when the row is absent or the cell is blank."""
+
+    def setUp(self):
+        import data_audit
+        from pathlib import Path
+        self.da = data_audit
+        self._orig_data = data_audit.DATA
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+        data_audit.DATA = Path(self.dir)
+        self.addCleanup(setattr, data_audit, "DATA", self._orig_data)
+
+    def _write_hist(self, lines):
+        with open(os.path.join(self.dir, "macro_economic_hist.csv"), "w") as f:
+            f.write("\n".join(lines) + "\n")
+
+    # HELD is a constant-valued live series (e.g. a held policy rate):
+    # archaeology dates it at its last value CHANGE (2024-01-05), but the
+    # writer knows real observations kept arriving (Last Observation
+    # 2024-03-01). DEAD is a genuinely dead series with fill.
+    _BASE = [
+        "Column ID,HELD,DEAD",
+        "Series ID,H1,D1",
+        "Source,BoC,FRED",
+        "Frequency,Daily,Monthly",
+    ]
+    _DATA = [
+        "Date,HELD,DEAD",
+        "2024-01-05,2.25,1.0",
+        "2024-02-02,2.25,1.0",
+        "2024-03-01,2.25,1.0",
+    ]
+
+    def test_metadata_row_wins_over_archaeology(self):
+        self._write_hist(self._BASE
+                         + ["Last Observation,2024-03-01,2024-01-05"]
+                         + self._DATA)
+        out = {r["col_id"]: r for r in self.da.load_macro_hist()}
+        self.assertEqual(out["HELD"]["last_obs"], "2024-03-01",
+                         "held-rate real obs date must come from metadata")
+        self.assertEqual(out["DEAD"]["last_obs"], "2024-01-05")
+
+    def test_blank_metadata_cell_falls_back_to_archaeology(self):
+        self._write_hist(self._BASE
+                         + ["Last Observation,,2024-01-05"]
+                         + self._DATA)
+        out = {r["col_id"]: r for r in self.da.load_macro_hist()}
+        # archaeology: HELD's last value change is the first data row
+        self.assertEqual(out["HELD"]["last_obs"], "2024-01-05")
+
+    def test_old_generation_without_row_falls_back(self):
+        self._write_hist(self._BASE + self._DATA)
+        out = {r["col_id"]: r for r in self.da.load_macro_hist()}
+        self.assertEqual(out["HELD"]["last_obs"], "2024-01-05")
+        self.assertEqual(out["DEAD"]["last_obs"], "2024-01-05")
