@@ -31,6 +31,7 @@ from library_utils import (
     INDICATOR_SUB_GROUP_ORDER,
     INDICATOR_CONCEPT_ORDER,
     load_hist_with_archive,
+    sniff_hist_prefix_rows,
 )
 
 MACRO_MKT       = DATA / "macro_market_hist.csv"
@@ -252,19 +253,22 @@ def _load_unified_hist_once() -> tuple["pd.DataFrame", dict[str, dict[str, str]]
     if _UNIFIED_DF is not None:
         return _UNIFIED_DF, _UNIFIED_META
 
-    # Live prefix
-    meta_live = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=14, low_memory=False)
-    # Sister prefix (may have extra columns vs live)
+    # Live prefix — sniffed, so 14-row (pre-2026-07-08) and 15-row
+    # (+"Last Observation") metadata generations both parse.
+    n_live = sniff_hist_prefix_rows(str(MACRO_ECONOMIC)) or 14
+    meta_live = pd.read_csv(MACRO_ECONOMIC, header=None, nrows=n_live, low_memory=False)
+    # Sister prefix (may have extra columns vs live, and its own generation)
     sister_path = MACRO_ECONOMIC.with_name(MACRO_ECONOMIC.name.replace("_hist.csv", "_hist_x.csv"))
     meta_sister = None
     if sister_path.exists():
         try:
-            meta_sister = pd.read_csv(sister_path, header=None, nrows=14, low_memory=False)
+            n_sis = sniff_hist_prefix_rows(str(sister_path)) or 14
+            meta_sister = pd.read_csv(sister_path, header=None, nrows=n_sis, low_memory=False)
         except Exception as e:
             print(f"  [build_html] WARN reading sister metadata {sister_path}: {e}")
 
     # Data — unioned live + sister via the §3.1.1 helper.
-    df = load_hist_with_archive(str(MACRO_ECONOMIC), skiprows=14)
+    df = load_hist_with_archive(str(MACRO_ECONOMIC), skiprows="auto")
 
     labels = meta_live.iloc[:, 0].tolist()  # ['Column ID', 'Series ID', ...]
 
@@ -398,7 +402,7 @@ def build_market_comp() -> dict:
         except Exception as e:
             print(f"  [build_html] WARN reading sister metadata {sister_path}: {e}")
 
-    df = load_hist_with_archive(str(MKT_COMP), skiprows=11)
+    df = load_hist_with_archive(str(MKT_COMP), skiprows="auto")
     if "row_id" in df.columns:
         df = df.drop(columns=["row_id"])
 

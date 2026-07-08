@@ -310,12 +310,112 @@ def _load_tier_map() -> dict[tuple[str, str], int]:
     return tiers
 
 
+def _load_override_map() -> dict[tuple[str, str], int]:
+    """Map (source_label, series_id) -> freshness_override_days, read from
+    every library CSV (same sweep shape as _load_tier_map). Drives the
+    bounded-fill limit alongside data/freshness_thresholds.csv."""
+    overrides: dict[tuple[str, str], int] = {}
+    for path in glob.glob(os.path.join(_DATA_DIR, "macro_library_*.csv")):
+        stem = os.path.basename(path)[len("macro_library_"):-len(".csv")]
+        src = _FILE_SOURCE.get(stem)
+        if not src:
+            continue
+        try:
+            with open(path, newline="") as fh:
+                rdr = _csv.DictReader(fh)
+                if "freshness_override_days" not in (rdr.fieldnames or []):
+                    continue
+                for row in rdr:
+                    sid = (row.get("series_id") or "").strip()
+                    o = (row.get("freshness_override_days") or "").strip()
+                    if sid and o:
+                        try:
+                            overrides[(src, sid)] = int(o)
+                        except ValueError:
+                            pass
+        except FileNotFoundError:
+            continue
+    return overrides
+
+
 def _attach_tiers(indicators: list[dict]) -> list[dict]:
-    """Set indic['tier'] from the library tier map (default 0)."""
+    """Set indic['tier'] and indic['freshness_override_days'] from the
+    library CSVs (tier default 0; override default None)."""
     tiers = _load_tier_map()
+    overrides = _load_override_map()
     for ind in indicators:
-        ind["tier"] = tiers.get((ind.get("source", ""), ind.get("source_id", "")), 0)
+        key = (ind.get("source", ""), ind.get("source_id", ""))
+        ind["tier"] = tiers.get(key, 0)
+        ind["freshness_override_days"] = overrides.get(key)
     return indicators
+
+
+# ---- bounded forward-fill (no fabricated currency past a series' cadence) --
+#
+# The Friday-spine hist forward-fills each raw series so a monthly print
+# "is" the value for the following weeks — legitimate step-function
+# semantics. What is NOT legitimate is unbounded fill: a series whose
+# publisher dies keeps emitting its last value forever, silently freezing
+# every composite and z-score built on it (the JP_INFL1 / EU_INFL1 /
+# CN_INFL1 bug class). Fill is therefore bounded at 2x the series'
+# staleness tolerance — the same registry (freshness_thresholds.csv +
+# per-row freshness_override_days) whose 2x line is where data_audit
+# Section C declares a series EXPIRED. Beyond the bound the column is NaN:
+# a dead series visibly ends.
+
+_FRESHNESS_DEFAULTS: dict[str, int] | None = None
+
+
+def _freshness_default_days(frequency: str) -> int:
+    """Per-frequency staleness tolerance from data/freshness_thresholds.csv."""
+    global _FRESHNESS_DEFAULTS
+    if _FRESHNESS_DEFAULTS is None:
+        _FRESHNESS_DEFAULTS = {}
+        try:
+            with open(os.path.join(_DATA_DIR, "freshness_thresholds.csv"),
+                      newline="") as fh:
+                for row in _csv.DictReader(fh):
+                    freq = (row.get("frequency") or "").strip().lower()
+                    days = (row.get("default_days") or "").strip()
+                    if freq and days:
+                        try:
+                            _FRESHNESS_DEFAULTS[freq] = int(days)
+                        except ValueError:
+                            pass
+        except FileNotFoundError:
+            pass
+    return _FRESHNESS_DEFAULTS.get((frequency or "").strip().lower(), 45)
+
+
+def _fill_limit_days(indic: dict) -> int:
+    """Forward-fill bound for one indicator: 2x its staleness tolerance."""
+    override = indic.get("freshness_override_days")
+    tolerance = int(override) if override else \
+        _freshness_default_days(indic.get("frequency", ""))
+    return 2 * tolerance
+
+
+def _bounded_spine_fill(s: pd.Series, spine: pd.DatetimeIndex,
+                        limit_days: int) -> pd.Series:
+    """Snap a raw series onto the Friday spine with forward-fill bounded at
+    ``limit_days`` past the underlying observation: each spine cell keeps the
+    most recent raw value only while that observation is at most limit_days
+    old, and is NaN otherwise. Bounds interior gaps and trailing fill alike,
+    measured in days against the raw observation dates (exact — no
+    value-change archaeology)."""
+    filled = s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
+    nonnull = s.dropna()
+    if nonnull.empty:
+        return filled
+    obs = nonnull.index.sort_values()
+    last_obs_asof = (
+        pd.Series(obs, index=obs)
+        .reindex(spine.union(obs)).sort_index().ffill().reindex(spine)
+    )
+    age_days = pd.Series(
+        (spine - pd.DatetimeIndex(last_obs_asof)).days, index=spine
+    )
+    return filled.where(age_days.le(limit_days))
 
 
 # ---- measure-kind / cadence / period helpers for winner selection ----
@@ -1488,9 +1588,8 @@ def build_hist_df(
         for col_name, s in series_dict.items():
             nonnull = s.dropna()
             new_last = nonnull.index.max() if not nonnull.empty else pd.NaT
-            combined = (
-                s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
-            )
+            fill_limit = _fill_limit_days(indic)
+            combined = _bounded_spine_fill(s, spine, fill_limit)
             if col_name not in cand_lists:
                 cand_lists[col_name] = []
                 col_order.append(col_name)
@@ -1503,7 +1602,8 @@ def build_hist_df(
                 "tier":      int(indic.get("tier", 0) or 0),
                 "rank":      _source_rank(indic["source"]),
                 "order":     len(cand_lists[col_name]),
-                "payload":   {"indic": indic, "series": combined, "last": new_last},
+                "payload":   {"indic": indic, "series": combined,
+                              "last": new_last, "fill_limit": fill_limit},
             })
 
     columns: dict[str, pd.Series] = {}
@@ -1512,7 +1612,15 @@ def build_hist_df(
         cands = cand_lists[col_name]
         win = _select_winner(cands)["payload"]
         columns[col_name] = win["series"]
-        provenance[col_name] = win["indic"]
+        # Copy so the shared indicator dict isn't mutated; _last_obs feeds
+        # the "Last Observation" metadata row and _fill_limit_days feeds the
+        # sister-archive trailing-bound enforcement in save_hist_csv.
+        provenance[col_name] = {
+            **win["indic"],
+            "_last_obs": (win["last"].date().isoformat()
+                          if pd.notna(win["last"]) else ""),
+            "_fill_limit_days": win["fill_limit"],
+        }
         if len(cands) > 1:
             others = ", ".join(sorted({c["payload"]["indic"]["source"] for c in cands}
                                       - {win["indic"]["source"]}))
@@ -1533,7 +1641,7 @@ HIST_METADATA_ROWS = [
     "Column ID", "Series ID", "Source", "Indicator",
     "Country", "Country Name", "Region",
     "Category", "Subcategory", "Concept", "cycle_timing",
-    "Units", "Frequency", "Last Updated",
+    "Units", "Frequency", "Last Updated", "Last Observation",
 ]
 
 
@@ -1541,12 +1649,15 @@ def _build_hist_metadata_rows(
     columns: list[str], provenance: dict[str, dict],
 ) -> list[list]:
     """
-    Build the 14 metadata rows that prefix macro_economic_hist.csv.
+    Build the 15 metadata rows that prefix macro_economic_hist.csv.
 
     `provenance[col_name]` is the indicator dict that actually populated the
     column in build_hist_df (freshness-wins merge), so the Source / Series ID
     / Indicator rows here truthfully describe what's in each column even when
-    multiple sources targeted the same col_name.
+    multiple sources targeted the same col_name. "Last Observation" (added
+    2026-07-08 with the bounded-fill change) is the per-column date of the
+    last *real* raw observation — ground truth for staleness, as opposed to
+    the last spine cell, which includes bounded forward-fill.
 
     The column → country split is recovered by stripping the leading
     "<COUNTRY>_" prefix when the indicator is a multi-country fan-out.
@@ -1595,6 +1706,7 @@ def _build_hist_metadata_rows(
             "Units":        indic["units"],
             "Frequency":    indic["frequency"],
             "Last Updated": ts,
+            "Last Observation": indic.get("_last_obs", ""),
         }
         for r, label in zip(rows, HIST_METADATA_ROWS):
             r.append(vals[label])
@@ -1643,18 +1755,32 @@ def push_hist_to_sheets(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
 
 def save_hist_csv(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     """
-    Write macro_economic_hist.csv.  Format: 14 metadata prefix rows,
+    Write macro_economic_hist.csv.  Format: 15 metadata prefix rows,
     then a header row (Date + column names), then one row per Friday.
 
     Routes through library_utils.write_hist_with_archive() to preserve any
     rows that would otherwise be lost to source-side floor advancement
     (per forward_plan §3.1.1 — e.g. ICE BofA 3-yr rolling window).
+
+    trailing_bounds carries each column's (last real observation,
+    fill-limit-days) so the sister archive can be held to the same
+    bounded-fill invariant as the live file — fabricated fill written to the
+    sister before the 2026-07-08 bounded-fill change is cleared on the first
+    run, and can never re-enter (the writer knows real-vs-fill exactly).
     """
     columns = list(df.columns)
     meta_rows = _build_hist_metadata_rows(columns, provenance)
 
+    trailing_bounds = {}
+    for col, ind in provenance.items():
+        last_obs = ind.get("_last_obs")
+        limit = ind.get("_fill_limit_days")
+        if last_obs and limit:
+            trailing_bounds[col] = (last_obs, int(limit))
+
     df_out = df.reset_index()
-    write_hist_with_archive(df_out, HIST_CSV, prefix_rows=meta_rows)
+    write_hist_with_archive(df_out, HIST_CSV, prefix_rows=meta_rows,
+                            trailing_bounds=trailing_bounds)
     print(f"  Written {len(df)} rows + {len(meta_rows)} metadata rows to {HIST_CSV}")
 
 

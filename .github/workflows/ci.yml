@@ -37,4 +37,5 @@ jobs:
             test_dbnomics_plausibility \
             test_atlanta_fed_parse \
             test_estat_parse \
-            test_ism_prnewswire_parse
+            test_ism_prnewswire_parse \
+            test_bounded_fill

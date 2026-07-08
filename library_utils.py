@@ -442,6 +442,32 @@ def _sister_path(path):
     return path[: -len("_hist.csv")] + "_hist_x.csv"
 
 
+def sniff_hist_prefix_rows(path, date_col="Date", max_scan=40):
+    """Count the metadata rows before a hist CSV's header row (the first row
+    whose first cell is exactly ``date_col``). Returns None if no header row
+    is found within ``max_scan`` lines.
+
+    Added 2026-07-08 with the bounded-fill change: the metadata block grew
+    from 14 to 15 rows ("Last Observation"), and files written before/after
+    the change coexist (committed live vs freshly-written live vs sister).
+    Sniffing makes every reader robust to either generation instead of
+    hardcoding the prefix count.
+    """
+    import csv as _csv
+    try:
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            for i, row in enumerate(_csv.reader(f)):
+                if i >= max_scan:
+                    break
+                # The header's date column is first cell (macro hists) or
+                # second cell after row_id (market_data_comp_hist).
+                if row and date_col in [c.strip() for c in row[:2]]:
+                    return i
+    except OSError:
+        return None
+    return None
+
+
 def _write_hist_payload(path, df, prefix_rows, date_col):
     """Write `df` to `path`, prepending `prefix_rows` metadata if provided.
 
@@ -467,11 +493,25 @@ def _write_hist_payload(path, df, prefix_rows, date_col):
         out.to_csv(path, index=False)
 
 
-def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col):
-    """Append rows to the sister CSV, deduplicating by `date_col` (existing wins)."""
-    n_prefix = len(prefix_rows) if prefix_rows else 0
+def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col,
+                         trailing_bounds=None):
+    """Append rows to the sister CSV, deduplicating by `date_col` (existing wins).
 
+    trailing_bounds (optional): {column: (last_real_obs_iso, fill_limit_days)}
+    from the writer, which knows each column's true last raw observation.
+    Any sister cell dated beyond last_real_obs + fill_limit_days is cleared —
+    it can only be forward-fill fabrication (real observations move the bound
+    itself). Enforced on every write, this both scrubs fill committed before
+    the 2026-07-08 bounded-fill change and prevents fabricated cells from
+    ever re-entering the archive. Cells at or before the bound — including
+    the truncation-preserved history Pattern 9 exists for — are untouched.
+    """
+    # Sniff the existing sister's own prefix count: it may have been written
+    # with an older metadata-row generation than the incoming prefix_rows.
     if _hp_os.path.exists(sister_path):
+        n_prefix = sniff_hist_prefix_rows(sister_path, date_col)
+        if n_prefix is None:
+            n_prefix = len(prefix_rows) if prefix_rows else 0
         existing = _hp_pd.read_csv(sister_path, skiprows=n_prefix, low_memory=False)
         if date_col in existing.columns:
             existing[date_col] = _hp_pd.to_datetime(existing[date_col], errors="coerce")
@@ -483,10 +523,28 @@ def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col):
 
     combined = combined.drop_duplicates(subset=[date_col], keep="first")
     combined = combined.sort_values(date_col).reset_index(drop=True)
+
+    if trailing_bounds:
+        cleared_total = 0
+        for col, (last_obs, limit_days) in trailing_bounds.items():
+            if col not in combined.columns:
+                continue
+            cutoff = _hp_pd.Timestamp(last_obs) + _hp_pd.Timedelta(days=int(limit_days))
+            mask = (combined[date_col] > cutoff) & combined[col].notna()
+            n = int(mask.sum())
+            if n:
+                combined.loc[mask, col] = float("nan")
+                cleared_total += n
+                print(f"  [sister-bound] {col}: cleared {n} fabricated "
+                      f"fill cell(s) beyond {cutoff.date()}")
+        if cleared_total:
+            print(f"  [sister-bound] total fabricated cells cleared: {cleared_total}")
+
     _write_hist_payload(sister_path, combined, prefix_rows, date_col)
 
 
-def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
+def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date",
+                            trailing_bounds=None):
     """Write a *_hist.csv keeping the sister `<path>_x.csv` current.
 
     Two write rules into the sister, both applied on every call:
@@ -514,6 +572,11 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
         existing fetch_hist.save_csv / fetch_macro_economic.save_hist_csv shape).
     date_col : str
         Date column name. Defaults to "Date".
+    trailing_bounds : dict[str, tuple[str, int]] or None
+        Optional {column: (last_real_obs_iso, fill_limit_days)} from the
+        caller. When provided, sister cells beyond each column's bound are
+        cleared as forward-fill fabrication (see _append_archive_rows).
+        Added 2026-07-08 with the bounded-fill change.
     """
     # Normalise df → Date as a regular column.
     if isinstance(df.index, _hp_pd.DatetimeIndex) and df.index.name == date_col:
@@ -523,13 +586,16 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
     new_df[date_col] = _hp_pd.to_datetime(new_df[date_col], errors="coerce")
     new_df = new_df[new_df[date_col].notna()]
 
-    n_prefix = len(prefix_rows) if prefix_rows else 0
     sister = _sister_path(path)
 
     # Rule 1 — shrinkage archive: read existing live and detect per-column
-    # floor advancement.
+    # floor advancement. The existing live file may carry an older
+    # metadata-row generation than the incoming prefix_rows — sniff it.
     archive_df = None
     if _hp_os.path.exists(path):
+        n_prefix = sniff_hist_prefix_rows(path, date_col)
+        if n_prefix is None:
+            n_prefix = len(prefix_rows) if prefix_rows else 0
         old_df = _hp_pd.read_csv(path, skiprows=n_prefix, low_memory=False)
         if date_col in old_df.columns:
             old_df[date_col] = _hp_pd.to_datetime(old_df[date_col], errors="coerce")
@@ -559,7 +625,8 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date"):
     parts = [p for p in (archive_df, new_df) if p is not None and not p.empty]
     if parts:
         to_archive = _hp_pd.concat(parts, ignore_index=True)
-        _append_archive_rows(sister, to_archive, prefix_rows, date_col)
+        _append_archive_rows(sister, to_archive, prefix_rows, date_col,
+                             trailing_bounds=trailing_bounds)
 
     # Write the live file.
     _write_hist_payload(path, new_df, prefix_rows, date_col)
@@ -576,14 +643,25 @@ def load_hist_with_archive(path, **read_csv_kwargs):
     Date axis detection: if the resulting DataFrame has a DatetimeIndex, dedup
     on the index; otherwise dedup on a 'Date' column if present; otherwise
     return the simple concat. Result is sorted ascending by date.
+
+    skiprows="auto" sniffs each file's own metadata-prefix count (live and
+    sister may carry different metadata-row generations — the block grew
+    from 14 to 15 rows on 2026-07-08). Prefer it over a hardcoded count.
     """
-    live = _hp_pd.read_csv(path, low_memory=False, **read_csv_kwargs)
     sister = _sister_path(path)
+    live_kwargs = dict(read_csv_kwargs)
+    sister_kwargs = dict(read_csv_kwargs)
+    if read_csv_kwargs.get("skiprows") == "auto":
+        live_kwargs["skiprows"] = sniff_hist_prefix_rows(path) or 0
+        sister_kwargs["skiprows"] = (sniff_hist_prefix_rows(sister) or 0) \
+            if _hp_os.path.exists(sister) else 0
+
+    live = _hp_pd.read_csv(path, low_memory=False, **live_kwargs)
     if not _hp_os.path.exists(sister):
         return live
 
     try:
-        archive = _hp_pd.read_csv(sister, low_memory=False, **read_csv_kwargs)
+        archive = _hp_pd.read_csv(sister, low_memory=False, **sister_kwargs)
     except Exception as exc:
         print(f"  [load_hist_with_archive] WARN reading sister {sister}: {exc}")
         return live
