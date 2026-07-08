@@ -831,65 +831,15 @@ def main():
         print(df_main["Asset Class"].value_counts().to_string())
 
 
-if __name__ == "__main__":
-    main()
-
 # ============================================================
-# PHASE A INTEGRATION — add these lines at the very end of
-# fetch_data.py, after the existing push_to_google_sheets() call
+# DOWNSTREAM PHASES — comp hist, unified macro, Phase E, SEC EDGAR.
+# Each phase is wrapped in its own broad try/except so that a
+# failure anywhere downstream CANNOT affect the tabs already
+# written by main(). Until 2026-07-08 these blocks ran at module
+# level, so `import fetch_data` executed the whole multi-hour
+# pipeline (forward_plan §2.C C4); they now run only under
+# `python fetch_data.py` via run_downstream_phases() below.
 # ============================================================
-#
-# This is wrapped in a broad try/except so that if Phase A
-# fails for any reason, it CANNOT affect the existing pipeline.
-# The daily market_data and sentiment_data outputs are already
-# committed before this code runs.
-#
-# PASTE THIS BLOCK at the bottom of fetch_data.py:
-
-# ============================================================
-# COMPREHENSIVE HISTORICAL SERIES (market_data_comp_hist)
-# Builds market_data_comp_hist tab + CSV using all instruments
-# from index_library.csv.  Start date: 1950-01-01.
-# ============================================================
-
-try:
-    from fetch_hist import run_comp_hist
-    run_comp_hist()
-except Exception as _comp_hist_err:
-    print(f"[CompHist] Non-fatal import/run error: {_comp_hist_err}")
-    print("[CompHist] Existing pipeline outputs are unaffected")
-
-# ============================================================
-# UNIFIED MACRO ECONOMIC — one long-form snapshot
-# (data/macro_economic.csv) and one wide-form Friday-spine history
-# (data/macro_economic_hist.csv) consolidating every raw economic
-# series (FRED + OECD + World Bank + IMF + DB.nomics + ifo) via
-# fetch_macro_economic.py.  Replaces the per-source Phase A / C / D /
-# D-ifo blocks that were retired in Stage 2 commit 13.
-# ============================================================
-
-try:
-    from fetch_macro_economic import run_phase_macro_economic
-    run_phase_macro_economic()
-except Exception as _me_err:
-    print(f"[macro_economic] Non-fatal error: {_me_err}")
-    print("[macro_economic] Existing pipeline outputs are unaffected")
-
-# ============================================================
-# PHASE E — MACRO-MARKET INDICATORS
-# Computes 50 composite macro-market indicators as weekly
-# time series with rolling z-scores and regime classifications.
-# Outputs: data/macro_market.csv, data/macro_market_hist.csv
-#          Google Sheets tabs: macro_market, macro_market_hist
-# Runs last so all upstream hist CSVs are guaranteed to exist.
-# ============================================================
-
-try:
-    from compute_macro_market import run_phase_e
-    run_phase_e()
-except Exception as _phase_e_err:
-    print(f"[Phase E] Non-fatal import/run error: {_phase_e_err}")
-    print("[Phase E] Existing pipeline outputs are unaffected")
 
 # ============================================================
 # SEC EDGAR EQUITY FUNDAMENTALS — data/equity_fundamentals.csv
@@ -977,22 +927,58 @@ def _merge_equity_fundamentals(new_df, path):
     return merged
 
 
-try:
-    from sources import sec_edgar as _sec_edgar
-    print("\n" + "=" * 60)
-    print("SEC EDGAR — Equity Fundamentals (revenue + diluted EPS)")
-    print("=" * 60)
-    _eqf_new = _sec_edgar.build_fundamentals_df()
-    if _eqf_new.empty:
-        print("  [SEC EDGAR] no rows fetched this run — "
-              "existing equity_fundamentals.csv left untouched")
-    else:
-        _eqf_merged = _merge_equity_fundamentals(_eqf_new, EQUITY_FUNDAMENTALS_CSV)
-        os.makedirs("data", exist_ok=True)
-        _eqf_merged.to_csv(EQUITY_FUNDAMENTALS_CSV, index=False)
-        print(f"  [SEC EDGAR] wrote {len(_eqf_merged)} rows "
-              f"({_eqf_new['ticker'].nunique()} tickers updated) "
-              f"to {EQUITY_FUNDAMENTALS_CSV}")
-except Exception as _sec_err:
-    print(f"[SEC EDGAR] Non-fatal import/run error: {_sec_err}")
+def run_downstream_phases():
+    """Run the four isolated downstream phases in order. Each keeps its own
+    try/except so a failure in a later phase cannot affect earlier outputs
+    (§11 Pattern 1 — moved verbatim from module level, forward_plan §2.C C4).
+    """
+    # --- Comp-pipeline weekly history (market_data_comp_hist) ---
+    try:
+        from fetch_hist import run_comp_hist
+        run_comp_hist()
+    except Exception as _comp_hist_err:
+        print(f"[CompHist] Non-fatal import/run error: {_comp_hist_err}")
+        print("[CompHist] Existing pipeline outputs are unaffected")
+
+    # --- Phase ME — unified raw-macro layer (macro_economic[_hist]) ---
+    try:
+        from fetch_macro_economic import run_phase_macro_economic
+        run_phase_macro_economic()
+    except Exception as _me_err:
+        print(f"[macro_economic] Non-fatal error: {_me_err}")
+        print("[macro_economic] Existing pipeline outputs are unaffected")
+
+    # --- Phase E — macro-market indicators (macro_market[_hist]) ---
+    # Runs after Phase ME so all upstream hist CSVs are guaranteed to exist.
+    try:
+        from compute_macro_market import run_phase_e
+        run_phase_e()
+    except Exception as _phase_e_err:
+        print(f"[Phase E] Non-fatal import/run error: {_phase_e_err}")
+        print("[Phase E] Existing pipeline outputs are unaffected")
+
+    # --- SEC EDGAR equity fundamentals (isolated pilot phase) ---
+    try:
+        from sources import sec_edgar as _sec_edgar
+        print("\n" + "=" * 60)
+        print("SEC EDGAR — Equity Fundamentals (revenue + diluted EPS)")
+        print("=" * 60)
+        _eqf_new = _sec_edgar.build_fundamentals_df()
+        if _eqf_new.empty:
+            print("  [SEC EDGAR] no rows fetched this run — "
+                  "existing equity_fundamentals.csv left untouched")
+        else:
+            _eqf_merged = _merge_equity_fundamentals(_eqf_new, EQUITY_FUNDAMENTALS_CSV)
+            os.makedirs("data", exist_ok=True)
+            _eqf_merged.to_csv(EQUITY_FUNDAMENTALS_CSV, index=False)
+            print(f"  [SEC EDGAR] wrote {len(_eqf_merged)} rows "
+                  f"({_eqf_new['ticker'].nunique()} tickers updated) "
+                  f"to {EQUITY_FUNDAMENTALS_CSV}")
+    except Exception as _sec_err:
+        print(f"[SEC EDGAR] Non-fatal import/run error: {_sec_err}")
+
+
+if __name__ == "__main__":
+    main()
+    run_downstream_phases()
     print("[SEC EDGAR] Existing pipeline outputs are unaffected")

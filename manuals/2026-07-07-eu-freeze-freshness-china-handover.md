@@ -1,5 +1,20 @@
 # Handover — EU_INFL1 freeze (P0) + freshness-honesty pass (P1) + China cluster (P2)
 
+> **RESOLUTION (2026-07-08): P0 and P1 are DONE** — see `forward_plan.md` §2.A
+> A10 (✅) and A11 (✅) for the durable record. Root cause of P0: Eurostat's
+> 2026-02-04 HICP methodology overhaul discontinued the old slices AND the ECB
+> `ICP` dataset (successor: ECB `HICP` dataflow, `DATA_PROVIDER=4D0`); on top of
+> that the DB.nomics **Eurostat provider mirror is frozen since 2026-01-22** —
+> now tracked as §2.A **A12** (covers the sentiment trio + EZ real-economy rows
+> this doc's P0 §4 asked about). **P2 (China) remains open** — the A1 leads
+> below are still the work order.
+>
+> **P1 amendment (2026-07-08, operator decision):** the `JPN_CPI_INDEX` drop this
+> doc recommended was reversed the same day — the column is reinstated on the
+> live OECD COICOP2018 index measure (T1, 1955+), with the Statistics Bureau
+> e-Stat CPI table `0003427113` queued as the tier-0 upgrade (§2.A **A13**).
+> Only the dead FRED registration stays dropped.
+
 > Created 2026-07-07 (UTC) after the CPI-definition split (PR #249) and the
 > label-vs-data audit closure (PR #250) landed and the daily workflow re-ran
 > (`ba51d46`, 2026-07-07 14:27 UTC). This is a work order for the **next

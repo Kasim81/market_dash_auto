@@ -1,0 +1,40 @@
+name: CI — offline tests
+# Runs the deterministic offline unit-test suite on every PR and push to
+# main (forward_plan §2.C C5). These modules need no network and no API
+# keys — they cover the tier-aware merge, hist preservation helpers, and
+# the offline parser regressions. The 10 network smoke tests stay inside
+# the daily update_data.yml run (continue-on-error), which is the right
+# posture for network checks — this workflow is the blocking gate for
+# logic regressions.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run offline unit tests
+        run: |
+          python -m unittest -v \
+            test_tier_merge \
+            test_macro_hist_merge \
+            test_library_utils_hist \
+            test_dbnomics_plausibility \
+            test_atlanta_fed_parse \
+            test_estat_parse \
+            test_ism_prnewswire_parse
