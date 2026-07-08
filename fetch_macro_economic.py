@@ -58,6 +58,7 @@ from sources import french as french_src
 from sources import jst as jst_src
 from sources import atlanta_fed as atlanta_fed_src
 from sources import ny_fed as ny_fed_src
+from sources import imf_sdmx as imf_sdmx_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive
@@ -141,6 +142,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(jst_src.load_library())
     indicators.extend(atlanta_fed_src.load_library())
     indicators.extend(ny_fed_src.load_library())
+    indicators.extend(imf_sdmx_src.load_library())
     return _attach_tiers(indicators)
 
 
@@ -278,6 +280,7 @@ _FILE_SOURCE = {
     "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
     "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
     "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
+    "imf_sdmx": "IMF SDMX",
 }
 
 
@@ -836,6 +839,12 @@ def _fetch_ny_fed_snapshot(indic: dict, fetched_at: str) -> list[dict]:
     return _snapshot_from_series(s, indic, fetched_at)
 
 
+def _fetch_imf_sdmx_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    s = imf_sdmx_src.fetch_series_as_pandas(indic["source_id"], last_n=13)
+    time.sleep(imf_sdmx_src.IMF_SDMX_DELAY)
+    return _snapshot_from_series(s, indic, fetched_at)
+
+
 # -- BoJ Time-Series Data Search snapshot --
 
 BOJ_DELAY = 0.6  # seconds between BoJ API calls
@@ -1020,6 +1029,8 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
                 got = _fetch_atlanta_fed_snapshot(indic, fetched_at)
             elif src == "NYFed":
                 got = _fetch_ny_fed_snapshot(indic, fetched_at)
+            elif src == "IMF SDMX":
+                got = _fetch_imf_sdmx_snapshot(indic, fetched_at)
             else:
                 print(f"  [WARN] Unknown source '{src}' — skipping")
                 continue
@@ -1290,6 +1301,12 @@ def _fetch_ny_fed_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s} if s is not None and not s.empty else {}
 
 
+def _fetch_imf_sdmx_history(indic: dict) -> dict[str, pd.Series]:
+    s = imf_sdmx_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
+    time.sleep(imf_sdmx_src.IMF_SDMX_DELAY)
+    return {indic["col"]: s} if s is not None and not s.empty else {}
+
+
 # -- BoJ Time-Series Data Search --
 
 def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
@@ -1431,6 +1448,8 @@ def _history_for_indicator(
         return _fetch_atlanta_fed_history(indic)
     if src == "NYFed":
         return _fetch_ny_fed_history(indic)
+    if src == "IMF SDMX":
+        return _fetch_imf_sdmx_history(indic)
     if src == "ifo":
         return _fetch_ifo_history(indic, ifo_indicators)
     print(f"  [WARN] Unknown source '{src}' in history fetch")

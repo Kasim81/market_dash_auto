@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 32-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, plus the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`) + `docs/build_html.py` + `scripts/` utilities, totalling ~21,900 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 31 input CSV libraries (1 instrument library + 28 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 33-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, plus the 2026-07-08 `imf_sdmx.py`) + `docs/build_html.py` + `scripts/` utilities, totalling ~22,100 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 32 input CSV libraries (1 instrument library + 29 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -107,6 +107,7 @@ market_dash_auto/
 │   ├── jst.py                         # Jordà-Schularick-Taylor Macrohistory R6 .dta loader (301 lines, §3.13)
 │   ├── atlanta_fed.py                 # Atlanta Fed GDPNow real-time US Q/Q SAAR GDP nowcast — keyless Excel download (535 lines, §3.1.4)
 │   ├── ny_fed.py                      # New York Fed Staff Nowcast — real-time US Q/Q SAAR GDP nowcast — keyless Excel download (348 lines, §3.1.4)
+│   ├── imf_sdmx.py                    # IMF Data Portal SDMX 2.1 fetcher (api.imf.org) — CHN CPI YoY + index; keyless, distinct from the DataMapper imf.py (§2.A A1, 2026-07-08)
 │   └── sec_edgar.py                   # SEC EDGAR companyfacts equity fundamentals (revenue + diluted EPS, Q+A) — keyless, fair-access UA (441 lines, 2026-06-15)
 │
 ├── data/                          # CSV config libraries + pipeline output files
@@ -142,6 +143,7 @@ market_dash_auto/
 │   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp (nominal)/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
 │   ├── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
+│   ├── macro_library_imf_sdmx.csv    # IMF Data Portal SDMX keys (2 rows: CHN_CPI_YOY + CHN_CPI_INDEX; plausibility bands; §2.A A1)
 │   └── macro_library_sec_edgar.csv    # SEC EDGAR fundamentals (68 rows: 34 US pure-plays × revenue+EPS; ticker,cik,metric,gaap_tags,col,name,sort_key)
 │   │
 │   ├── source_fallbacks.csv           # Per-indicator T0/T1/T2/T3 fallback chain (Stage B + §3.9)
@@ -342,6 +344,15 @@ Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-L
 - **Schema:** library CSV carries a `sub_field` column naming the currency to extract (`USD` / `GBP` / `EUR`). LBMA JSON returns a 3-element `v` array per date; the parser maps `sub_field` to the array index. EUR slot is `0.0` for pre-1999 dates — treated as missing.
 - **Status:** Wired §3.9 (2026-05-09); see `manuals/forward_plan.md` §3.9.1 for the multi-commodity extension plan (silver / platinum / palladium via the same module, plus FRED IMF Primary Commodity Prices mirrors for the wider commodity set).
 - **Fetcher:** `sources/lbma.py`
+
+### IMF Data Portal — SDMX 2.1 (2026-07-08)
+
+- **URL:** `https://api.imf.org/external/sdmx/2.1/data/<agency>,<flow>/<key>` (the platform that replaced `dataservices.imf.org` / `SDMX_JSON.svc` in the IMF's 2025 data.imf.org migration — the legacy endpoint no longer resolves)
+- **Auth:** None required. SDMX-CSV via `Accept: application/vnd.sdmx.data+csv`; `TIME_PERIOD` values like `2026-M05` / `2026-Q2` / `2026` are handled by `_parse_period`. Responses carry ~40 metadata columns with long quoted description fields — parsed with a real CSV reader, never split on commas.
+- **Used for:** 2 China series (§2.A A1): `CHN_CPI_YOY` ← `IMF.STA,CPI/CHN.CPI._T.YOY_PCH_PA_PT.M` (monthly all-items CPI YoY, 1994+, verified 1.20% @ 2026-05 — feeds `CN_INFL1` headline, wins the cadence-first merge over the WB annual fan-out) and `CHN_CPI_INDEX` ← `IMF.STA,CPI/CHN.CPI._T.IX.M` (2020=100, 1993+, verified 104.36 @ 2026-05 — replaced frozen FRED mirror `CHNCPIALLMINMEI`; note the base-year change from the mirror's 2015=100). Library: `data/macro_library_imf_sdmx.csv` (rows carry `plausible_min`/`plausible_max` for audit Section E).
+- **Distinct from `sources/imf.py`:** the DataMapper v1 API (annual WEO aggregates) and this SDMX platform share nothing but the publisher — separate modules, separate libraries.
+- **Known limitation:** the IMF PPI dataset is only as fresh as what countries supply — for China it ends 2022-12 (NBS stopped supplying PPI internationally; see forward_plan §1 Known Data Gaps).
+- **Fetcher:** `sources/imf_sdmx.py` (uses the shared `base.fetch_with_backoff` — the §2.C C3 pattern). Smoke test: `test_imf_sdmx_smoke.py` (daily CI step; network-gated skip).
 
 ### Nasdaq Data Link (scaffolding — empty)
 

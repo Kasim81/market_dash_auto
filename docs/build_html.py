@@ -351,6 +351,8 @@ def build_macro_economic() -> dict:
         "Shiller", "KenFrench", "JST",
         # §3.1.4 real-time GDP-growth nowcasts
         "AtlantaFed", "NYFed",
+        # §2.A A1 IMF Data Portal SDMX (api.imf.org)
+        "IMF SDMX",
     })
 
 

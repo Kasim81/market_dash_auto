@@ -2101,18 +2101,21 @@ def _calc_JP_INFL1(mu, **_):
 
 def _calc_CN_INFL1(mu, **_):
     """China inflation: mean of CPI YoY and PPI YoY (both %).
-    Headline = CHN_CPI_INDEX (FRED `CHNCPIALLMINMEI` — Index 2015=100,
-    converted to YoY here); PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — already
-    YoY %). Re-pointed 2026-07-07 to the renamed CHN_CPI_INDEX column (was
-    CHN_CPI) as part of the CPI-definition split — behaviour unchanged (same
-    FRED series). No fresh monthly CN CPI-YoY aggregator exists (OECD
-    COICOP2018 has no CHN coverage; IMF IFS mirror is ~1yr stale on
-    DB.nomics; NBS exposes no clean ex-food-energy national YoY), so
-    CHN_CPI_YOY carries only the WB annual fallback and is not used here.
-    China runs no hard 2% target and is deflation-prone, so it gets its own
-    reflation/stable/deflation-risk regime rather than the G10 target buckets."""
-    cpi = _yoy(_to_weekly_friday(_get_col(mu, "CHN_CPI_INDEX")))  # CPI index → YoY %
+    Headline = CHN_CPI_YOY (IMF Data Portal CPI dataset — monthly national
+    all-items YoY %, repointed 2026-07-08 per §2.A A1; previously derived
+    via `_yoy(CHN_CPI_INDEX)` from the FRED mirror that froze 2025-04).
+    PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — YoY %, frozen at 2022-12 by NBS
+    upstream: China stopped supplying PPI to every international aggregator,
+    so the PPI leg contributes history only and the composite tracks CPI
+    alone after 2022-12 — see §1 Known Data Gaps). The hist writer
+    forward-fills every column onto the Friday spine, so the dead PPI must
+    be hard-cut at its genuine last observation or the frozen -0.7 print
+    would bias the composite mean forever; remove the cut if a live CN PPI
+    source is ever wired."""
+    cpi = _to_weekly_friday(_get_col(mu, "CHN_CPI_YOY"))          # already YoY %
     ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))              # already YoY %
+    if ppi is not None and not ppi.empty:
+        ppi = ppi.loc[:"2022-12-31"]  # NBS stopped supplying PPI after 2022-12
     parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
     if not parts:
         return pd.Series(dtype=float)

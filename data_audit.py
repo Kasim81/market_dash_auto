@@ -85,6 +85,8 @@ SOURCE_BY_LIBRARY = {
     # §3.1.4 real-time GDP-growth nowcasts (single-source primary fetchers)
     "atlanta_fed": "AtlantaFed",
     "ny_fed":      "NYFed",
+    # §2.A A1 — IMF Data Portal SDMX (api.imf.org; distinct from DataMapper)
+    "imf_sdmx":    "IMF SDMX",
 }
 
 
