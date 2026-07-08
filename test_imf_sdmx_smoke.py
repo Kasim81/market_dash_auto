@@ -40,6 +40,18 @@ CHN_CPI_YOY_ID = "IMF.STA,CPI/CHN.CPI._T.YOY_PCH_PA_PT.M"
 PLAUSIBLE_LO, PLAUSIBLE_HI = -10.0, 30.0
 MAX_STALENESS_DAYS = 120
 
+# §3.18 regime-aa monthly-growth backfill (2026-07-08): the PI and QNEA
+# dataflows now carry DEU/FRA/NLD/CHE industrial production and five
+# quarterly real-GDP levels. One representative series per dataflow keeps
+# the smoke cost low while still catching a dataflow-level stall (the PI
+# JPN member is already frozen at 2023-11, so per-dataflow health is not
+# hypothetical). Staleness bounds mirror the library rows'
+# freshness_override_days (150 monthly / 210 quarterly).
+DEU_IND_PROD_ID = "IMF.STA,PI/DEU.IND.SA_IX.M"
+DEU_GDP_ID = "IMF.STA,QNEA/DEU.B1GQ.Q.SA.XDC.Q"
+PI_MAX_STALENESS_DAYS = 150
+QNEA_MAX_STALENESS_DAYS = 210
+
 
 def _network_available() -> bool:
     if os.environ.get("SKIP_NETWORK_TESTS"):
@@ -76,6 +88,44 @@ class ImfSdmxSmokeTest(unittest.TestCase):
             age_days, MAX_STALENESS_DAYS,
             f"CHN CPI YoY last obs {s.index[-1].date()} is {age_days}d old — "
             f"the IMF CPI dataset appears to have stalled",
+        )
+
+    def test_pi_deu_ind_prod_live_deep_fresh(self):
+        s = imf_sdmx_src.fetch_series_as_pandas(DEU_IND_PROD_ID, col_name="DEU_IND_PROD")
+        self.assertIsNotNone(s, "IMF SDMX returned no data for DEU industrial production")
+        self.assertLessEqual(
+            s.index[0].year, 1960,
+            f"PI DEU history starts {s.index[0].date()} — the deep backfill "
+            f"(1958-01 verified at wiring) has been truncated",
+        )
+        last_val = float(s.iloc[-1])
+        self.assertTrue(
+            10.0 <= last_val <= 250.0,
+            f"DEU IP index {last_val} outside plausible band — unit/mapping regression?",
+        )
+        age_days = (date.today() - s.index[-1].date()).days
+        self.assertLessEqual(
+            age_days, PI_MAX_STALENESS_DAYS,
+            f"PI DEU last obs {s.index[-1].date()} is {age_days}d old — the "
+            f"Production Indexes dataflow appears to have stalled (the JPN "
+            f"member already froze at 2023-11)",
+        )
+
+    def test_qnea_deu_gdp_live_plausible_fresh(self):
+        s = imf_sdmx_src.fetch_series_as_pandas(DEU_GDP_ID, col_name="DEU_GDP_INDEX")
+        self.assertIsNotNone(s, "IMF SDMX returned no data for DEU quarterly real GDP")
+        self.assertLessEqual(s.index[0].year, 1992, "QNEA DEU history truncated (1991-Q1 at wiring)")
+        last_val = float(s.iloc[-1])
+        self.assertTrue(
+            2e11 <= last_val <= 2e12,
+            f"DEU real GDP level {last_val:.3e} outside plausible band "
+            f"(~7.7e11 EUR/quarter at wiring) — unit or scale regression?",
+        )
+        age_days = (date.today() - s.index[-1].date()).days
+        self.assertLessEqual(
+            age_days, QNEA_MAX_STALENESS_DAYS,
+            f"QNEA DEU last obs {s.index[-1].date()} is {age_days}d old — the "
+            f"QNEA dataflow appears to have stalled",
         )
 
 

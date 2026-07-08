@@ -37,7 +37,12 @@ from sources.base import fetch_with_backoff
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_ecb.csv"
 ECB_BASE = "https://data-api.ecb.europa.eu/service/data"
-DEFAULT_HIST_START = "2000-01-01"
+# Matches the coordinator's HIST_START so deep dataflows aren't cut by the
+# fetch window (STBS industrial production reaches 1991-01, MNA GDP 1995-Q1,
+# HICP 1996-12). Widened from 2000-01-01 on 2026-07-08 with the regime-aa
+# monthly-growth backfill — the ECB API simply returns each series from its
+# actual start.
+DEFAULT_HIST_START = "1947-01-01"
 
 
 # ---------------------------------------------------------------------------

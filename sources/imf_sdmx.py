@@ -44,7 +44,11 @@ _DATA_DIR = pathlib.Path(__file__).resolve().parent.parent / "data"
 _LIBRARY_CSV = _DATA_DIR / "macro_library_imf_sdmx.csv"
 
 IMF_SDMX_BASE = "https://api.imf.org/external/sdmx/2.1/data"
-DEFAULT_HIST_START = "1990-01-01"
+# Matches the coordinator's HIST_START so deep series (PI industrial
+# production reaches 1953-1958) aren't cut by the fetch window. Widened from
+# 1990-01-01 on 2026-07-08 with the regime-aa monthly-growth backfill; the
+# original CPI rows start 1993/94 so they are unaffected.
+DEFAULT_HIST_START = "1947-01-01"
 IMF_SDMX_DELAY = 1.0  # polite inter-call delay (no published rate limit)
 
 
