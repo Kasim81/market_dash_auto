@@ -27,6 +27,7 @@ FILE_SOURCE = {
     "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
     "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
     "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
+    "imf_sdmx": "IMF SDMX",
 }
 FANOUT = {"World Bank", "OECD", "IMF"}
 SKIP_FILES = {"countries", "sec_edgar"}  # not macro sources / different schema

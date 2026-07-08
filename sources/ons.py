@@ -30,11 +30,11 @@ finest non-empty array (months > quarters > years).
 from __future__ import annotations
 
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_ons.csv"
@@ -100,28 +100,10 @@ def fetch_series(
     if not uri.startswith("/"):
         uri = "/" + uri
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(ONS_DATA, params={"uri": uri}, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text:
-                return resp.json()
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [ONS HTTP {resp.status_code}] {uri} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [ONS HTTP {resp.status_code}] {uri} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [ONS timeout] {uri} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [ONS request error] {uri}: {e} — skipping")
-            return None
-
-    print(f"    [ONS FAIL] {uri} — {retries} attempts exhausted")
-    return None
+    return fetch_with_backoff(
+        ONS_DATA, params={"uri": uri}, label=f"ONS {uri}",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+    )
 
 
 # ---------------------------------------------------------------------------

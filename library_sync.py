@@ -161,6 +161,7 @@ MACRO_LIBS = {
     "jst":       DATA / "macro_library_jst.csv",
     "atlanta_fed": DATA / "macro_library_atlanta_fed.csv",
     "ny_fed":      DATA / "macro_library_ny_fed.csv",
+    "imf_sdmx":    DATA / "macro_library_imf_sdmx.csv",
 }
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
@@ -184,7 +185,7 @@ def _macro_econ_expected() -> set[str]:
     for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma",
                 "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls",
                 "insee", "bdf", "alpha_vantage", "shiller", "french", "jst",
-                "atlanta_fed", "ny_fed"):
+                "atlanta_fed", "ny_fed", "imf_sdmx"):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue

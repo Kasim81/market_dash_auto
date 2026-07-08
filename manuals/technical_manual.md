@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 32-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, plus the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`) + `docs/build_html.py` + `scripts/` utilities, totalling ~21,900 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 31 input CSV libraries (1 instrument library + 28 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 33-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, plus the 2026-07-08 `imf_sdmx.py`) + `docs/build_html.py` + `scripts/` utilities, totalling ~22,100 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 32 input CSV libraries (1 instrument library + 29 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -107,6 +107,7 @@ market_dash_auto/
 │   ├── jst.py                         # Jordà-Schularick-Taylor Macrohistory R6 .dta loader (301 lines, §3.13)
 │   ├── atlanta_fed.py                 # Atlanta Fed GDPNow real-time US Q/Q SAAR GDP nowcast — keyless Excel download (535 lines, §3.1.4)
 │   ├── ny_fed.py                      # New York Fed Staff Nowcast — real-time US Q/Q SAAR GDP nowcast — keyless Excel download (348 lines, §3.1.4)
+│   ├── imf_sdmx.py                    # IMF Data Portal SDMX 2.1 fetcher (api.imf.org) — CHN CPI YoY + index; keyless, distinct from the DataMapper imf.py (§2.A A1, 2026-07-08)
 │   └── sec_edgar.py                   # SEC EDGAR companyfacts equity fundamentals (revenue + diluted EPS, Q+A) — keyless, fair-access UA (441 lines, 2026-06-15)
 │
 ├── data/                          # CSV config libraries + pipeline output files
@@ -142,6 +143,7 @@ market_dash_auto/
 │   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp (nominal)/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
 │   ├── macro_library_ny_fed.csv       # NY Fed Nowcast series (1 row: US_NYFED_NOWCAST — US Real GDP Q/Q SAAR nowcast, weekly)
+│   ├── macro_library_imf_sdmx.csv    # IMF Data Portal SDMX keys (2 rows: CHN_CPI_YOY + CHN_CPI_INDEX; plausibility bands; §2.A A1)
 │   └── macro_library_sec_edgar.csv    # SEC EDGAR fundamentals (68 rows: 34 US pure-plays × revenue+EPS; ticker,cik,metric,gaap_tags,col,name,sort_key)
 │   │
 │   ├── source_fallbacks.csv           # Per-indicator T0/T1/T2/T3 fallback chain (Stage B + §3.9)
@@ -162,7 +164,7 @@ market_dash_auto/
 │   ├── market_data_comp.csv           # OUTPUT — comp-pipeline daily snapshot
 │   ├── market_data_comp_hist.csv      # OUTPUT — comp-pipeline weekly history
 │   ├── macro_economic.csv             # OUTPUT — unified raw-macro snapshot (long-form)
-│   ├── macro_economic_hist.csv        # OUTPUT — unified raw-macro weekly history (wide-form, 14 metadata rows)
+│   ├── macro_economic_hist.csv        # OUTPUT — unified raw-macro weekly history (wide-form, 15 metadata rows)
 │   ├── macro_market.csv               # OUTPUT — macro-market indicator snapshot
 │   ├── macro_market_hist.csv          # OUTPUT — macro-market indicator weekly history
 │   ├── macro_market_monthly_hist.csv  # OUTPUT — month-end-sampled view of macro_market_hist (regime-AA Phase 3 input, §3.14)
@@ -342,6 +344,15 @@ Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-L
 - **Schema:** library CSV carries a `sub_field` column naming the currency to extract (`USD` / `GBP` / `EUR`). LBMA JSON returns a 3-element `v` array per date; the parser maps `sub_field` to the array index. EUR slot is `0.0` for pre-1999 dates — treated as missing.
 - **Status:** Wired §3.9 (2026-05-09); see `manuals/forward_plan.md` §3.9.1 for the multi-commodity extension plan (silver / platinum / palladium via the same module, plus FRED IMF Primary Commodity Prices mirrors for the wider commodity set).
 - **Fetcher:** `sources/lbma.py`
+
+### IMF Data Portal — SDMX 2.1 (2026-07-08)
+
+- **URL:** `https://api.imf.org/external/sdmx/2.1/data/<agency>,<flow>/<key>` (the platform that replaced `dataservices.imf.org` / `SDMX_JSON.svc` in the IMF's 2025 data.imf.org migration — the legacy endpoint no longer resolves)
+- **Auth:** None required. SDMX-CSV via `Accept: application/vnd.sdmx.data+csv`; `TIME_PERIOD` values like `2026-M05` / `2026-Q2` / `2026` are handled by `_parse_period`. Responses carry ~40 metadata columns with long quoted description fields — parsed with a real CSV reader, never split on commas.
+- **Used for:** 2 China series (§2.A A1): `CHN_CPI_YOY` ← `IMF.STA,CPI/CHN.CPI._T.YOY_PCH_PA_PT.M` (monthly all-items CPI YoY, 1994+, verified 1.20% @ 2026-05 — feeds `CN_INFL1` headline, wins the cadence-first merge over the WB annual fan-out) and `CHN_CPI_INDEX` ← `IMF.STA,CPI/CHN.CPI._T.IX.M` (2020=100, 1993+, verified 104.36 @ 2026-05 — replaced frozen FRED mirror `CHNCPIALLMINMEI`; note the base-year change from the mirror's 2015=100). Library: `data/macro_library_imf_sdmx.csv` (rows carry `plausible_min`/`plausible_max` for audit Section E).
+- **Distinct from `sources/imf.py`:** the DataMapper v1 API (annual WEO aggregates) and this SDMX platform share nothing but the publisher — separate modules, separate libraries.
+- **Known limitation:** the IMF PPI dataset is only as fresh as what countries supply — for China it ends 2022-12 (NBS stopped supplying PPI internationally; see forward_plan §1 Known Data Gaps).
+- **Fetcher:** `sources/imf_sdmx.py` (uses the shared `base.fetch_with_backoff` — the §2.C C3 pattern). Smoke test: `test_imf_sdmx_smoke.py` (daily CI step; network-gated skip).
 
 ### Nasdaq Data Link (scaffolding — empty)
 
@@ -572,7 +583,7 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `market_data_comp` | `fetch_data.py` | `data/market_data_comp.csv` | ~390 comp-pipeline instruments, daily snapshot |
 | `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
 | `macro_economic` | `fetch_macro_economic.py` | `data/macro_economic.csv` | Unified raw-macro snapshot (long-form) — every series from FRED + OECD + WB + IMF + DB.nomics + ifo, one row per series with metadata |
-| `macro_economic_hist` | `fetch_macro_economic.py` | `data/macro_economic_hist.csv` | Wide-form weekly Friday-spine history from 1947, with **14 metadata rows** above the data: Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated |
+| `macro_economic_hist` | `fetch_macro_economic.py` | `data/macro_economic_hist.csv` | Wide-form weekly Friday-spine history from 1947, with **15 metadata rows** above the data: Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated, Last Observation (per-column last real raw observation, added 2026-07-08). Forward-fill onto the spine is bounded at 2× each series' staleness tolerance (Pattern 12) — beyond the bound a column is NaN, so a dead series visibly ends |
 | `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 108-indicator snapshot (id, group, sub_group, concept, subcategory, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note). `concept` + `subcategory` added 2026-04-28 (§2.4) — drives the explorer's By-Concept sidebar view. |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
@@ -656,7 +667,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `market_data_comp.csv` | ~360 | fetch_data.py | Comp-pipeline daily snapshot |
 | `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 10 metadata prefix rows + data |
 | `macro_economic.csv` | ~170 | fetch_macro_economic.py | Unified raw-macro snapshot (long-form) — one row per series with metadata |
-| `macro_economic_hist.csv` | ~4,150 | fetch_macro_economic.py | Wide-form weekly Friday-spine history from 1947, **14 metadata prefix rows + data** |
+| `macro_economic_hist.csv` | ~4,150 | fetch_macro_economic.py | Wide-form weekly Friday-spine history from 1947, **15 metadata prefix rows + data** (bounded fill per Pattern 12) |
 | `macro_market.csv` | ~108 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `macro_market_monthly_hist.csv` | ~320 | compute_macro_market.py | **NEW 2026-06-10 (forward_plan §3.14).** Month-end-sampled view of `macro_market_hist.csv`. Same wide schema (`<id>_raw` / `_zscore` / `_regime` / `_fwd_regime` per indicator), one row per month-end, each cell = the latest weekly Friday observation within that month. Produced via `df_hist.resample("ME").last()` after the weekly write — sampling only, the underlying 156-week z-score window is unchanged. Sister-file `_x.csv` follows the standard preservation contract. Stable schema for regime-AA Phase 3 Layer-1 monthly engine consumption. |
@@ -855,7 +866,7 @@ The module loads every indicator definition from the per-source CSVs at import t
 | `_get_ifo_monthly_df(...)` / `_fetch_ifo_history(...)` | Cached ifo workbook + per-series history extraction |
 | `_history_for_indicator(...)` | Generic per-indicator history dispatch (handles fan-out vs single-country) |
 | `build_hist_df(indicators)` | Build the wide-form `macro_economic_hist` DataFrame on the weekly Friday spine from 1947 |
-| `_build_hist_metadata_rows(...)` | Construct the 14 metadata prefix rows above the data (Column ID / Series ID / Source / Indicator / Country / Country Name / Region / Category / Subcategory / Concept / cycle_timing / Units / Frequency / Last Updated) |
+| `_build_hist_metadata_rows(...)` | Construct the 15 metadata prefix rows above the data (Column ID / Series ID / Source / Indicator / Country / Country Name / Region / Category / Subcategory / Concept / cycle_timing / Units / Frequency / Last Updated) |
 | `push_snapshot_to_sheets(df)` / `push_hist_to_sheets(df, indicators)` | Sheets writers — both check `library_utils.SHEETS_PROTECTED_TABS` before writing |
 | `run_phase_macro_economic()` | **Entry point** — load every library, fetch snapshot + history for all sources, save CSVs, push to Sheets |
 
@@ -1286,7 +1297,7 @@ Each indicator goes through:
 |---|---|
 | `_load_indicator_library()` | Load `macro_indicator_library.csv` → `INDICATOR_META`, `ALL_INDICATOR_IDS`, `NATURALLY_LEADING` |
 | `load_comp_hist()` | Load `market_data_comp_hist.csv` (weekly prices) |
-| `load_macro_economic_hist()` | Load `macro_economic_hist.csv` (skip 14 metadata rows) — replaces the retired `load_macro_us_hist()` / `load_macro_intl_hist()` pair |
+| `load_macro_economic_hist()` | Load `macro_economic_hist.csv` (metadata prefix sniffed via `skiprows="auto"`) — replaces the retired `load_macro_us_hist()` / `load_macro_intl_hist()` pair |
 | `fetch_ecb_euro_ig_spread(mu)` | ECB AAA euro govt 10Y yield → Euro IG spread placeholder (see EU_Cr1 docstring; corp-yield half currently unwired) |
 | `fetch_fxi_prices()` | yfinance FXI (China Large-Cap ETF) for `AS_G1` denominator |
 | `_to_weekly_friday(series)` | Resample any cadence to the weekly Friday spine |
@@ -1674,6 +1685,8 @@ Together, **the sister tracks live's full historical reach over time** and addit
 
 **CI persistence fix (2026-07-08).** The daily workflow's explicit `git add` list in `update_data.yml` never included the three sister files, so sister updates written during a CI run were silently discarded on the happy path — they only reached git when a push-conflict retry's `git add -A` swept them in (committed sisters had drifted to 2026-04-24 / 2026-05-01 while CI's own Section D audit, which runs post-fetch on the fresh on-disk files, kept reporting them current). All three `*_hist_x.csv` files are now in the workflow's commit list; the audit's Section D "strict subset" ALERTs on a cold checkout self-clear on the first post-fix daily run.
 
+**Bounded-fill interaction (2026-07-08, Pattern 12).** The macro sister is now held to the same bounded-fill invariant as live: `write_hist_with_archive` accepts `trailing_bounds` (per-column last real observation + fill limit from the writer) and clears sister cells beyond the bound as fill fabrication. Sister reads sniff each file's own metadata-prefix generation (`sniff_hist_prefix_rows`) since the header block grew 14 → 15 rows. See Pattern 12 for the full design and the safety argument.
+
 **Read-back semantics**: `library_utils.load_hist_with_archive()` is a drop-in replacement for `pd.read_csv` that transparently unions live + sister via `pd.combine_first`. Live wins on cells where it has a non-null value; sister fills cells where live is NaN. This gives Phase E indicator calculators (`compute_macro_market.py`) and the dashboard payload (`docs/build_html.py`) the full historical depth even when the source has truncated.
 
 **Open design question — sister CSV cannot self-heal under `keep="first"` dedup.** `library_utils._append_archive_rows()` deduplicates by date with `keep="first"`, so once a value is in the sister it is **never** overwritten by a later corrected one. Consequences:
@@ -1779,6 +1792,24 @@ ticker,ex_date,ratio,notes
 3. **Add a row to `data/manual_splits.csv`** with that ex-rights date and the integer ratio.
 4. **Run `python scripts/backadjust_hist_splits.py`** to correct committed live + sister CSVs immediately.
 5. **Commit** the new row + the corrected CSVs. Next daily run will produce a continuous series from then on (runtime `apply_manual_splits` handles fresh fetches automatically).
+
+### Pattern 12: Bounded Forward-Fill — No Fabricated Currency Past a Series' Cadence (2026-07-08)
+
+The unified hist snaps every raw series onto the weekly Friday spine with forward-fill. Interior step-fill (a monthly print "is" the value for the weeks until the next print) is legitimate. What Pattern 12 removes is **unbounded** fill: pre-2026-07-08, a series whose publisher died kept emitting its last value on every subsequent Friday forever — which is what let `JP_INFL1`, `EU_INFL1` and `CN_INFL1` freeze *silently* (composites looked populated), poisoned composite means with dead legs (`CHN_PPI` frozen at −0.7 since 2022-12 was still being averaged into `CN_INFL1` in 2026), compressed rolling z-score windows with flat-filled tails, and forced the audit's Section C into value-change archaeology.
+
+**The rule.** Fill is bounded at **2× each series' staleness tolerance** — the same registry the audit uses (`data/freshness_thresholds.csv` per-frequency defaults, overridden by the per-row `freshness_override_days` on any `macro_library_*.csv`). The 2× line is exactly where Section C declares a series EXPIRED: the point where the audit stops believing a value is current is the point where the hist stops writing it. Beyond the bound the column is NaN — a dead series visibly *ends*. The bound is measured in days against the **raw observation dates** (`_bounded_spine_fill` in `fetch_macro_economic.py`), never by value-change archaeology, so genuinely-constant series (held policy rates, which emit real observations at an unchanged value) are never touched. Applies to interior gaps beyond the bound too (a 2-year hole in a recovered series is not filled through).
+
+**The three layers:**
+
+1. **Writer** — `_bounded_spine_fill` in `build_hist_df`; per-candidate limit from `_fill_limit_days` (override → else frequency default). The hist header also gained a 15th metadata row, **"Last Observation"** — the per-column date of the last real raw observation, written from the winning candidate at merge time (ground truth for staleness; no archaeology needed downstream).
+2. **Sister archive** — `write_hist_with_archive(..., trailing_bounds=...)`: the writer passes each column's (last real obs, limit) and `_append_archive_rows` clears any sister cell beyond the bound as fill fabrication. This is a standing invariant, not a one-off migration: it scrubs the fabricated cells committed before this change on the first post-merge run, and prevents any from re-entering (safe by construction — a cleared cell only ever surfaces via `load_hist_with_archive` when live is NaN at that date, i.e. beyond the bound, where the cell was fill by definition; Pattern 9's truncation-preserved history is interior, not trailing, and is untouched).
+3. **Consumers** — `_to_weekly_friday` drops NaNs before resampling so calculators can't re-fabricate the trailing NaNs the writer leaves; the cross-series alignment helpers (`_log_ratio`, `_arith_diff`, `_sum_log_ratio`, the FX basket) cap their alignment fill at `_ALIGN_FFILL_LIMIT` (13 weekly rows) so a dead leg stops extending to a live leg's end.
+
+**Header generations & sniffing.** The metadata block grew 14 → 15 rows, and files written before/after the change coexist (committed live, freshly-written live, sisters). Every reader therefore locates the header row by inspection instead of a hardcoded count: `library_utils.sniff_hist_prefix_rows()` + `load_hist_with_archive(skiprows="auto")` (live and sister sniffed independently), and `data_audit._split_meta_and_data` / `_read_hist_dates`. Sisters upgrade to the new header automatically on their first post-change rewrite.
+
+**Expected downstream effect (validated offline 2026-07-08, before/after over all 107 calculators):** only `EU_INFL1` (frozen 2.1 tail disappears until the fresh ECB source lands) and `CN_INFL1` (dead PPI leg stops dragging the mean) changed; the removed `CHN_PPI` fill was 175 fabricated weeks. The `_calc_CN_INFL1` per-series date hard-cut this replaced was deleted the same day — dead legs now end in the data layer, so **no calculator ever needs ticker-specific staleness handling**. Regression suite: `test_bounded_fill.py` (in the ci.yml offline gate).
+
+**Relationship to the multifreq rebuild (§5 / `multifreq_plan.md`):** the ragged-column design stores native frequency with *no* fill — this pattern is a stepping stone that establishes the no-fabricated-currency semantics the multifreq merge must preserve, not a rival design.
 
 ---
 

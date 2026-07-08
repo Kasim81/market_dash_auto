@@ -4,6 +4,8 @@
 
 After reverting main to weekly Friday spine (Phase 1), this branch implements native-frequency storage with ragged columns — each series gets its own date + value columns, only as long as data exists. This eliminates wasted cells from forward-filling monthly/quarterly data to daily/weekly, and gives us genuine daily granularity for market prices.
 
+> **Interim step already on main (2026-07-08, forward_plan §2.A A14 / tech_manual Pattern 12):** the weekly-spine hist no longer forward-fills *unboundedly* — fill is capped at 2× each series' staleness tolerance, so dead series end instead of flatlining. This establishes the no-fabricated-currency semantics the ragged rebuild must preserve (this plan's "no forward-fill at all" is the end state), and the per-column "Last Observation" metadata row it added is a natural precursor to the ragged format's per-series date columns.
+
 **Branch:** `data_pipeline_multifreq` (created from main after Phase 1)
 
 ---

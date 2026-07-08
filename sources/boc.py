@@ -28,11 +28,11 @@ series name; the numeric value is the nested ``"v"`` string.
 from __future__ import annotations
 
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_boc.csv"
@@ -100,28 +100,10 @@ def fetch_series(
     else:
         params = {"start_date": start}
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text:
-                return resp.json()
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [BoC HTTP {resp.status_code}] {series_id} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [BoC HTTP {resp.status_code}] {series_id} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [BoC timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [BoC request error] {series_id}: {e} — skipping")
-            return None
-
-    print(f"    [BoC FAIL] {series_id} — {retries} attempts exhausted")
-    return None
+    return fetch_with_backoff(
+        url, params=params, label=f"BoC {series_id}",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+    )
 
 
 # ---------------------------------------------------------------------------

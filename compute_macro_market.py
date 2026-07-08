@@ -297,7 +297,17 @@ def _to_weekly_friday(series: pd.Series) -> pd.Series:
     """
     Resample an arbitrary-frequency series to weekly Friday close.
     Uses last observation in the week then forward-fills gaps (for monthly data).
+
+    NaNs are dropped first so the returned series *ends at the last real
+    value*: the unified hist leaves NaN beyond each column's bounded-fill
+    window (2026-07-08 bounded-fill change), and resampling over those
+    trailing NaNs then ffilling would re-fabricate the very currency the
+    writer bound removed. Interior gaps (weeks between monthly prints)
+    still fill as before.
     """
+    if series.empty:
+        return series
+    series = series.dropna()
     if series.empty:
         return series
     return series.resample("W-FRI").last().ffill()
@@ -347,12 +357,19 @@ def _p(df_comp: pd.DataFrame, ticker: str, usd: bool = False) -> pd.Series:
     return s
 
 
+# Cross-series alignment fill cap (weekly rows, ~one quarter). Aligning
+# mixed-cadence legs on a union index needs some forward-fill, but an
+# unbounded one lets a dead leg extend to a live leg's end — the same
+# fabrication the hist writer's bounded fill removes (2026-07-08).
+_ALIGN_FFILL_LIMIT = 13
+
+
 def _log_ratio(num: pd.Series, den: pd.Series) -> pd.Series:
     """
     Compute log(num / den) on the aligned intersection of both series.
     Returns an empty Series if either input is empty or denominator is zero.
     """
-    aligned = pd.concat([num, den], axis=1).ffill().dropna()
+    aligned = pd.concat([num, den], axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
     if aligned.empty or aligned.shape[1] < 2:
         return pd.Series(dtype=float)
     n = aligned.iloc[:, 0]
@@ -362,7 +379,7 @@ def _log_ratio(num: pd.Series, den: pd.Series) -> pd.Series:
 
 def _arith_diff(a: pd.Series, b: pd.Series) -> pd.Series:
     """Arithmetic difference a - b on aligned intersection."""
-    aligned = pd.concat([a, b], axis=1).ffill().dropna()
+    aligned = pd.concat([a, b], axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
     if aligned.empty or aligned.shape[1] < 2:
         return pd.Series(dtype=float)
     return (aligned.iloc[:, 0] - aligned.iloc[:, 1]).dropna()
@@ -374,7 +391,7 @@ def _sum_log_ratio(nums: list, dens: list) -> pd.Series:
     nums / dens are lists of pd.Series already extracted from comp_hist.
     """
     all_s = nums + dens
-    aligned = pd.concat(all_s, axis=1).ffill().dropna()
+    aligned = pd.concat(all_s, axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
     if aligned.empty or aligned.shape[1] < len(nums) + len(dens):
         return pd.Series(dtype=float)
     num_sum = aligned.iloc[:, :len(nums)].sum(axis=1)
@@ -797,7 +814,7 @@ def load_comp_hist() -> pd.DataFrame:
         raise FileNotFoundError(
             f"Missing {COMP_HIST_CSV} — run fetch_hist.py (run_comp_hist) first."
         )
-    df = load_hist_with_archive(COMP_HIST_CSV, skiprows=11, index_col="Date")
+    df = load_hist_with_archive(COMP_HIST_CSV, skiprows="auto", index_col="Date")
     df.index = pd.to_datetime(df.index, errors="coerce")
     df = df[df.index.notna()].sort_index()
     if "row_id" in df.columns:
@@ -836,7 +853,7 @@ def load_macro_economic_hist() -> pd.DataFrame:
         )
     df = load_hist_with_archive(
         MACRO_ECONOMIC_HIST_CSV,
-        skiprows=14,
+        skiprows="auto",
         index_col="Date",
     )
     df.index = pd.to_datetime(df.index, errors="coerce")
@@ -1564,7 +1581,7 @@ def _calc_FX_EM1(cp, **_):
         legs.append(-np.log(s.replace(0, np.nan)))
     if not legs:
         return pd.Series(dtype=float)
-    basket = pd.concat(legs, axis=1).ffill().dropna().mean(axis=1)
+    basket = pd.concat(legs, axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna().mean(axis=1)
     sma26 = basket.rolling(26, min_periods=13).mean()
     return (basket - sma26).dropna()
 
@@ -2101,17 +2118,17 @@ def _calc_JP_INFL1(mu, **_):
 
 def _calc_CN_INFL1(mu, **_):
     """China inflation: mean of CPI YoY and PPI YoY (both %).
-    Headline = CHN_CPI_INDEX (FRED `CHNCPIALLMINMEI` — Index 2015=100,
-    converted to YoY here); PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — already
-    YoY %). Re-pointed 2026-07-07 to the renamed CHN_CPI_INDEX column (was
-    CHN_CPI) as part of the CPI-definition split — behaviour unchanged (same
-    FRED series). No fresh monthly CN CPI-YoY aggregator exists (OECD
-    COICOP2018 has no CHN coverage; IMF IFS mirror is ~1yr stale on
-    DB.nomics; NBS exposes no clean ex-food-energy national YoY), so
-    CHN_CPI_YOY carries only the WB annual fallback and is not used here.
-    China runs no hard 2% target and is deflation-prone, so it gets its own
-    reflation/stable/deflation-risk regime rather than the G10 target buckets."""
-    cpi = _yoy(_to_weekly_friday(_get_col(mu, "CHN_CPI_INDEX")))  # CPI index → YoY %
+    Headline = CHN_CPI_YOY (IMF Data Portal CPI dataset — monthly national
+    all-items YoY %, repointed 2026-07-08 per §2.A A1; previously derived
+    via `_yoy(CHN_CPI_INDEX)` from the FRED mirror that froze 2025-04).
+    PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — YoY %, frozen at 2022-12 by NBS
+    upstream: China stopped supplying PPI to every international aggregator,
+    so the PPI leg contributes history only and the composite tracks CPI
+    alone after the bounded-fill window past 2022-12 — see §1 Known Data
+    Gaps. The hist's bounded fill (2026-07-08) ends the dead column
+    instead of forward-filling it to the present, and the mean skips the
+    missing leg — no per-series handling needed here)."""
+    cpi = _to_weekly_friday(_get_col(mu, "CHN_CPI_YOY"))          # already YoY %
     ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))              # already YoY %
     parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
     if not parts:

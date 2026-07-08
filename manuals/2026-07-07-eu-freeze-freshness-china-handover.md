@@ -14,6 +14,14 @@
 > live OECD COICOP2018 index measure (T1, 1955+), with the Statistics Bureau
 > e-Stat CPI table `0003427113` queued as the tier-0 upgrade (§2.A **A13**).
 > Only the dead FRED registration stays dropped.
+>
+> **P2 RESOLUTION (2026-07-08): CPI fixed, PPI accepted gap** — see §2.A A1 (✅).
+> Lead (1) below was right in spirit but the endpoint moved: `dataservices.imf.org`
+> is gone; the successor `api.imf.org` SDMX platform's `IMF.STA:CPI` dataflow is
+> monthly-fresh for China (1.20% @ 2026-05). Wired via the new `sources/imf_sdmx.py`.
+> The IMF's own PPI dataset also ends 2022-12 (NBS stopped supplying it), so
+> lead (2) is moot for PPI — formalized as a Known Data Gap with the CN_INFL1
+> PPI leg hard-cut at 2022-12.
 
 > Created 2026-07-07 (UTC) after the CPI-definition split (PR #249) and the
 > label-vs-data audit closure (PR #250) landed and the daily workflow re-ran

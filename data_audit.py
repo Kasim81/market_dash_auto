@@ -47,8 +47,16 @@ OUT_COMMENT = ROOT / "audit_comment.md"
 
 TODAY = date.today()
 
-# Number of metadata-prefix rows above the data in each hist CSV.
-MACRO_HIST_META_ROWS = 14
+def _split_meta_and_data(rows: list[list[str]]) -> tuple[list[list[str]], list[list[str]]]:
+    """Split raw CSV rows of a macro hist file into (metadata rows, data rows),
+    locating the header row (first cell == 'Date') by inspection rather than a
+    hardcoded count — the metadata block grew from 14 to 15 rows on 2026-07-08
+    ('Last Observation') and both generations must parse. The header row itself
+    is dropped. Returns ([], []) if no header row is found."""
+    for i, r in enumerate(rows[:40]):
+        if r and r[0].strip() == "Date":
+            return rows[:i], rows[i + 1:]
+    return [], []
 
 # Library names map to the Source string the per-source modules write into the
 # unified hist's Source metadata row.
@@ -85,6 +93,8 @@ SOURCE_BY_LIBRARY = {
     # §3.1.4 real-time GDP-growth nowcasts (single-source primary fetchers)
     "atlanta_fed": "AtlantaFed",
     "ny_fed":      "NYFed",
+    # §2.A A1 — IMF Data Portal SDMX (api.imf.org; distinct from DataMapper)
+    "imf_sdmx":    "IMF SDMX",
 }
 
 
@@ -175,14 +185,14 @@ def load_macro_hist() -> list[dict]:
     with path.open(newline="") as f:
         rows = list(csv.reader(f))
 
-    if len(rows) <= MACRO_HIST_META_ROWS:
+    meta_rows, data_rows = _split_meta_and_data(rows)
+    if not meta_rows or not data_rows:
         return []
 
-    labels = [r[0] for r in rows[:MACRO_HIST_META_ROWS]]
+    labels = [r[0] for r in meta_rows]
     label_idx = {label: i for i, label in enumerate(labels)}
 
     n_cols = len(rows[0])
-    data_rows = rows[MACRO_HIST_META_ROWS:]
 
     out: list[dict] = []
     for ci in range(1, n_cols):
@@ -199,10 +209,10 @@ def load_macro_hist() -> list[dict]:
                 prev_val = cell
 
         out.append({
-            "col_id":    rows[label_idx["Column ID"]][ci].strip(),
-            "series_id": rows[label_idx["Series ID"]][ci].strip(),
-            "source":    rows[label_idx["Source"]][ci].strip(),
-            "frequency": rows[label_idx["Frequency"]][ci].strip(),
+            "col_id":    meta_rows[label_idx["Column ID"]][ci].strip(),
+            "series_id": meta_rows[label_idx["Series ID"]][ci].strip(),
+            "source":    meta_rows[label_idx["Source"]][ci].strip(),
+            "frequency": meta_rows[label_idx["Frequency"]][ci].strip(),
             "last_obs":  last_change_date,
         })
     return out
@@ -839,37 +849,38 @@ def _check_registry_drift() -> list[str]:
 # total union), date ranges, and flag any anomalies (sister rows duplicated in
 # live, sister missing for an ICE-BofA-bearing file, etc.).
 
-def _read_hist_dates(path: Path, skiprows: int) -> list[str]:
-    """Return the list of Date strings in the data section of a hist file."""
+def _read_hist_dates(path: Path) -> list[str]:
+    """Return the list of Date strings in the data section of a hist file.
+    The header row is located by inspection ('Date' in its first two cells),
+    so per-file metadata-prefix generations (14 vs 15 rows) both parse."""
     if not path.exists():
         return []
     with path.open(newline="") as f:
         rows = list(csv.reader(f))
-    if len(rows) <= skiprows:
-        return []
-    header = rows[skiprows]
-    try:
-        date_idx = header.index("Date")
-    except ValueError:
-        return []
-    return [r[date_idx] for r in rows[skiprows + 1:] if len(r) > date_idx and r[date_idx]]
+    for i, r in enumerate(rows[:40]):
+        cells = [c.strip() for c in r[:2]]
+        if "Date" in cells:
+            date_idx = r.index("Date")
+            return [x[date_idx] for x in rows[i + 1:]
+                    if len(x) > date_idx and x[date_idx]]
+    return []
 
 
 def section_d_history_preservation() -> dict:
     """Report live + sister row counts and date ranges per *_hist.csv pair."""
     pairs = [
-        ("market_data_comp_hist.csv",  DATA / "market_data_comp_hist.csv",  11, True),
-        ("macro_economic_hist.csv",    DATA / "macro_economic_hist.csv",    14, True),
-        ("macro_market_hist.csv",      DATA / "macro_market_hist.csv",       0, False),
+        ("market_data_comp_hist.csv",  DATA / "market_data_comp_hist.csv",  True),
+        ("macro_economic_hist.csv",    DATA / "macro_economic_hist.csv",    True),
+        ("macro_market_hist.csv",      DATA / "macro_market_hist.csv",      False),
     ]
     issues: list[str] = []
     rows: list[dict] = []
 
-    for name, live_path, skip, has_ice_bofa in pairs:
+    for name, live_path, has_ice_bofa in pairs:
         sister_path = live_path.with_name(live_path.name.replace("_hist.csv", "_hist_x.csv"))
 
-        live_dates = _read_hist_dates(live_path, skip)
-        sister_dates = _read_hist_dates(sister_path, skip) if sister_path.exists() else []
+        live_dates = _read_hist_dates(live_path)
+        sister_dates = _read_hist_dates(sister_path) if sister_path.exists() else []
 
         union_dates = set(live_dates) | set(sister_dates)
         overlap = set(live_dates) & set(sister_dates)
@@ -971,13 +982,13 @@ def load_latest_macro_values() -> dict[str, dict]:
     path = DATA / "macro_economic_hist.csv"
     with path.open(newline="") as f:
         rows = list(csv.reader(f))
-    if len(rows) <= MACRO_HIST_META_ROWS:
+    meta_rows, data_rows = _split_meta_and_data(rows)
+    if not meta_rows or not data_rows:
         return {}
 
-    labels = [r[0] for r in rows[:MACRO_HIST_META_ROWS]]
+    labels = [r[0] for r in meta_rows]
     label_idx = {label: i for i, label in enumerate(labels)}
     n_cols = len(rows[0])
-    data_rows = rows[MACRO_HIST_META_ROWS:]
 
     out: dict[str, dict] = {}
     for ci in range(1, n_cols):
@@ -997,10 +1008,10 @@ def load_latest_macro_values() -> dict[str, dict]:
             fval = float(last_val)
         except ValueError:
             continue
-        col_id = rows[label_idx["Column ID"]][ci].strip()
+        col_id = meta_rows[label_idx["Column ID"]][ci].strip()
         out[col_id] = {
-            "series_id": rows[label_idx["Series ID"]][ci].strip(),
-            "source":    rows[label_idx["Source"]][ci].strip(),
+            "series_id": meta_rows[label_idx["Series ID"]][ci].strip(),
+            "source":    meta_rows[label_idx["Source"]][ci].strip(),
             "value":     fval,
             "date":      last_date,
         }
