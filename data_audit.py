@@ -727,11 +727,20 @@ def _check_unadjusted_splits() -> list[str]:
 
     with comp_path.open(newline="") as f:
         rows = list(csv.reader(f))
-    if len(rows) <= 12:
+
+    # Locate the header row ('Date' in its first two cells) by inspection —
+    # the comp metadata block grew 11 → 12 rows on 2026-07-08 (§2.A A16
+    # "Last Observation") and both generations must parse.
+    hdr_idx = None
+    for i, r in enumerate(rows[:40]):
+        if "Date" in [c.strip() for c in r[:2]]:
+            hdr_idx = i
+            break
+    if hdr_idx is None or len(rows) <= hdr_idx + 1:
         return []
 
     ticker_row = rows[0]; variant_row = rows[1]
-    data = rows[12:]                       # 11 metadata rows + 1 header row
+    data = rows[hdr_idx + 1:]
     # Look back far enough that a jump can have PERSIST_WEEKS of follow-up
     # weeks AND we still see ~8 weeks of usable history before it.
     scan = data[-(8 + 1 + 6):]              # 15 weekly closes

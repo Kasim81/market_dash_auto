@@ -46,7 +46,46 @@ from library_utils import (
     lib_sort_key as _comp_inst_sort_key,
     write_hist_with_archive,
     apply_manual_splits,
+    bounded_spine_fill,
 )
+
+# Bounded forward-fill limits (tech_manual §11 Pattern 12, §2.A A16).
+# yfinance prices have used a 5-week fill cap since Stage A; the FRED leg
+# and the FX conversion previously filled unboundedly — a discontinued
+# FRED series flatlined forever and a dead FX pair silently froze the USD
+# conversion of every instrument in that currency while local prices kept
+# moving. Daily series now stop ~3 weeks past the last real observation
+# (2x tolerance, floored to ride out market-holiday clusters); the comp
+# FRED leg is mostly daily yields/spreads but carries monthly series too
+# (e.g. PIORECRUSDM iron ore), so its limit is inferred per series from
+# the raw observation spacing via _infer_fill_limit_days.
+DAILY_FILL_LIMIT_DAYS = 21
+YF_FILL_LIMIT_DAYS = 35   # the existing ffill(limit=5) in days
+
+
+def _infer_fill_limit_days(series: pd.Series) -> int:
+    """Fill limit for a raw series, inferred from its median observation
+    spacing and mapped to 2x the matching freshness tolerance (mirrors the
+    macro writer's frequency-driven limits): daily/weekly → 21d floor,
+    monthly → 90d, quarterly → 240d, coarser → 1080d."""
+    idx = series.dropna().index.sort_values()
+    if len(idx) < 3:
+        return DAILY_FILL_LIMIT_DAYS
+    gap = idx.to_series().diff().median().days
+    if gap <= 8:
+        return DAILY_FILL_LIMIT_DAYS
+    if gap <= 35:
+        return 90
+    if gap <= 100:
+        return 240
+    return 1080
+
+# Per-base-ticker last real observation dates + fill limits, captured by
+# the fetch loops on the raw (pre-fill) series and consumed by the
+# "Last Observation" metadata row + the sister trailing_bounds.
+# Reset by run_comp_hist().
+LAST_OBS_BY_TICKER: dict = {}
+FILL_LIMIT_BY_TICKER: dict = {}
 from sources.base import (
     get_sheets_service,
     push_df_to_sheets as _base_push,
@@ -90,16 +129,17 @@ def get_friday_spine(start_str: str, end_date: date = None) -> pd.DatetimeIndex:
 
 def align_to_friday_spine(series: pd.Series, spine: pd.DatetimeIndex) -> pd.Series:
     """
-    Reindex a series to a Friday spine, then forward-fill to propagate
-    monthly/quarterly values into intervening weekly slots.
+    Snap a series onto the Friday spine with forward-fill bounded past the
+    underlying observation (Pattern 12 — a discontinued series ends instead
+    of flatlining forever). The limit follows the series' own cadence
+    (_infer_fill_limit_days), so intervening weekly slots between monthly/
+    quarterly prints still fill as before.
     """
     # Ensure series index is datetime
     series.index = pd.to_datetime(series.index)
     series = series.sort_index()
 
-    # Reindex to spine, then ffill
-    aligned = series.reindex(spine, method="ffill")
-    return aligned
+    return bounded_spine_fill(series, spine, _infer_fill_limit_days(series))
 
 
 
@@ -115,7 +155,7 @@ def fred_fetch_series_full(series_id: str, start: str) -> pd.Series | None:
 
 
 def save_csv(df: pd.DataFrame, path: str, label: str,
-             prefix_rows: list = None) -> None:
+             prefix_rows: list = None, trailing_bounds: dict = None) -> None:
     """
     Save DataFrame to CSV.
     If prefix_rows is provided, those rows are written before the header+data
@@ -124,14 +164,17 @@ def save_csv(df: pd.DataFrame, path: str, label: str,
 
     For *_hist.csv paths, routes through library_utils.write_hist_with_archive()
     which preserves any rows that would otherwise be lost to source-side
-    floor advancement (per forward_plan §3.1.1).
+    floor advancement (per forward_plan §3.1.1). trailing_bounds
+    ({column: (last_real_obs_iso, fill_limit_days)}) holds the sister archive
+    to the Pattern-12 bounded-fill invariant — see §2.A A16.
     """
     if df.empty:
         print(f"  [{label}] Empty — skipping CSV write")
         return
 
     if path.endswith("_hist.csv"):
-        write_hist_with_archive(df, path, prefix_rows=prefix_rows)
+        write_hist_with_archive(df, path, prefix_rows=prefix_rows,
+                                trailing_bounds=trailing_bounds)
     else:
         os.makedirs("data", exist_ok=True)
         if prefix_rows:
@@ -401,7 +444,9 @@ def compute_comp_usd_series(
         return local_prices
 
     fx = fx_cache[fx_ticker]
-    fx_aligned = fx.reindex(local_prices.index, method="ffill")
+    # Bounded (Pattern 12): a dead FX pair must make the USD variant go
+    # NaN rather than silently converting live local prices at a stale rate.
+    fx_aligned = bounded_spine_fill(fx, local_prices.index, DAILY_FILL_LIMIT_DAYS)
 
     if currency in COMP_FCY_PER_USD_HIST:
         return local_prices / fx_aligned
@@ -508,6 +553,9 @@ def fetch_comp_yfinance_history(
         s = apply_manual_splits(s, ticker)
         weekly        = s.resample("W-FRI").last()
         local_aligned = weekly.reindex(spine).ffill(limit=5)
+        if weekly.last_valid_index() is not None:
+            LAST_OBS_BY_TICKER[ticker] = weekly.last_valid_index()
+            FILL_LIMIT_BY_TICKER[ticker] = YF_FILL_LIMIT_DAYS
 
         local_prices[ticker] = local_aligned
         usd_prices[ticker]   = compute_comp_usd_series(local_aligned, currency, fx_cache)
@@ -547,6 +595,9 @@ def fetch_comp_fred_rates_history(
             aligned          = align_to_friday_spine(data, spine)
             local_prices[sid] = aligned
             usd_prices[sid]   = aligned   # rates: no FX conversion
+            if data.last_valid_index() is not None:
+                LAST_OBS_BY_TICKER[sid] = pd.to_datetime(data.last_valid_index())
+                FILL_LIMIT_BY_TICKER[sid] = _infer_fill_limit_days(data)
         if i < total:
             time.sleep(FRED_DELAY)
 
@@ -626,9 +677,12 @@ def build_comp_market_meta_prefix(
     fred_rates: list,
 ) -> list:
     """
-    Build 10-row metadata prefix for market_data_comp_hist.
-    Row order: Ticker ID, Variant, Source, Name, Region,
-               Asset Class, Currency, Units, Frequency, Last Updated
+    Build the metadata prefix for market_data_comp_hist (12 rows).
+    Row order: Ticker ID, Variant, Source, Name, Broad Asset Class, Region,
+               Sub-Category, Currency, Units, Frequency, Last Updated,
+               Last Observation (per-base-ticker last real raw observation —
+               added 2026-07-08 with the A16 bounded-fill extension; readers
+               sniff the prefix count, so the 11-row generation still parses).
     """
     run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -652,6 +706,7 @@ def build_comp_market_meta_prefix(
     units_row            = ["Units"]
     frequency_row        = ["Frequency"]
     updated_row          = ["Last Updated"]
+    last_obs_row         = ["Last Observation"]
 
     for col in df.columns:
         if col == "Date":
@@ -701,11 +756,13 @@ def build_comp_market_meta_prefix(
         units_row.append(units)
         frequency_row.append("Weekly")
         updated_row.append(run_ts)
+        lo = LAST_OBS_BY_TICKER.get(base)
+        last_obs_row.append(lo.date().isoformat() if lo is not None else "")
 
     return [
         ticker_id_row, variant_row, source_row,
         name_row, broad_asset_cls_row, region_row, asset_class_row, currency_row,
-        units_row, frequency_row, updated_row,
+        units_row, frequency_row, updated_row, last_obs_row,
     ]
 
 
@@ -724,6 +781,8 @@ def run_comp_hist() -> None:
     print("=" * 60)
 
     start_ts = time.time()
+    LAST_OBS_BY_TICKER.clear()
+    FILL_LIMIT_BY_TICKER.clear()
 
     try:
         # 1. Friday spine from 1950
@@ -760,9 +819,23 @@ def run_comp_hist() -> None:
         comp_df.insert(0, "row_id", range(1, len(comp_df) + 1))
         comp_meta = [[""] + row for row in comp_meta]
 
+        # 7b. Sister trailing bounds (Pattern 12 / §2.A A16): each column's
+        # last real raw observation + its cadence-matched fill limit, so
+        # fabricated fill can never persist in the sister archive.
+        trailing_bounds = {}
+        for col in comp_df.columns:
+            if col in ("row_id", "Date"):
+                continue
+            base = col[:-6] if col.endswith("_Local") else \
+                col[:-4] if col.endswith("_USD") else col
+            lo = LAST_OBS_BY_TICKER.get(base)
+            if lo is not None:
+                limit = FILL_LIMIT_BY_TICKER.get(base, YF_FILL_LIMIT_DAYS)
+                trailing_bounds[col] = (lo.date().isoformat(), limit)
+
         # 8. Save CSV
         save_csv(comp_df, COMP_HIST_CSV, "market_data_comp_hist",
-                 prefix_rows=comp_meta)
+                 prefix_rows=comp_meta, trailing_bounds=trailing_bounds)
 
         # 9. Push to Google Sheets
         push_df_to_sheets(comp_df, COMP_HIST_TAB, "market_data_comp_hist",

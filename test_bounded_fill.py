@@ -247,3 +247,48 @@ class SectionCLastObservationTest(unittest.TestCase):
         out = {r["col_id"]: r for r in self.da.load_macro_hist()}
         self.assertEqual(out["HELD"]["last_obs"], "2024-01-05")
         self.assertEqual(out["DEAD"]["last_obs"], "2024-01-05")
+
+
+class CompHistBoundedFillTest(unittest.TestCase):
+    """§2.A A16 — the comp-hist writer's fill sites are bounded too."""
+
+    def test_align_to_friday_spine_bounded_by_inferred_cadence(self):
+        import fetch_hist
+        spine = pd.date_range("2024-01-05", "2024-12-27", freq="W-FRI")
+        # Monthly series (e.g. PIORECRUSDM iron ore): interior fill between
+        # prints must survive; trailing fill stops ~90d past the last print.
+        m = pd.Series([1.0, 2.0, 3.0],
+                      index=pd.to_datetime(["2024-01-01", "2024-02-01",
+                                            "2024-03-01"]))
+        self.assertEqual(fetch_hist._infer_fill_limit_days(m), 90)
+        out = fetch_hist.align_to_friday_spine(m, spine)
+        self.assertEqual(out["2024-01-26"], 1.0)      # interior fill intact
+        self.assertEqual(out["2024-05-24"], 3.0)      # 84d old — kept
+        self.assertTrue(pd.isna(out["2024-05-31"]))   # 91d old — cleared
+        # Daily series: ~3-week floor.
+        d = pd.Series([float(x) for x in range(30)],
+                      index=pd.bdate_range("2024-01-01", periods=30))
+        self.assertEqual(fetch_hist._infer_fill_limit_days(d),
+                         fetch_hist.DAILY_FILL_LIMIT_DAYS)
+        outd = fetch_hist.align_to_friday_spine(d, spine)
+        self.assertLessEqual(outd.dropna().index.max(),
+                             d.index.max() + pd.Timedelta(days=21))
+
+    def test_meta_prefix_has_last_observation_row(self):
+        import fetch_hist
+        fetch_hist.LAST_OBS_BY_TICKER.clear()
+        fetch_hist.LAST_OBS_BY_TICKER["TST"] = pd.Timestamp("2024-06-07")
+        df = pd.DataFrame({
+            "Date": pd.to_datetime(["2024-06-07"]),
+            "TST_Local": [1.0], "TST_USD": [1.0],
+        })
+        inst = [{"ticker": "TST", "ticker_type": "PR", "name": "Test",
+                 "region": "Global", "asset_class": "Equity",
+                 "broad_asset_class": "Equity", "asset_subclass": "",
+                 "units": "Index", "currency": "USD"}]
+        meta = fetch_hist.build_comp_market_meta_prefix(df, inst, [])
+        labels = [r[0] for r in meta]
+        self.assertIn("Last Observation", labels)
+        lo_row = meta[labels.index("Last Observation")]
+        self.assertEqual(lo_row[1], "2024-06-07")   # TST_Local
+        self.assertEqual(lo_row[2], "2024-06-07")   # TST_USD
