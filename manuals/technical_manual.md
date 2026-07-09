@@ -665,7 +665,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 |---|---|---|---|
 | `market_data.csv` | ~70 | fetch_data.py | Simple-pipeline daily snapshot |
 | `market_data_comp.csv` | ~360 | fetch_data.py | Comp-pipeline daily snapshot |
-| `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 10 metadata prefix rows + data |
+| `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 12 metadata prefix rows + data (incl. Last Observation since §2.A A16; bounded fill per Pattern 12) |
 | `macro_economic.csv` | ~170 | fetch_macro_economic.py | Unified raw-macro snapshot (long-form) — one row per series with metadata |
 | `macro_economic_hist.csv` | ~4,150 | fetch_macro_economic.py | Wide-form weekly Friday-spine history from 1947, **15 metadata prefix rows + data** (bounded fill per Pattern 12) |
 | `macro_market.csv` | ~107 | compute_macro_market.py | Macro-market indicator snapshot |
@@ -824,7 +824,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `fetch_comp_yfinance_history(instruments, start, fx_cache)` | Fetch all yfinance histories |
 | `fetch_comp_fred_rates_history(rates, start)` | Fetch all FRED rate histories |
 | `build_comp_market_hist_df(yf_data, fred_data, spine)` | Combine yfinance + FRED histories and align to the Friday spine |
-| `build_comp_market_meta_prefix(df, instruments, rates)` | Build the 10 metadata prefix rows above the data |
+| `build_comp_market_meta_prefix(df, instruments, rates)` | Build the 12 metadata prefix rows above the data |
 | `run_comp_hist()` | **Entry point** — build + push `market_data_comp_hist` |
 
 #### Key Constants
@@ -1809,6 +1809,8 @@ The unified hist snaps every raw series onto the weekly Friday spine with forwar
 
 **Expected downstream effect (validated offline 2026-07-08, before/after over all 107 calculators):** only `EU_INFL1` (frozen 2.1 tail disappears until the fresh ECB source lands) and `CN_INFL1` (dead PPI leg stops dragging the mean) changed; the removed `CHN_PPI` fill was 175 fabricated weeks. The `_calc_CN_INFL1` per-series date hard-cut this replaced was deleted the same day — dead legs now end in the data layer, so **no calculator ever needs ticker-specific staleness handling**. Regression suite: `test_bounded_fill.py` (in the ci.yml offline gate).
 
+**Comp-pipeline extension (§2.A A16, 2026-07-08).** `market_data_comp_hist` is held to the same invariant: yfinance prices already had a 5-week fill cap (Stage A prior art); the previously-unbounded **FRED leg** (`align_to_friday_spine`) and the **FX conversion** fill (a dead FX pair would silently convert live local prices at a stale rate) are now bounded via the shared `library_utils.bounded_spine_fill`, with the FRED limit **inferred per series from raw observation spacing** (`_infer_fill_limit_days`: daily/weekly → 21d floor, monthly → 90d, quarterly → 240d — the comp FRED leg is mostly daily yields/spreads but carries monthly series like `PIORECRUSDM`). The comp writer gained a 12th "Last Observation" metadata row and passes per-column `trailing_bounds` for its sister. On the current data the bound trims **zero** live columns — it is purely forward protection.
+
 **Relationship to the multifreq rebuild (§5 / `multifreq_plan.md`):** the ragged-column design stores native frequency with *no* fill — this pattern is a stepping stone that establishes the no-fabricated-currency semantics the multifreq merge must preserve, not a rival design.
 
 ---
@@ -2020,7 +2022,7 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 
 The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. The §3.1 sub-track 3 writeback adds a registry-update half between the audit and the post. Mechanism:
 
-- **Audit step.** `python data_audit.py` runs after fetch + explorer rebuild. Section A: fetch outcomes from `pipeline.log` scrape. Section B: static checks against the registry CSVs *plus registry drift across all 3 hist↔library pairs* (the drift check imports library_sync helpers — orphan column reports include `(run: python library_sync.py --confirm)`). Section C: value-change staleness against the unified hist. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Audit step.** `python data_audit.py` runs after fetch + explorer rebuild. Section A: fetch outcomes from `pipeline.log` scrape. Section B: static checks against the registry CSVs *plus registry drift across all 3 hist↔library pairs* (the drift check imports library_sync helpers — orphan column reports include `(run: python library_sync.py --confirm)`). Section C: observation staleness against the unified hist — last-obs dates read from the "Last Observation" metadata row (writer ground truth, §2.A A15, 2026-07-08) with value-change archaeology as the fallback for blank cells / pre-A14 file generations. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
 - **Writeback step.** `python audit_writeback.py` runs immediately after the audit. Parses `data_audit.txt` Section A for `YFINANCE_DEAD` entries, updates `data/yfinance_failure_streaks.csv`, and flips `validation_status` to `UNAVAILABLE` on any row whose streak hits N=14. Appends a one-line summary to `audit_comment.md` so the Issue comment surfaces today's writeback actions. Manual override always wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally on the next FRESH cycle.
 - **Posting step.** Uses the pre-installed `gh` CLI:
   1. Ensure a `daily-audit` label exists (`gh label create daily-audit ...`, idempotent).

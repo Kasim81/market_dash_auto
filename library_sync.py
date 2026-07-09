@@ -95,12 +95,17 @@ def _comp_idxs_for_orphan(rows: list[list[str]], ticker: str) -> list[int]:
 def _comp_archive(rows: list[list[str]], ticker: str, idxs: list[int]) -> Path:
     ARCHIVE.mkdir(parents=True, exist_ok=True)
     out_path = ARCHIVE / f"market_data_comp_hist__{ticker}__{date.today().isoformat()}.csv"
-    header_row = rows[11]            # data-header row: "row_id, Date, <ticker>_Local, ..."
+    # Locate the data-header row ("row_id, Date, <ticker>_Local, ...") by
+    # inspection — the comp metadata block grew 11 → 12 rows on 2026-07-08
+    # (§2.A A16 "Last Observation") and both generations must parse.
+    hdr_idx = next(i for i, r in enumerate(rows[:40])
+                   if "Date" in [c.strip() for c in r[:2]])
+    header_row = rows[hdr_idx]
     keep_idxs = [1] + idxs           # col 1 is Date
     with out_path.open("w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow([header_row[i] for i in keep_idxs])
-        for r in rows[12:]:
+        for r in rows[hdr_idx + 1:]:
             w.writerow([r[i] if i < len(r) else "" for i in keep_idxs])
     return out_path
 

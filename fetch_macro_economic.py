@@ -61,7 +61,7 @@ from sources import ny_fed as ny_fed_src
 from sources import imf_sdmx as imf_sdmx_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
-from library_utils import write_hist_with_archive
+from library_utils import write_hist_with_archive, bounded_spine_fill
 
 
 # ---------------------------------------------------------------------------
@@ -395,27 +395,9 @@ def _fill_limit_days(indic: dict) -> int:
     return 2 * tolerance
 
 
-def _bounded_spine_fill(s: pd.Series, spine: pd.DatetimeIndex,
-                        limit_days: int) -> pd.Series:
-    """Snap a raw series onto the Friday spine with forward-fill bounded at
-    ``limit_days`` past the underlying observation: each spine cell keeps the
-    most recent raw value only while that observation is at most limit_days
-    old, and is NaN otherwise. Bounds interior gaps and trailing fill alike,
-    measured in days against the raw observation dates (exact — no
-    value-change archaeology)."""
-    filled = s.reindex(spine.union(s.index)).sort_index().ffill().reindex(spine)
-    nonnull = s.dropna()
-    if nonnull.empty:
-        return filled
-    obs = nonnull.index.sort_values()
-    last_obs_asof = (
-        pd.Series(obs, index=obs)
-        .reindex(spine.union(obs)).sort_index().ffill().reindex(spine)
-    )
-    age_days = pd.Series(
-        (spine - pd.DatetimeIndex(last_obs_asof)).days, index=spine
-    )
-    return filled.where(age_days.le(limit_days))
+# Shared with fetch_hist since §2.A A16 — canonical implementation lives in
+# library_utils (tech_manual §11 Pattern 12).
+_bounded_spine_fill = bounded_spine_fill
 
 
 # ---- measure-kind / cadence / period helpers for winner selection ----
