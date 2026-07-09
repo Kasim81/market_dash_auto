@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-07-08
+> Last updated: 2026-07-09
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -47,8 +47,8 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 | `market_data_comp_hist` | ~390 instruments from library | Weekly history from 1950 | yfinance + FRED |
 | `macro_economic` | ~150 raw macro series across 12 economies | Daily snapshot (long-form) | FRED + OECD + World Bank + IMF + DB.nomics + ifo |
 | `macro_economic_hist` | ~150 raw macro series | Weekly Friday-spine history from 1947 | FRED + OECD + World Bank + IMF + DB.nomics + ifo |
-| `macro_market` | 108 composite indicators | Daily snapshot | Derived from above datasets |
-| `macro_market_hist` | 108 composite indicators | Weekly history from 2000 | Derived from above datasets |
+| `macro_market` | 107 composite indicators | Daily snapshot | Derived from above datasets |
+| `macro_market_hist` | 107 composite indicators | Weekly history from 2000 | Derived from above datasets |
 
 ### Codebase Size
 
@@ -60,11 +60,11 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ```
 market_dash_auto/
-├── fetch_data.py                  # Master orchestrator — runs all phases (998 lines)
+├── fetch_data.py                  # Master orchestrator — runs all phases (984 lines)
 ├── fetch_hist.py                  # Comp-pipeline weekly history (781 lines)
-├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,546 lines)
-├── compute_macro_market.py        # 108 macro-market composite indicators + monthly-hist writer (2,546 lines)
-├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (627 lines)
+├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,825 lines)
+├── compute_macro_market.py        # 107 macro-market composite indicators + monthly-hist writer (2,567 lines)
+├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (705 lines)
 ├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
@@ -87,16 +87,16 @@ market_dash_auto/
 │   ├── brightdata.py                  # Shared Bright Data Web Unlocker client (credentials/available/unlock) with process-wide call cap — bot-protection bypass for ISM press releases (132 lines, 2026-07-02)
 │   ├── ifo.py                         # ifo Institute Excel-workbook fetcher with retry + cache + month-walk + Bright Data fallback (579 lines)
 │   ├── boe.py                         # Bank of England IADB CSV fetcher (264 lines)
-│   ├── ecb.py                         # ECB Data Portal SDMX fetcher
+│   ├── ecb.py                         # ECB Data Portal SDMX fetcher (213 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
 │   ├── boj.py                         # Bank of Japan Time-Series API fetcher (320 lines)
 │   ├── estat.py                       # e-Stat (Japan Statistics Bureau) REST API fetcher (336 lines; `_parse_estat_time` monthly @time parser fixed 2026-06-15)
 │   ├── lbma.py                        # LBMA precious-metals JSON fetcher (prices.lbma.org.uk) — §3.9
 │   ├── nasdaq_data_link.py            # Nasdaq Data Link scaffolding (empty after LBMA/GOLD went paid-tier — §3.9)
-│   ├── boc.py                         # Bank of Canada Valet API fetcher — keyless JSON (183 lines)
+│   ├── boc.py                         # Bank of Canada Valet API fetcher — keyless JSON (165 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
 │   ├── statcan.py                     # Statistics Canada WDS fetcher — keyless POST API (201 lines)
-│   ├── ons.py                         # ONS Zebedee /data API fetcher — keyless JSON (218 lines)
-│   ├── bundesbank.py                  # Deutsche Bundesbank SDMX-ML fetcher — keyless (218 lines)
-│   ├── abs.py                         # Australian Bureau of Statistics SDMX-CSV fetcher — keyless (206 lines)
+│   ├── ons.py                         # ONS Zebedee /data API fetcher — keyless JSON (200 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
+│   ├── bundesbank.py                  # Deutsche Bundesbank SDMX-ML fetcher — keyless (201 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
+│   ├── abs.py                         # Australian Bureau of Statistics SDMX-CSV fetcher — keyless (189 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
 │   ├── istat.py                       # ISTAT (Italy) SDMX-CSV fetcher with vintage (EDITION) resolution, per-series EDITION cache + wildcard-on-miss resolution (395 lines)
 │   ├── bls.py                         # US Bureau of Labor Statistics Public Data API fetcher — BLS_API_KEY optional (284 lines)
 │   ├── insee.py                       # INSEE BDM SDMX-ML fetcher — keyless + optional INSEE_API_KEY (231 lines)
@@ -150,7 +150,7 @@ market_dash_auto/
 │   ├── manual_splits.csv              # Yahoo-missing split overrides (ticker, ex_date, ratio) — §11 Pattern 11
 │   │
 │   ├── # Phase E composite-indicator registry:
-│   ├── macro_indicator_library.csv    # 108 macro-market indicator definitions
+│   ├── macro_indicator_library.csv    # 107 macro-market indicator definitions
 │   ├── reference_indicators.csv       # 206-row L/C/G cycle-timing cross-reference
 │   │
 │   ├── # Audit infrastructure (§2.6 v2 + §3.1):
@@ -246,7 +246,7 @@ fetch_data.py
 │
 └─ [try] run_phase_e()                          ← compute_macro_market  → macro_market + macro_market_hist
                                                    Reads macro_economic_hist + market_data_comp_hist;
-                                                   computes 108 composite indicators (z-score, regime, fwd_regime).
+                                                   computes 107 composite indicators (z-score, regime, fwd_regime).
 ```
 
 The retired Phase A (`fetch_macro_us_fred.py` → `macro_us[_hist]`), Phase C (`fetch_macro_international.py` → `macro_intl[_hist]`), Phase D Tier 2 (`fetch_macro_dbnomics.py` → `macro_dbnomics[_hist]`) and Phase D ifo (`fetch_macro_ifo.py` → `macro_ifo[_hist]`) coordinators were consolidated into Phase ME on 2026-04-23. All four modules and their 8 tabs have been deleted; the tab names live on in `SHEETS_LEGACY_TABS_TO_DELETE` so the daily run sweeps them on the Sheet side.
@@ -391,7 +391,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **URL:** `https://www.bankofcanada.ca/valet/observations/<seriesNames>/json` with `?recent=<n>` or `?start_date=YYYY-MM-DD`
 - **Auth:** None required. Free, keyless JSON API.
 - **Used for:** 5 Canada series: Policy Rate (`CAN_POLICY_RATE` ← V39079), GoC 2Y benchmark yield (`CAN_GOV_2Y` ← BD.CDN.2YR.DQ.YLD), GoC 10Y benchmark yield (`CAN_GOV_10Y` ← BD.CDN.10YR.DQ.YLD), BoC CPI-median core inflation (`CAN_CPI_MEDIAN`), USD/CAD reference rate (`CAN_USDCAD`). Library: `data/macro_library_boc.csv`.
-- **Fetcher:** `sources/boc.py` (183 lines). Response shape: `{"observations": [{"d": "YYYY-MM-DD", "<series>": {"v": "<value>"}}, ...]}`.
+- **Fetcher:** `sources/boc.py` (165 lines; retries route through the shared `base.fetch_with_backoff` since the §2.C C3 batch-1 conversion, 2026-07-08). Response shape: `{"observations": [{"d": "YYYY-MM-DD", "<series>": {"v": "<value>"}}, ...]}`.
 
 ### Statistics Canada — Web Data Service (2026-05-28)
 
@@ -407,7 +407,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Auth:** None required. Free, keyless JSON API.
 - **Used for:** 14 UK series: `GBR_CPI_YOY` (D7G7 — CPI annual rate), `GBR_CPIH_YOY` (L55O — CPIH annual rate), `GBR_GDP_REAL` (ABMI — real GDP chain volume), `GBR_UNEMPLOYMENT` (MGSX — unemployment rate 16+), `GBR_EMP_RATE` (LF24 — employment rate 16-64), `GBR_AWE_REGPAY_YOY` (KAI9 — average weekly earnings regular pay YoY); **2026-06-10:** `GBR_CORE_CPI_YOY` (DKO8), `GBR_IND_PROD` (K222), `GBR_SERV_PROD` (S2KU), `GBR_RETAIL_VOL` (J5EK); **2026-06-11:** `GBR_GDP_MONTHLY` (ECY2 — monthly real GDP, feeds UK_NOWCAST1); **2026-06-15 (PR #205):** `GBR_CLAIMANT_COUNT` (BCJD — Total Claimant Count SA, Labour Market, ~40d freshness), `GBR_PPI_OUTPUT` (GD6Y — PPI Output all manufactured products, Prices/Inflation, ~40d freshness); **2026-06-17 (PR #217 batch 1):** `GBR_CPI` (D7BT — CPI headline index level monthly; primary ONS source replacing frozen FRED mirror `GBRCPIALLMINMEI`, last-changed 2025-03; verified 142.4 @ 2026-05). Library: `data/macro_library_ons.csv` (14 rows).
 - **Series ID convention:** website taxonomy URI of the timeseries (e.g. `economy/inflationandpriceindices/timeseries/d7g7/mm23`). The module picks the finest non-empty frequency array from the response (months > quarters > years).
-- **Fetcher:** `sources/ons.py` (218 lines).
+- **Fetcher:** `sources/ons.py` (200 lines; retries route through the shared `base.fetch_with_backoff` since the §2.C C3 batch-1 conversion, 2026-07-08).
 
 ### Deutsche Bundesbank — SDMX REST API (2026-05-28)
 
@@ -415,14 +415,14 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Auth:** None required. SDMX-ML only (JSON/CSV return HTTP 406).
 - **Used for:** 4 Germany series: `DEU_BUND_10Y` (BBSIS daily yield residual maturity 9-10y — daily, ultimate source vs FRED monthly mirror), `DEU_BUND_1_2Y` (1-2y residual maturity — genuine gap, no aggregator equivalent), plus 2 more. Library: `data/macro_library_bundesbank.csv`.
 - **Series ID convention:** `<flow>/<key>` where the key is the full dot-separated SDMX dimension tuple (all 15 dimensions for BBSIS required — a shorter key returns HTTP 404).
-- **Fetcher:** `sources/bundesbank.py` (218 lines).
+- **Fetcher:** `sources/bundesbank.py` (201 lines; retries route through the shared `base.fetch_with_backoff` since the §2.C C3 batch-1 conversion, 2026-07-08).
 
 ### Australian Bureau of Statistics — ABS Data API (2026-05-28)
 
 - **URL:** `https://data.api.abs.gov.au/rest/data/<flow>/<key>?lastNObservations=<n>` (SDMX-CSV; JSON returns HTTP 406)
 - **Auth:** None required.
 - **Used for:** 5 Australia series: `AUS_CPI` (CPI all-groups index), `AUS_GDP_REAL` (chain volume GDP), `AUS_GDP_GROWTH` (QoQ % change), `AUS_UNEMPLOYMENT` (LF unemployment rate 15+ SA), `AUS_PART_RATE` (participation rate 15+ SA). Library: `data/macro_library_abs.csv`.
-- **Fetcher:** `sources/abs.py` (206 lines). CSV shape identical to ECB Data Portal (TIME_PERIOD + OBS_VALUE columns).
+- **Fetcher:** `sources/abs.py` (189 lines; retries route through the shared `base.fetch_with_backoff` since the §2.C C3 batch-1 conversion, 2026-07-08). CSV shape identical to ECB Data Portal (TIME_PERIOD + OBS_VALUE columns).
 
 ### ISTAT — Italy Statistics Bureau SDMX API (2026-05-28)
 
@@ -529,7 +529,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Used for (inline):** Euro area AAA govt 10Y yield (YC dataset, key `B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y`) consumed by `fetch_ecb_euro_ig_spread()` in `compute_macro_market.py`.
 - **Used for (registry-driven, via `sources/ecb.py`):** ECB Deposit Facility Rate (`EA_DEPOSIT_RATE` ← `FM/D.U2.EUR.4F.KR.DFR.LEV`), AAA euro yield curve points (`EZ_GOVT_2Y` ← `YC/...SR_2Y`, `EZ_GOVT_30Y` ← `YC/...SR_30Y`), ECB Composite Indicator of Systemic Stress (`EZ_CISS` ← `CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX` — daily systemic-stress composite 0–1, verified live 2026-06-15), ECB Consumer Expectations Survey 12M inflation expectations (`EZ_INFL_EXP_12M` ← `CES/M.Z18.ALL.T.C1120.NUM_VAR.WM` — monthly weighted median, verified live 2026-06-15), **2026-06-17:** Euro area M3 broad money supply (`EZ_M3` ← `BSI/M.U2.Y.V.M30.X.I.U2.2300.Z01.A` — monthly YoY%, verified 2.74% @ 2026-04; replaced frozen FRED mirror `MABMM301EZM189S`), **2026-07-08 (forward_plan §2.A A10):** euro-area HICP headline (`EA_HICP` ← `HICP/M.U2.N.000000.4D0.ANR`, verified 2.8% @ 2026-06) + core ex energy/food (`EA_HICP_CORE_YOY` ← `HICP/M.U2.N.XEF000.4D0.ANR`, verified 2.4% @ 2026-06) — both feed `EU_INFL1`. The `HICP` dataflow is the successor to the `ICP` dataset the ECB discontinued 2026-02-04 alongside Eurostat's HICP methodology overhaul (same 6-dimension key shape; `DATA_PROVIDER=4D0` replaces the old `4`; history to 1996-12). Library: `data/macro_library_ecb.csv` (8 rows).
 - **Rate limit:** 2s delay; 60s timeout; `lastNObservations=N` on snapshot calls to keep responses small.
-- **Fetcher:** `sources/ecb.py` (230 lines, registry path) + inline call in `compute_macro_market.py` (legacy YC call — refactor TODO).
+- **Fetcher:** `sources/ecb.py` (213 lines, registry path; retries route through the shared `base.fetch_with_backoff` since the §2.C C3 batch-1 conversion, 2026-07-08) + inline call in `compute_macro_market.py` (legacy YC call — refactor TODO).
 
 ### Bank of England — IADB
 
@@ -584,7 +584,7 @@ All tabs live in a single spreadsheet (`12nKIUGHz5euDbNQPDTVECsJBNwrceRF1ymsQrIe
 | `market_data_comp_hist` | `fetch_hist.py` | `data/market_data_comp_hist.csv` | Weekly comp prices from 1950 |
 | `macro_economic` | `fetch_macro_economic.py` | `data/macro_economic.csv` | Unified raw-macro snapshot (long-form) — every series from FRED + OECD + WB + IMF + DB.nomics + ifo, one row per series with metadata |
 | `macro_economic_hist` | `fetch_macro_economic.py` | `data/macro_economic_hist.csv` | Wide-form weekly Friday-spine history from 1947, with **15 metadata rows** above the data: Column ID, Series ID, Source, Indicator, Country, Country Name, Region, Category, Subcategory, Concept, cycle_timing, Units, Frequency, Last Updated, Last Observation (per-column last real raw observation, added 2026-07-08). Forward-fill onto the spine is bounded at 2× each series' staleness tolerance (Pattern 12) — beyond the bound a column is NaN, so a dead series visibly ends |
-| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 108-indicator snapshot (id, group, sub_group, concept, subcategory, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note). `concept` + `subcategory` added 2026-04-28 (§2.4) — drives the explorer's By-Concept sidebar view. |
+| `macro_market` | `compute_macro_market.py` | `data/macro_market.csv` | 107-indicator snapshot (id, group, sub_group, concept, subcategory, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note). `concept` + `subcategory` added 2026-04-28 (§2.4) — drives the explorer's By-Concept sidebar view. |
 | `macro_market_hist` | `compute_macro_market.py` | `data/macro_market_hist.csv` | Weekly indicator history from 2000 |
 
 ### Legacy Tabs (Auto-Deleted)
@@ -668,7 +668,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `market_data_comp_hist.csv` | ~3,990 | fetch_hist.py | Weekly prices, 10 metadata prefix rows + data |
 | `macro_economic.csv` | ~170 | fetch_macro_economic.py | Unified raw-macro snapshot (long-form) — one row per series with metadata |
 | `macro_economic_hist.csv` | ~4,150 | fetch_macro_economic.py | Wide-form weekly Friday-spine history from 1947, **15 metadata prefix rows + data** (bounded fill per Pattern 12) |
-| `macro_market.csv` | ~108 | compute_macro_market.py | Macro-market indicator snapshot |
+| `macro_market.csv` | ~107 | compute_macro_market.py | Macro-market indicator snapshot |
 | `macro_market_hist.csv` | ~1,370 | compute_macro_market.py | Weekly indicator history |
 | `macro_market_monthly_hist.csv` | ~320 | compute_macro_market.py | **NEW 2026-06-10 (forward_plan §3.14).** Month-end-sampled view of `macro_market_hist.csv`. Same wide schema (`<id>_raw` / `_zscore` / `_regime` / `_fwd_regime` per indicator), one row per month-end, each cell = the latest weekly Friday observation within that month. Produced via `df_hist.resample("ME").last()` after the weekly write — sampling only, the underlying 156-week z-score window is unchanged. Sister-file `_x.csv` follows the standard preservation contract. Stable schema for regime-AA Phase 3 Layer-1 monthly engine consumption. |
 | `equity_fundamentals.csv` | grows w/ history | fetch_data.py (SEC EDGAR phase) | **NEW 2026-06-15.** Long/tidy SEC EDGAR revenue + diluted-EPS history for the 34 US-filer pilot pure-plays. One row per (ticker, metric, fiscal period): `ticker, metric (revenue\|eps), period_end, period_type (Q\|A), value, unit, fy, fp, form, source="SEC EDGAR", retrieved`. Idempotent-merge keyed on `(ticker, metric, period_end, period_type)` — unchanged periods keep their `retrieved`, restated/new periods take the fresh value, old periods preserved on a transient miss. Isolated phase; keyless (SEC fair-access UA + ≤10 req/s). |
@@ -743,7 +743,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 
 ## 9. Module Reference
 
-### 9.1 `library_utils.py` (627 lines)
+### 9.1 `library_utils.py` (705 lines)
 
 **Role:** Shared constants and helpers — single authoritative source for sort logic, FX maps, and the Sheets tab-state frozensets used by every writer.
 
@@ -771,7 +771,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 | `write_hist_with_archive(df, path, prefix_rows=None, date_col="Date")` | function | **NEW 2026-04-30 (Stage A).** History-preservation writer. Per-column floor-advancement detection: for each column where the new fetch's earliest non-null date is later than the locally-stored earliest non-null date, the rows about to disappear are appended to `<path>_x.csv` (sister, deduped by date) before the live file is rewritten with the new (truncated) window. Used by every `*_hist.csv` writer (`fetch_data.py`, `fetch_hist.py`, `fetch_macro_economic.py`, `compute_macro_market.py`). See §11 Pattern 9. |
 | `load_hist_with_archive(path, **read_csv_kwargs)` | function | **NEW 2026-04-30 (Stage A).** History-preservation reader. Drop-in replacement for `pd.read_csv(path, ...)` that transparently unions live + sister via `combine_first` semantics — live wins on cells where it has a non-null value, sister fills cells where live is NaN. Used by `compute_macro_market.py` Phase E calculators and `docs/build_html.py` payload builders. |
 
-### 9.2 `fetch_data.py` (998 lines)
+### 9.2 `fetch_data.py` (984 lines)
 
 **Role:** Master orchestrator + both snapshot pipelines (simple + comp). After `main()` finishes, three module-level `try/except` blocks chain in `fetch_hist.run_comp_hist`, `fetch_macro_economic.run_phase_macro_economic`, and `compute_macro_market.run_phase_e` (see §3 Execution Flow).
 
@@ -841,7 +841,7 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 - **Columns** = instruments (local currency first, then USD)
 - **Metadata prefix rows** (in Sheets tabs, not in CSVs): ticker ID, variant, source, name, broad asset class, region, sub-category, currency, units, frequency — then column header row, then data
 
-### 9.4 `fetch_macro_economic.py` (1,680 lines)
+### 9.4 `fetch_macro_economic.py` (1,825 lines)
 
 **Role:** Phase ME — unified raw-macro coordinator. Replaces the four retired per-source coordinators (Phase A `fetch_macro_us_fred.py`, Phase C `fetch_macro_international.py`, Phase D Tier 2 `fetch_macro_dbnomics.py`, Phase D ifo `fetch_macro_ifo.py`) and produces one snapshot tab (`macro_economic`) plus one history tab (`macro_economic_hist`).
 
@@ -890,9 +890,9 @@ Unit-tested in `test_tier_merge.py` (cadence-first, tier tie-break, staleness fa
 
 Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → alpha_vantage → shiller → french → jst → atlanta_fed → ny_fed`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema. This read order still determines candidate-list `order` (the final tie-break inside `_select_winner`), but it no longer determines the winner outright — see the tier-aware merge above.
 
-### 9.5 `sources/` package (32 modules — 2 scaffolding-only, ~9,000 lines total)
+### 9.5 `sources/` package (33 modules — 2 scaffolding-only, ~9,200 lines total)
 
-**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added).
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added). **2026-07-08:** new module `imf_sdmx.py` (§9.5.19) added for the IMF Data Portal SDMX 2.1 API (§2.A A1, China CPI). Same day, **§2.C C3 batch 1** converted five keyless GET modules — `ecb.py`, `boc.py`, `ons.py`, `bundesbank.py`, `abs.py` — from an identical hand-rolled retry loop to the shared `sources/base.fetch_with_backoff` helper, each shrinking by ~15-20 lines (`ecb.py` 230→213, `boc.py` 183→165, `ons.py` 218→200, `bundesbank.py` 218→201, `abs.py` 206→189); `imf_sdmx.py` was written directly on the shared helper. Remaining C3 conversions are tracked in `forward_plan.md` §2.C C3.
 
 **Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → alpha_vantage → shiller → french → jst → atlanta_fed → ny_fed`. Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Per `col`, the winning source is now chosen by the tier-aware, cadence-first, staleness-fallback merge (`_select_winner` / `_dedupe_snapshot_rows`, §9.4) rather than a plain last-writer-wins rule — this read order only supplies the final tie-break.
 
@@ -1013,14 +1013,14 @@ Bank of England Interactive Statistical Database (IADB) fetcher. Direct CSV down
 
 Uses a Chrome-like User-Agent — IADB's WAF blocks the default `python-requests` UA.
 
-#### 9.5.10 `sources/ecb.py` (230 lines, Stage D)
+#### 9.5.10 `sources/ecb.py` (213 lines, Stage D; retry loop replaced by shared `base.fetch_with_backoff` §2.C C3, 2026-07-08)
 
 ECB Data Portal fetcher. SDMX 2.1 over REST. Distinct from the legacy inline ECB call in `compute_macro_market.py::fetch_ecb_euro_ig_spread()` (which is not yet refactored through this module).
 
 | Function | Purpose |
 |---|---|
 | `load_library()` | Read `data/macro_library_ecb.csv` |
-| `fetch_series(series_id, start, ..., last_n=None)` | GET against `https://data-api.ecb.europa.eu/service/data`. `series_id` is `<DATASET>/<KEY>`. `last_n` optionally appends `&lastNObservations=N` for fast snapshot calls (used at snapshot time to avoid timeout on cold ECB cache). |
+| `fetch_series(series_id, start, ..., last_n=None)` | Delegates to `base.fetch_with_backoff` against `https://data-api.ecb.europa.eu/service/data`. `series_id` is `<DATASET>/<KEY>`. `last_n` optionally appends `&lastNObservations=N` for fast snapshot calls (used at snapshot time to avoid timeout on cold ECB cache). |
 | `parse_csv(text, series_id)` | Read TIME_PERIOD + OBS_VALUE columns; dimension columns ignored |
 | `_parse_period(p)` | Daily / monthly / quarterly / annual ECB period parser |
 | `fetch_series_as_pandas(series_id, ..., last_n=None)` | Convenience wrapper |
@@ -1057,14 +1057,14 @@ Statistics Bureau of Japan e-Stat fetcher. JSON REST API; reads `ESTAT_APP_ID` f
 
 Falls back gracefully if `ESTAT_APP_ID` env var is missing.
 
-#### 9.5.13 `sources/boc.py` (183 lines, 2026-05-28)
+#### 9.5.13 `sources/boc.py` (165 lines, 2026-05-28; retry loop replaced by shared `base.fetch_with_backoff` §2.C C3, 2026-07-08)
 
 Bank of Canada Valet API fetcher. Keyless JSON. Series names are Valet identifiers (e.g. `V39079`).
 
 | Function | Purpose |
 |---|---|
 | `load_library()` | Read `data/macro_library_boc.csv` |
-| `fetch_series(series_name, recent, start_date, ...)` | GET against the Valet observations endpoint; uses `recent=N` for snapshot, `start_date=` for history |
+| `fetch_series(series_name, recent, start_date, ...)` | Delegates to `base.fetch_with_backoff` against the Valet observations endpoint; uses `recent=N` for snapshot, `start_date=` for history |
 | `parse_json(doc, series_name)` | Extract `(date, value)` tuples from the `observations` array |
 | `fetch_series_as_pandas(series_name, ...)` | Convenience wrapper |
 
@@ -1079,36 +1079,36 @@ Statistics Canada WDS POST API fetcher. Keyless. Vector IDs are numeric (e.g. `4
 | `parse_json(doc, vector_id)` | Extract `(refPer, value)` tuples from the `vectorDataPoint` array |
 | `fetch_series_as_pandas(vector_id, ...)` | Convenience wrapper |
 
-#### 9.5.15 `sources/ons.py` (218 lines, 2026-05-28)
+#### 9.5.15 `sources/ons.py` (200 lines, 2026-05-28; retry loop replaced by shared `base.fetch_with_backoff` §2.C C3, 2026-07-08)
 
 UK ONS Zebedee /data API fetcher. Keyless JSON. The legacy `api.ons.gov.uk` host was decommissioned 2024-11-25.
 
 | Function | Purpose |
 |---|---|
 | `load_library()` | Read `data/macro_library_ons.csv` |
-| `fetch_series(series_id, ...)` | GET against `https://api.beta.ons.gov.uk/v1/data?uri=<series_id>` |
+| `fetch_series(series_id, ...)` | Delegates to `base.fetch_with_backoff` against `https://api.beta.ons.gov.uk/v1/data?uri=<series_id>` |
 | `parse_json(doc, series_id)` | Pick finest non-empty frequency array (months > quarters > years); parse period strings to dates |
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
-#### 9.5.16 `sources/bundesbank.py` (218 lines, 2026-05-28)
+#### 9.5.16 `sources/bundesbank.py` (201 lines, 2026-05-28; retry loop replaced by shared `base.fetch_with_backoff` §2.C C3, 2026-07-08)
 
 Deutsche Bundesbank SDMX-ML REST API fetcher. Keyless. All dimension values required in the key (JSON/CSV return HTTP 406).
 
 | Function | Purpose |
 |---|---|
 | `load_library()` | Read `data/macro_library_bundesbank.csv` |
-| `fetch_series(series_id, last_n, ...)` | GET against `https://api.statistiken.bundesbank.de/rest/data/<flow>/<key>` |
+| `fetch_series(series_id, last_n, ...)` | Delegates to `base.fetch_with_backoff` against `https://api.statistiken.bundesbank.de/rest/data/<flow>/<key>` |
 | `parse_xml(text, series_id)` | SDMX generic-data XML → `list[(date, float)]` |
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
-#### 9.5.17 `sources/abs.py` (206 lines, 2026-05-28)
+#### 9.5.17 `sources/abs.py` (189 lines, 2026-05-28; retry loop replaced by shared `base.fetch_with_backoff` §2.C C3, 2026-07-08)
 
 Australian Bureau of Statistics SDMX-CSV API fetcher. Keyless. Same CSV shape as the ECB Data Portal (TIME_PERIOD + OBS_VALUE columns).
 
 | Function | Purpose |
 |---|---|
 | `load_library()` | Read `data/macro_library_abs.csv` |
-| `fetch_series(series_id, last_n, ...)` | GET against `https://data.api.abs.gov.au/rest/data/<flow>/<key>` with `Accept: text/csv` |
+| `fetch_series(series_id, last_n, ...)` | Delegates to `base.fetch_with_backoff` against `https://data.api.abs.gov.au/rest/data/<flow>/<key>` with `Accept: text/csv` |
 | `parse_csv(text, series_id)` | Read TIME_PERIOD + OBS_VALUE columns |
 | `fetch_series_as_pandas(series_id, ...)` | Convenience wrapper |
 
@@ -1247,15 +1247,15 @@ New York Fed Staff Nowcast keyless Excel fetcher. Downloads the full forecast-hi
 
 Smoke test: `test_ny_fed_smoke.py` (daily CI step — SKIPs when the NY Fed medialibrary host is unreachable from the runner).
 
-### 9.6 `compute_macro_market.py` (2,546 lines)
+### 9.6 `compute_macro_market.py` (2,567 lines)
 
-**Role:** Phase E — 108 composite macro-market indicators with z-scores, regime classifications, forward regime signals, and z-score trend diagnostics. Also writes the month-end-sampled `macro_market_monthly_hist.csv` consumed by regime-AA Phase 3 (§3.14).
+**Role:** Phase E — 107 composite macro-market indicators with z-scores, regime classifications, forward regime signals, and z-score trend diagnostics. Also writes the month-end-sampled `macro_market_monthly_hist.csv` consumed by regime-AA Phase 3 (§3.14).
 
 All indicator metadata is loaded from `macro_indicator_library.csv` at import time — no hardcoded indicator definitions in Python. The CSV is the single source of truth for `id`, `category`, `group`, `sub_group`, `naturally_leading`, `formula_using_library_names`, `economic_interpretation`, `regime_classification`, and `cycle_timing`.
 
 As of the 2026-04-26 supplemental refactor (commit `48c8c1c`) and the 2026-04-27 EU_Cr1 fix-forward, **this module contains zero direct API contact for FRED**. Every FRED series the calculators read is provisioned through the unified `macro_economic_hist` (built by `fetch_macro_economic.py`) and looked up by column name via `_get_col(mu, "<col>")`. The only direct API contact remaining is `fetch_ecb_euro_ig_spread()` (ECB Data Portal — too deeply nested to live in `macro_library_*.csv`) and `fetch_fxi_prices()` (yfinance FXI denominator for `AS_G1`).
 
-#### Indicator Families (108 total)
+#### Indicator Families (107 total)
 
 | Group | Sub-group(s) | IDs | Description |
 |---|---|---|---|
@@ -1311,11 +1311,11 @@ Each indicator goes through:
 | `_r(raw, z, pos_z, neg_z, pos_label, neg_label, neutral)` | Standard 3-bucket regime helper used by most `REGIME_RULES` lambdas |
 | `_assign_regime(ind_id, raw, z)` / `_assign_fwd_regime(ind_id, z_slope)` | Apply the regime rule and the forward-regime classification for one indicator |
 | `make_result(raw, ind_id)` | Wrap a raw weekly Series into the per-indicator DataFrame (`raw`, `zscore`, `regime`, `fwd_regime`) |
-| `compute_all_indicators(cp, mu, mi, supp, dbn)` | Orchestrate all 108 indicator calculations under one try/except per indicator |
+| `compute_all_indicators(cp, mu, mi, supp, dbn)` | Orchestrate all 107 indicator calculations under one try/except per indicator |
 | `_zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w)` | Classify recent z-score trajectory as `intensifying` (rising in magnitude vs 1w/4w and near the 13-week peak), `fading` (`\|z_now\| < 0.9 × \|z_4w\|`), `reversing` (sign flip vs 4w ago from a prior `\|z\| > 0.5`), or `stable`. |
 | `_sample_z(df, offset_weeks)` | Return zscore value `offset_weeks` Friday rows before the last non-null raw row (used to sample 1w/4w/13w history for trend classification). |
 | `build_snapshot_df(results)` | One row per indicator: id, group, sub_group, category, last_date, raw, zscore, zscore_1w_ago, zscore_4w_ago, zscore_13w_ago, zscore_peak_abs_13w, zscore_trend, regime, fwd_regime, formula_note |
-| `build_hist_df(results)` | One row per date × ~432 columns (108 indicators × 4 values: raw, zscore, regime, fwd_regime). `pd.concat(...).copy()` defragments the wide frame to silence pandas `PerformanceWarning`s in the downstream `reset_index()`. |
+| `build_hist_df(results)` | One row per date × ~428 columns (107 indicators × 4 values: raw, zscore, regime, fwd_regime). `pd.concat(...).copy()` defragments the wide frame to silence pandas `PerformanceWarning`s in the downstream `reset_index()`. |
 | `push_macro_to_google_sheets(df_snapshot, df_hist)` | Write `macro_market` and `macro_market_hist` tabs to Sheets (checks `SHEETS_PROTECTED_TABS`) |
 | `run_phase_e()` | **Entry point** — load inputs, compute, save + push. **2026-06-10 (§3.14):** after the weekly hist is written, additionally writes a month-end-sampled view via `df_hist.resample("ME").last()` into `MONTHLY_HIST_CSV` (`data/macro_market_monthly_hist.csv`). Sampling only — the underlying 156-week z-score window in `_rolling_zscore` is unchanged. Sister-file `_x.csv` follows the standard preservation contract via `write_hist_with_archive`. Stable schema for regime-AA Phase 3 Layer-1 monthly engine consumption. |
 
@@ -1330,10 +1330,10 @@ Each indicator goes through:
 | `_FWD_SLOPE_POS` | +0.15 | Weekly z-score slope threshold for `improving` |
 | `_FWD_SLOPE_NEG` | -0.15 | Weekly z-score slope threshold for `deteriorating` |
 | `ECB_BASE_URL` | `https://data-api.ecb.europa.eu/service/data` | ECB Data Portal SDMX REST endpoint |
-| `INDICATOR_META` | dict | Maps 108 IDs to `(group, sub_group, category, formula_note, concept, subcategory)` — 6-tuple loaded from CSV. `concept` and `subcategory` were added 2026-04-28 (§2.4) and propagate into the `macro_market.csv` snapshot output. |
+| `INDICATOR_META` | dict | Maps 107 IDs to `(group, sub_group, category, formula_note, concept, subcategory)` — 6-tuple loaded from CSV. `concept` and `subcategory` were added 2026-04-28 (§2.4) and propagate into the `macro_market.csv` snapshot output. |
 | `ALL_INDICATOR_IDS` | list | Ordered indicator IDs (CSV row order) |
 | `NATURALLY_LEADING` | frozenset | IDs flagged as naturally leading in the CSV |
-| `REGIME_RULES` | dict | Maps 108 IDs to regime classification lambdas |
+| `REGIME_RULES` | dict | Maps 107 IDs to regime classification lambdas |
 | `_US_CALCULATORS` | dict | US indicator calculator functions |
 | `_EU_CALCULATORS` | dict | Europe/UK indicator calculator functions (incl. EU_Cr2) |
 | `_ASIA_REGIONAL_CALCULATORS` | dict | Asia/Global/FX indicator calculator functions |
