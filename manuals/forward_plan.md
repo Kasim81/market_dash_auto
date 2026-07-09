@@ -1195,6 +1195,38 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 
 ---
 
+### 3.19 Phase-1 data coverage: monthly growth & inflation per region, 1946+ scope (regime-AA-driven, HIGH — ✅ 2026-07-09)
+
+> **Work order:** regime-aa memo `2026-07-08-monthly-growth-inflation-cadence`, **rewritten 2026-07-09** as the Phase-1 coverage list (8 items). Much of it was already delivered by §3.18 / earlier sessions; this section records the item-by-item disposition so the memo can be closed against it.
+
+**Already delivered before this session (verified against committed hist 2026-07-09):**
+
+- **Item 1a/1b (UK growth):** `GBR_IND_PROD` monthly **1948-01+** (ONS K222, wired 2026-06-10) and `GBR_GDP_MONTHLY` **1997-01+** (ONS ECY2, wired 2026-06-11) — both live in committed hist.
+- **Item 2 (CAN):** `CAN_GDP_MONTHLY` monthly **1997-01+** (StatCan v65201210) + `CAN_EMPLOYMENT` monthly **1976-01+** (v2062811); `CAN_CPI_INDEX` reaches **1914+** upstream (1946-12+ on the committed spine). CHE/NLD/FRA growth columns delivered by §3.18.
+- **Item 3 (EA19):** `EZ_IND_PROD` → **1991-01** and `EZ_RETAIL_VOL` → **2000-01** verified live via ECB STBS on 2026-07-09 (committed hist still shows 2025-01+ until the next daily regen fills it). Retail's 2000 start is an STBS series limit, not a fetch window — the deflated-turnover index simply starts there; documented as-is.
+- **Item 6 (quarterly real GDP levels):** DEU/JPN/ITA/CHE/NLD (§3.18 IMF QNEA) + `EA_GDP_INDEX` (ECB MNA) + `GBR_GDP_REAL` (ONS ABMI, 1955+) + `AUS_GDP_REAL` (ABS ANA_AGG) already wired — only CAN was missing (closed below).
+- **Item 7 (dating):** Pattern 13 already records the reference-start/reference-end contract (§3.18.4); option chosen was "document per-column", full re-dating deferred to §5 multifreq.
+
+**Completed 2026-07-09 (this session; new columns materialise on the first post-merge daily run):**
+
+1. **Item 1c — UK deep monthly inflation:** `GBR_RPI_YOY` (ONS CZBH, RPI all-items 12-month rate, monthly **1948-06+**, n=936 — the deepest monthly UK inflation rate; CPI/CPIH start 1989/1988) + companion `GBR_RPI` index level (ONS CHAW, Jan-1987=100, monthly 1987-01+ — the Zebedee monthly series starts at the index base). Both verified live 2026-07-09 (3.1% / 415.3 @ 2026-05). RPI's known formula effect (~+0.9pp vs CPI long-run; de-designated 2013) is noted in the library row — depth is the point.
+2. **Item 5 — DEU pre-1997 monthly CPI:** `DEU_CPI_INDEX` ← `IMF.STA,CPI/DEU.CPI._T.IX.M` (national all-items, 2020=100, monthly **1955-01 → 2026-05**, n=857, verified live). Kills the 1996/97 floor on German inflation depth (`DEU_HICP_INDEX`/`DEU_CPI_YOY`). Discovery note: IMF.STA flows return only 1990+ unless `startPeriod` is passed — `DEFAULT_HIST_START=1947-01-01` (§3.18.5) is what makes the regen pull full depth.
+3. **Item 6 (CAN gap) — quarterly real GDP level:** `CAN_GDP_INDEX` ← `IMF.STA,QNEA/CAN.B1GQ.Q.SA.XDC.Q` (chained volume SA, CAD units, **1961-Q1 → 2026-Q1**, verified live). StatCan tier-0 upgrade (table 36-10-0104) possible later.
+4. **Item 4 — AUS monthly CPI + growth proxy:** `AUS_CPI_MONTHLY` ← ABS `CPI/1.10001.10.50.M` — the **complete monthly CPI** the ABS introduced with the Nov-2025 cycle (better than the memo's expected "indicator, 2022+"): live 2024-04+, with the frozen `CPI_M` indicator (2017-09 → 2025-09; froze when the complete series replaced it) ratio-spliced into the sister for 2017-09 → 2024-03 depth (`scripts/backfill_aus_cpi_monthly.py`, ratio 0.77904, drift 0.17%, seam step +0.77%; donor ledgered in `source_fallbacks.csv`). **Before 2017-09 Australia has no monthly CPI at any source — quarterly `AUS_CPI_INDEX` (1948-09+) is the documented fallback.** Growth proxy: `AUS_EMPLOYMENT` ← `LF/M3.3.1599.20.AUS.M` (employed persons total 15+ SA, monthly **1978-02+**; M3 is the total — M1 is full-time only). `AUS_UNEMPLOYMENT`/`AUS_PART_RATE` monthly 1978+ were already live.
+5. **Item 7 (extension):** Pattern 13 table extended — ABS added to the reference-start family (quarterly dated at the 1st of the quarter's *last* month, like ECB), all six new columns recorded as reference-start from birth, and the AUS sister seed noted as dating-uniform across its seam.
+
+**Deferred (unchanged or newly noted):**
+
+- **Item 2 — CHE monthly proxy:** unchanged from §3.18 — KOF barometer needs an API key and is a sentiment composite, not realized growth; CHE stays quarterly (`CHE_IND_PROD` + `CHE_GDP_INDEX`) with monthly `CHE_CPI_YOY`. Revisit only on a specific regime-aa need (credentialed/Codespace session).
+- **IMF PI `CAN.IND.SA_IX.M`** probed and rejected: frozen at 2023-10 (StatCan monthly GDP + employment are the live CAN monthly growth feeds).
+- **AUS pre-2017 monthly CPI:** does not exist upstream; accepted limitation (quarterly before 2017-09, monthly-indicator-quality 2017-09→2024-03, complete monthly CPI after).
+- **`EZ_RETAIL_VOL` pre-2000:** STBS carries nothing earlier for the deflated index; accepted (memo asked ~1991 "where the flow allows").
+- Tier-0 upgrades and OECD-QNA deeper GDP levels: as listed under §3.18 deferred.
+
+**Acceptance check (memo wording → status):** monthly growth ≥1 series per region at max depth — ✅ all 10 regions + EA19 (CHE quarterly, documented) · monthly inflation at max depth — ✅ GBR 1948+, DEU 1955+, AUS 2017+ (doc'd), others already deep · quarterly GDP levels for the 9 economies — ✅ all nine + EA19 · dating convention — ✅ documented per column (Pattern 13, extended) · forward_plan §3.x entry marking done-vs-deferred — ✅ this section.
+
+---
+
 ## 4. Project Chronology
 
 **Priority:** Low — useful project history but doesn't move the pipeline forward.
