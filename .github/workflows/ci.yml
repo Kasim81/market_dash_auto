@@ -38,4 +38,5 @@ jobs:
             test_atlanta_fed_parse \
             test_estat_parse \
             test_ism_prnewswire_parse \
-            test_bounded_fill
+            test_bounded_fill \
+            test_source_registry

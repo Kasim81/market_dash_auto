@@ -138,36 +138,11 @@ def sync_comp(confirm: bool) -> int:
 #   World Bank, IMF:       col_id = f"{country}_{col}" for each of the 12 countries
 
 MACRO_ECON_HIST = DATA / "macro_economic_hist.csv"
-MACRO_LIBS = {
-    "fred":      DATA / "macro_library_fred.csv",
-    "oecd":      DATA / "macro_library_oecd.csv",
-    "worldbank": DATA / "macro_library_worldbank.csv",
-    "imf":       DATA / "macro_library_imf.csv",
-    "dbnomics":  DATA / "macro_library_dbnomics.csv",
-    "ifo":       DATA / "macro_library_ifo.csv",
-    "boe":       DATA / "macro_library_boe.csv",
-    "ecb":       DATA / "macro_library_ecb.csv",
-    "boj":       DATA / "macro_library_boj.csv",
-    "estat":     DATA / "macro_library_estat.csv",
-    "nasdaqdl":  DATA / "macro_library_nasdaqdl.csv",
-    "lbma":      DATA / "macro_library_lbma.csv",
-    "boc":       DATA / "macro_library_boc.csv",
-    "statcan":   DATA / "macro_library_statcan.csv",
-    "ons":       DATA / "macro_library_ons.csv",
-    "bundesbank": DATA / "macro_library_bundesbank.csv",
-    "abs":       DATA / "macro_library_abs.csv",
-    "istat":     DATA / "macro_library_istat.csv",
-    "bls":       DATA / "macro_library_bls.csv",
-    "insee":     DATA / "macro_library_insee.csv",
-    "bdf":       DATA / "macro_library_bdf.csv",
-    "alpha_vantage": DATA / "macro_library_alpha_vantage.csv",
-    "shiller":   DATA / "macro_library_shiller.csv",
-    "french":    DATA / "macro_library_french.csv",
-    "jst":       DATA / "macro_library_jst.csv",
-    "atlanta_fed": DATA / "macro_library_atlanta_fed.csv",
-    "ny_fed":      DATA / "macro_library_ny_fed.csv",
-    "imf_sdmx":    DATA / "macro_library_imf_sdmx.csv",
-}
+# Derived from the shared identity table (sources.SOURCE_REGISTRY, §2.C C2) —
+# a new source registered there is automatically covered by the sync.
+from sources import LABEL_BY_STEM as _LABEL_BY_STEM  # noqa: E402
+
+MACRO_LIBS = {stem: DATA / f"macro_library_{stem}.csv" for stem in _LABEL_BY_STEM}
 COUNTRIES_LIB = DATA / "macro_library_countries.csv"
 
 
@@ -187,10 +162,9 @@ def _macro_econ_expected() -> set[str]:
     # (BoC, StatCan, ONS, Bundesbank, ABS, ISTAT, BLS), the 2026-06-09 batch
     # (INSEE, BdF), and the 2026-06-10 §3.13 long-run + §3.3 PE batch
     # (Alpha Vantage, Shiller, KenFrench, JST).
-    for src in ("fred", "dbnomics", "ifo", "boe", "ecb", "boj", "estat", "nasdaqdl", "lbma",
-                "boc", "statcan", "ons", "bundesbank", "abs", "istat", "bls",
-                "insee", "bdf", "alpha_vantage", "shiller", "french", "jst",
-                "atlanta_fed", "ny_fed", "imf_sdmx"):
+    # Every registered source except the three multi-country fan-outs
+    # (OECD / World Bank / IMF), which are expanded per country below.
+    for src in sorted(set(MACRO_LIBS) - {"oecd", "worldbank", "imf"}):
         path = MACRO_LIBS[src]
         if not path.exists():
             continue

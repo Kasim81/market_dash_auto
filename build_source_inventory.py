@@ -19,17 +19,11 @@ DATA = "data"
 OUT = "manuals/source_inventory_audit.xlsx"
 
 # ---- filename -> canonical source label (matches the loaders' "source") ----
-FILE_SOURCE = {
-    "abs": "ABS", "alpha_vantage": "Alpha Vantage", "atlanta_fed": "AtlantaFed",
-    "bdf": "Banque de France", "bls": "BLS", "boc": "BoC", "boe": "BoE",
-    "boj": "BoJ", "bundesbank": "Bundesbank", "dbnomics": "DB.nomics", "ecb": "ECB",
-    "estat": "e-Stat", "fred": "FRED", "french": "French", "ifo": "ifo", "imf": "IMF",
-    "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
-    "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
-    "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
-    "imf_sdmx": "IMF SDMX",
-}
-FANOUT = {"World Bank", "OECD", "IMF"}
+# Derived from the shared identity table (sources.SOURCE_REGISTRY, §2.C C2).
+# The previous hand-copied dict here carried "french": "French" while the
+# loader emits "KenFrench" — exactly the drift class the shared table kills.
+from sources import LABEL_BY_STEM as FILE_SOURCE  # noqa: E402
+from sources import FANOUT_LABELS as FANOUT  # noqa: E402
 SKIP_FILES = {"countries", "sec_edgar"}  # not macro sources / different schema
 
 _CAD_ORDER = {"daily": 0, "business daily": 0, "weekly": 1, "monthly": 2,

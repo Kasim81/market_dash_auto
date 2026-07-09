@@ -62,7 +62,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 market_dash_auto/
 ├── fetch_data.py                  # Master orchestrator — runs all phases (984 lines)
 ├── fetch_hist.py                  # Comp-pipeline weekly history (781 lines)
-├── fetch_macro_economic.py        # Unified raw-macro coordinator (1,825 lines)
+├── fetch_macro_economic.py        # Unified raw-macro coordinator (~1,300 lines; §2.C C2 registry dispatch — _SOURCE_HANDLERS + _make_source_handlers replaced the two 27-branch ladders and ~42 template wrappers)
 ├── compute_macro_market.py        # 107 macro-market composite indicators + monthly-hist writer (2,567 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (705 lines)
 ├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
@@ -75,7 +75,7 @@ market_dash_auto/
 ├── README.md
 │
 ├── sources/                       # Per-source raw-macro fetchers (called by fetch_macro_economic.py)
-│   ├── __init__.py
+│   ├── __init__.py                    # SOURCE_REGISTRY — the single label/stem/module identity table every tool derives from (§2.C C2, 2026-07-09)
 │   ├── base.py                        # Shared HTTP/Sheets/CSV plumbing (226 lines)
 │   ├── countries.py                   # 14-country code registry (54 lines)
 │   ├── fred.py                        # FRED REST API fetcher (423 lines)
