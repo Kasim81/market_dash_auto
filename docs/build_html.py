@@ -388,17 +388,20 @@ def load_countries() -> list[dict]:
 # ── 7. market_data_comp_hist ──────────────────────────────────────────────────
 
 def build_market_comp() -> dict:
-    # rows 0-10 = metadata, row 11 = headers, row 12+ = data.
+    # Metadata rows, then header row, then data — prefix count sniffed
+    # (11-row and 12-row generations coexist per §2.A A16).
     # Per §3.1.1: data is unioned with the sister; sister can contribute
     # columns that today's live doesn't have (e.g. when a fetch failed).
     # Read metadata from BOTH prefixes and key by column name to keep the
     # lookup robust to schema mismatches.
-    meta_live = pd.read_csv(MKT_COMP, header=None, nrows=11, low_memory=False)
+    n_live = sniff_hist_prefix_rows(str(MKT_COMP)) or 11
+    meta_live = pd.read_csv(MKT_COMP, header=None, nrows=n_live, low_memory=False)
     sister_path = MKT_COMP.with_name(MKT_COMP.name.replace("_hist.csv", "_hist_x.csv"))
     meta_sister = None
     if sister_path.exists():
         try:
-            meta_sister = pd.read_csv(sister_path, header=None, nrows=11, low_memory=False)
+            n_sis = sniff_hist_prefix_rows(str(sister_path)) or 11
+            meta_sister = pd.read_csv(sister_path, header=None, nrows=n_sis, low_memory=False)
         except Exception as e:
             print(f"  [build_html] WARN reading sister metadata {sister_path}: {e}")
 

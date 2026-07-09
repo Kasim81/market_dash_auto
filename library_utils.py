@@ -442,6 +442,33 @@ def _sister_path(path):
     return path[: -len("_hist.csv")] + "_hist_x.csv"
 
 
+def bounded_spine_fill(series, spine, limit_days):
+    """Snap a raw series onto a date spine with forward-fill bounded at
+    ``limit_days`` past the underlying observation: each spine cell keeps the
+    most recent raw value only while that observation is at most limit_days
+    old, and is NaN otherwise. Bounds interior gaps and trailing fill alike,
+    measured in days against the raw observation dates — exact, no
+    value-change archaeology, so constant-valued live series are never
+    touched (tech_manual §11 Pattern 12; shared by fetch_macro_economic and
+    fetch_hist since §2.A A16)."""
+    filled = (
+        series.reindex(spine.union(series.index)).sort_index()
+        .ffill().reindex(spine)
+    )
+    nonnull = series.dropna()
+    if nonnull.empty:
+        return filled
+    obs = nonnull.index.sort_values()
+    last_obs_asof = (
+        _hp_pd.Series(obs, index=obs)
+        .reindex(spine.union(obs)).sort_index().ffill().reindex(spine)
+    )
+    age_days = _hp_pd.Series(
+        (spine - _hp_pd.DatetimeIndex(last_obs_asof)).days, index=spine
+    )
+    return filled.where(age_days.le(limit_days))
+
+
 def sniff_hist_prefix_rows(path, date_col="Date", max_scan=40):
     """Count the metadata rows before a hist CSV's header row (the first row
     whose first cell is exactly ``date_col``). Returns None if no header row
