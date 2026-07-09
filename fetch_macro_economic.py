@@ -271,17 +271,9 @@ def _source_rank(source: str) -> int:
 # ---------------------------------------------------------------------------
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-# filename stem -> the `source` label the loaders emit (for the tier join)
-_FILE_SOURCE = {
-    "abs": "ABS", "alpha_vantage": "Alpha Vantage", "atlanta_fed": "AtlantaFed",
-    "bdf": "Banque de France", "bls": "BLS", "boc": "BoC", "boe": "BoE",
-    "boj": "BoJ", "bundesbank": "Bundesbank", "dbnomics": "DB.nomics", "ecb": "ECB",
-    "estat": "e-Stat", "fred": "FRED", "french": "KenFrench", "ifo": "ifo", "imf": "IMF",
-    "insee": "INSEE", "istat": "ISTAT", "jst": "JST", "lbma": "LBMA",
-    "nasdaqdl": "Nasdaq Data Link", "ny_fed": "NYFed", "oecd": "OECD", "ons": "ONS",
-    "shiller": "Shiller", "statcan": "StatCan", "worldbank": "World Bank",
-    "imf_sdmx": "IMF SDMX",
-}
+# filename stem -> the `source` label the loaders emit (for the tier join).
+# Derived from the shared identity table (§2.C C2) — one registration point.
+from sources import LABEL_BY_STEM as _FILE_SOURCE  # noqa: E402
 
 
 def _load_tier_map() -> dict[tuple[str, str], int]:
@@ -661,195 +653,32 @@ def _fetch_dbnomics_snapshot(indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
-# -- BoE IADB snapshot --
-
-BOE_DELAY = 0.6  # seconds between BoE IADB calls
-
-
-def _fetch_boe_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = boe_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(BOE_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- ECB Data Portal snapshot --
-
-ECB_DELAY = 0.6  # seconds between ECB Data Portal calls
-
-
-def _fetch_ecb_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    # last_n=2 keeps the response small (latest + prior) so we don't need a
-    # 60s timeout window for the snapshot call. History pulls full series.
-    s = ecb_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
-    time.sleep(ECB_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- Bank of Canada Valet snapshot --
-
-BOC_DELAY = 0.4  # seconds between BoC Valet calls
-
-
-def _fetch_boc_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = boc_src.fetch_series_as_pandas(indic["source_id"], recent=2)
-    time.sleep(BOC_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- StatCan WDS snapshot --
-
-STATCAN_DELAY = 0.4  # seconds between StatCan WDS calls
-
-
-def _fetch_statcan_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = statcan_src.fetch_series_as_pandas(indic["source_id"], latest_n=2)
-    time.sleep(STATCAN_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- ONS snapshot --
-
-ONS_DELAY = 0.4  # seconds between ONS calls
-
-
-def _fetch_ons_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    # ONS /data returns the full series in one small JSON; no last_n param.
-    s = ons_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(ONS_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- Bundesbank snapshot --
-
-BUNDESBANK_DELAY = 0.4  # seconds between Bundesbank calls
-
-
-def _fetch_bundesbank_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
-    time.sleep(BUNDESBANK_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- ABS snapshot --
-
-ABS_DELAY = 0.4  # seconds between ABS calls
-
-
-def _fetch_abs_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = abs_src.fetch_series_as_pandas(indic["source_id"], last_n=2)
-    time.sleep(ABS_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- ISTAT snapshot --
-
-ISTAT_DELAY = 0.6  # seconds between ISTAT calls (flaky gateway — go gentle)
-
-
-def _fetch_istat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = istat_src.fetch_series_as_pandas(indic["source_id"], last_n=3)
-    time.sleep(ISTAT_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- BLS snapshot --
-
-BLS_DELAY = 0.5  # seconds between BLS API calls
-
-
-def _fetch_bls_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = bls_src.fetch_series_as_pandas(indic["source_id"], recent=True)
-    time.sleep(BLS_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- INSEE / Banque de France snapshots --
-# National statistical offices wired as PRIMARY sources for FRA. INSEE is keyless
-# and curated; Banque de France no-ops gracefully until BDF_API_KEY is present.
-
-INSEE_DELAY = 0.5  # seconds between INSEE API calls
-BDF_DELAY   = 0.5  # seconds between Banque de France API calls
+# -- Standard per-series sources: delays + shared handler factory ----------
+#
+# Per-source politeness delays (seconds between API calls). The §3.13
+# long-run sources (Shiller / Ken French / JST / the Fed nowcasts) cache one
+# workbook/ZIP/.dta per process so the whole library costs one download —
+# their delay only matters between distinct downloads, keep it short.
+BOE_DELAY = 0.6
+ECB_DELAY = 0.6
+BOC_DELAY = 0.4
+STATCAN_DELAY = 0.4
+ONS_DELAY = 0.4
+BUNDESBANK_DELAY = 0.4
+ABS_DELAY = 0.4
+ISTAT_DELAY = 0.6   # flaky gateway — go gentle
+BLS_DELAY = 0.5
+INSEE_DELAY = 0.5
+BDF_DELAY = 0.5
+BOJ_DELAY = 0.6
+ESTAT_DELAY = 0.6
+NDL_DELAY = 0.6
+LBMA_DELAY = 0.6
+SHILLER_DELAY = 0.1
+FRENCH_DELAY = 0.1
+JST_DELAY = 0.1
+ATLANTA_FED_DELAY = 0.1
+NY_FED_DELAY = 0.1
 
 
 def _snapshot_from_series(s, indic: dict, fetched_at: str) -> list[dict]:
@@ -866,151 +695,45 @@ def _snapshot_from_series(s, indic: dict, fetched_at: str) -> list[dict]:
                       latest, prior, last_period, fetched_at)]
 
 
-def _fetch_insee_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = insee_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(INSEE_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
+def _make_source_handlers(mod, delay: float, snapshot_kwargs: dict | None = None,
+                          sub_field_default: str | None = None):
+    """Build the (snapshot, history) handler pair for a standard single-series
+    source module exposing ``fetch_series_as_pandas(series_id, ...)``.
 
+    §2.C C2 (2026-07-09): this factory replaced ~21 pairs of near-identical
+    hand-written ``_fetch_<src>_{snapshot,history}`` wrappers. Per-source
+    variation is carried in the arguments:
 
-def _fetch_bdf_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = bdf_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(BDF_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
+    snapshot_kwargs    — extra kwargs for the *snapshot* call only (the
+                         source-specific "just the latest couple of points"
+                         fast path, e.g. ``{"last_n": 2}`` for ECB or
+                         ``{"recent": True}`` for BLS). History always pulls
+                         the full series.
+    sub_field_default  — for modules whose fetch takes a ``sub_field``
+                         (Nasdaq Data Link ``""``, LBMA ``"USD"``): forwarded
+                         from the indicator row with this default, on both
+                         snapshot and history calls.
+    """
+    snap_kw = dict(snapshot_kwargs or {})
 
+    def snapshot(indic: dict, fetched_at: str) -> list[dict]:
+        kw = dict(snap_kw)
+        if sub_field_default is not None:
+            kw["sub_field"] = indic.get("sub_field", sub_field_default)
+        s = mod.fetch_series_as_pandas(indic["source_id"], **kw)
+        time.sleep(delay)
+        return _snapshot_from_series(s, indic, fetched_at)
 
-# -- §3.13 long-run sources (Shiller / Ken French / JST) snapshot --
-#
-# These three sources each cache a single workbook/ZIP/.dta per process so the
-# whole library hits one network round-trip total — the delay only matters
-# between distinct downloads, not between successive series within one source.
-# Keep the delay short.
-SHILLER_DELAY    = 0.1
-FRENCH_DELAY     = 0.1
-JST_DELAY        = 0.1
-ATLANTA_FED_DELAY = 0.1
-NY_FED_DELAY     = 0.1
+    def history(indic: dict) -> dict[str, pd.Series]:
+        kw = {}
+        if sub_field_default is not None:
+            kw["sub_field"] = indic.get("sub_field", sub_field_default)
+        s = mod.fetch_series_as_pandas(indic["source_id"],
+                                       col_name=indic["col"], **kw)
+        time.sleep(delay)
+        return {indic["col"]: s} if s is not None and not s.empty else {}
 
-
-def _fetch_shiller_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = shiller_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(SHILLER_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_french_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = french_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(FRENCH_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_jst_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = jst_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(JST_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_atlanta_fed_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = atlanta_fed_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(ATLANTA_FED_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_ny_fed_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = ny_fed_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(NY_FED_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-def _fetch_imf_sdmx_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = imf_sdmx_src.fetch_series_as_pandas(indic["source_id"], last_n=13)
-    time.sleep(imf_sdmx_src.IMF_SDMX_DELAY)
-    return _snapshot_from_series(s, indic, fetched_at)
-
-
-# -- BoJ Time-Series Data Search snapshot --
-
-BOJ_DELAY = 0.6  # seconds between BoJ API calls
-
-
-def _fetch_boj_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = boj_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(BOJ_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- e-Stat snapshot --
-
-ESTAT_DELAY = 0.6  # seconds between e-Stat API calls
-
-
-def _fetch_estat_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = estat_src.fetch_series_as_pandas(indic["source_id"])
-    time.sleep(ESTAT_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- Nasdaq Data Link snapshot --
-
-NDL_DELAY = 0.6  # seconds between Nasdaq Data Link calls
-
-
-def _fetch_ndl_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = ndl_src.fetch_series_as_pandas(
-        indic["source_id"],
-        sub_field=indic.get("sub_field", ""),
-    )
-    time.sleep(NDL_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
-
-
-# -- LBMA snapshot --
-
-LBMA_DELAY = 0.6  # seconds between LBMA JSON calls
-
-
-def _fetch_lbma_snapshot(indic: dict, fetched_at: str) -> list[dict]:
-    s = lbma_src.fetch_series_as_pandas(
-        indic["source_id"],
-        sub_field=indic.get("sub_field", "USD"),
-    )
-    time.sleep(LBMA_DELAY)
-    if s is None or s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    s = s.dropna()
-    if s.empty:
-        return [_blank_row(indic, indic["country"], indic["col"], fetched_at)]
-    latest = float(s.iloc[-1])
-    prior = float(s.iloc[-2]) if len(s) >= 2 else None
-    last_period = s.index[-1].strftime("%Y-%m-%d")
-    return [_make_row(indic, indic["country"], indic["col"],
-                      latest, prior, last_period, fetched_at)]
+    return snapshot, history
 
 
 # -- ifo snapshot (batch) --
@@ -1047,6 +770,7 @@ def _fetch_ifo_snapshot_batch(
 
 def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
     """Iterate every indicator, fetch its latest observations, return a DF."""
+    _validate_dispatch(indicators)
     fetched_at = _utc_ts()
     rows: list[dict] = []
 
@@ -1059,63 +783,7 @@ def build_snapshot_df(indicators: list[dict]) -> pd.DataFrame:
         label = f"{src}/{indic['col']}"
         print(f"  [{label}]")
         try:
-            if src == "FRED" and indic["country"] == "USA":
-                got = _fetch_fred_us_snapshot(indic, fetched_at)
-            elif src == "FRED":
-                got = _fetch_fred_intl_snapshot(indic, fetched_at)
-            elif src == "OECD":
-                got = _fetch_oecd_snapshot(indic, fetched_at)
-            elif src == "World Bank":
-                got = _fetch_wb_snapshot(indic, fetched_at)
-            elif src == "IMF":
-                got = _fetch_imf_snapshot(indic, fetched_at)
-            elif src == "DB.nomics":
-                got = _fetch_dbnomics_snapshot(indic, fetched_at)
-            elif src == "BoE":
-                got = _fetch_boe_snapshot(indic, fetched_at)
-            elif src == "ECB":
-                got = _fetch_ecb_snapshot(indic, fetched_at)
-            elif src == "BoJ":
-                got = _fetch_boj_snapshot(indic, fetched_at)
-            elif src == "BoC":
-                got = _fetch_boc_snapshot(indic, fetched_at)
-            elif src == "StatCan":
-                got = _fetch_statcan_snapshot(indic, fetched_at)
-            elif src == "ONS":
-                got = _fetch_ons_snapshot(indic, fetched_at)
-            elif src == "Bundesbank":
-                got = _fetch_bundesbank_snapshot(indic, fetched_at)
-            elif src == "ABS":
-                got = _fetch_abs_snapshot(indic, fetched_at)
-            elif src == "ISTAT":
-                got = _fetch_istat_snapshot(indic, fetched_at)
-            elif src == "BLS":
-                got = _fetch_bls_snapshot(indic, fetched_at)
-            elif src == "INSEE":
-                got = _fetch_insee_snapshot(indic, fetched_at)
-            elif src == "Banque de France":
-                got = _fetch_bdf_snapshot(indic, fetched_at)
-            elif src == "e-Stat":
-                got = _fetch_estat_snapshot(indic, fetched_at)
-            elif src == "Nasdaq Data Link":
-                got = _fetch_ndl_snapshot(indic, fetched_at)
-            elif src == "LBMA":
-                got = _fetch_lbma_snapshot(indic, fetched_at)
-            elif src == "Shiller":
-                got = _fetch_shiller_snapshot(indic, fetched_at)
-            elif src == "KenFrench":
-                got = _fetch_french_snapshot(indic, fetched_at)
-            elif src == "JST":
-                got = _fetch_jst_snapshot(indic, fetched_at)
-            elif src == "AtlantaFed":
-                got = _fetch_atlanta_fed_snapshot(indic, fetched_at)
-            elif src == "NYFed":
-                got = _fetch_ny_fed_snapshot(indic, fetched_at)
-            elif src == "IMF SDMX":
-                got = _fetch_imf_sdmx_snapshot(indic, fetched_at)
-            else:
-                print(f"  [WARN] Unknown source '{src}' — skipping")
-                continue
+            got = _SOURCE_HANDLERS[src][0](indic, fetched_at)
             rows.extend(got)
         except Exception as e:
             print(f"  [{label}] snapshot failed: {e}")
@@ -1175,18 +843,7 @@ def _obs_list_to_series(obs: list[tuple[str, float]], col_name: str) -> pd.Serie
 
 # -- FRED US --
 
-def _fetch_fred_us_history(indic: dict) -> dict[str, pd.Series]:
-    s = fred_src.fetch_series_as_pandas(indic["source_id"], FRED_API_KEY, HIST_START)
-    time.sleep(FRED_DELAY)
-    if s is None:
-        return {}
-    s.name = indic["col"]
-    return {indic["col"]: s}
-
-
-# -- FRED intl --
-
-def _fetch_fred_intl_history(indic: dict) -> dict[str, pd.Series]:
+def _fetch_fred_history(indic: dict) -> dict[str, pd.Series]:
     s = fred_src.fetch_series_as_pandas(indic["source_id"], FRED_API_KEY, HIST_START)
     time.sleep(FRED_DELAY)
     if s is None:
@@ -1249,194 +906,6 @@ def _fetch_dbnomics_history(indic: dict) -> dict[str, pd.Series]:
     return {indic["col"]: s}
 
 
-# -- BoE IADB --
-
-def _fetch_boe_history(indic: dict) -> dict[str, pd.Series]:
-    s = boe_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BOE_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- ECB Data Portal --
-
-def _fetch_ecb_history(indic: dict) -> dict[str, pd.Series]:
-    s = ecb_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ECB_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- Bank of Canada Valet --
-
-def _fetch_boc_history(indic: dict) -> dict[str, pd.Series]:
-    s = boc_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BOC_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- StatCan WDS --
-
-def _fetch_statcan_history(indic: dict) -> dict[str, pd.Series]:
-    s = statcan_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(STATCAN_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- ONS --
-
-def _fetch_ons_history(indic: dict) -> dict[str, pd.Series]:
-    s = ons_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ONS_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- Bundesbank --
-
-def _fetch_bundesbank_history(indic: dict) -> dict[str, pd.Series]:
-    s = bundesbank_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BUNDESBANK_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- ABS --
-
-def _fetch_abs_history(indic: dict) -> dict[str, pd.Series]:
-    s = abs_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ABS_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- ISTAT --
-
-def _fetch_istat_history(indic: dict) -> dict[str, pd.Series]:
-    s = istat_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ISTAT_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- BLS --
-
-def _fetch_bls_history(indic: dict) -> dict[str, pd.Series]:
-    s = bls_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BLS_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-def _fetch_insee_history(indic: dict) -> dict[str, pd.Series]:
-    s = insee_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(INSEE_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_bdf_history(indic: dict) -> dict[str, pd.Series]:
-    s = bdf_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BDF_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-# -- §3.13 long-run sources (Shiller / Ken French / JST) history --
-
-def _fetch_shiller_history(indic: dict) -> dict[str, pd.Series]:
-    s = shiller_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(SHILLER_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_french_history(indic: dict) -> dict[str, pd.Series]:
-    s = french_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(FRENCH_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_jst_history(indic: dict) -> dict[str, pd.Series]:
-    s = jst_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(JST_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_atlanta_fed_history(indic: dict) -> dict[str, pd.Series]:
-    s = atlanta_fed_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ATLANTA_FED_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_ny_fed_history(indic: dict) -> dict[str, pd.Series]:
-    s = ny_fed_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(NY_FED_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-def _fetch_imf_sdmx_history(indic: dict) -> dict[str, pd.Series]:
-    s = imf_sdmx_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(imf_sdmx_src.IMF_SDMX_DELAY)
-    return {indic["col"]: s} if s is not None and not s.empty else {}
-
-
-# -- BoJ Time-Series Data Search --
-
-def _fetch_boj_history(indic: dict) -> dict[str, pd.Series]:
-    s = boj_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(BOJ_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- e-Stat --
-
-def _fetch_estat_history(indic: dict) -> dict[str, pd.Series]:
-    s = estat_src.fetch_series_as_pandas(indic["source_id"], col_name=indic["col"])
-    time.sleep(ESTAT_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- Nasdaq Data Link --
-
-def _fetch_ndl_history(indic: dict) -> dict[str, pd.Series]:
-    s = ndl_src.fetch_series_as_pandas(
-        indic["source_id"],
-        sub_field=indic.get("sub_field", ""),
-        col_name=indic["col"],
-    )
-    time.sleep(NDL_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
-# -- LBMA --
-
-def _fetch_lbma_history(indic: dict) -> dict[str, pd.Series]:
-    s = lbma_src.fetch_series_as_pandas(
-        indic["source_id"],
-        sub_field=indic.get("sub_field", "USD"),
-        col_name=indic["col"],
-    )
-    time.sleep(LBMA_DELAY)
-    if s is None or s.empty:
-        return {}
-    return {indic["col"]: s}
-
-
 # -- ifo (shares the workbook download with snapshot via module cache) --
 
 _IFO_MONTHLY_DF: pd.DataFrame | None = None
@@ -1473,69 +942,92 @@ def _fetch_ifo_history(
 
 # -- Top-level history builder --
 
+def _fetch_fred_snapshot(indic: dict, fetched_at: str) -> list[dict]:
+    """US rows use the latest/prior fast path; intl rows the desc-order probe."""
+    if indic["country"] == "USA":
+        return _fetch_fred_us_snapshot(indic, fetched_at)
+    return _fetch_fred_intl_snapshot(indic, fetched_at)
+
+
+# ---------------------------------------------------------------------------
+# SOURCE DISPATCH (§2.C C2, 2026-07-09)
+# ---------------------------------------------------------------------------
+# One registry entry per source label: (snapshot_handler, history_handler).
+# Standard single-series sources come from _make_source_handlers; the five
+# structurally-special sources (FRED us/intl split, the OECD/WB/IMF
+# multi-country fan-outs, DB.nomics with the plausibility guard + ISM
+# press-release fallback) keep their hand-written handlers, registered here.
+# "ifo" is deliberately absent: its workbook is fetched once per run and
+# fanned out as a batch (see _fetch_ifo_snapshot_batch / _fetch_ifo_history).
+#
+# The label strings must match what each sources/<mod>.load_library() emits
+# — the shared identity table is sources.SOURCE_REGISTRY, and
+# _validate_dispatch() hard-fails the run on any loaded indicator whose
+# label has no entry here (replacing the old silent "[WARN] Unknown
+# source" skip).
+
+_SOURCE_HANDLERS: dict[str, tuple] = {
+    "FRED":       (_fetch_fred_snapshot, _fetch_fred_history),
+    "OECD":       (_fetch_oecd_snapshot, _fetch_oecd_history),
+    "World Bank": (_fetch_wb_snapshot, _fetch_wb_history),
+    "IMF":        (_fetch_imf_snapshot, _fetch_imf_history),
+    "DB.nomics":  (_fetch_dbnomics_snapshot, _fetch_dbnomics_history),
+    "BoE":        _make_source_handlers(boe_src, BOE_DELAY),
+    "ECB":        _make_source_handlers(ecb_src, ECB_DELAY,
+                                        snapshot_kwargs={"last_n": 2}),
+    "BoJ":        _make_source_handlers(boj_src, BOJ_DELAY),
+    "e-Stat":     _make_source_handlers(estat_src, ESTAT_DELAY),
+    "Nasdaq Data Link": _make_source_handlers(ndl_src, NDL_DELAY,
+                                              sub_field_default=""),
+    "LBMA":       _make_source_handlers(lbma_src, LBMA_DELAY,
+                                        sub_field_default="USD"),
+    "BoC":        _make_source_handlers(boc_src, BOC_DELAY,
+                                        snapshot_kwargs={"recent": 2}),
+    "StatCan":    _make_source_handlers(statcan_src, STATCAN_DELAY,
+                                        snapshot_kwargs={"latest_n": 2}),
+    "ONS":        _make_source_handlers(ons_src, ONS_DELAY),
+    "Bundesbank": _make_source_handlers(bundesbank_src, BUNDESBANK_DELAY,
+                                        snapshot_kwargs={"last_n": 2}),
+    "ABS":        _make_source_handlers(abs_src, ABS_DELAY,
+                                        snapshot_kwargs={"last_n": 2}),
+    "ISTAT":      _make_source_handlers(istat_src, ISTAT_DELAY,
+                                        snapshot_kwargs={"last_n": 3}),
+    "BLS":        _make_source_handlers(bls_src, BLS_DELAY,
+                                        snapshot_kwargs={"recent": True}),
+    "INSEE":      _make_source_handlers(insee_src, INSEE_DELAY),
+    "Banque de France": _make_source_handlers(bdf_src, BDF_DELAY),
+    "Shiller":    _make_source_handlers(shiller_src, SHILLER_DELAY),
+    "KenFrench":  _make_source_handlers(french_src, FRENCH_DELAY),
+    "JST":        _make_source_handlers(jst_src, JST_DELAY),
+    "AtlantaFed": _make_source_handlers(atlanta_fed_src, ATLANTA_FED_DELAY),
+    "NYFed":      _make_source_handlers(ny_fed_src, NY_FED_DELAY),
+    "IMF SDMX":   _make_source_handlers(imf_sdmx_src, imf_sdmx_src.IMF_SDMX_DELAY,
+                                        snapshot_kwargs={"last_n": 13}),
+}
+
+
+def _validate_dispatch(indicators: list[dict]) -> None:
+    """Hard-fail before any network work if a loaded indicator's source label
+    has no registered handler — a typo'd or newly-added source must be a loud
+    startup error, never a silently skipped library row (§2.C C2)."""
+    unknown = sorted({i["source"] for i in indicators}
+                     - set(_SOURCE_HANDLERS) - {"ifo"})
+    if unknown:
+        raise RuntimeError(
+            f"No handler registered in _SOURCE_HANDLERS for source label(s) "
+            f"{unknown} — add the entry (and, for a new source, a "
+            f"sources.SOURCE_REGISTRY SourceSpec)."
+        )
+
+
 def _history_for_indicator(
     indic: dict,
     ifo_indicators: list[dict],
 ) -> dict[str, pd.Series]:
     src = indic["source"]
-    if src == "FRED" and indic["country"] == "USA":
-        return _fetch_fred_us_history(indic)
-    if src == "FRED":
-        return _fetch_fred_intl_history(indic)
-    if src == "OECD":
-        return _fetch_oecd_history(indic)
-    if src == "World Bank":
-        return _fetch_wb_history(indic)
-    if src == "IMF":
-        return _fetch_imf_history(indic)
-    if src == "DB.nomics":
-        return _fetch_dbnomics_history(indic)
-    if src == "BoE":
-        return _fetch_boe_history(indic)
-    if src == "ECB":
-        return _fetch_ecb_history(indic)
-    if src == "BoJ":
-        return _fetch_boj_history(indic)
-    if src == "BoC":
-        return _fetch_boc_history(indic)
-    if src == "StatCan":
-        return _fetch_statcan_history(indic)
-    if src == "ONS":
-        return _fetch_ons_history(indic)
-    if src == "Bundesbank":
-        return _fetch_bundesbank_history(indic)
-    if src == "ABS":
-        return _fetch_abs_history(indic)
-    if src == "ISTAT":
-        return _fetch_istat_history(indic)
-    if src == "BLS":
-        return _fetch_bls_history(indic)
-    if src == "INSEE":
-        return _fetch_insee_history(indic)
-    if src == "Banque de France":
-        return _fetch_bdf_history(indic)
-    if src == "e-Stat":
-        return _fetch_estat_history(indic)
-    if src == "Nasdaq Data Link":
-        return _fetch_ndl_history(indic)
-    if src == "LBMA":
-        return _fetch_lbma_history(indic)
-    if src == "Shiller":
-        return _fetch_shiller_history(indic)
-    if src == "KenFrench":
-        return _fetch_french_history(indic)
-    if src == "JST":
-        return _fetch_jst_history(indic)
-    if src == "AtlantaFed":
-        return _fetch_atlanta_fed_history(indic)
-    if src == "NYFed":
-        return _fetch_ny_fed_history(indic)
-    if src == "IMF SDMX":
-        return _fetch_imf_sdmx_history(indic)
     if src == "ifo":
         return _fetch_ifo_history(indic, ifo_indicators)
-    print(f"  [WARN] Unknown source '{src}' in history fetch")
-    return {}
+    return _SOURCE_HANDLERS[src][1](indic)
 
 
 def build_hist_df(
@@ -1550,6 +1042,7 @@ def build_hist_df(
     observation wins — data freshness, not library load order. Ties are
     broken in favour of the source that arrived first (stable order).
     """
+    _validate_dispatch(indicators)
     today = date.today()
     spine = build_friday_spine(HIST_START, today)
 

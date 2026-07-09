@@ -59,43 +59,10 @@ def _split_meta_and_data(rows: list[list[str]]) -> tuple[list[list[str]], list[l
     return [], []
 
 # Library names map to the Source string the per-source modules write into the
-# unified hist's Source metadata row.
-SOURCE_BY_LIBRARY = {
-    # Aggregators
-    "fred":      "FRED",
-    "oecd":      "OECD",
-    "worldbank": "World Bank",
-    "imf":       "IMF",
-    "dbnomics":  "DB.nomics",
-    # Direct national-statistics offices / central banks
-    "ifo":       "ifo",
-    "boe":       "BoE",
-    "ecb":       "ECB",
-    "boj":       "BoJ",
-    "estat":     "e-Stat",
-    "boc":       "BoC",
-    "statcan":   "StatCan",
-    "ons":       "ONS",
-    "bundesbank": "Bundesbank",
-    "abs":       "ABS",
-    "istat":     "ISTAT",
-    "bls":       "BLS",
-    "insee":     "INSEE",
-    "bdf":       "Banque de France",
-    # Commodity / market reference
-    "nasdaqdl":  "Nasdaq Data Link",
-    "lbma":      "LBMA",
-    "alpha_vantage": "Alpha Vantage",
-    # §3.13 long-run historical / cross-validation anchors
-    "shiller":   "Shiller",
-    "french":    "KenFrench",
-    "jst":       "JST",
-    # §3.1.4 real-time GDP-growth nowcasts (single-source primary fetchers)
-    "atlanta_fed": "AtlantaFed",
-    "ny_fed":      "NYFed",
-    # §2.A A1 — IMF Data Portal SDMX (api.imf.org; distinct from DataMapper)
-    "imf_sdmx":    "IMF SDMX",
-}
+# unified hist's Source metadata row. Derived from the shared identity table
+# (sources.SOURCE_REGISTRY, §2.C C2) — one registration point for new sources.
+from sources import LABEL_BY_STEM as SOURCE_BY_LIBRARY  # noqa: E402
+
 
 
 # =============================================================================
