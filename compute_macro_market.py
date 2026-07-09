@@ -1996,8 +1996,8 @@ def _calc_EU_NOWCAST1(dbn, **_):
     """Equal-weight Eurozone real-time growth nowcast (§3.1.4).
     Z-score-normalises each of four real-economy + sentiment components
     on their own 156-week window, then averages available z-scores. Inputs:
-      - EZ_IND_PROD     (Eurostat teiis080 industrial production index)
-      - EZ_RETAIL_VOL   (Eurostat teiis260 retail volume index)
+      - EZ_IND_PROD     (ECB STBS industrial production index)
+      - EZ_RETAIL_VOL   (ECB STBS deflated retail turnover index)
       - EU_ESI          (EC Economic Sentiment Indicator)
       - EU_IND_CONF     (EC Industrial Confidence Indicator)
     Same z-composite shape as GL_PMI1 / US_INFEXP1 — raw output is the
