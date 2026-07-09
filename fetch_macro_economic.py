@@ -470,6 +470,74 @@ def _select_winner(cands: list[dict]) -> dict:
         -(c["last"].toordinal() if c["last"] else 0), c["order"]))
 
 
+def _demotion_event(cands: list[dict], win: dict) -> tuple[dict, str] | None:
+    """Detect a declared-primary demotion in one (Country, Col) group (§2.C C1).
+
+    The declared primary is the lowest-tier registered candidate (tier 0 =
+    primary source; `_attach_tiers`). If the selected winner sits at a higher
+    tier, the primary was demoted — return (primary_cand, reason) so the
+    caller can log it loudly. Returns None when the winner IS at primary
+    tier (including the multiple-tier-0 "ambiguous precedence" case, which
+    is a wiring issue for build_source_inventory, not a runtime event).
+
+    The reason string states *why* the primary lost, mirroring the
+    _select_winner rules: no data, definition collision (legacy pick),
+    staleness gate (>2x own cadence vs the group's freshest), or a
+    finer-cadence fallback outranking a coarser primary.
+    """
+    min_tier = min(c["tier"] for c in cands)
+    if win["tier"] <= min_tier:
+        return None
+    primaries = [c for c in cands if c["tier"] == min_tier]
+    # Best primary: prefer one with data, then freshest.
+    prim = max(primaries,
+               key=lambda c: (c["has_data"], c["last"] or date.min, -c["order"]))
+    n_extra = len(primaries) - 1
+
+    if not prim["has_data"]:
+        reason = "primary returned no data this run"
+    elif len({c["kind"] for c in cands if c["has_data"]}) > 1:
+        reason = "definition collision (mixed measure-kinds) — legacy freshest pick"
+    else:
+        dated = [c["last"] for c in cands if c["has_data"] and c["last"]]
+        freshest = max(dated) if dated else None
+        if (prim["last"] and freshest
+                and (freshest - prim["last"]).days > 2 * prim["cad_days"]):
+            reason = (f"stale {(date.today() - prim['last']).days}d "
+                      f"(last obs {prim['last'].isoformat()}, group freshest "
+                      f"{freshest.isoformat()}, gate 2x{prim['cad_days']}d)")
+        elif win["cad_rank"] < prim["cad_rank"]:
+            reason = "finer-cadence fallback outranks coarser primary (cadence-first)"
+        else:
+            reason = "lost freshness tiebreak at equal cadence"
+    if n_extra:
+        reason += f" [+{n_extra} other tier-{min_tier} candidate(s)]"
+    return prim, reason
+
+
+def _log_demotion(col: str, cands: list[dict], win: dict,
+                  describe, context: str = "") -> None:
+    """Print the §2.C C1 [FALLBACK] line for a demoted declared primary.
+
+    `describe(cand)` -> (source, series_id, frequency) for the message; the
+    prefix is a stable contract — data_audit Section A scrapes pipeline.log
+    for `[FALLBACK]` so a demotion is a reported audit issue on day one,
+    not a silent six-month freeze (the JP/EU/CN_INFL1 bug class).
+    """
+    event = _demotion_event(cands, win)
+    if event is None:
+        return
+    prim, reason = event
+    p_src, p_sid, _ = describe(prim)
+    w_src, w_sid, w_freq = describe(win)
+    w_last = win["last"].isoformat() if win["last"] else "no data"
+    tag = f" ({context})" if context else ""
+    print(f"    [FALLBACK]{tag} {col}: declared primary {p_src}/{p_sid} "
+          f"(tier {prim['tier']}) demoted — {reason}; serving "
+          f"{w_src}/{w_sid} (tier {win['tier']}, {w_freq or '?'}, "
+          f"last {w_last})")
+
+
 def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
     """Collapse rows that share a (Country, Col) to a single winning source
     using the tier-aware, cadence-first, staleness-fallback policy."""
@@ -499,7 +567,15 @@ def _dedupe_snapshot_rows(rows: list[dict]) -> list[dict]:
             "order":     i,
             "payload":   r,
         } for i, r in enumerate(grp)]
-        out.append(_select_winner(cands)["payload"])
+        win = _select_winner(cands)
+        _log_demotion(
+            key[1], cands, win,
+            lambda c: (c["payload"].get("Source", "?"),
+                       c["payload"].get("Series ID", "?"),
+                       c["payload"].get("Frequency", "")),
+            context="snapshot",
+        )
+        out.append(win["payload"])
     return out
 
 
@@ -1085,7 +1161,14 @@ def build_hist_df(
     provenance: dict[str, dict] = {}
     for col_name in col_order:
         cands = cand_lists[col_name]
-        win = _select_winner(cands)["payload"]
+        win_cand = _select_winner(cands)
+        _log_demotion(
+            col_name, cands, win_cand,
+            lambda c: (c["payload"]["indic"].get("source", "?"),
+                       c["payload"]["indic"].get("source_id", "?"),
+                       c["payload"]["indic"].get("frequency", "")),
+        )
+        win = win_cand["payload"]
         columns[col_name] = win["series"]
         # Copy so the shared indicator dict isn't mutated; _last_obs feeds
         # the "Last Observation" metadata row and _fill_limit_days feeds the

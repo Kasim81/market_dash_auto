@@ -307,20 +307,29 @@ def section_a_fetch_outcomes() -> dict:
       ECB / fallbacks (informational; included for visibility):
         [ECB] EU_I1 spread unavailable — ...
 
+      Declared-primary demotions (§2.C C1, 2026-07-09 — emitted by the
+      tier-aware merge in fetch_macro_economic._log_demotion on both the
+      snapshot and history paths):
+        [FALLBACK] EA_HICP: declared primary estat/... (tier 0) demoted —
+        stale 190d (...); serving ecb/... (tier 2, Monthly, last 2026-06-01)
+      Every such line is surfaced verbatim: a frozen primary is a reported
+      audit issue on day one, not a silent six-month freeze.
+
     Cross-check: yfinance "delisted" tickers are cross-referenced against the
     latest non-empty observation in market_data_comp_hist.csv.  If a ticker
     has data in the latest row, the warning was transient and the ticker is
     omitted from the audit (false positive).  If the ticker has no data, it's
     a real concern and it's reported.
 
-    Returns dict with three sorted lists:
-      yfinance_dead, fred_persistent_errors, other_warnings
+    Returns dict with four sorted/ordered lists:
+      yfinance_dead, fred_persistent_errors, fallback_demotions, other_warnings
     """
     import re
 
     log_path = ROOT / "pipeline.log"
     if not log_path.exists():
-        return {"yfinance_dead": [], "fred_persistent_errors": [], "other_warnings": []}
+        return {"yfinance_dead": [], "fred_persistent_errors": [],
+                "fallback_demotions": [], "other_warnings": []}
 
     text = log_path.read_text()
 
@@ -351,6 +360,13 @@ def section_a_fetch_outcomes() -> dict:
         fred_final.add((m.group(1), m.group(2)))
     fred_persistent_errors = sorted(f"HTTP {c} on {s}" for c, s in fred_final)
 
+    # ---------- Declared-primary demotions (§2.C C1) ----------
+    fallback_demotions: list[str] = []
+    for m in re.finditer(r'\[FALLBACK\][^\n]*', text):
+        line = m.group(0).strip()
+        if line not in fallback_demotions:
+            fallback_demotions.append(line)
+
     # ---------- Other source warnings (informational) ----------
     other_warnings: list[str] = []
     # ECB / DBnomics / OECD per-source notable lines
@@ -370,6 +386,7 @@ def section_a_fetch_outcomes() -> dict:
     return {
         "yfinance_dead": yfinance_dead,
         "fred_persistent_errors": fred_persistent_errors,
+        "fallback_demotions": fallback_demotions,
         "other_warnings": other_warnings,
     }
 
