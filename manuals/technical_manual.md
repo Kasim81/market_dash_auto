@@ -1475,16 +1475,18 @@ Default mode is dry-run; pass `--confirm` to apply. The `removed_tickers.csv` le
 
 For each orphan column, the existing data is archived to `data/_archived_columns/<hist_basename>__<column_id>__<YYYY-MM-DD>.csv` (preserving full historical observations) before the column is dropped from the live hist file.
 
-#### Key functions
+#### Key functions (§2.C C6 shape, 2026-07-09)
 
 | Function | Purpose |
 |---|---|
-| `sync_comp(confirm)`, `sync_macro_economic(confirm)`, `sync_macro_market(confirm)` | Per-pair drivers; return orphan count |
-| `_run_pair(...)` | Generic engine: read hist rows, compute orphan set, archive each orphan, drop columns, rewrite |
-| `_<pair>_expected()` | Compute the expected column-id set from the relevant library CSVs |
-| `_<pair>_present(rows)` | Extract the present column-id set from the hist rows |
-| `_<pair>_idxs_for_orphan(rows, id)` | Locate every CSV column index that belongs to the orphan id |
-| `_<pair>_archive(rows, id, idxs)` | Write the per-orphan archive file |
+| `SYNC_SPECS` | The registry: one frozen `SyncSpec(name, hist_path, expected, id_start_col)` per hist↔library pair. `data_audit._check_registry_drift` iterates this too, and a fourth pair (§5 multifreq) is one more entry |
+| `sync(spec, confirm)` | Generic engine: read hist rows, compute orphan set, archive each orphan, drop columns, rewrite live + mirror the drop on the `_hist_x` sister |
+| `_<pair>_expected()` | Per-pair expected-id derivation — the only genuinely pair-specific logic (comp ticker fields; single-col + OECD/WB/IMF fan-out; indicator × 4 suffixes) |
+| `_present_ids(spec, rows)` | Present ids = row-0 cells from `spec.id_start_col` (2 for comp's `["", "Ticker ID", …]` layout, 1 for the label-first layouts) |
+| `_idxs_for_id(rows, id)` | Every CSV column index carrying the id (comp ids appear twice: `_Local` + `_USD`) |
+| `_locate_data_header(rows)` / `_archive_orphan(spec, rows, id, idxs)` | Archive writer: finds the data-header row by inspection ("Date" in the first two cells — the `sniff_hist_prefix_rows` rule), so every metadata-prefix generation parses. This closed a real C6-class bug: the comp archiver got sniffing on 2026-07-08 while `_macro_econ_archive` kept a hardcoded `rows[15:]`, archiving the "Date" header row as data on 15-row-generation files |
+
+Pinned by `test_library_sync.py` (7 offline tests, synthetic files in all three layouts; in the ci.yml gate).
 
 ### 9.10 `audit_writeback.py` (~230 lines)
 
@@ -2050,7 +2052,7 @@ These were evaluated during the Phase D source evaluation and deliberately exclu
 
 The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing via SMTP. The §3.1 sub-track 3 writeback adds a registry-update half between the audit and the post. Mechanism:
 
-- **Audit step.** `python data_audit.py` runs after fetch + explorer rebuild. Section A: fetch outcomes from `pipeline.log` scrape — incl. every `[FALLBACK]` declared-primary demotion line the tier merge emits (§2.C C1, 2026-07-09), surfaced verbatim under `FALLBACK_DEMOTIONS`. Section B: static checks against the registry CSVs *plus registry drift across all 3 hist↔library pairs* (the drift check imports library_sync helpers — orphan column reports include `(run: python library_sync.py --confirm)`). Section C: observation staleness against the unified hist — last-obs dates read from the "Last Observation" metadata row (writer ground truth, §2.A A15, 2026-07-08) with value-change archaeology as the fallback for blank cells / pre-A14 file generations. Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
+- **Audit step.** `python data_audit.py` runs after fetch + explorer rebuild. Section A: fetch outcomes from `pipeline.log` scrape — incl. every `[FALLBACK]` declared-primary demotion line the tier merge emits (§2.C C1, 2026-07-09), surfaced verbatim under `FALLBACK_DEMOTIONS`. Section B: static checks against the registry CSVs *plus registry drift across all 3 hist↔library pairs* (the drift check imports library_sync helpers — orphan column reports include `(run: python library_sync.py --confirm)`). Section C: observation staleness against the unified hist — last-obs dates read from the "Last Observation" metadata row (writer ground truth, §2.A A15, 2026-07-08) with value-change archaeology as the fallback for blank cells / pre-A14 file generations. **Section F (§2.C C8, 2026-07-09): the CRITICAL gate** — the audit's one exception to the warning-channel philosophy: (a) a `SHEETS_PROTECTED_TABS` output CSV with zero data rows or zero populated value cells, (b) any of the 6 hist CSVs losing >10% of rows/columns vs the committed HEAD version. On a finding the audit exits 2, its step goes red, and `data_audit_critical.flag` makes the commit step commit only `pipeline.log` + the audit reports (then exit 1) — the bad artefacts never reach main; the Issue comment leads with a 🛑 CRITICAL banner. Deliberately hard to false-trigger (git/HEAD unavailable → checks skip; a 10% library prune stays under the gate; tested incl. a real-repo no-false-trigger case in `test_data_audit_critical.py`). Outputs `data_audit.txt` (full report) + `audit_comment.md` (Issue-comment body with one-line ALL CLEAN / N ISSUES summary).
 - **Writeback step.** `python audit_writeback.py` runs immediately after the audit. Parses `data_audit.txt` Section A for `YFINANCE_DEAD` entries, updates `data/yfinance_failure_streaks.csv`, and flips `validation_status` to `UNAVAILABLE` on any row whose streak hits N=14. Appends a one-line summary to `audit_comment.md` so the Issue comment surfaces today's writeback actions. Manual override always wins — re-setting `CONFIRMED` after a real fix restarts the streak naturally on the next FRESH cycle.
 - **Posting step.** Uses the pre-installed `gh` CLI:
   1. Ensure a `daily-audit` label exists (`gh label create daily-audit ...`, idempotent).

@@ -93,10 +93,17 @@ jobs:
       # orphans, indicator-library schema, calculator registration,
       # _get_col column existence), C) value-change staleness on the
       # unified hist.  Outputs data_audit.txt + audit_comment.md at
-      # repo root.  Exit code is always 0 — warning channel, not a
-      # build gate.
+      # repo root.  Exit code is 0 for everything in Sections A-E —
+      # warning channel, not a build gate — EXCEPT the narrow §2.C C8
+      # Section F CRITICAL class (protected-tab output empty/all-NaN;
+      # hist CSV losing >10% rows/columns vs HEAD): then the audit
+      # exits 2, this step goes red for visibility, and
+      # data_audit_critical.flag tells the commit step below to SKIP
+      # the data files (pipeline.log + audit reports still commit for
+      # the post-mortem).
       if: always()
       run: |
+        set -o pipefail
         echo "" >> pipeline.log
         echo "" >> pipeline.log
         python data_audit.py 2>&1 | tee -a pipeline.log
@@ -172,6 +179,22 @@ jobs:
         [ -f pipeline.log ] && git add -f pipeline.log || true
         [ -f data_audit.txt ] && git add -f data_audit.txt || true
         [ -f audit_comment.md ] && git add -f audit_comment.md || true
+        # §2.C C8 CRITICAL gate: data_audit.py writes this flag (and exits
+        # 2, turning its step red) when a Section F CRITICAL fired —
+        # protected-tab output empty/all-NaN or a hist CSV losing >10%
+        # rows/columns vs HEAD.  Committing those artefacts would bake the
+        # catastrophe into git history and downstream automations, so we
+        # stop after the diagnostics above.  The flag itself is never
+        # committed (explicit adds only).
+        if [ -f data_audit_critical.flag ]; then
+          echo "CRITICAL audit findings — skipping the data-file commit:"
+          cat data_audit_critical.flag
+          if ! git diff --staged --quiet; then
+            git commit -m "Audit reports only (CRITICAL gate) - $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push || true
+          fi
+          exit 1
+        fi
         # Retire the v1 freshness audit output (replaced by data_audit.txt):
         [ -f freshness_audit.txt ] && git rm -f freshness_audit.txt || true
         [ -f data/market_data.csv ] && git add -f data/market_data.csv || true
