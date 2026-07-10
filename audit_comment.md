@@ -1,11 +1,20 @@
-## Daily audit — 2026-07-10 — **51 ISSUES** (1 fetch error, 49 stale series, 1 static-check failure)
+## Daily audit — 2026-07-10 — **57 ISSUES** (8 fetch errors, 49 stale series)
 
-_Run: 2026-07-10 04:55 UTC_
+_Run: 2026-07-10 09:40 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
+
+**fallback_demotions** (7):
+- `[FALLBACK] (snapshot) CAN_UNEMPLOYMENT: declared primary StatCan/2062815 (tier 0) demoted — primary returned no data this run; serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
+- `[FALLBACK] (snapshot) FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
+- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-31)`
+- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 
 **other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
@@ -15,21 +24,18 @@ Full report attached as `data_audit.txt` in today's commit.
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (9):
+**EXPIRED** (6):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
 | `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1317d | 45d |
 | `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 982d | 45d |
 | `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 375d | 120d\* |
-| `EU_ESI` | DB.nomics | Monthly | 2025-12-31 | 191d | 45d |
-| `EU_IND_CONF` | DB.nomics | Monthly | 2025-12-31 | 191d | 45d |
-| `EU_SVC_CONF` | DB.nomics | Monthly | 2025-12-31 | 191d | 45d |
 | `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 131d | 60d\* |
 | `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 100d | 45d |
 | `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 100d | 45d\* |
 
-**STALE** (40):
+**STALE** (43):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -56,14 +62,14 @@ Full report attached as `data_audit.txt` in today's commit.
 | `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-04-01 | 100d | 60d\* |
 | `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 100d | 60d\* |
 | `GBR_GDP_MONTHLY` | ONS | Monthly | 2026-04-01 | 100d | 75d\* |
-| `ITA_IND_PROD` | ISTAT | Monthly | 2026-04-01 | 100d | 60d\* |
 | `PERMIT` | FRED | Monthly | 2026-05-01 | 70d | 45d |
 | `USA_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 70d | 45d\* |
 | `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 70d | 45d\* |
 | `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 70d | 45d |
 | `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 70d | 45d |
 | `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 70d | 45d |
-| _… 10 more in `data_audit.txt`_ |  |  |  |  |  |
+| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 70d | 45d\* |
+| _… 13 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -102,14 +108,6 @@ Full report attached as `data_audit.txt` in today's commit.
 | `AUS_GDP_JST` | JST | 2020-12-31 | 2026-12-31 |
 | `AUS_EQUITY_TR_JST` | JST | 2020-12-31 | 2026-12-31 |
 | _… 9 more in `data_audit.txt`_ |  |  |  |
-
-</details>
-
-<details><summary>Static-check failures</summary>
-
-
-**missing_columns** (1):
-- _get_col(...,'GOLD_USD_PM') referenced in compute_macro_market.py but column absent from macro_economic_hist.csv
 
 </details>
 
