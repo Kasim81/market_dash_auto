@@ -53,7 +53,7 @@ def build_friday_spine(start: str, end: date) -> pd.DatetimeIndex:
 # ---------------------------------------------------------------------------
 
 def fetch_with_backoff(
-    url: str,
+    url: str | list[str] | tuple[str, ...],
     params: dict | None = None,
     label: str = "",
     accept_csv: bool = False,
@@ -61,46 +61,138 @@ def fetch_with_backoff(
     backoff_base: int = 2,
     timeout: int = 30,
     headers: dict | None = None,
-) -> dict | str | None:
+    accept: str | None = None,
+    context: str = "",
+    validate=None,
+    json_body=None,
+    retry_errors: bool = False,
+) -> dict | str | bytes | None:
     """
-    Generic HTTP GET with exponential backoff on 429 / 5xx.
+    Generic HTTP fetch with exponential backoff on 429 / 5xx.
 
-    Returns parsed JSON (or raw text when accept_csv=True), or None on failure.
+    Returns parsed JSON (default), raw text (``accept="text"`` or the legacy
+    ``accept_csv=True``), or raw bytes (``accept="bytes"``), or None on
+    failure.
 
-    ``headers`` is optional; when supplied it is passed straight to
-    requests.get. Existing callers that omit it keep the previous behaviour
-    (no custom headers). This is required by sources that mandate a header —
-    e.g. SEC EDGAR's fair-access User-Agent with a contact email.
+    Single-URL semantics (unchanged since the original helper): 200 → done;
+    429/503/5xx → back off and retry; any other status → give up immediately.
+
+    §2.C C3 remainder extensions (2026-07-09), all backwards compatible:
+
+    url         — may be a list/tuple of mirror URLs. Each attempt walks the
+                  mirrors in order and ANY per-mirror failure (bad status,
+                  rejected content, network error) moves to the next mirror;
+                  only when a whole pass fails does the attempt back off.
+                  This is the BoE / LBMA / FRB-Atlanta / NY-Fed / Shiller /
+                  Ken-French mirror-rotation shape, previously six copies.
+    accept      — "json" | "text" | "bytes" (default json; overrides
+                  accept_csv when given). "bytes" serves the workbook
+                  downloaders.
+    context     — appended to log lines as " on {context}". FRED relies on
+                  this: data_audit Section A scrapes the exact
+                  "[FRED] HTTP <code> on <series> — skipping" shape.
+    validate    — optional callable(content) -> error string | None, run on
+                  a 200 body BEFORE accepting it (e.g. the BoE/BoJ "endpoint
+                  returned an HTML form instead of CSV" sniff). A rejection
+                  is treated like a failed mirror.
+    json_body   — when not None the request is a POST with this JSON payload
+                  (the StatCan WDS shape); otherwise GET.
+    retry_errors — single-URL mode only: back off and retry on connection
+                  errors instead of aborting (the ISTAT / Ken-French flaky-
+                  gateway posture; mirror mode always rotates on errors).
     """
+    urls = [url] if isinstance(url, str) else list(url)
+    multi = len(urls) > 1
+    mode = accept or ("text" if accept_csv else "json")
+    on = f" on {context}" if context else ""
+
+    def _short(u: str) -> str:
+        return u.rsplit("/", 1)[-1] or u
+
     for attempt in range(retries):
-        try:
-            resp = requests.get(url, params=params, headers=headers, timeout=timeout)
+        for u in urls:
+            try:
+                if json_body is not None:
+                    resp = requests.post(u, json=json_body, headers=headers,
+                                         timeout=timeout)
+                else:
+                    resp = requests.get(u, params=params, headers=headers,
+                                        timeout=timeout)
 
-            if resp.status_code == 200:
-                return resp.text if accept_csv else resp.json()
+                if resp.status_code == 200:
+                    if mode == "bytes":
+                        content = resp.content
+                    elif mode == "text":
+                        content = resp.text
+                    else:
+                        try:
+                            content = resp.json()
+                        except ValueError as e:
+                            print(f"  [{label}] non-JSON body{on}"
+                                  f"{' via ' + _short(u) if multi else ''}: {e}")
+                            if not multi:
+                                return None   # a 200 with a bad body won't
+                            continue          # improve on retry; next mirror
+                    if validate is not None:
+                        why = validate(content)
+                        if why:
+                            print(f"  [{label}] rejected{on}"
+                                  f"{' via ' + _short(u) if multi else ''}: {why}")
+                            if not multi:
+                                return None
+                            continue
+                    return content
 
-            if resp.status_code in (429, 503) or resp.status_code >= 500:
-                wait = backoff_base ** (attempt + 1)
-                print(
-                    f"  [{label}] HTTP {resp.status_code}. "
-                    f"Backing off {wait}s (attempt {attempt + 1}/{retries})"
-                )
-                time.sleep(wait)
+                if multi:
+                    # Mirror mode: any status just moves to the next mirror;
+                    # backoff happens only after a full pass fails.
+                    print(f"  [{label}] HTTP {resp.status_code}{on} via {_short(u)}")
+                    continue
+
+                if resp.status_code in (429, 503) or resp.status_code >= 500:
+                    wait = backoff_base ** (attempt + 1)
+                    print(
+                        f"  [{label}] HTTP {resp.status_code}{on}. "
+                        f"Backing off {wait}s (attempt {attempt + 1}/{retries})"
+                    )
+                    time.sleep(wait)
+                    break                     # out of the (single) URL walk
+
+                print(f"  [{label}] HTTP {resp.status_code}{on} — skipping")
+                return None
+
+            except requests.exceptions.Timeout:
+                print(f"  [{label}] Timeout{on}"
+                      f"{' via ' + _short(u) if multi else ''}.")
+                if not multi:
+                    wait = backoff_base ** (attempt + 1)
+                    print(f"  [{label}] Backing off {wait}s")
+                    time.sleep(wait)
                 continue
 
-            print(f"  [{label}] HTTP {resp.status_code} — skipping")
-            return None
+            except requests.exceptions.RequestException as e:
+                if multi:
+                    print(f"  [{label}] Request error{on} via {_short(u)}: {e}")
+                    continue
+                if retry_errors:
+                    wait = backoff_base ** (attempt + 1)
+                    print(f"  [{label}] Request error{on}: {e} — "
+                          f"backing off {wait}s (attempt {attempt + 1}/{retries})")
+                    time.sleep(wait)
+                    continue
+                print(f"  [{label}] Request error{on}: {e} — skipping")
+                return None
+        else:
+            # URL walk completed without returning: in mirror mode this is a
+            # failed full pass — back off before the next attempt (except
+            # after the final one).
+            if multi and attempt + 1 < retries:
+                wait = backoff_base ** (attempt + 1)
+                print(f"  [{label}] all {len(urls)} mirror(s) failed{on} — "
+                      f"backing off {wait}s (attempt {attempt + 1}/{retries})")
+                time.sleep(wait)
 
-        except requests.exceptions.Timeout:
-            wait = backoff_base ** (attempt + 1)
-            print(f"  [{label}] Timeout. Backing off {wait}s")
-            time.sleep(wait)
-
-        except requests.exceptions.RequestException as e:
-            print(f"  [{label}] Request error: {e} — skipping")
-            return None
-
-    print(f"  [{label}] All {retries} attempts failed — skipping")
+    print(f"  [{label}] All {retries} attempts failed{on} — skipping")
     return None
 
 

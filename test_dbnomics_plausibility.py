@@ -84,7 +84,7 @@ class LibraryBandTest(unittest.TestCase):
     def test_rows_without_band_are_none(self):
         lib = {r["col"]: r for r in dbn.load_library()}
         # A non-diffusion DB.nomics row should carry no band.
-        row = lib["EU_ESI"]
+        row = lib["DEU_CPI_YOY"]
         self.assertIsNone(row["plausible_min"])
         self.assertIsNone(row["plausible_max"])
 

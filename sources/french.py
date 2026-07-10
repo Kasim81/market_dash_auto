@@ -56,11 +56,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 import zipfile
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_french.csv"
@@ -152,29 +152,28 @@ def _resolve_zip(zip_stem: str, retries: int = 3, timeout: int = 30) -> bytes | 
         return None
 
     url = _zip_url(zip_stem)
-    last_exc: Exception | None = None
-    for attempt in range(retries):
-        try:
-            r = requests.get(url, headers=_HEADERS, timeout=timeout)
-        except requests.RequestException as e:
-            print(f"    [KenFrench] GET {url} raised {type(e).__name__}: {e} "
-                  f"(attempt {attempt + 1}/{retries})", flush=True)
-            last_exc = e
-        else:
-            if r.status_code == 200 and r.content.startswith(_ZIP_MAGIC):
-                _ZIP_CACHE[zip_stem] = r.content
-                print(f"    [KenFrench] resolved {url} ({len(r.content)} bytes)", flush=True)
-                return r.content
-            head = r.content[:80].replace(b"\n", b" ")
-            print(f"    [KenFrench] GET {url} HTTP {r.status_code} len={len(r.content)} "
-                  f"first 80={head!r} (attempt {attempt + 1}/{retries})", flush=True)
-            last_exc = RuntimeError(f"HTTP {r.status_code} non-ZIP body")
-        if attempt + 1 < retries:
-            time.sleep(2 ** attempt)
 
-    print(f"    [KenFrench FAIL] {zip_stem} — {retries} attempts exhausted ({last_exc})",
-          flush=True)
-    _ZIP_ERROR[zip_stem] = last_exc or RuntimeError("unknown")
+    # §2.C C3 (2026-07-09): shared retry engine — retry_errors=True keeps the
+    # old retry-on-connection-error posture toward the Dartmouth host; the
+    # validate hook keeps the ZIP magic-byte sniff. The per-process
+    # _ZIP_CACHE / _ZIP_ERROR memo (don't re-hammer a dead host within one
+    # run) stays here — it's a caching concern, not a retry concern.
+    def _reject(body: bytes) -> str | None:
+        if not body.startswith(_ZIP_MAGIC):
+            head = body[:80].replace(b"\n", b" ")
+            return f"non-ZIP body len={len(body)} first 80={head!r}"
+        return None
+
+    body = fetch_with_backoff(
+        url, label="KenFrench", accept="bytes",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=zip_stem, validate=_reject, retry_errors=True,
+    )
+    if body is not None:
+        _ZIP_CACHE[zip_stem] = body
+        print(f"    [KenFrench] resolved {url} ({len(body)} bytes)", flush=True)
+        return body
+    _ZIP_ERROR[zip_stem] = RuntimeError("fetch failed (see log above)")
     return None
 
 

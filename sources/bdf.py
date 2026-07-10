@@ -28,14 +28,25 @@ the gap surfaces in the daily audit.
 
 Series ID convention: ``<dataset_id>|<odsql_where>``, where:
 
-- ``<dataset_id>``  — the Opendatasoft dataset id (e.g. ``webstat-bdf-mir``);
-- ``<odsql_where>`` — the ODSQL ``where=`` filter pinning the SDMX dimension
-  tuple to a single observation series (e.g.
-  ``frequency="M" AND ref_area="FR" AND bs_item="A2C" AND ...``).
+- ``<dataset_id>``  — the Opendatasoft dataset id;
+- ``<odsql_where>`` — the ODSQL ``where=`` filter pinning a single series.
+
+Data model (verified 2026-07-09, forward_plan §2.A A6): this Webstat instance
+does **not** serve observations through per-series datasets — the individual
+``mir-*`` (and every other) catalogue entry is an *empty stub*
+(``has_records: false``, ``fields: []``). **Every observation across all
+dataflows lives in ONE flat store dataset, ``observations``**, keyed by a
+``series_key`` text column of the form ``<DATAFLOW>.<dot-key>`` (e.g.
+``MIR1.M.FR.B.A22.A.R.A.2250U6.EUR.N``). So a series is pinned with
+``observations|series_key='<KEY>'`` — the dataset_id is always ``observations``
+and the where-clause filters ``series_key``. ODSQL string literals use single
+quotes, so no CSV double-quote escaping is needed. The ``observations`` record
+shape exposes ``time_period`` / ``obs_value`` fields, which the heuristic
+parser below auto-detects.
 
 The pipe separator keeps the library CSV schema stable (one ``series_id``
-column) and survives URL/HTTP encoding because neither ``|`` nor ``"`` appear
-in Opendatasoft dataset ids.
+column) and survives URL/HTTP encoding because ``|`` does not appear in
+Opendatasoft dataset ids or SDMX series keys.
 
 A ``series_id`` whose dataset_id is ``PROVISIONAL`` (case-insensitive) means
 the row has not yet been validated against a live credentialed fetch — the

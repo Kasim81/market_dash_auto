@@ -63,6 +63,7 @@ SOURCE_REGISTRY: tuple[SourceSpec, ...] = (
     SourceSpec("BLS",              "bls",            "bls"),
     SourceSpec("INSEE",            "insee",          "insee"),
     SourceSpec("Banque de France", "bdf",            "bdf"),
+    SourceSpec("Eurostat",         "eurostat",       "eurostat"),
     SourceSpec("Alpha Vantage",    "alpha_vantage",  "alpha_vantage"),
     SourceSpec("Shiller",          "shiller",        "shiller"),
     SourceSpec("KenFrench",        "french",         "french"),

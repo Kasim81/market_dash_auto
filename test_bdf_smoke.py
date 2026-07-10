@@ -8,18 +8,15 @@ is BOTH key-gated and network-gated: it SKIPS unless ``BDF_API_KEY`` is set and
 the endpoint is reachable. That means it stays dormant in local/unit runs and
 only fires on the credentialed daily CI run.
 
-The library entries for `FRA_LOAN_RATE_HOUSE` and `FRA_LOAN_RATE_NFC` are
-currently PROVISIONAL — the public Opendatasoft catalogue exposes only the
-archived-reports dataset, so the dataset_id + ODSQL filter for the MIR
-(monetary financial institution interest rate) series cannot be identified
-without a credential. Once the secret reaches the runtime this test will SKIP
-each row whose `series_id` still starts with ``PROVISIONAL|`` (so the test
-itself stays green) and assert non-empty data only for rows that have been
-upgraded to a real `<dataset_id>|<odsql_where>` form.
-
-When all rows are validated this test will start asserting them all resolve,
-which is exactly the "do the keys + auth work?" signal we want from the first
-credentialed run.
+The library entries for `FRA_LOAN_RATE_HOUSE` and `FRA_LOAN_RATE_NFC` were
+verified live on 2026-07-09 (forward_plan §2.A A6) via a credentialed probe:
+both resolve to `observations|series_key='MIR1.M.FR.B.A22.A.R.A.2250U6.EUR.N'`
+and `...A20...2240U6...` against the single flat `observations` store (the
+per-series `mir-*` catalogue datasets are empty stubs). This test now asserts
+they resolve to non-empty data — the "do the keys + auth work?" signal from the
+credentialed daily run. The PROVISIONAL-skip branch below is retained as a
+defensive mechanism for any future un-pinned row (dataset_id == ``PROVISIONAL``);
+both live rows are real and are asserted, not skipped.
 """
 import os
 import sys

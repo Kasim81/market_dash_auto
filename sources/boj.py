@@ -44,11 +44,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_boj.csv"
@@ -138,32 +138,22 @@ def fetch_series(
         "startDate": start,
     }
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(BOJ_BASE, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text.strip():
-                head = resp.text.lstrip()[:200].lower()
-                if head.startswith("<!doctype html") or head.startswith("<html"):
-                    print(f"    [BoJ] {series_id} returned HTML (not CSV) — skipping")
-                    return None
-                return resp.text
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [BoJ HTTP {resp.status_code}] {series_id} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [BoJ HTTP {resp.status_code}] {series_id} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [BoJ timeout] {series_id} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [BoJ request error] {series_id}: {e} — skipping")
-            return None
+    # §2.C C3 (2026-07-09): shared retry engine; the validate hook keeps the
+    # old in-loop guards (empty body; the BoJ search app returning its HTML
+    # form instead of CSV — both are non-retryable definition failures).
+    def _reject(text: str) -> str | None:
+        if not text.strip():
+            return "empty body"
+        head = text.lstrip()[:200].lower()
+        if head.startswith("<!doctype html") or head.startswith("<html"):
+            return "HTML (not CSV)"
+        return None
 
-    print(f"    [BoJ FAIL] {series_id} — {retries} attempts exhausted")
-    return None
+    return fetch_with_backoff(
+        BOJ_BASE, params=params, label="BoJ", accept="text",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=series_id, validate=_reject,
+    )
 
 
 # ---------------------------------------------------------------------------
