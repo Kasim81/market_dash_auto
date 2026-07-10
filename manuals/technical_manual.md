@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-07-09
+> Last updated: 2026-07-10
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -52,7 +52,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 33-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, plus the 2026-07-08 `imf_sdmx.py`) + `docs/build_html.py` + `scripts/` utilities, totalling ~22,100 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 32 input CSV libraries (1 instrument library + 29 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 34-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, the 2026-07-08 `imf_sdmx.py`, plus `__init__.py` itself since §2.C C2 gave it real content — `SOURCE_REGISTRY`) + `docs/build_html.py` + `scripts/` utilities, totalling ~22,100 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 32 input CSV libraries (1 instrument library + 29 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
@@ -65,11 +65,11 @@ market_dash_auto/
 ├── fetch_macro_economic.py        # Unified raw-macro coordinator (~1,300 lines; §2.C C2 registry dispatch — _SOURCE_HANDLERS + _make_source_handlers replaced the two 27-branch ladders and ~42 template wrappers)
 ├── compute_macro_market.py        # 107 macro-market composite indicators + monthly-hist writer (2,567 lines)
 ├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (705 lines)
-├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,342 lines)
+├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight (§2.6 v2; 1,343 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
 ├── audit_writeback.py             # Daily writeback half of the audit loop — flips dead-ticker validation_status to UNAVAILABLE after 14d streak (§3.1 sub-track 3; ~230 lines)
-├── library_sync.py                # Operator-gated hist↔library prune utility — archives orphan columns then drops them; covers 3 pairs (comp / macro_economic / macro_market) (402 lines). `MACRO_LIBS` covers all 25 single-source registries (was 21 pre-2026-06-10).
+├── library_sync.py                # Operator-gated hist↔library prune utility — archives orphan columns then drops them; covers 3 pairs (comp / macro_economic / macro_market) (382 lines). `MACRO_LIBS` covers all 28 single-source registries, now derived from `sources.SOURCE_REGISTRY` (§2.C C2, 2026-07-09; was 25 pre-C2, 21 pre-2026-06-10).
 ├── pipeline.log                   # Captured stdout+stderr of the most recent run (committed by CI)
 ├── requirements.txt               # Python dependencies
 ├── README.md
@@ -171,7 +171,7 @@ market_dash_auto/
 │   └── equity_fundamentals.csv        # OUTPUT — SEC EDGAR revenue + diluted EPS history (long/tidy, idempotent-merge; isolated phase in fetch_data.py)
 │
 ├── docs/                          # Indicator Explorer generator
-│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,923 lines)
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,932 lines)
 │   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
 │   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
 │
@@ -202,7 +202,7 @@ market_dash_auto/
 │
 └── .github/workflows/
     ├── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits the log + audit + data CSVs + Pattern-9 sister archives (sisters added to the commit list 2026-07-08)
-    └── ci.yml                     # Offline unit-test gate on pull_request + push-to-main — 7 deterministic modules, no network/keys (forward_plan §2.C C5, 2026-07-08)
+    └── ci.yml                     # Offline unit-test gate on pull_request + push-to-main — 9 deterministic modules, no network/keys (forward_plan §2.C C5, 2026-07-08; test_bounded_fill + test_source_registry added 2026-07-08/09)
 ```
 
 ---
@@ -841,11 +841,13 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 - **Columns** = instruments (local currency first, then USD)
 - **Metadata prefix rows** (in Sheets tabs, not in CSVs): ticker ID, variant, source, name, broad asset class, region, sub-category, currency, units, frequency — then column header row, then data
 
-### 9.4 `fetch_macro_economic.py` (1,825 lines)
+### 9.4 `fetch_macro_economic.py` (~1,300 lines; §2.C C2, 2026-07-09)
 
 **Role:** Phase ME — unified raw-macro coordinator. Replaces the four retired per-source coordinators (Phase A `fetch_macro_us_fred.py`, Phase C `fetch_macro_international.py`, Phase D Tier 2 `fetch_macro_dbnomics.py`, Phase D ifo `fetch_macro_ifo.py`) and produces one snapshot tab (`macro_economic`) plus one history tab (`macro_economic_hist`).
 
 The module loads every indicator definition from the per-source CSVs at import time via `load_all_indicators()`, then dispatches snapshot and history fetches to the matching `sources/*.py` module based on each indicator's `source` field. There is **no direct API contact in this module** — every HTTP/Excel call lives in `sources/`.
+
+**Dispatch (§2.C C2, 2026-07-09):** each source label maps to a `(snapshot_handler, history_handler)` pair in the `_SOURCE_HANDLERS` dict. The ~24 standard single-series sources get their pair generated by the `_make_source_handlers(module, delay, snapshot_kwargs, sub_field_default)` factory; the five structurally-special sources (FRED us/intl split, the OECD/WB/IMF fan-outs, DB.nomics with its plausibility guard + ISM fallback) keep hand-written handlers registered in the same table; `ifo` stays on its batch path. `_validate_dispatch()` hard-fails the run before any network work if a loaded indicator's source label has no entry (replacing the old silent `[WARN] Unknown source` skip). Labels/stems/modules all come from `sources.SOURCE_REGISTRY`. This replaced two ~27-branch `if/elif` ladders and ~42 near-identical `_fetch_<src>_{snapshot,history}` wrappers (net −863 lines).
 
 #### Key Functions
 
@@ -890,9 +892,9 @@ Unit-tested in `test_tier_merge.py` (cadence-first, tier tie-break, staleness fa
 
 Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → alpha_vantage → shiller → french → jst → atlanta_fed → ny_fed`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema. This read order still determines candidate-list `order` (the final tie-break inside `_select_winner`), but it no longer determines the winner outright — see the tier-aware merge above.
 
-### 9.5 `sources/` package (33 modules — 2 scaffolding-only, ~9,200 lines total)
+### 9.5 `sources/` package (34 modules — 2 scaffolding-only, ~9,200 lines total)
 
-**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added). **2026-07-08:** new module `imf_sdmx.py` (§9.5.19) added for the IMF Data Portal SDMX 2.1 API (§2.A A1, China CPI). Same day, **§2.C C3 batch 1** converted five keyless GET modules — `ecb.py`, `boc.py`, `ons.py`, `bundesbank.py`, `abs.py` — from an identical hand-rolled retry loop to the shared `sources/base.fetch_with_backoff` helper, each shrinking by ~15-20 lines (`ecb.py` 230→213, `boc.py` 183→165, `ons.py` 218→200, `bundesbank.py` 218→201, `abs.py` 206→189); `imf_sdmx.py` was written directly on the shared helper. Remaining C3 conversions are tracked in `forward_plan.md` §2.C C3.
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added). **2026-07-08:** new module `imf_sdmx.py` (185 lines; see §5 "IMF Data Portal — SDMX 2.1" for its full description — it has no numbered §9.5.x subsection of its own) added for the IMF Data Portal SDMX 2.1 API (§2.A A1, China CPI). Same day, **§2.C C3 batch 1** converted five keyless GET modules — `ecb.py`, `boc.py`, `ons.py`, `bundesbank.py`, `abs.py` — from an identical hand-rolled retry loop to the shared `sources/base.fetch_with_backoff` helper, each shrinking by ~15-20 lines (`ecb.py` 230→213, `boc.py` 183→165, `ons.py` 218→200, `bundesbank.py` 218→201, `abs.py` 206→189); `imf_sdmx.py` was written directly on the shared helper. Remaining C3 conversions are tracked in `forward_plan.md` §2.C C3.
 
 **Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → alpha_vantage → shiller → french → jst → atlanta_fed → ny_fed`. Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Per `col`, the winning source is now chosen by the tier-aware, cadence-first, staleness-fallback merge (`_select_winner` / `_dedupe_snapshot_rows`, §9.4) rather than a plain last-writer-wins rule — this read order only supplies the final tie-break.
 
@@ -1340,7 +1342,7 @@ Each indicator goes through:
 | `_PHASE_D_CALCULATORS` | dict | Survey-derived indicators (ISM, ifo, Eurostat) — historical naming, all now read from the unified hist |
 | `_ALL_CALCULATORS` | dict | Merged union of the above four dicts |
 
-### 9.7 `docs/build_html.py` (2,923 lines)
+### 9.7 `docs/build_html.py` (2,932 lines)
 
 **Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a 3-section sidebar. Reads the freshly-written CSVs at the end of each pipeline run.
 
@@ -1395,7 +1397,7 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 - `docs/indicator_explorer.html` — self-contained HTML (committed to git)
 - `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
 
-### 9.8 `data_audit.py` (1,342 lines)
+### 9.8 `data_audit.py` (1,343 lines)
 
 **Role:** Daily integrated audit that consolidates every "what could go wrong" signal into a single committed report + a GitHub Issue comment that triggers user notification email. Replaces the v1 `freshness_audit.py` (deleted 2026-04-28). See §2.6 of `forward_plan.md` for the design rescope rationale.
 
@@ -1457,7 +1459,7 @@ OECD multi-country fan-out conflicts (one library row → many fanned-out column
 
 The 117d cluster (PERMIT, FEDFUNDS, CMRMTSPL, FRA/DEU_UNEMPLOYMENT, EU_ESI/IND/SVC_CONF, ISM_MFG_PMI/NEWORD) was deliberately **not** widened — 117d for monthly publishers is too long for normal lag; widening would mask a real fetch or publisher issue. Those 10 series remain EXPIRED as forcing functions.
 
-### 9.9 `library_sync.py` (402 lines)
+### 9.9 `library_sync.py` (382 lines)
 
 **Role:** Operator-gated companion to `data_audit.py`'s Section B `registry_drift` check (forward_plan §0 / §3.1). The library CSVs are the source of truth for what the pipeline fetches; this utility keeps the hist files aligned with them after a library row has been edited or removed.
 
@@ -1468,7 +1470,7 @@ Default mode is dry-run; pass `--confirm` to apply. The `removed_tickers.csv` le
 | Pair | Source-of-truth | Hist file | Column-derivation rule |
 |---|---|---|---|
 | **comp** | `index_library.csv` (PR/TR + ticker_fred_* fields) | `market_data_comp_hist.csv` | row 0 ("Ticker ID") cols 2+; each base ticker appears twice (`_Local` + `_USD`) |
-| **macro_economic** | union of all 25 `macro_library_*.csv` registered in `MACRO_LIBS` (fred, oecd, worldbank, imf, dbnomics, ifo, boe, ecb, boj, estat, nasdaqdl, lbma, boc, statcan, ons, bundesbank, abs, istat, bls, insee, bdf, alpha_vantage, shiller, french, jst — coverage extended 2026-06-10 to match `data_audit.py`'s walk and prevent registry-drift false positives on the new sources) | `macro_economic_hist.csv` | FRED/DB.nomics/ifo etc.: `col` (or `series_id` fallback); OECD: `f"{country}_{series_id}"` per `oecd_countries`; WB/IMF: `f"{country}_{col}"` × every code in `macro_library_countries.csv` |
+| **macro_economic** | union of all 28 `macro_library_*.csv` registered in `MACRO_LIBS` — now derived from `sources.SOURCE_REGISTRY` (§2.C C2, 2026-07-09) rather than a hand-maintained dict: fred, oecd, worldbank, imf, dbnomics, ifo, boe, ecb, boj, estat, nasdaqdl, lbma, boc, statcan, ons, bundesbank, abs, istat, bls, insee, bdf, alpha_vantage, shiller, french, jst, atlanta_fed, ny_fed, imf_sdmx | `macro_economic_hist.csv` | FRED/DB.nomics/ifo etc.: `col` (or `series_id` fallback); OECD: `f"{country}_{series_id}"` per `oecd_countries`; WB/IMF: `f"{country}_{col}"` × every code in `macro_library_countries.csv` |
 | **macro_market** | `macro_indicator_library.csv` (`id` column) | `macro_market_hist.csv` | each `id` produces 4 columns: `<id>_raw`, `<id>_zscore`, `<id>_regime`, `<id>_fwd_regime` |
 
 For each orphan column, the existing data is archived to `data/_archived_columns/<hist_basename>__<column_id>__<YYYY-MM-DD>.csv` (preserving full historical observations) before the column is dropped from the live hist file.
@@ -1508,7 +1510,7 @@ Runs as a CI step between `data_audit.py` and the GitHub Issue comment post, so 
 
 Pass `--dry-run` for report-only.
 
-### 9.11 `build_source_inventory.py` (361 lines, added 2026-07-03 PR #246)
+### 9.11 `build_source_inventory.py` (356 lines, added 2026-07-03 PR #246; shrank via §2.C C2, 2026-07-09)
 
 **Role:** Offline, keyless static audit of source→indicator wiring. Reads only the in-repo `data/macro_library_*.csv` registrations plus the last regen's `data/macro_economic.csv` — no network calls. For every served column it lists all declaring sources (primary + fallbacks), which one actually won at the last regen, and structural flags:
 
