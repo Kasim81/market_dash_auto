@@ -30,11 +30,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_boe.csv"
@@ -134,35 +134,23 @@ def fetch_series(
         "VPD": "Y",
     }
 
-    for attempt in range(retries):
-        for base in BOE_URLS:
-            try:
-                resp = requests.get(base, params=params, headers=_HEADERS, timeout=timeout)
-                if resp.status_code != 200 or not resp.text:
-                    if 500 <= resp.status_code < 600:
-                        print(f"    [BoE HTTP {resp.status_code}] {series_code} via {base.rsplit('/', 1)[-1]} — server error")
-                    else:
-                        print(f"    [BoE HTTP {resp.status_code}] {series_code} via {base.rsplit('/', 1)[-1]}")
-                    continue
-                # Reject HTML responses (form page) — try the next URL.
-                head = resp.text.lstrip()[:200].lower()
-                if head.startswith("<!doctype html") or head.startswith("<html"):
-                    print(f"    [BoE] {base.rsplit('/', 1)[-1]} returned HTML form (not CSV) — trying alt")
-                    continue
-                return resp.text
-            except requests.Timeout:
-                print(f"    [BoE timeout] {series_code} via {base.rsplit('/', 1)[-1]}")
-                continue
-            except requests.RequestException as e:
-                print(f"    [BoE request error] {series_code} via {base.rsplit('/', 1)[-1]}: {e}")
-                continue
-        # All URLs failed for this attempt; back off before next attempt.
-        wait = 2 ** attempt
-        print(f"    [BoE] all URLs failed for {series_code} — backing off {wait}s")
-        time.sleep(wait)
+    # §2.C C3 (2026-07-09): shared retry engine in mirror mode — each attempt
+    # walks BOE_URLS in order (the same rotation the hand-written loop did);
+    # the validate hook keeps the "IADB returned its HTML form instead of
+    # CSV" sniff, which in mirror mode moves to the alternate URL.
+    def _reject(text: str) -> str | None:
+        if not text:
+            return "empty body"
+        head = text.lstrip()[:200].lower()
+        if head.startswith("<!doctype html") or head.startswith("<html"):
+            return "HTML form (not CSV)"
+        return None
 
-    print(f"    [BoE FAIL] {series_code} — {retries} attempts × {len(BOE_URLS)} URLs exhausted")
-    return None
+    return fetch_with_backoff(
+        list(BOE_URLS), params=params, label="BoE", accept="text",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=series_code, validate=_reject,
+    )
 
 
 # ---------------------------------------------------------------------------

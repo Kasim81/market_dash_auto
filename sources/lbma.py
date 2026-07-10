@@ -36,12 +36,11 @@ Driven by the regime AA Phase 0c long-run availability requirement.
 
 from __future__ import annotations
 
-import json
 import pathlib
-import time
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_lbma.csv"
@@ -105,43 +104,16 @@ def load_library() -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def _fetch_raw(series_id: str, timeout: int = 30, retries: int = 3) -> list | None:
-    """Hit prices.lbma.org.uk for the named series. Returns parsed JSON list."""
-    last_exc: Exception | None = None
-    for attempt in range(retries):
-        for host in LBMA_HOSTS:
-            url = f"{host}/json/{series_id}.json"
-            try:
-                resp = requests.get(url, headers=_HEADERS, timeout=timeout)
-                if resp.status_code != 200:
-                    print(f"    [LBMA HTTP {resp.status_code}] {series_id} via {host}")
-                    continue
-                if not resp.text:
-                    print(f"    [LBMA] {series_id} via {host}: empty body")
-                    continue
-                try:
-                    return resp.json()
-                except json.JSONDecodeError as e:
-                    head = resp.text.lstrip()[:120]
-                    print(f"    [LBMA] {series_id} via {host}: non-JSON body "
-                          f"(first 120: {head!r}) — {e}")
-                    continue
-            except requests.Timeout:
-                print(f"    [LBMA timeout] {series_id} via {host}")
-                last_exc = TimeoutError(f"timeout on {url}")
-                continue
-            except requests.RequestException as e:
-                print(f"    [LBMA request error] {series_id} via {host}: {e}")
-                last_exc = e
-                continue
-        # All hosts failed for this attempt — back off before retry.
-        wait = 2 ** attempt
-        if attempt + 1 < retries:
-            print(f"    [LBMA] all hosts failed for {series_id} — backing off {wait}s")
-            time.sleep(wait)
+    """Hit prices.lbma.org.uk for the named series. Returns parsed JSON list.
 
-    print(f"    [LBMA FAIL] {series_id} — {retries} attempts × {len(LBMA_HOSTS)} host(s) "
-          f"exhausted ({last_exc})")
-    return None
+    §2.C C3 (2026-07-09): shared retry engine in mirror mode — each attempt
+    walks LBMA_HOSTS in order; a non-200, empty/non-JSON body, or network
+    error moves to the next host, and a whole failed pass backs off."""
+    return fetch_with_backoff(
+        [f"{host}/json/{series_id}.json" for host in LBMA_HOSTS],
+        label="LBMA", retries=retries, timeout=timeout, headers=_HEADERS,
+        context=series_id,
+    )
 
 
 def fetch_series_as_pandas(

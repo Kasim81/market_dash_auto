@@ -50,11 +50,11 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 from datetime import date, datetime, timezone
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_istat.csv"
@@ -124,32 +124,20 @@ def _fetch_csv(
     if last_n is not None and last_n > 0:
         params["lastNObservations"] = last_n
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(url, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text.strip():
-                return resp.text
-            if resp.status_code == 404:
-                # NoRecordsFound — a real "no data" answer, not worth retrying.
-                print(f"    [ISTAT 404] {flow}/{key} — no records")
-                return None
-            if resp.status_code in (429, 503) or resp.status_code >= 500:
-                wait = min(2 ** attempt, 16)
-                print(f"    [ISTAT HTTP {resp.status_code}] {flow}/{key} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [ISTAT HTTP {resp.status_code}] {flow}/{key} — skipping")
-            return None
-        except requests.Timeout:
-            wait = min(2 ** attempt, 16)
-            print(f"    [ISTAT timeout] {flow}/{key} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [ISTAT request error] {flow}/{key}: {e} — backing off")
-            time.sleep(2)
+    # §2.C C3 (2026-07-09): shared retry engine — retry_errors=True keeps the
+    # 2026-06-12 flaky-gateway posture (a connection error is retried, not
+    # aborted, so series that come back mid-outage are still captured); the
+    # (timeout=30, retries=3) budget from that tuning is unchanged, and a 404
+    # (NoRecordsFound) aborts immediately exactly as before. The validate
+    # hook keeps the empty-body guard.
+    def _reject(text: str) -> str | None:
+        return "empty body" if not text.strip() else None
 
-    print(f"    [ISTAT FAIL] {flow}/{key} — {retries} attempts exhausted")
-    return None
+    return fetch_with_backoff(
+        url, params=params, label="ISTAT", accept="text",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=f"{flow}/{key}", validate=_reject, retry_errors=True,
+    )
 
 
 # ---------------------------------------------------------------------------

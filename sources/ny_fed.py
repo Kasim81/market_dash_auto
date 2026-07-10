@@ -50,10 +50,10 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_ny_fed.csv"
 
@@ -133,46 +133,23 @@ def _download_workbook(timeout: int = 45, retries: int = 2) -> bytes | None:
 
     Returns the raw bytes or None on hard failure. Logs every attempt for
     pipeline.log capture. Cached per process via _resolve_workbook_bytes()."""
-    last_exc: Exception | None = None
-    for attempt in range(retries):
-        for host in NYFED_XLSX_HOSTS:
-            try:
-                resp = requests.get(host, headers=_HEADERS, timeout=timeout)
-                if resp.status_code != 200:
-                    print(f"    [NYFed HTTP {resp.status_code}] {host}")
-                    continue
-                body = resp.content
-                if not body:
-                    print(f"    [NYFed] {host}: empty body")
-                    continue
-                if not body.startswith(_XLSX_MAGIC):
-                    head = body[:32].replace(b"\n", b" ")
-                    print(
-                        f"    [NYFed] {host}: not an xlsx — "
-                        f"first 32 bytes: {head!r}"
-                    )
-                    continue
-                print(
-                    f"    [NYFed] resolved xlsx ({len(body):,} bytes) via {host}"
-                )
-                return body
-            except requests.Timeout:
-                print(f"    [NYFed timeout] {host}")
-                last_exc = TimeoutError(f"timeout on {host}")
-                continue
-            except requests.RequestException as e:
-                print(f"    [NYFed request error] {host}: {e}")
-                last_exc = e
-                continue
-        wait = 2 ** attempt
-        if attempt + 1 < retries:
-            print(f"    [NYFed] all hosts failed — backing off {wait}s")
-            time.sleep(wait)
-    print(
-        f"    [NYFed FAIL] {retries} attempts × {len(NYFED_XLSX_HOSTS)} host(s) "
-        f"exhausted ({last_exc})"
+    # §2.C C3 (2026-07-09): shared retry engine in mirror mode with
+    # accept="bytes"; the validate hook keeps the xlsx magic-byte sniff.
+    def _reject(body: bytes) -> str | None:
+        if not body:
+            return "empty body"
+        if not body.startswith(_XLSX_MAGIC):
+            head = body[:32].replace(b"\n", b" ")
+            return f"not an xlsx — first 32 bytes: {head!r}"
+        return None
+
+    body = fetch_with_backoff(
+        list(NYFED_XLSX_HOSTS), label="NYFed", accept="bytes",
+        retries=retries, timeout=timeout, headers=_HEADERS, validate=_reject,
     )
-    return None
+    if body is not None:
+        print(f"    [NYFed] resolved xlsx ({len(body):,} bytes)")
+    return body
 
 
 def _resolve_workbook_bytes() -> bytes | None:
