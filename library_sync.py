@@ -160,6 +160,7 @@ MACRO_LIBS = {
     "bls":       DATA / "macro_library_bls.csv",
     "insee":     DATA / "macro_library_insee.csv",
     "bdf":       DATA / "macro_library_bdf.csv",
+    "eurostat":  DATA / "macro_library_eurostat.csv",
     "alpha_vantage": DATA / "macro_library_alpha_vantage.csv",
     "shiller":   DATA / "macro_library_shiller.csv",
     "french":    DATA / "macro_library_french.csv",

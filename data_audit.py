@@ -82,6 +82,7 @@ SOURCE_BY_LIBRARY = {
     "bls":       "BLS",
     "insee":     "INSEE",
     "bdf":       "Banque de France",
+    "eurostat":  "Eurostat",
     # Commodity / market reference
     "nasdaqdl":  "Nasdaq Data Link",
     "lbma":      "LBMA",
