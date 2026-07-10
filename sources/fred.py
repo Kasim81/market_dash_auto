@@ -22,6 +22,8 @@ import time
 import pandas as pd
 import requests
 
+from sources.base import fetch_with_backoff
+
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_fred.csv"
 
 # FRED REST endpoints
@@ -252,38 +254,14 @@ def fetch_observations(
     if realtime_end is not None:
         params["realtime_end"] = realtime_end
 
-    log_label = label or series_id
-
-    for attempt in range(retries):
-        try:
-            resp = requests.get(OBSERVATIONS_URL, params=params, timeout=timeout)
-
-            if resp.status_code == 200:
-                return resp.json()
-
-            if resp.status_code == 429 or resp.status_code >= 500:
-                wait = backoff_base ** (attempt + 1)
-                print(
-                    f"  [FRED] HTTP {resp.status_code} on {log_label} — "
-                    f"backoff {wait}s (attempt {attempt+1}/{retries})"
-                )
-                time.sleep(wait)
-                continue
-
-            print(f"  [FRED] HTTP {resp.status_code} on {log_label} — skipping")
-            return None
-
-        except requests.exceptions.Timeout:
-            wait = backoff_base ** (attempt + 1)
-            print(f"  [FRED] Timeout on {log_label} — backoff {wait}s")
-            time.sleep(wait)
-
-        except requests.exceptions.RequestException as e:
-            print(f"  [FRED] Request error on {log_label}: {e} — skipping")
-            return None
-
-    print(f"  [FRED] All {retries} attempts failed for {log_label} — skipping")
-    return None
+    # §2.C C3 (2026-07-09): shared retry engine. `context` keeps the exact
+    # "[FRED] HTTP <code> on <series> — skipping" shape that data_audit
+    # Section A scrapes from pipeline.log.
+    return fetch_with_backoff(
+        OBSERVATIONS_URL, params=params, label="FRED",
+        retries=retries, backoff_base=backoff_base, timeout=timeout,
+        context=label or series_id,
+    )
 
 
 def parse_observations(data: dict | None) -> list[tuple[str, float]]:

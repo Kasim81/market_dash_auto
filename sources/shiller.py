@@ -59,10 +59,10 @@ from __future__ import annotations
 
 import io
 import pathlib
-import time
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_shiller.csv"
 
@@ -184,47 +184,25 @@ def _download_workbook(timeout: int = 30, retries: int = 2) -> bytes | None:
     Returns the raw bytes (xlsx-with-.xls-extension in modern releases) or
     None on hard failure. Logs every attempt for pipeline.log capture.
     Cached per process via _resolve_workbook_bytes()."""
-    last_exc: Exception | None = None
-    for attempt in range(retries):
-        for host in SHILLER_XLS_HOSTS:
-            try:
-                resp = requests.get(host, headers=_HEADERS, timeout=timeout)
-                if resp.status_code != 200:
-                    print(f"    [Shiller HTTP {resp.status_code}] {host}")
-                    continue
-                body = resp.content
-                if not body:
-                    print(f"    [Shiller] {host}: empty body")
-                    continue
-                if body.startswith(_XLSX_MAGIC):
-                    print(f"    [Shiller] resolved xlsx ({len(body):,} bytes) via {host}")
-                    return body
-                if body.startswith(_BIFF_MAGIC):
-                    print(f"    [Shiller] resolved BIFF .xls ({len(body):,} bytes) via {host}")
-                    return body
-                head = body[:32].replace(b"\n", b" ")
-                print(
-                    f"    [Shiller] {host}: unrecognised file magic — "
-                    f"first 32 bytes: {head!r}"
-                )
-            except requests.Timeout:
-                print(f"    [Shiller timeout] {host}")
-                last_exc = TimeoutError(f"timeout on {host}")
-                continue
-            except requests.RequestException as e:
-                print(f"    [Shiller request error] {host}: {e}")
-                last_exc = e
-                continue
-        # All hosts failed this attempt — back off before retry.
-        wait = 2 ** attempt
-        if attempt + 1 < retries:
-            print(f"    [Shiller] all hosts failed — backing off {wait}s")
-            time.sleep(wait)
-    print(
-        f"    [Shiller FAIL] {retries} attempts × {len(SHILLER_XLS_HOSTS)} host(s) "
-        f"exhausted ({last_exc})"
+    # §2.C C3 (2026-07-09): shared retry engine in mirror mode with
+    # accept="bytes"; the validate hook keeps the file-magic sniff (modern
+    # releases are xlsx-with-.xls-extension, older mirrors true BIFF .xls).
+    def _reject(body: bytes) -> str | None:
+        if not body:
+            return "empty body"
+        if not (body.startswith(_XLSX_MAGIC) or body.startswith(_BIFF_MAGIC)):
+            head = body[:32].replace(b"\n", b" ")
+            return f"unrecognised file magic — first 32 bytes: {head!r}"
+        return None
+
+    body = fetch_with_backoff(
+        list(SHILLER_XLS_HOSTS), label="Shiller", accept="bytes",
+        retries=retries, timeout=timeout, headers=_HEADERS, validate=_reject,
     )
-    return None
+    if body is not None:
+        kind = "xlsx" if body.startswith(_XLSX_MAGIC) else "BIFF .xls"
+        print(f"    [Shiller] resolved {kind} ({len(body):,} bytes)")
+    return body
 
 
 def _resolve_workbook_bytes() -> bytes | None:

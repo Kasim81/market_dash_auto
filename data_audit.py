@@ -22,12 +22,21 @@ Replaces the v1 freshness_audit.py with a three-section integrated audit:
       where forward-fill on the Friday spine would otherwise hide
       stale-publisher series.
 
+(Sections D and E — history preservation and value plausibility — were added
+later; Section F below is the §2.C C8 CRITICAL gate.)
+
 Outputs:
     data_audit.txt      — full sorted report, repo-root
     audit_comment.md    — short markdown for posting as a GitHub Issue comment
                           (first line is the one-sentence ISSUE/CLEAN summary)
+    data_audit_critical.flag — written ONLY when Section F fired; the
+                          update_data.yml commit step reads it to skip the
+                          data-file commit (removed again on clean runs)
 
-Exit code: always 0 — this is a warning channel, not a build gate.
+Exit code: 0 for everything in Sections A–E (warning channel, not a build
+gate) — except the deliberately-narrow Section F CRITICAL class (§2.C C8:
+protected-tab output empty/all-NaN; hist CSV losing >10% rows/columns vs
+HEAD), which exits 2 so the daily workflow withholds the data commit.
 
 Usage:
     python data_audit.py [--quiet]
@@ -307,20 +316,29 @@ def section_a_fetch_outcomes() -> dict:
       ECB / fallbacks (informational; included for visibility):
         [ECB] EU_I1 spread unavailable — ...
 
+      Declared-primary demotions (§2.C C1, 2026-07-09 — emitted by the
+      tier-aware merge in fetch_macro_economic._log_demotion on both the
+      snapshot and history paths):
+        [FALLBACK] EA_HICP: declared primary estat/... (tier 0) demoted —
+        stale 190d (...); serving ecb/... (tier 2, Monthly, last 2026-06-01)
+      Every such line is surfaced verbatim: a frozen primary is a reported
+      audit issue on day one, not a silent six-month freeze.
+
     Cross-check: yfinance "delisted" tickers are cross-referenced against the
     latest non-empty observation in market_data_comp_hist.csv.  If a ticker
     has data in the latest row, the warning was transient and the ticker is
     omitted from the audit (false positive).  If the ticker has no data, it's
     a real concern and it's reported.
 
-    Returns dict with three sorted lists:
-      yfinance_dead, fred_persistent_errors, other_warnings
+    Returns dict with four sorted/ordered lists:
+      yfinance_dead, fred_persistent_errors, fallback_demotions, other_warnings
     """
     import re
 
     log_path = ROOT / "pipeline.log"
     if not log_path.exists():
-        return {"yfinance_dead": [], "fred_persistent_errors": [], "other_warnings": []}
+        return {"yfinance_dead": [], "fred_persistent_errors": [],
+                "fallback_demotions": [], "other_warnings": []}
 
     text = log_path.read_text()
 
@@ -351,6 +369,13 @@ def section_a_fetch_outcomes() -> dict:
         fred_final.add((m.group(1), m.group(2)))
     fred_persistent_errors = sorted(f"HTTP {c} on {s}" for c, s in fred_final)
 
+    # ---------- Declared-primary demotions (§2.C C1) ----------
+    fallback_demotions: list[str] = []
+    for m in re.finditer(r'\[FALLBACK\][^\n]*', text):
+        line = m.group(0).strip()
+        if line not in fallback_demotions:
+            fallback_demotions.append(line)
+
     # ---------- Other source warnings (informational) ----------
     other_warnings: list[str] = []
     # ECB / DBnomics / OECD per-source notable lines
@@ -370,6 +395,7 @@ def section_a_fetch_outcomes() -> dict:
     return {
         "yfinance_dead": yfinance_dead,
         "fred_persistent_errors": fred_persistent_errors,
+        "fallback_demotions": fallback_demotions,
         "other_warnings": other_warnings,
     }
 
@@ -802,29 +828,22 @@ def _check_registry_drift() -> list[str]:
     library_sync pairs (comp, macro_economic, macro_market) so the operator
     can run `python library_sync.py --confirm` to archive + prune.
 
-    Reuses library_sync's expected/present helpers so the column-derivation
+    Iterates library_sync.SYNC_SPECS (§2.C C6) so the column-derivation
     rules (PR/TR for comp, OECD/WB/IMF country fan-out for macro economic,
-    indicator suffixes for macro market) live in one place.
+    indicator suffixes for macro market) live in one place — a new hist
+    pair registered there is automatically drift-checked here.
     """
     import library_sync as ls
 
-    pairs = [
-        ("market_data_comp_hist.csv", ls.COMP_HIST,       ls._comp_expected,       ls._comp_present),
-        ("macro_economic_hist.csv",   ls.MACRO_ECON_HIST, ls._macro_econ_expected, ls._macro_econ_present),
-        ("macro_market_hist.csv",     ls.MACRO_MKT_HIST,  ls._macro_mkt_expected,  ls._macro_mkt_present),
-    ]
-
     issues: list[str] = []
-    for name, hist_path, expected_fn, present_fn in pairs:
-        if not hist_path.exists():
+    for spec in ls.SYNC_SPECS:
+        if not spec.hist_path.exists():
             continue
-        with hist_path.open(newline="") as f:
+        with spec.hist_path.open(newline="") as f:
             rows = list(csv.reader(f))
-        expected = expected_fn()
-        present = present_fn(rows)
-        for col_id in sorted(present - expected):
+        for col_id in sorted(ls._present_ids(spec, rows) - spec.expected()):
             issues.append(
-                f"hist column {col_id!r} present in {name} but no matching "
+                f"hist column {col_id!r} present in {spec.name} but no matching "
                 f"row in source-of-truth library "
                 f"(run: python library_sync.py --confirm)"
             )
@@ -1037,6 +1056,110 @@ def section_e_plausibility() -> dict:
 # Report rendering
 # =============================================================================
 
+# =============================================================================
+# Section F — CRITICAL hard-fail gate (§2.C C8)
+# =============================================================================
+# The audit is deliberately a warning channel (exit 0) — EXCEPT for a tiny,
+# deliberately-hard-to-trigger CRITICAL class where committing the data would
+# bake a catastrophe into git history and downstream Sheets/automations:
+#
+#   (a) a SHEETS_PROTECTED_TABS output CSV that exists but carries ZERO rows
+#       with any value cell — the all-NaN/empty regression class (protected
+#       tabs feed the user's downstream trigger.py automations);
+#   (b) a hist CSV that lost >10% of its rows or columns vs the committed
+#       (HEAD) version — the truncated-rewrite class (hist files are
+#       append-mostly; even a big library prune stays far under 10%).
+#
+# On any CRITICAL finding main() exits 2 and writes data_audit_critical.flag;
+# update_data.yml commits only pipeline.log + the audit reports and SKIPS the
+# data-file commit, so the bad artefacts never reach main. The (c) idea from
+# the review (composite raw unchanged >k months) is intentionally absent:
+# C1's [FALLBACK] demotion reporting + Section C EXPIRED already cover that
+# signature as loud warnings, and freezes are sometimes upstream-legitimate.
+
+CRITICAL_FLAG = ROOT / "data_audit_critical.flag"
+_SHRINK_TOLERANCE = 0.10          # >10% row/col loss vs HEAD is CRITICAL
+_HIST_GATED = [
+    "data/market_data_comp_hist.csv", "data/market_data_comp_hist_x.csv",
+    "data/macro_economic_hist.csv", "data/macro_economic_hist_x.csv",
+    "data/macro_market_hist.csv", "data/macro_market_hist_x.csv",
+]
+
+
+def _csv_shape(rows: list[list[str]]) -> tuple[int, int]:
+    """(row count, first-row cell count) — a cheap, format-agnostic shape."""
+    return len(rows), (len(rows[0]) if rows else 0)
+
+
+def _committed_shape(relpath: str) -> tuple[int, int] | None:
+    """Shape of the HEAD version of relpath, or None when unavailable
+    (not a git checkout, file new in this run, git missing). Failures skip
+    the check rather than fail it — this gate must never false-trigger."""
+    import io
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["git", "show", f"HEAD:{relpath}"],
+            capture_output=True, cwd=ROOT, timeout=120,
+        )
+        if out.returncode != 0:
+            return None
+        return _csv_shape(list(csv.reader(io.StringIO(out.stdout.decode("utf-8")))))
+    except Exception:
+        return None
+
+
+def section_f_critical() -> dict:
+    """Run the CRITICAL checks. Returns {"critical": [msg, ...]}."""
+    critical: list[str] = []
+
+    # (a) protected-tab outputs empty / all-NaN
+    from library_utils import SHEETS_PROTECTED_TABS
+    for tab in sorted(SHEETS_PROTECTED_TABS):
+        path = DATA / f"{tab}.csv"
+        if not path.exists():
+            continue          # legacy tab with no CSV output (sentiment_data)
+        with path.open(newline="") as f:
+            rows = list(csv.reader(f))
+        header, data_rows = (rows[0] if rows else []), rows[1:]
+        if not data_rows:
+            critical.append(f"protected output {path.name} has ZERO data rows")
+            continue
+        # Value region starts at "Last Price" (identity/metadata cols before
+        # it are always populated and would mask an all-NaN regression).
+        if "Last Price" in header:
+            v0 = header.index("Last Price")
+            if not any(any(c.strip() for c in r[v0:]) for r in data_rows):
+                critical.append(
+                    f"protected output {path.name}: all {len(data_rows)} data "
+                    f"rows have EMPTY value cells (from column "
+                    f"{header[v0]!r} on) — all-NaN regression"
+                )
+
+    # (b) hist CSVs shrinking vs the committed version
+    for relpath in _HIST_GATED:
+        path = ROOT / relpath
+        if not path.exists():
+            continue
+        old = _committed_shape(relpath)
+        if old is None:
+            continue
+        old_rows, old_cols = old
+        with path.open(newline="") as f:
+            new_rows, new_cols = _csv_shape(list(csv.reader(f)))
+        for kind, new_n, old_n in [("row", new_rows, old_rows),
+                                   ("column", new_cols, old_cols)]:
+            if old_n and new_n < old_n * (1 - _SHRINK_TOLERANCE):
+                critical.append(
+                    f"{relpath}: {kind} count fell {old_n} → {new_n} "
+                    f"(-{(1 - new_n / old_n) * 100:.0f}%, gate "
+                    f"{int(_SHRINK_TOLERANCE * 100)}%) vs committed HEAD — "
+                    f"truncated rewrite?"
+                )
+
+    return {"critical": critical}
+
+
 def render_report(sections: dict) -> str:
     """Build the plaintext data_audit.txt report."""
     lines: list[str] = []
@@ -1152,6 +1275,19 @@ def render_report(sections: dict) -> str:
             )
     lines.append("")
 
+    # Section F — CRITICAL gate (§2.C C8)
+    f_sec = sections.get("f", {"critical": []})
+    n_f = len(f_sec["critical"])
+    lines.append(f"--- Section F: CRITICAL gate ({n_f} finding(s)) ---")
+    if n_f == 0:
+        lines.append("  (none)")
+    else:
+        for item in f_sec["critical"]:
+            lines.append(f"  CRITICAL  {item}")
+        lines.append("  → audit exits nonzero; the daily workflow SKIPS the "
+                     "data-file commit (pipeline.log + reports still committed).")
+    lines.append("")
+
     lines.append("Footer:")
     lines.append("  * = per-row override applied (freshness_override_days column)")
     lines.append("  STALE   = age between 1x and 2x tolerance — investigate")
@@ -1174,9 +1310,18 @@ def render_comment(sections: dict) -> str:
     n_d = len(d["issues"])
     e = sections.get("e", {"implausible": []})
     n_e = len(e["implausible"])
-    total = n_a + n_b + n_stale + n_anchors_overdue + n_d + n_e
+    f_sec = sections.get("f", {"critical": []})
+    n_f = len(f_sec["critical"])
+    total = n_a + n_b + n_stale + n_anchors_overdue + n_d + n_e + n_f
 
     lines: list[str] = []
+    # CRITICAL banner first — this is the one class that blocked the data
+    # commit (§2.C C8), so it must be impossible to miss in the Issue thread.
+    if n_f:
+        lines.append(f"# 🛑 CRITICAL — data commit SKIPPED ({n_f} finding{'s' if n_f != 1 else ''})")
+        for item in f_sec["critical"]:
+            lines.append(f"> **{item}**")
+        lines.append("")
     if total == 0:
         anchor_note = (
             f" (plus {n_anchors_active} historical anchor{'s' if n_anchors_active != 1 else ''} active)"
@@ -1197,6 +1342,8 @@ def render_comment(sections: dict) -> str:
             parts.append(f"{n_d} history-preservation issue{'s' if n_d != 1 else ''}")
         if n_e:
             parts.append(f"{n_e} implausible value{'s' if n_e != 1 else ''}")
+        if n_f:
+            parts.append(f"{n_f} CRITICAL")
         lines.append(
             f"## Daily audit — {TODAY.isoformat()} — **{total} ISSUE{'S' if total != 1 else ''}** "
             f"({', '.join(parts)})"
@@ -1328,6 +1475,7 @@ def main() -> int:
         "c": section_c_staleness(),
         "d": section_d_history_preservation(),
         "e": section_e_plausibility(),
+        "f": section_f_critical(),
     }
 
     OUT_REPORT.write_text(render_report(sections))
@@ -1336,7 +1484,16 @@ def main() -> int:
     if not quiet:
         print(OUT_REPORT.read_text())
 
-    return 0  # warning channel — never fail the build
+    # §2.C C8: the audit stays a warning channel (exit 0) for Sections A–E;
+    # only the deliberately-narrow Section F CRITICAL class fails the build.
+    # The flag file is the commit-step contract in update_data.yml — when it
+    # exists, only pipeline.log + the audit reports are committed.
+    criticals = sections["f"]["critical"]
+    if criticals:
+        CRITICAL_FLAG.write_text("\n".join(criticals) + "\n")
+        return 2
+    CRITICAL_FLAG.unlink(missing_ok=True)
+    return 0
 
 
 if __name__ == "__main__":

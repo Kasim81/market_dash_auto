@@ -38,15 +38,14 @@ Series ID convention used in the registry:
 
 from __future__ import annotations
 
-import json
 import os
 import pathlib
-import time
 from datetime import date, datetime
-from urllib.parse import parse_qsl, urlencode
+from urllib.parse import parse_qsl
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_estat.csv"
@@ -135,40 +134,23 @@ def fetch_series(
     }
     params.update(extras)
 
-    for attempt in range(retries):
-        try:
-            resp = requests.get(ESTAT_BASE, params=params, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text:
-                try:
-                    doc = resp.json()
-                except json.JSONDecodeError as e:
-                    print(f"    [e-Stat] JSON decode failed for {stats_data_id}: {e}")
-                    return None
-                # e-Stat returns 200 even for query errors; check the RESULT block.
-                result = doc.get("GET_STATS_DATA", {}).get("RESULT", {})
-                status = result.get("STATUS")
-                if status not in (0, "0"):
-                    err_msg = result.get("ERROR_MSG", "<no message>")
-                    print(f"    [e-Stat] API error STATUS={status} for {stats_data_id}: {err_msg}")
-                    return None
-                return doc
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [e-Stat HTTP {resp.status_code}] {stats_data_id} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [e-Stat HTTP {resp.status_code}] {stats_data_id} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [e-Stat timeout] {stats_data_id} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [e-Stat request error] {stats_data_id}: {e} — skipping")
-            return None
+    # §2.C C3 (2026-07-09): shared retry engine; the validate hook keeps the
+    # old in-loop guard — e-Stat returns HTTP 200 even for query errors, so
+    # the RESULT block is the real status (a non-zero STATUS is a definition
+    # error, not worth retrying).
+    def _reject(doc: dict) -> str | None:
+        result = doc.get("GET_STATS_DATA", {}).get("RESULT", {})
+        status = result.get("STATUS")
+        if status not in (0, "0"):
+            return (f"API error STATUS={status}: "
+                    f"{result.get('ERROR_MSG', '<no message>')}")
+        return None
 
-    print(f"    [e-Stat FAIL] {stats_data_id} — {retries} attempts exhausted")
-    return None
+    return fetch_with_backoff(
+        ESTAT_BASE, params=params, label="e-Stat",
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=stats_data_id, validate=_reject,
+    )
 
 
 # ---------------------------------------------------------------------------

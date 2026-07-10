@@ -81,10 +81,10 @@ from __future__ import annotations
 import io
 import pathlib
 import re
-import time
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_atlanta_fed.csv"
 
@@ -190,46 +190,24 @@ def _download_workbook(timeout: int = 45, retries: int = 2) -> bytes | None:
 
     Returns the raw bytes or None on hard failure. Logs every attempt for
     pipeline.log capture. Cached per process via _resolve_workbook_bytes()."""
-    last_exc: Exception | None = None
-    for attempt in range(retries):
-        for host in GDPNOW_XLSX_HOSTS:
-            try:
-                resp = requests.get(host, headers=_HEADERS, timeout=timeout)
-                if resp.status_code != 200:
-                    print(f"    [AtlantaFed HTTP {resp.status_code}] {host}")
-                    continue
-                body = resp.content
-                if not body:
-                    print(f"    [AtlantaFed] {host}: empty body")
-                    continue
-                if not body.startswith(_XLSX_MAGIC):
-                    head = body[:32].replace(b"\n", b" ")
-                    print(
-                        f"    [AtlantaFed] {host}: not an xlsx — "
-                        f"first 32 bytes: {head!r}"
-                    )
-                    continue
-                print(
-                    f"    [AtlantaFed] resolved xlsx ({len(body):,} bytes) via {host}"
-                )
-                return body
-            except requests.Timeout:
-                print(f"    [AtlantaFed timeout] {host}")
-                last_exc = TimeoutError(f"timeout on {host}")
-                continue
-            except requests.RequestException as e:
-                print(f"    [AtlantaFed request error] {host}: {e}")
-                last_exc = e
-                continue
-        wait = 2 ** attempt
-        if attempt + 1 < retries:
-            print(f"    [AtlantaFed] all hosts failed — backing off {wait}s")
-            time.sleep(wait)
-    print(
-        f"    [AtlantaFed FAIL] {retries} attempts × {len(GDPNOW_XLSX_HOSTS)} host(s) "
-        f"exhausted ({last_exc})"
+    # §2.C C3 (2026-07-09): shared retry engine in mirror mode with
+    # accept="bytes"; the validate hook keeps the xlsx magic-byte sniff
+    # (an HTML error page or truncated body moves to the next mirror).
+    def _reject(body: bytes) -> str | None:
+        if not body:
+            return "empty body"
+        if not body.startswith(_XLSX_MAGIC):
+            head = body[:32].replace(b"\n", b" ")
+            return f"not an xlsx — first 32 bytes: {head!r}"
+        return None
+
+    body = fetch_with_backoff(
+        list(GDPNOW_XLSX_HOSTS), label="AtlantaFed", accept="bytes",
+        retries=retries, timeout=timeout, headers=_HEADERS, validate=_reject,
     )
-    return None
+    if body is not None:
+        print(f"    [AtlantaFed] resolved xlsx ({len(body):,} bytes)")
+    return body
 
 
 def _resolve_workbook_bytes() -> bytes | None:

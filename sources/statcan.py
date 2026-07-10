@@ -29,11 +29,11 @@ Response shape (json):
 from __future__ import annotations
 
 import pathlib
-import time
 from datetime import date, datetime
 
 import pandas as pd
-import requests
+
+from sources.base import fetch_with_backoff
 
 
 _LIBRARY_CSV = pathlib.Path(__file__).parent.parent / "data" / "macro_library_statcan.csv"
@@ -109,37 +109,24 @@ def fetch_series(
         print(f"    [StatCan] invalid vector id {series_id!r}")
         return None
 
-    body = [{"vectorId": vid, "latestN": latest_n}]
-    for attempt in range(retries):
-        try:
-            resp = requests.post(WDS_LATEST_N, json=body, headers=_HEADERS, timeout=timeout)
-            if resp.status_code == 200 and resp.text:
-                doc = resp.json()
-                if not isinstance(doc, list) or not doc:
-                    print(f"    [StatCan] unexpected response for v{vid}")
-                    return None
-                item = doc[0]
-                if item.get("status") != "SUCCESS":
-                    print(f"    [StatCan] status={item.get('status')} for v{vid}")
-                    return None
-                return item.get("object")
-            if 500 <= resp.status_code < 600:
-                wait = 2 ** attempt
-                print(f"    [StatCan HTTP {resp.status_code}] v{vid} — backing off {wait}s")
-                time.sleep(wait)
-                continue
-            print(f"    [StatCan HTTP {resp.status_code}] v{vid} — skipping")
-            return None
-        except requests.Timeout:
-            wait = 2 ** attempt
-            print(f"    [StatCan timeout] v{vid} — backing off {wait}s")
-            time.sleep(wait)
-        except requests.RequestException as e:
-            print(f"    [StatCan request error] v{vid}: {e} — skipping")
-            return None
+    # §2.C C3 (2026-07-09): shared retry engine (the POST-shaped WDS call is
+    # why fetch_with_backoff grew ``json_body``); the validate hook keeps the
+    # old in-loop response-envelope guards, which are definition failures and
+    # not worth retrying.
+    def _reject(doc) -> str | None:
+        if not isinstance(doc, list) or not doc:
+            return "unexpected response shape"
+        if doc[0].get("status") != "SUCCESS":
+            return f"status={doc[0].get('status')}"
+        return None
 
-    print(f"    [StatCan FAIL] v{vid} — {retries} attempts exhausted")
-    return None
+    doc = fetch_with_backoff(
+        WDS_LATEST_N, label="StatCan",
+        json_body=[{"vectorId": vid, "latestN": latest_n}],
+        retries=retries, timeout=timeout, headers=_HEADERS,
+        context=f"v{vid}", validate=_reject,
+    )
+    return doc[0].get("object") if doc else None
 
 
 # ---------------------------------------------------------------------------
