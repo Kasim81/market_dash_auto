@@ -53,6 +53,7 @@ from sources import istat as istat_src
 from sources import bls as bls_src
 from sources import insee as insee_src
 from sources import bdf as bdf_src
+from sources import eurostat as eurostat_src
 from sources import shiller as shiller_src
 from sources import french as french_src
 from sources import jst as jst_src
@@ -137,6 +138,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(bls_src.load_library())
     indicators.extend(insee_src.load_library())
     indicators.extend(bdf_src.load_library())
+    indicators.extend(eurostat_src.load_library())
     indicators.extend(shiller_src.load_library())
     indicators.extend(french_src.load_library())
     indicators.extend(jst_src.load_library())
@@ -748,6 +750,7 @@ INSEE_DELAY = 0.5
 BDF_DELAY = 0.5
 BOJ_DELAY = 0.6
 ESTAT_DELAY = 0.6
+EUROSTAT_DELAY = 0.6  # seconds between Eurostat dissemination-API calls
 NDL_DELAY = 0.6
 LBMA_DELAY = 0.6
 SHILLER_DELAY = 0.1
@@ -1072,6 +1075,8 @@ _SOURCE_HANDLERS: dict[str, tuple] = {
                                         snapshot_kwargs={"recent": True}),
     "INSEE":      _make_source_handlers(insee_src, INSEE_DELAY),
     "Banque de France": _make_source_handlers(bdf_src, BDF_DELAY),
+    "Eurostat":   _make_source_handlers(eurostat_src, EUROSTAT_DELAY,
+                                        snapshot_kwargs={"last_n": 2}),
     "Shiller":    _make_source_handlers(shiller_src, SHILLER_DELAY),
     "KenFrench":  _make_source_handlers(french_src, FRENCH_DELAY),
     "JST":        _make_source_handlers(jst_src, JST_DELAY),
