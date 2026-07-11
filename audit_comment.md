@@ -1,20 +1,23 @@
-## Daily audit — 2026-07-10 — **57 ISSUES** (8 fetch errors, 49 stale series)
+## Daily audit — 2026-07-11 — **57 ISSUES** (9 fetch errors, 48 stale series)
 
-_Run: 2026-07-10 09:40 UTC_
+_Run: 2026-07-11 04:17 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**fallback_demotions** (7):
-- `[FALLBACK] (snapshot) CAN_UNEMPLOYMENT: declared primary StatCan/2062815 (tier 0) demoted — primary returned no data this run; serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
+**yfinance_dead** (2):
+- `HYXU`
+- `IFRB.L`
+
+**fallback_demotions** (6):
 - `[FALLBACK] (snapshot) FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
-- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 132d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 132d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 - `[FALLBACK] FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-31)`
-- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 131d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 132d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 132d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 
 **other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
@@ -28,48 +31,48 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1317d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 982d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 375d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 131d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 100d | 45d |
-| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 100d | 45d\* |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1318d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 983d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 376d | 120d\* |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 132d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 101d | 45d |
+| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 101d | 45d\* |
 
-**STALE** (43):
+**STALE** (42):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 556d | 540d |
-| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-09-30 | 283d | 180d\* |
-| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 190d | 180d\* |
-| `CP` | FRED | Quarterly | 2026-01-01 | 190d | 180d\* |
-| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 159d | 100d\* |
-| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 159d | 100d\* |
-| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 159d | 100d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 132d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 132d | 120d\* |
-| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 131d | 100d\* |
-| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 131d | 100d\* |
-| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 131d | 90d\* |
-| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 131d | 120d\* |
-| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 131d | 120d\* |
-| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 131d | 120d |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 101d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 101d | 90d\* |
-| `ITA_BTP_10Y` | FRED | Monthly | 2026-04-01 | 100d | 90d\* |
-| `CHN_CON_CONF` | FRED | Monthly | 2026-04-01 | 100d | 90d\* |
-| `NLD_DSL_10Y` | FRED | Monthly | 2026-04-01 | 100d | 75d\* |
-| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-04-01 | 100d | 60d\* |
-| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 100d | 60d\* |
-| `GBR_GDP_MONTHLY` | ONS | Monthly | 2026-04-01 | 100d | 75d\* |
-| `PERMIT` | FRED | Monthly | 2026-05-01 | 70d | 45d |
-| `USA_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 70d | 45d\* |
-| `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 70d | 45d\* |
-| `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 70d | 45d |
-| `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 70d | 45d |
-| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 70d | 45d |
-| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 70d | 45d\* |
-| _… 13 more in `data_audit.txt`_ |  |  |  |  |  |
+| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 557d | 540d |
+| `EZ_EMPLOYMENT` | DB.nomics | Quarterly | 2025-09-30 | 284d | 180d\* |
+| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 191d | 180d\* |
+| `CP` | FRED | Quarterly | 2026-01-01 | 191d | 180d\* |
+| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 160d | 100d\* |
+| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 160d | 100d\* |
+| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 160d | 100d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 133d | 90d\* |
+| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 133d | 120d\* |
+| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 132d | 100d\* |
+| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 132d | 100d\* |
+| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 132d | 90d\* |
+| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 132d | 120d\* |
+| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 132d | 120d\* |
+| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 132d | 120d |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 102d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 102d | 90d\* |
+| `ITA_BTP_10Y` | FRED | Monthly | 2026-04-01 | 101d | 90d\* |
+| `CHN_CON_CONF` | FRED | Monthly | 2026-04-01 | 101d | 90d\* |
+| `NLD_DSL_10Y` | FRED | Monthly | 2026-04-01 | 101d | 75d\* |
+| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-04-01 | 101d | 60d\* |
+| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 101d | 60d\* |
+| `GBR_GDP_MONTHLY` | ONS | Monthly | 2026-04-01 | 101d | 75d\* |
+| `PERMIT` | FRED | Monthly | 2026-05-01 | 71d | 45d |
+| `USA_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 71d | 45d\* |
+| `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-05-01 | 71d | 45d\* |
+| `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 71d | 45d |
+| `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-05-01 | 71d | 45d |
+| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 71d | 45d |
+| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 71d | 45d\* |
+| _… 12 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -122,3 +125,5 @@ Full report attached as `data_audit.txt` in today's commit.
 
 </details>
 
+
+_audit_writeback: 2 ticker(s) on active dead-list streak (threshold 14d); none flipped this run._
