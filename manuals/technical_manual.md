@@ -26,6 +26,8 @@ This manual is the authoritative record of the **current code state** — module
 12. [Environment Setup](#12-environment-setup)
 13. [Known Issues & Status](#13-known-issues--status)
 14. [Operational Notes](#14-operational-notes)
+- [Appendix A — FactIQ Data Audit (2026-07-12)](#appendix-a--factiq-data-audit-2026-07-12)
+- [Appendix B — FactIQ Golden Snapshot](#appendix-b--factiq-golden-snapshot)
 
 ---
 
@@ -584,7 +586,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 
 ### Reference / audit-only data — FactIQ (not a pipeline source)
 
-FactIQ is an authenticated MCP data-warehouse plugin used **interactively** to cross-check the pipeline against an independent reference (read-only, 50-row/call, ~1 req/s, no monthly quota). The pipeline's Python cannot `import` it — it is OAuth-MCP, not a library — so it is **not** a `sources/*.py` module and never a last-writer in the source merge. (A headless GitHub-Actions job *could* in principle run an agent with FactIQ's MCP + a pre-authorized token to pull data into the CSVs, but that is a separate, unattended agent-in-CI path with real caveats — see forward_plan.) The rule stands: **replicate the upstream source where it has a clean public API; do not re-scrape FactIQ's warehouse** (its data isn't licensed for redistribution). The audit's data backing remains under `handover/audit/` (golden snapshot `handover/audit/golden/`, plus `findings.csv` / `working_list.csv`); the golden snapshot is the free-now reference hedge against FactIQ going paid. The full audit write-up and planning docs are archived in git (PRs #265 / #266).
+FactIQ is an authenticated MCP data-warehouse plugin used **interactively** to cross-check the pipeline against an independent reference (read-only, 50-row/call, ~1 req/s, no monthly quota). The pipeline's Python cannot `import` it — it is OAuth-MCP, not a library — so it is **not** a `sources/*.py` module and never a last-writer in the source merge. (A headless GitHub-Actions job *could* in principle run an agent with FactIQ's MCP + a pre-authorized token to pull data into the CSVs, but that is a separate, unattended agent-in-CI path with real caveats — see forward_plan.) The rule stands: **replicate the upstream source where it has a clean public API; do not re-scrape FactIQ's warehouse** (its data isn't licensed for redistribution). The audit is written up in **Appendix A** (findings summary) and **Appendix B** (golden snapshot) of this manual; its data files sit alongside this manual (`manuals/factiq_audit_findings.csv`, `manuals/factiq_audit_working_list.csv`, `manuals/factiq_golden_*.json`). The golden snapshot is the free-now reference hedge against FactIQ going paid. The full narrative report and planning docs are archived in git (PRs #265 / #266).
 
 ---
 
@@ -2041,7 +2043,7 @@ Going forward, the daily `audit_writeback.py` runs N=14 consecutive days of dead
 
 ### Metadata / Label Issues — currently clean (last audit 2026-07-14, FactIQ)
 
-Last full audit against `data/index_library.csv`: **2026-07-14 (FactIQ ticker-by-ticker audit)**, superseding the prior 2026-04-21 sweep. The FactIQ audit (676 findings; data under `handover/audit/`, full write-up archived in git PR #266) confirmed the priced universe holds on scale/units/sign but surfaced **four currency-label / proxy defects that changed displayed USD numbers** — all four now resolved and merged to `main` (PR #265). The items below are all resolved; included here as historical record.
+Last full audit against `data/index_library.csv`: **2026-07-14 (FactIQ ticker-by-ticker audit)**, superseding the prior 2026-04-21 sweep. The FactIQ audit (676 findings; see Appendix A + `manuals/factiq_audit_*.csv`) confirmed the priced universe holds on scale/units/sign but surfaced **four currency-label / proxy defects that changed displayed USD numbers** — all four now resolved and merged to `main` (PR #265). The items below are all resolved; included here as historical record.
 
 **Resolved by the 2026-07-14 FactIQ audit** (`data/index_library.csv`):
 
@@ -2146,6 +2148,96 @@ The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing 
 ### index_library.csv Maintenance
 
 The library is built and maintained via a separate Claude project at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. See the `TECHNICAL_MANUAL.md` in that folder for the library build process. To add a new instrument without the library builder, add a row to `data/index_library.csv` with `validation_status = "CONFIRMED"`, verify the ticker, set `base_currency`, and optionally set `simple_dash = True`. Changes take effect on the next pipeline run.
+
+---
+
+## Appendix A — FactIQ Data Audit (2026-07-12)
+
+A permanent record of the one-off FactIQ ticker-by-ticker audit that produced the 4 fixes in §13 and the direct-wire roadmap in `forward_plan.md` §3.1.8. The audit cross-checked every instrument in `data/index_library.csv` against FactIQ as an independent reference (independent of yfinance/FRED). Row-level data lives alongside this manual:
+
+- **`manuals/factiq_audit_findings.csv`** (636 consolidated finding rows) — columns `ticker, name, tier, check_type, check_id, repo_value, factiq_value, as_of_repo, as_of_factiq, delta, tolerance, severity, verdict, notes`.
+- **`manuals/factiq_audit_working_list.csv`** (401 rows) — every instrument with its audit tier (A/B/C), `audit_symbol`, and the `is_level`/`is_yield`/`pence`/`has_output` flags.
+
+The full narrative report (`AUDIT_REPORT.md`) and the planning doc (`FACTIQ_AUDIT_PLAN.md`) are archived in git (PR #266).
+
+### A.1 Headline
+
+Local-currency prices and returns are **fundamentally sound** where independently checkable: every Tier-A instrument tested (US ETFs, FX, commodities, Treasury yields) matched FactIQ on scale, units, sign, currency convention and — where exact-date data existed — value to tolerance. No `÷100` pence bug, `%`-vs-`bps` confusion, or sign flip survived in the priced US/FX/commodity/rates universe. **One material value exception:** several US-listed ETF proxies carried a *foreign* currency label (EMB=ARS, FEZ=EUR, ASHR=CNY, HYXU=EUR); for **EMB** the USD Perf columns were demonstrably corrupted (a phantom ARS→USD conversion flipped 1Y +11.69% local → −13.35% USD on an already-USD fund), and EMB was additionally reused as the single proxy for 9 library rows. These are the four fixes now merged (§13). The rest of the findings are **structural, not value errors**: dataset staleness, coverage gaps, and representation/semantics. The **US Treasury par-yield cross-check was the strongest independent result** — repo `^TNX`/`^TYX`/`^FVX` matched the Treasury par curve on 2026-05-12 to <0.5 bp.
+
+### A.2 Counts
+
+**By tier** (`working_list`, 401 rows):
+
+| Tier | Rows | Has output | Notes |
+|---|---|---|---|
+| A | 89 | 89 | US eq/ETF, FX, commodities, FRED, Rates/yield |
+| B | 94 | 92 | Foreign-listed ETFs/ADRs, exchange-suffixed |
+| C | 218 | 139 | Index-level tickers, VIX family, `UNAVAILABLE` |
+| **Total** | **401** | **320 covered** | 81 uncovered (52 `UNAVAILABLE` by design + 29 true gaps) |
+
+**By verdict** (676 findings across both passes, before final consolidation to the 636-row CSV):
+
+| Verdict | Count | | Check type | Count |
+|---|---|---|---|---|
+| FLAG(HIGH) | 336 | | freshness (F1) | 305 |
+| FLAG(MEDIUM) | 76 | | coverage | 139 |
+| FLAG(LOW) | 72 | | value | 130 |
+| PASS | 154 | | metadata | 76 |
+| PROXY | 15 | | consistency | 26 |
+| UNAUDITABLE | 22 | | | | |
+| RECONCILIATION | 1 | | | |
+
+### A.3 Most-severe findings (triage, worst first)
+
+| # | Finding | Severity | Root cause |
+|---|---|---|---|
+| 1 | Entire committed dataset ~2 months stale (Last Date 2026-05-12; 321 rows ≈60-65d gap) | HIGH (systematic) | Committed CSV not regenerated (audit did not re-run the pipeline) |
+| 2 | `^CM100` dead ~10.6 years (frozen ~2015) | HIGH | yfinance stopped serving the ticker |
+| 3 | `^SP500-151050` (Paper & Forest) dead since 2015-12-18 | HIGH | yfinance GICS sub-index discontinued |
+| 4 | `^SP500-551020` (Gas Utilities) dead since 2016-06-30 | HIGH | yfinance GICS sub-index discontinued |
+| 5 | 29 library rows produce no output (CSI 500/1000, VXEEM, ~26 `^SP500-xxxxxx` industry sub-indices) | HIGH | yfinance returns nothing for these |
+| 6 | 47 output rows have empty Last Price (`.L`/`.DE` UCITS ETF proxies) | MEDIUM | ETF-proxy fetch failed / dead symbol |
+| 7 | 6 `.L` bond rows are rebased indices, not prices (IEAC.L=1.19, IBGL.L=1.42…) | MEDIUM | By-design base~1.0 but labelled EUR/GBP with Sunday dates |
+| 9a | `EMB` reused as proxy for 9 library rows | HIGH | Broken proxy validity |
+| 9b | `EMB` USD returns corrupted — Currency=ARS on a USD fund; 1Y +11.69% → −13.35% USD | HIGH | phantom ARS→USD FX (**fixed**, §13) |
+| 9c | US-listed ETF proxies labelled foreign currency — FEZ=EUR, ASHR=CNY, HYXU=EUR | MEDIUM | FX double-count risk (**fixed**, §13) |
+| 10 | `PIORECRUSDM` (Iron Ore, monthly) stale 133d | MEDIUM | Publication lag / genuine staleness |
+| 11 | Index-name-on-ETF-proxy labelling — XIU.TO "S&P/TSX Composite", 2800.HK "Hang Seng"… | LOW (systematic) | Proxy convention |
+| 13 | 26 `simple_dash=True` rows absent from `market_data.csv` (M8) | MEDIUM | Subset-file inconsistency |
+| 14 | `000905.SS` (CSI 500) priceable on FactIQ (~8138 CNY) but library marks it UNAVAILABLE | LOW (promotion) | Re-source candidate (forward_plan §2.A A18) |
+
+**No CRITICAL findings** — no sign flips, no order-of-magnitude/÷100 errors — survived in the audited universe. The 2026-07-13 resume sweep confirmed this across all 72 Tier-A US ETFs, 7 FX pairs, and 14+ commodities (zero anomalies).
+
+### A.4 Method notes & open judgment calls
+
+- **As-of alignment.** The repo was ~2 months stale, so comparisons used FactIQ's close on the repo's as-of date (2026-05-12) where the tool exposed it (FX/commodities/Treasury — all matched), and a scale/units/52-week-range sanity check for equities (FactIQ's market-data endpoint samples rows and omits arbitrary dates, so exact-date equity close verification to ±0.10% is not reliably achievable — it is robust for catching ÷100/sign/gross errors, which is what matters).
+- **Treasury yields are the cleanest independent check** (`treasury.yield_curve.*` exposes exact daily par yields). This directly motivated `sources/treasury.py` (§5).
+- **The "FRED" rows are ICE BofA indices** (BAML* OAS/TR) — FactIQ carries no ICE BofA data, so they are UNAUDITABLE against FactIQ and must stay direct-from-FRED.
+- **Open judgment calls** (recorded for whoever re-runs the audit): the rebased `.L` bond rows (units label + non-Sunday date), pruning the dead/discontinued sub-indices (forward_plan §3.8.5), and whether the CSI 500 promotion is worth wiring (§2.A A18).
+
+## Appendix B — FactIQ Golden Snapshot
+
+Reference values captured from FactIQ **while access was free/unlimited (2026-07-12/14)** — the insurance set for re-auditing if FactIQ later goes paid (`forward_plan.md` §3.1.8, free→paid risk). The machine-readable originals are kept as sibling files for automated re-verification:
+
+- **`manuals/factiq_golden_2026-07-12.json`** — the headline reference set (embedded below).
+- **`manuals/factiq_golden_2026-07-14_sweep.json`** — the full Tier-A/Tier-B sweep (72 US ETFs with close + 52-week range + repo-as-of-2026-05-12 value, 5 FX pairs, 9 commodities, 7 Tier-B resolved quotes, 9 Tier-B unresolvable). Summarised in B.2.
+
+### B.1 Headline reference set (2026-07-12, FactIQ live)
+
+US-listed ETF quotes (`GLOBAL_QUOTE`, 2026-07-10): SPY **754.95**, QQQ **725.51**, TLT **84.47**, EEM **66.90**, XLK **185.78**, IWM **295.99**, XLE **55.08**. SPY daily close: 2026-05-11 **739.30**, 2026-05-14 **748.17**.
+
+| Foreign proxy (2026-07-10) | Px | Ccy | Name / exch |
+|---|---|---|---|
+| IWDA.L | 144.23 | USD | iShares Core MSCI World UCITS (Acc), LSE |
+| IEAC.L | 120.16 | EUR | iShares Core € Corp Bond UCITS, LSE (the EUR-quoted `.L` that motivated the pence-gate fix) |
+| XIU.TO | 52.69 | CAD | iShares S&P/TSX 60, TSX |
+| NIFTYBEES.NS | 275.07 | INR | Nippon India ETF Nifty BeES, NSE |
+
+FX close 2026-05-12: EUR/USD **1.17409**, USD/JPY **157.61982**. Commodity close 2026-05-12: WTI (CL1) **102.11877**, Gold (XAU near) **4677.0**. Treasury par yield 2026-05-12: 10yr **4.46**, 30yr **5.03**, 5yr **4.12**, 3mo par **3.70** (repo `^TNX`/`^TYX`/`^FVX` matched to <0.5 bp — the audit's strongest independent check).
+
+### B.2 Full sweep (2026-07-14) — summary
+
+The sweep JSON holds per-ticker `close` / `wk52_low` / `wk52_high` / `repo_0512` for **72 US-listed ETFs** (AAXJ…XLY). **Key verification result:** because the repo's as-of date (2026-05-12) falls inside the trailing 52 weeks of the 2026-07-13 quotes, every repo Last Price *must* sit within FactIQ's [52wk-low, 52wk-high] — **all 72 did**, confirming no scale/sign/÷100 anomaly anywhere in the priced ETF universe. It also carries FX close 2026-05-12 (GBP/USD 1.35243, USD/CNY 6.79289, USD/INR 95.52, USD/KRW 1493.0, USD/TWD 31.4915), 9 commodity closes (Brent 107.37, Copper 6.41, Nat Gas 2.834, Silver 86.54, Coffee 2.81, Sugar 0.1501, Corn 4.67, Wheat 6.65, Soybeans 12.135), 7 Tier-B resolved quotes (XCS.TO, 1306.T, 1321.T, 000001.SS, 069500.KS, 2800.HK, BOVA11.SA), and 9 Tier-B unresolvable symbols (XU100.IS, XU030.IS, FTSEMIB.MI, IMIB.MI, NAFTRAC.MX, IOZ.AX, VAS.AX, SSO.AX, IAF.AX). See `manuals/factiq_golden_2026-07-14_sweep.json` for the full per-ticker table.
 
 ---
 
