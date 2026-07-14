@@ -1,0 +1,637 @@
+ticker,name,tier,check_type,check_id,repo_value,factiq_value,as_of_repo,as_of_factiq,delta,tolerance,severity,verdict,notes
+XU100.IS,Borsa Istanbul 100,B,coverage,B_PROMOTE,(repo),index not covered,2026-05-12,2026-07-13,,,LOW,UNAUDITABLE,Istanbul index not in FactIQ provider (SYMBOL_SEARCH XU100=0 results). Repo value (yfinance) stands; not externally checkable via FactIQ. Directional.
+SMALLCAP.NS,Nifty Smallcap 100,B,coverage,B_PROMOTE,(repo),NSE quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"Priceable on NSE via FactIQ, but symbol resolves to a Mirae small-cap fund, not the Nifty Smallcap 100 index — proxy/name mismatch. Directional."
+399001.SZ,Shenzhen Composite,B,coverage,B_PROMOTE,(repo),SZSE quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"Priceable on SZSE via FactIQ, BUT 399001 = 'SZSE Component Index' (399106 is the Composite) — repo Name 'Shenzhen Composite' is a mislabel. Directional."
+000852.SS,CSI 1000 Index,B,coverage,B_PROMOTE,UNAVAILABLE(no output),not priceable,2026-05-12,2026-07-13,,,LOW,UNAUDITABLE,CSI 1000 (000852.SS) not priceable via FactIQ (invalid symbol); stays UNAVAILABLE. Directional only.
+000905.SS,CSI 500 Index,B,coverage,B_PROMOTE,UNAVAILABLE(no output),SSE quote AVAILABLE (~8138 CNY),2026-05-12,2026-07-13,,,MEDIUM,PASS,"PROMOTION: library marks CSI 500 UNAVAILABLE/no-output, but FactIQ CAN price 000905.SS (SSE, CNY ~8138 on 2026-07-13). Candidate to re-source via FactIQ. (name label 'XMPD' odd but is CSI 500)."
+000300.SS,CSI 300 Index,B,coverage,B_PROMOTE,(repo),SSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,"Priceable on SSE via FactIQ (CSI 300 Index, CNY). Promotable."
+000001.SS,Shanghai Composite,B,coverage,B_PROMOTE,(repo),SSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on SSE via FactIQ (SSE indices covered; 000300.SS->CSI300 OK). Promotable.
+XCS.TO,XCS.TO,B,coverage,B_PROMOTE,(repo),TSX quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on TSX via FactIQ (probe XGB.TO->TSX CAD OK). Promotable.
+XRB.TO,XRB.TO,B,coverage,B_PROMOTE,(repo),TSX quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on TSX via FactIQ (probe XGB.TO->TSX CAD OK). Promotable.
+XLB.TO,XLB.TO,B,coverage,B_PROMOTE,(repo),TSX quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on TSX via FactIQ (probe XGB.TO->TSX CAD OK). Promotable.
+XSB.TO,XSB.TO,B,coverage,B_PROMOTE,(repo),TSX quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on TSX via FactIQ (probe XGB.TO->TSX CAD OK). Promotable.
+XGB.TO,XGB.TO,B,coverage,B_PROMOTE,(repo),TSX quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on TSX via FactIQ (probe XGB.TO->TSX CAD OK). Promotable.
+2561.T,2561.T,B,coverage,B_PROMOTE,(repo),JPX quote available,2026-05-12,2026-07-13,,,LOW,PASS,"Priceable on JPX/Tokyo via FactIQ (1306.T,2561.T -> JPX JPY OK). Promotable. Note repo Name is index (TOPIX) but symbol prices an ETF (proxy label)."
+1306.T,1306.T,B,coverage,B_PROMOTE,(repo),JPX quote available,2026-05-12,2026-07-13,,,LOW,PASS,"Priceable on JPX/Tokyo via FactIQ (1306.T,2561.T -> JPX JPY OK). Promotable. Note repo Name is index (TOPIX) but symbol prices an ETF (proxy label)."
+ZPRG.DE,ZPRG.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+SPYW.DE,SPYW.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXX6.DE,EXX6.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXV4.DE,EXV4.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+FTSEMIB.MI,FTSE MIB Index,B,coverage,B_PROMOTE,(repo),index not covered,2026-05-12,2026-07-13,,,LOW,UNAUDITABLE,FactIQ provider does not quote the FTSE MIB index (SYMBOL_SEARCH returns only warrants). Repo value (yfinance) stands; not externally checkable via FactIQ. Directional.
+XU030.IS,Borsa Istanbul 30,B,coverage,B_PROMOTE,(repo),index not covered,2026-05-12,2026-07-13,,,LOW,UNAUDITABLE,Istanbul index not in FactIQ provider (SYMBOL_SEARCH XU100=0 results). Repo value (yfinance) stands; not externally checkable via FactIQ. Directional.
+EXV2.DE,EXV2.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+IAF.AX,Australia Government Bond Index (iShares),B,coverage,B_PROMOTE,(repo),entitlement-gated,2026-05-12,2026-07-13,,,LOW,UNAUDITABLE,ASX (XASX) data requires a FactIQ/twelvedata add-on not on this plan ('not authorized to access XASX data'). Priceable in principle but entitlement-gated here. Other .AX rows (IOZ.AX etc) same class. Directional.
+EXV3.DE,EXV3.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXV1.DE,EXV1.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+IWQU.L,IWQU.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IWFV.L,IWFV.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IWDA.L,IWDA.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IUKD.L,IUKD.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+INXG.L,INXG.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IHYU.L,IHYU.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IGLT.L,IGLT.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IGLS.L,IGLS.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IEFQ.L,IEFQ.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IEFM.L,IEFM.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IBGS.L,IBGS.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IBGM.L,IBGM.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IBCX.L,IBCX.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IBCI.L,IBCI.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+CNYB.L,CNYB.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+CMOD.L,CMOD.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+AGGG.L,AGGG.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IWMO.L,IWMO.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IWVL.L,IWVL.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+EXI5.DE,EXI5.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+MINV.L,MINV.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+EXH9.DE,EXH9.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXH4.DE,EXH4.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXH3.DE,EXH3.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EXH1.DE,EXH1.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+EUN0.DE,EUN0.DE,B,coverage,B_PROMOTE,(repo),XETR quote available (bare symbol),2026-05-12,2026-07-13,,,LOW,PASS,Priceable on Xetra via FactIQ using BARE ticker (drop .DE suffix); probes EXV1/ZPRG->XETR EUR OK. Promotable. Note: '.DE' suffix not accepted by FactIQ provider; bare symbol resolves.
+HYLH.L,HYLH.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+IITB.L,IITB.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+IFRB.L,IFRB.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+IBGL.L,IBGL.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+IEAG.L,IEAG.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+WSML.L,WSML.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+VGOV.L,VGOV.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+VFEM.L,VFEM.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+VDET.L,VDET.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+UKDV.L,UKDV.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+SLXX.L,SLXX.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+NDIA.L,NDIA.L,B,coverage,B_PROMOTE,(repo),LSE quote available,2026-05-12,2026-07-13,,,LOW,PASS,Priceable on LSE via FactIQ GLOBAL_QUOTE (probe IWDA.L->LSE OK). Promotable to externally-auditable. Directional/proxy row.
+IEAC.L,IEAC.L,B,coverage,B_PROMOTE,(rebased index),LSE ETF quote available,2026-05-12,2026-07-13,,,LOW,PROXY,"LSE ETF is priceable via FactIQ, BUT repo stores a rebased synthetic index (base~1.0), not the ETF price (pre-existing V_SEMANTICS UNAUDITABLE stands). Promotion would require swapping to ETF price."
+IBCX.L,ICE BofA Euro Corporate Bond Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+CNYB.L,China Government Bond Index (CGBs),?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+CMOD.L,L&G All Commodities UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IBGM.L,iShares Eur Govt Bond 7-10yr UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IBCI.L,ICE BofA Euro Inflation-Linked Government Bond Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+VGOV.L,Vanguard UK Gilt UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXX6.DE,ICE BofA Germany Government Bond Index (Bunds),?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IBGS.L,ICE BofA 1-3 Year Euro Government Bond Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IHYU.L,iShares USD High Yield Corp Bond UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+SLXX.L,iShares Core GBP Corporate Bond UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+VDET.L,Vanguard USD EM Government Bond UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+INXG.L,ICE BofA UK Inflation-Linked Gilt Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IGLT.L,ICE BofA 10+ Year UK Gilt Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IGLS.L,ICE BofA 1-3 Year UK Gilt Index,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+AGGG.L,iShares Core Global Aggregate Bond UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+NDIA.L,iShares India 50 ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+STX40.JO,FTSE/JSE Top 40,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+^SP500-6020,S&P 500 Equity Real Estate Investment Trusts,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+IWDA.L,iShares Core MSCI World UCITS ETF,B,metadata,M_CCY,GBP,USD (LSE USD Acc share class),,,,exact,LOW,FLAG(LOW),Repo labels IWDA.L base_currency GBP; FactIQ LSE line is the USD (Acc) share class. Multi-class ETF ambiguity; verify intended class. (Row also has empty Last Price.)
+^SP500-255030,S&P 500 Broadline Retail (Indus,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+IEFQ.L,iShares MSCI Europe Quality Factor UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+^SP500-253010,S&P 500 Hotels Restaurants & Le,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-203030,,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-202020,S&P 500 - Professional Services,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-151030,S&P 500 Containers & Packaging,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-151010,S&P 500 Chemicals (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^VXEEM,CBOE VXEEM - EM Volatility,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+000852.SS,CSI 1000 Index,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+000905.SS,CSI 500 Index,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+VFEM.L,Vanguard FTSE Emerging Markets UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+CBON,VanEck China AMC China Bond ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IEFM.L,iShares MSCI Europe Momentum Factor UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+CMOD.L,L&G All Commodities UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+DXJ,WisdomTree Japan Hedged Equity Fund,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+FXI,iShares China Large-Cap ETF (HK),B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+MCHI,iShares MSCI China ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EIS,iShares MSCI Israel ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+TUR,iShares MSCI Turkey ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EZA,iShares MSCI South Africa ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+INDA,iShares MSCI India ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EWW,iShares MSCI Mexico ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EWZ,iShares MSCI Brazil ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IUKD.L,iShares UK Dividend UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IEAC.L,iShares Core € Corp Bond UCITS ETF,B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+IGOV,iShares International Treasury Bond ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IBGM.L,iShares Eur Govt Bond 7-10yr UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWFV.L,iShares MSCI World Value Factor UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+NDIA.L,iShares India 50 ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EWT,iShares MSCI Taiwan ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EWY,iShares MSCI South Korea ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+VFEM.L,Vanguard FTSE Emerging Markets UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWDA.L,iShares Core MSCI World UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+399001.SZ,Shenzhen Composite,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NDX,Nasdaq 100,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+DBC,Invesco DB Commodity Index Fund,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+DBA,Invesco DB Agriculture Fund,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-352030,S&P 500 - Life Sciences Tools &,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+VGOV.L,Vanguard UK Gilt UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWDA.L,iShares Core MSCI World UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EUN0.DE,iShares MSCI Europe Min Vol UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXS1.DE,DAX 40,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+SPYW.DE,SPDR S&P Euro Dividend Aristocrats UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXV2.DE,STOXX Europe 600 Telecom,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXV1.DE,STOXX Europe 600 Banks,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXI5.DE,STOXX Europe 600 Real Estate,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXV3.DE,STOXX Europe 600 Technology,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXH1.DE,STOXX Europe 600 Energy,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXH4.DE,STOXX Europe 600 Industrials,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXH9.DE,STOXX Europe 600 Utilities,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXV4.DE,STOXX Europe 600 Health Care,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXH3.DE,STOXX Europe 600 Consumer Staples,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXS3.DE,MDAX,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+C40.PA,CAC 40,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+WSML.L,iShares MSCI World Small Cap UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+EXSA.DE,STOXX Europe 600,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IUKD.L,iShares UK Dividend UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+UKDV.L,SPDR S&P UK Dividend Aristocrats UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+VMID.L,FTSE 250,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+ISF.L,FTSE 100,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IWQU.L,iShares MSCI World Quality Factor UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IWMO.L,iShares MSCI World Momentum UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+MINV.L,iShares MSCI World Min Vol UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IWFV.L,iShares MSCI World Value Factor UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+IWVL.L,iShares MSCI World Value Factor UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+ZPRG.DE,SPDR S&P Global Dividend Aristocrats UCITS ETF,?,coverage,EMPTY_OUTPUT,,no Last Price,,,,,MEDIUM,FLAG(MEDIUM),comp row present but Last Price empty (Last Date 2026-05-11)
+^SP500-301010,S&P 500 Consumer Staples Distri,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-401010,S&P 500 Banks (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+000852.SS,CSI 1000 Index,B,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-403010,S&P 500 Insurance (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601070,S&P 500 Retail REITs (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+HYXU,Euro HY (USD Hedged),,metadata,CCY_FX,Currency=EUR,US-listed ETF (trades USD),2026-05-12,,,,MEDIUM,FLAG(MEDIUM),"HYXU is a US-listed ETF (USD) labeled Currency=EUR; if USD-adjustment applies EUR->USD FX, the USD Perf columns double-count FX. Verify pipeline FX logic for foreign-currency-labeled US-listed proxies."
+ASHR,CSI 300,,metadata,CCY_FX,Currency=CNY,US-listed ETF (trades USD),2026-05-12,,,,MEDIUM,FLAG(MEDIUM),"ASHR is a US-listed ETF (USD) labeled Currency=CNY; if USD-adjustment applies CNY->USD FX, the USD Perf columns double-count FX. Verify pipeline FX logic for foreign-currency-labeled US-listed proxies."
+FEZ,Euro Stoxx 50,,metadata,CCY_FX,Currency=EUR,US-listed ETF (trades USD),2026-05-12,,,,MEDIUM,FLAG(MEDIUM),"FEZ is a US-listed ETF (USD) labeled Currency=EUR; if USD-adjustment applies EUR->USD FX, the USD Perf columns double-count FX. Verify pipeline FX logic for foreign-currency-labeled US-listed proxies."
+EMB,Argentina Government Bond Index (USD Hedged),,metadata,CCY_FX,"Currency=ARS, USD 1Y=-13.35",Local 1Y=+11.69,2026-05-12,,,,HIGH,FLAG(HIGH),"Output row Currency=ARS on a USD-denominated fund. USD-adjustment applies a phantom ARS->USD (~25% peso) conversion, flipping 1Y from +11.69% local to -13.35% USD. USD-adjusted returns for this row are corrupted."
+EMB,EM bond proxies (9 library rows),,metadata,PROXY_COLLISION,1 output ticker,9 library rows,2026-05-12,,,,HIGH,FLAG(HIGH),EMB (US-listed USD iShares JPM EM Bond ETF) is reused as the proxy for 9 distinct library rows: Argentina/Brazil/Korea/Mexico/Indonesia/Saudi/S.Africa/Turkey USD-Hedged govt-bond indices (base ccy ARS/BRL/KRW/MXN/IDR/SAR/ZAR/TRY) + the real USD EM Debt fund. One ETF cannot represent 9 country indices; proxy validity is broken.
+^SP500-602010,S&P 500 -Real Estate Management,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601080,S&P 500 Specialized REITs (Indu,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601060,S&P 500 - Residential REITs (In,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601050,S&P 500 Health Care REITs (Indu,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601040,S&P 500 Office REITs (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601030,S&P 500 Hotel & Resort REITs (I,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-601025,S&P 500 Industrial REITs (Indus,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-551050,S&P 500 Independent Power and R,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-551040,S&P 500 Water Utilities (Indust,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-502030,S&P 500 Interactive Media & Ser,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-502020,S&P 500 Entertainment (Industry,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-502010,S&P 500 Media (Industry),,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-501020,S&P 500 Wireless Telecommunicat,,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+^SP500-452020,"S&P 500 Technology Hardware, St",,coverage,MATCH_LIB_NO_OUTPUT,in library,no comp row,,,,,HIGH,FLAG(HIGH),"Library row (yfinance PR, validation=UNAVAILABLE) has no output row (checked all ticker columns)"
+DBB,Invesco DB Base Metals Fund,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+000905.SS,CSI 500 Index,B,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+DBE,Invesco DB Energy Fund,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^DJI,Dow Jones Industrial Average,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^FTAS,FTSE All-Share,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^FTSC,FTSE SmallCap,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^GDAXI,DAX 40,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^MDAXI,MDAX,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^SDAXI,SDAX,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^TECDAX,TecDAX,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^FCHI,CAC 40,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^CM100,CAC Mid 60,C,freshness,F1,2015-12-17,2026-07-12,,,3860.0,5,HIGH,FLAG(HIGH),stale 3860d vs Daily threshold 5d
+FTSEMIB.MI,FTSE MIB Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^N225,Nikkei 225,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+1306.T,TOPIX Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^GSPTSE,S&P/TSX Composite,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XIU.TO,S&P/TSX 60,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XCS.TO,S&P/TSX SmallCap,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^AXJO,S&P/ASX 200,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^AORD,S&P/ASX All Ordinaries,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^AXSO,S&P/ASX Small Ordinaries,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+000001.SS,Shanghai Composite,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+000300.SS,CSI 300 Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^HSI,Hang Seng Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^BSESN,S&P BSE Sensex,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^FTMC,FTSE 250,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^FTSE,FTSE 100,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^SP500-60,S&P 500 Real Estate,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RUJ,Russell 2000 Value,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NYA,NYSE Composite,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RUI,Russell 1000,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^MID,S&P MidCap 400,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RUT,Russell 2000,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP600,S&P SmallCap 600,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IVE,S&P 500 Value,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IVW,S&P 500 Growth,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RLV,Russell 1000 Value,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RLG,Russell 1000 Growth,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^RUO,Russell 2000 Growth,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-55,S&P 500 Utilities,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^GSPE,S&P 500 Energy,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-15,S&P 500 Materials,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-20,S&P 500 Industrials,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-25,S&P 500 Consumer Discretionary,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-30,S&P 500 Consumer Staples,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-35,S&P 500 Health Care,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-40,S&P 500 Financials,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-45,S&P 500 Information Technology,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-50,S&P 500 Communication Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NSEI,Nifty 50,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CRSMID,Nifty Midcap 100,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+SMALLCAP.NS,Nifty Smallcap 100,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2530,S&P 500 Consumer Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EEM,iShares MSCI Emerging Markets ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EWJ,iShares MSCI Japan ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+AAXJ,iShares MSCI All Country Asia ex Japan ETF,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EZU,iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2010,S&P 500 Capital Goods,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2020,S&P 500 Commercial & Professional Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2030,S&P 500 Transportation,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2510,S&P 500 Automobiles & Components,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2520,S&P 500 Consumer Durables & Apparel,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-2550,S&P 500 Consumer Discretionary Distribution & Retail,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+ACWI,iShares MSCI ACWI ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-3010,S&P 500 Food & Staples Retailing,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-3020,S&P 500 Food Beverage & Tobacco,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-3030,S&P 500 Household & Personal Products,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-3510,S&P 500 Health Care Equipment & Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-3520,S&P 500 Pharma Biotech & Life Sciences,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-4010,S&P 500 Banks,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-4020,S&P 500 Financial Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-4030,S&P 500 Insurance,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-4510,S&P 500 Software & Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+URTH,iShares MSCI World ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EXI5.DE,STOXX Europe 600 Real Estate,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^BVSP,Bovespa (IBOVESPA),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XU030.IS,Borsa Istanbul 30,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^KS11,KOSPI,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^KS200,KOSPI 200,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^KQ11,KOSDAQ,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^MXX,S&P/BMV IPC Index (Mexico),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^JKSE,Jakarta Composite (IDX Composite),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^TASI.SR,Tadawul All Share Index (Saudi),C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^J203.JO,FTSE/JSE All Share,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^J200.JO,FTSE/JSE Top 40,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+XU100.IS,Borsa Istanbul 100,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^MERV,MERVAL (Argentina),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EXV2.DE,STOXX Europe 600 Telecom,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^STOXX50E,Euro Stoxx 50,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^STOXX,STOXX Europe 600,C,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXV1.DE,STOXX Europe 600 Banks,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXV4.DE,STOXX Europe 600 Health Care,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXV3.DE,STOXX Europe 600 Technology,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXH1.DE,STOXX Europe 600 Energy,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXH4.DE,STOXX Europe 600 Industrials,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXH3.DE,STOXX Europe 600 Consumer Staples,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EXH9.DE,STOXX Europe 600 Utilities,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^IXIC,NASDAQ Composite,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^GSPC,S&P 500,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-4530,S&P 500 Semiconductors & Equipment,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NDX,Nasdaq 100,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-551050,S&P 500 Independent Power and R,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601025,S&P 500 Industrial REITs (Indus,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601030,S&P 500 Hotel & Resort REITs (I,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601040,S&P 500 Office REITs (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601050,S&P 500 Health Care REITs (Indu,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601060,S&P 500 - Residential REITs (In,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601070,S&P 500 Retail REITs (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-601080,S&P 500 Specialized REITs (Indu,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-602010,S&P 500 -Real Estate Management,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-551040,S&P 500 Water Utilities (Indust,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-502030,S&P 500 Interactive Media & Ser,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-502020,S&P 500 Entertainment (Industry,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-151030,S&P 500 Containers & Packaging,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-6020,S&P 500 Equity Real Estate Investment Trusts,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^VXEEM,CBOE VXEEM - EM Volatility,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-151010,S&P 500 Chemicals (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-202020,S&P 500 - Professional Services,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-502010,S&P 500 Media (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-203030,,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-253010,S&P 500 Hotels Restaurants & Le,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-255030,S&P 500 Broadline Retail (Indus,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-301010,S&P 500 Consumer Staples Distri,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-352030,S&P 500 - Life Sciences Tools &,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-401010,S&P 500 Banks (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-403010,S&P 500 Insurance (Industry),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-452020,"S&P 500 Technology Hardware, St",C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^SP500-501020,S&P 500 Wireless Telecommunicat,C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=yfinance PR)
+^FTSE,FTSE 100,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-20,S&P 500 Industrials,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-25,S&P 500 Consumer Discretionary,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-30,S&P 500 Consumer Staples,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-35,S&P 500 Health Care,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-40,S&P 500 Financials,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-45,S&P 500 Information Technology,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-50,S&P 500 Communication Services,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-55,S&P 500 Utilities,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-60,S&P 500 Real Estate,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^FTMC,FTSE 250,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^GSPE,S&P 500 Energy,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^GDAXI,DAX 40,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^N225,Nikkei 225,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^BSESN,S&P BSE Sensex,C,consistency,M8,74244.8438,74272.8906,,,-28.0468,exact,MEDIUM,FLAG(MEDIUM),Last Price differs between market_data.csv and market_data_comp.csv
+^NSEI,Nifty 50,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^STOXX50E,Euro Stoxx 50,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+USDJPY=X,USD/JPY,A,consistency,M8,157.73,157.717,,,0.013,exact,MEDIUM,FLAG(MEDIUM),Last Price differs between market_data.csv and market_data_comp.csv
+INR=X,USD/INR,A,consistency,M8,95.665,95.6725,,,-0.0075,exact,MEDIUM,FLAG(MEDIUM),Last Price differs between market_data.csv and market_data_comp.csv
+KRW=X,USD/KRW,A,consistency,M8,1494.67,1494.37,,,0.3,exact,MEDIUM,FLAG(MEDIUM),Last Price differs between market_data.csv and market_data_comp.csv
+TWD=X,USD/TWD,A,consistency,M8,31.519,31.518,,,0.001,exact,MEDIUM,FLAG(MEDIUM),Last Price differs between market_data.csv and market_data_comp.csv
+^SP500-15,S&P 500 Materials,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^RLG,Russell 1000 Growth,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^RUT,Russell 2000,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+,ICE BofA Euro Corporate Bond Index (USD Hedged),C,metadata,M2,UNAVAILABLE,CONFIRMED,,,,,LOW,FLAG(LOW),validation_status=UNAVAILABLE (data_source=UNAVAILABLE)
+^GSPC,S&P 500,C,consistency,M8,in comp/simple_dash,absent from market_data.csv,,,,,MEDIUM,FLAG(MEDIUM),simple_dash=True but not present in market_data.csv
+^SP500-4520,S&P 500 Technology Hardware & Equipment,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-5010,S&P 500 Telecommunication Services,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+PIORECRUSDM,Iron Ore (World Bank Price Index),A,freshness,F1,2026-03-01,2026-07-12,,,133.0,45,HIGH,FLAG(HIGH),stale 133d vs Monthly threshold 45d
+^SP500-351010,S&P 500 Health Care Equipment &,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+BAMLC0A3CA,ICE BofA US A Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLC0A4CBBB,ICE BofA US BBB Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLH0A0HYM2,ICE BofA US High Yield OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLH0A1HYBB,ICE BofA US BB High Yield OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLH0A2HYB,ICE BofA US Single-B High Yield OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLH0A3HYC,ICE BofA US CCC & Lower HY OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLHE00EHYIOAS,ICE BofA Euro High Yield OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLEMCBPIOAS,ICE BofA EM Corporate Plus OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLEMHBHYCRPIOAS,ICE BofA EM High Yield Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLEMRACRPIASIAOAS,ICE BofA EM Asia Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLEM2BRRBBBCRPIOAS,ICE BofA EM BBB Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+GOVT,ICE BofA US Treasury Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+SHY,ICE BofA 1-3 Year US Treasury Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+TLT,ICE BofA 10+ Year US Treasury Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+DFII10,ICE BofA US Inflation-Linked Treasury Index (TIPS),A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLCC0A0CMTRIV,ICE BofA US Corporate Index,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLHYH0A0HYM2TRIV,ICE BofA US High Yield Index,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IGLT.L,ICE BofA UK Gilt Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IGLS.L,ICE BofA 1-3 Year UK Gilt Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+INXG.L,ICE BofA UK Inflation-Linked Gilt Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLC0A2CAA,ICE BofA US AA Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLC0A1CAAA,ICE BofA US AAA Corporate OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+BAMLC0A0CM,ICE BofA US Corporate IG OAS,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^SP500-453010,S&P 500 Semiconductor & Semicon,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-352010,S&P 500 - Biotechnology (Indust,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-352020,S&P 500 - Pharmaceuticals (Indu,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-402010,S&P 500 Financial Services (Ind,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-402020,S&P 500 Consumer Finance (Indus,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-402030,S&P 500 Capital Markets (Indust,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-451020,S&P 500 IT Services (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-451030,S&P 500 Software (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-452010,S&P 500 Communications Equipmen,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-452030,"S&P 500 - Electronic Equipment,",C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-501010,S&P 500 Diversified Telecommuni,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+CNYB.L,iShares China CNY Bond UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^SP500-551010,S&P 500 Electric Utilities (Ind,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-551020,S&P 500 Gas Utilities (Industry,C,freshness,F1,2016-06-30,2026-07-12,,,3664.0,5,HIGH,FLAG(HIGH),stale 3664d vs Daily threshold 5d
+^SP500-551030,S&P 500 Multi-Utilities (Indust,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+AGGG.L,iShares Core Global Aggregate Bond UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+SLXX.L,iShares Core GBP Corporate Bond UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IHYU.L,iShares USD High Yield Corp Bond UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+VDET.L,Vanguard USD EM Government Bond UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IEAG.L,ICE BofA Euro Government Bond Index,B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+IBGS.L,ICE BofA 1-3 Year Euro Government Bond Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IBGL.L,ICE BofA 10+ Year Euro Government Bond Index,B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+SI=F,Silver,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+HYXU,ICE BofA Euro High Yield Bond Index (USD Hedged),B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EMB,JP Morgan  USD Emerging Market Debt,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+WIP,FTSE International Government Inflation-Protected Bond Index (USD Hedged),A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+CL=F,WTI Crude Oil,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+BZ=F,Brent Crude Oil,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+NG=F,Natural Gas (Henry Hub),A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+RB=F,Gasoline (RBOB),A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+HO=F,Heating Oil,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+GC=F,Gold,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+HG=F,Copper,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+HYLH.L,ICE BofA Global High Yield Bond Index (USD Hedged),B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+ALI=F,Aluminium,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+ZS=F,Soybeans,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+ZC=F,Corn,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+ZW=F,Wheat,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+SB=F,Sugar No. 11,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+CT=F,Cotton No. 2,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+KC=F,Coffee (Arabica),A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+CC=F,Cocoa,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+LE=F,Live Cattle,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+BAMLHE00EHYITRIV,ICE BofA Euro High Yield Bond Index,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IBCI.L,ICE BofA Euro Inflation-Linked Government Bond Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+2561.T,ICE BofA Japan Government Bond Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XGB.TO,ICE BofA Canada Government Bond Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XSB.TO,ICE BofA 1-3 Year Canada Government Bond Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XLB.TO,ICE BofA 10+ Year Canada Government Bond Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+XRB.TO,Canada Real Return Bond Index (Inflation-Linked),B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EXX6.DE,ICE BofA Germany Government Bond Index (Bunds),B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IFRB.L,France Government Bond Index (OATs),B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+IITB.L,Italy Government Bond Index (BTPs),B,freshness,F1,2026-05-10,2026-07-12,,,63.0,5,HIGH,FLAG(HIGH),stale 63d vs Daily threshold 5d
+IAF.AX,Australia Government Bond Index,B,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IBCX.L,ICE BofA Euro Corporate Bond Index,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^SP500-351020,S&P 500 Health Care Providers &,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-303020,S&P 500 Personal Care Products,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-5020,S&P 500 Media & Entertainment,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-303010,S&P 500 Household Products (Ind,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+QUAL,iShares MSCI USA Quality Factor ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+SCHD,Schwab US Dividend Equity ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+SPLV,Invesco S&P 500 Low Volatility ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+USMV,iShares MSCI USA Min Vol Factor ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IEFM.L,iShares MSCI Europe Momentum Factor UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+EUN0.DE,iShares MSCI Europe Min Vol UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IEFQ.L,iShares MSCI Europe Quality Factor UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+UKDV.L,SPDR S&P UK Dividend Aristocrats UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+SPYW.DE,SPDR S&P Euro Dividend Aristocrats UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+WSML.L,iShares MSCI World Small Cap UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWQU.L,iShares MSCI World Quality Factor UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+MINV.L,iShares MSCI World Min Vol UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWMO.L,iShares MSCI World Momentum UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+ZPRG.DE,SPDR S&P Global Dividend Aristocrats UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+IWVL.L,iShares MSCI World Value Factor UCITS ETF,B,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+ACWV,iShares MSCI ACWI Min Vol Factor ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+SCZ,iShares MSCI EAFE Small-Cap ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+ILF,iShares Latin America 40 ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+DX-Y.NYB,DXY Dollar Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+GBPUSD=X,GBP/USD,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EURUSD=X,EUR/USD,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+VIG,Vanguard Dividend Appreciation ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+MTUM,iShares MSCI USA Momentum Factor ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IWS,Russell Midcap Value Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^VIX,CBOE VIX Volatility Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXIT,Nifty IT,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXAUTO,Nifty Auto,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NSEBANK,Nifty Bank,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXENERGY,Nifty Energy,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXFMCG,Nifty FMCG,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXINFRA,Nifty Infrastructure,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXMETAL,Nifty Metal,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXPHARMA,Nifty Pharma,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^CNXREALTY,Nifty Realty,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^VIX9D,CBOE VIX9D - 9-Day VIX,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IWP,Russell Midcap Growth Index,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^VIX3M,CBOE VIX3M - 3-Month VIX,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^VVIX,CBOE VVIX - Volatility of VIX,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SKEW,CBOE SKEW Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^VXEFA,CBOE VXEFA - EAFE Volatility,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^MOVE,MOVE Index - Bond Volatility,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^GVZ,CBOE GVZ - Gold Volatility Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^OVX,CBOE OVX - Crude Oil Volatility,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^NYFANG,NYSE FANG+ Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SPXEW,S&P 500 Equal Weight Index,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+USDJPY=X,USD/JPY,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+CNY=X,USD/CNY,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+INR=X,USD/INR,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-203040,S&P 500 Ground Transportation (,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201020,S&P 500 Building Products (Indu,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201030,S&P 500 Construction & Engineer,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201040,S&P 500 Electrical Equipment (I,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201050,S&P 500 Industrial Conglomerate,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201060,S&P 500 Machinery (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201070,S&P 500 Trading Companies & Dis,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-202010,S&P 500 - Commercial Services &,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-203010,S&P 500 Air Freight & Logistics,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-203020,S&P 500 Passenger Airlines (Ind,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-251010,S&P 500 Automobile Components (,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-151050,S&P 500 Paper & Forest Products (Industry),C,freshness,F1,2015-12-18,2026-07-12,,,3859.0,5,HIGH,FLAG(HIGH),stale 3859d vs Daily threshold 5d
+^SP500-251020,S&P 500 Automobiles (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-252010,S&P 500 Household Durables (Ind,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-252020,S&P 500 Leisure Products (Indus,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-252030,"S&P 500 Textiles, Apparel & Lux",C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-255010,S&P 500 Distributors (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-255040,S&P 500 Specialty Retail (Indus,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-302010,S&P 500 Beverages (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-302020,S&P 500 Food Products (Industry,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-302030,S&P 500 Tobacco (Industry),C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-201010,S&P 500 Aerospace & Defense (In,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-151040,S&P 500 Metals & Mining (Indust,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+KRW=X,USD/KRW,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+EXI,iShares Global Industrials ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+TWD=X,USD/TWD,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+BTC-USD,Bitcoin,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+ETH-USD,Ethereum,A,freshness,F1,2026-05-11,2026-07-12,,,62.0,5,HIGH,FLAG(HIGH),stale 62d vs Daily threshold 5d
+^IRX,US 3-Month Treasury Yield,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^FVX,US 5-Year Treasury Yield,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^TNX,US 10-Year Treasury Yield,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^TYX,US 30-Year Treasury Yield,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IXC,iShares Global Energy ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+MXI,iShares Global Materials ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+RXI,iShares Global Consumer Discretionary ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-151020,S&P 500 Construction Materials,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+KXI,iShares Global Consumer Staples ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IXJ,iShares Global Healthcare ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IXG,iShares Global Financials ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IXN,iShares Global Tech ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IXP,iShares Global Comm Services ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+JXI,iShares Global Utilities ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+REET,iShares Global REIT ETF,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-101010,S&P 500 Energy Equipment & Serv,C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+^SP500-101020,"S&P 500 Oil, Gas & Consumable F",C,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+DBP,Invesco DB Precious Metals Fund,A,freshness,F1,2026-05-12,2026-07-12,,,61.0,5,HIGH,FLAG(HIGH),stale 61d vs Daily threshold 5d
+IAF.AX,Australia Government Bond Index,B,value,V_TIERB,100.29,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: ASX .AX - not authorized. Tier-B demote: UNAUDITABLE via FactIQ.
+EWW,iShares MSCI Mexico ETF,A,value,V_SCALE,79.99,74.15,2026-05-12,2026-07-13/14,5.84,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EWT,iShares MSCI Taiwan ETF,A,value,V_SCALE,93.77,101.88,2026-05-12,2026-07-13/14,-8.11,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EWJ,iShares MSCI Japan ETF,A,value,V_SCALE,92.06,92.72,2026-05-12,2026-07-13/14,-0.66,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EMB,Argentina Government Bond Index (USD Hedged),A,value,V_SCALE,95.72,95.38,2026-05-12,2026-07-13/14,0.34,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EIS,iShares MSCI Israel ETF,A,value,V_SCALE,134.82,118.0,2026-05-12,2026-07-13/14,16.82,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DXJ,WisdomTree Japan Hedged Equity Fund,A,value,V_SCALE,169.09,175.04,2026-05-12,2026-07-13/14,-5.95,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DIA,Dow Jones Industrial Average,A,value,V_SCALE,497.89,524.47,2026-05-12,2026-07-13/14,-26.58,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DBP,Invesco DB Precious Metals Fund,A,value,V_SCALE,114.54,91.87,2026-05-12,2026-07-13/14,22.67,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DBE,Invesco DB Energy Fund,A,value,V_SCALE,33.25,29.0,2026-05-12,2026-07-13/14,4.25,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DBC,Invesco DB Commodity Index Fund,A,value,V_SCALE,31.69,28.33,2026-05-12,2026-07-13/14,3.36,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DBB,Invesco DB Base Metals Fund,A,value,V_SCALE,26.23,24.48,2026-05-12,2026-07-13/14,1.75,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+DBA,Invesco DB Agriculture Fund,A,value,V_SCALE,28.57,27.72,2026-05-12,2026-07-13/14,0.85,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+CBON,VanEck China AMC China Bond ETF,A,value,V_SCALE,23.781,23.85,2026-05-12,2026-07-13/14,-0.069,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+ASHR,CSI 300 Index,A,value,V_SCALE,36.35,34.5,2026-05-12,2026-07-13/14,1.85,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range. (US-listed USD ETF; repo currency label CNY already flagged 9c — value is correct USD price.)
+ACWV,iShares MSCI ACWI Min Vol Factor ETF,A,value,V_SCALE,120.62,122.22,2026-05-12,2026-07-13/14,-1.6,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+ACWI,iShares MSCI ACWI ETF,A,value,V_SCALE,154.65,155.94,2026-05-12,2026-07-13/14,-1.29,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+AAXJ,iShares MSCI All Country Asia ex Japan ETF,A,value,V_SCALE,113.74,111.83,2026-05-12,2026-07-13/14,1.91,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EWZ,iShares MSCI Brazil ETF,A,value,V_SCALE,38.24,35.39,2026-05-12,2026-07-13/14,2.85,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+LE=F,Live Cattle,A,value,V_COMM,2.477,no FactIQ series,2026-05-12,2026-07-13,,scale,LOW,UNAUDITABLE,USD/lb (~247.7 cents/lb) plausible for 2026; FactIQ has no livestock (LIVE_CATTLE) series. Scale/convention reasoned-OK; no independent exact check. Directional only.
+EWY,iShares MSCI South Korea ETF,A,value,V_SCALE,178.5,168.02,2026-05-12,2026-07-13/14,10.48,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EXI,iShares Global Industrials ETF,A,value,V_SCALE,196.39,195.4,2026-05-12,2026-07-13/14,0.99,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+KC=F,Coffee,A,value,V_COMM,2.948,2.81,2026-05-12,2026-07-13/14,0.138,1.0%,PASS,PASS,USD/lb (FactIQ cents/lb ÷100). ~4.9% (front-month basis); NO div100 error - repo correctly in USD/lb.
+NG=F,Natural Gas,A,value,V_COMM,2.843,2.834,2026-05-12,2026-07-13/14,0.009,1.0%,PASS,PASS,USD/MMBtu. 0.3% exact-date.
+HG=F,Copper,A,value,V_COMM,6.485,6.41,2026-05-12,2026-07-13/14,0.075,1.0%,PASS,PASS,USD/lb. 05-12 interp 05-10/05-13; units USD/lb match.
+BZ=F,Brent,A,value,V_COMM,107.77,107.37,2026-05-12,2026-07-13/14,0.4,1.0%,PASS,PASS,USD/bbl. 0.37% exact-date.
+TWD=X,USD/TWD,A,value,V_FX,31.519,31.4915,2026-05-12,2026-07-13/14,0.0275,0.30%,PASS,PASS,Exact/near-date FactIQ FX match; convention correct (TWD-per-USD); 0.09%.
+KRW=X,USD/KRW,A,value,V_FX,1494.67,1493.0,2026-05-12,2026-07-13/14,1.67,0.30%,PASS,PASS,Exact/near-date FactIQ FX match; convention correct (KRW-per-USD (05-12 interp)); 0.11%.
+INR=X,USD/INR,A,value,V_FX,95.665,95.52,2026-05-12,2026-07-13/14,0.145,0.30%,PASS,PASS,Exact/near-date FactIQ FX match; convention correct (INR-per-USD (05-12 interp 05-11/05-13)); 0.15%.
+CNY=X,USD/CNY,A,value,V_FX,6.7913,6.79289,2026-05-12,2026-07-13/14,-0.0016,0.30%,PASS,PASS,Exact/near-date FactIQ FX match; convention correct (CNY-per-USD); 0.02%.
+GBPUSD=X,GBP/USD,A,value,V_FX,1.3535,1.35243,2026-05-12,2026-07-13/14,0.0011,0.30%,PASS,PASS,Exact/near-date FactIQ FX match; convention correct (USD-per-GBP); 0.08%.
+XLY,S&P 500 Consumer Discretionary,A,value,V_SCALE,118.29,116.04,2026-05-12,2026-07-13/14,2.25,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLV,S&P 500 Health Care,A,value,V_SCALE,145.85,161.41,2026-05-12,2026-07-13/14,-15.56,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLU,S&P 500 Utilities,A,value,V_SCALE,45.19,45.72,2026-05-12,2026-07-13/14,-0.53,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLRE,S&P 500 Real Estate,A,value,V_SCALE,44.58,44.7,2026-05-12,2026-07-13/14,-0.12,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLP,S&P 500 Consumer Staples,A,value,V_SCALE,84.44,84.59,2026-05-12,2026-07-13/14,-0.15,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLI,S&P 500 Industrials,A,value,V_SCALE,174.35,180.37,2026-05-12,2026-07-13/14,-6.02,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLF,S&P 500 Financials,A,value,V_SCALE,51.58,56.07,2026-05-12,2026-07-13/14,-4.49,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLC,S&P 500 Communication Services,A,value,V_SCALE,115.86,111.59,2026-05-12,2026-07-13/14,4.27,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLB,S&P 500 Materials,A,value,V_SCALE,52.14,50.58,2026-05-12,2026-07-13/14,1.56,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SI=F,Silver,A,value,V_COMM,85.13,86.54,2026-05-12,2026-07-13/14,-1.41,1.0%,PASS,PASS,USD/oz. 1.66% (COMEX future vs XAG spot; volatile week) - directional.
+SB=F,Sugar,A,value,V_COMM,0.1501,0.1501,2026-05-12,2026-07-13/14,0.0,1.0%,PASS,PASS,USD/lb (FactIQ 15.01 cents ÷100). exact; units reconciled cents->USD.
+VIG,Vanguard Dividend Appreciation ETF,A,value,V_SCALE,228.79,238.48,2026-05-12,2026-07-13/14,-9.69,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+ZC=F,Corn,A,value,V_COMM,4.6725,4.67,2026-05-12,2026-07-13/14,0.0025,1.0%,PASS,PASS,USD/bu (FactIQ 467 cents ÷100). exact; units reconciled.
+EZA,iShares MSCI South Africa ETF,A,value,V_SCALE,70.71,62.76,2026-05-12,2026-07-13/14,7.95,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SSO.AX,S&P/ASX Small Ordinaries,B,value,V_TIERB,15.88,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: ASX .AX - not authorized. Tier-B demote: UNAUDITABLE via FactIQ.
+VAS.AX,S&P/ASX All Ordinaries,B,value,V_TIERB,107.34,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: ASX .AX - not authorized. Tier-B demote: UNAUDITABLE via FactIQ.
+IOZ.AX,S&P/ASX 200,B,value,V_TIERB,34.77,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: ASX .AX - not authorized (twelvedata add-on required). Tier-B demote: UNAUDITABLE via FactIQ.
+NAFTRAC.MX,S&P/BMV IPC Index (Mexico),B,value,V_TIERB,70.0,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: Mexico .MX - invalid symbol. Tier-B demote: UNAUDITABLE via FactIQ.
+IMIB.MI,FTSE MIB Index,B,value,V_TIERB,29.95,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: Milan .MI - invalid symbol. Tier-B demote: UNAUDITABLE via FactIQ.
+FTSEMIB.MI,FTSE MIB Index,B,value,V_TIERB,48991.0,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: Milan .MI - invalid symbol. Tier-B demote: UNAUDITABLE via FactIQ.
+XU030.IS,Borsa Istanbul 30,B,value,V_TIERB,16812.9004,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: Borsa Istanbul .IS - invalid symbol. Tier-B demote: UNAUDITABLE via FactIQ.
+XU100.IS,Borsa Istanbul 100,B,value,V_TIERB,14779.9004,no resolve,2026-05-12,2026-07-13/14,,,MEDIUM,UNAUDITABLE,Does NOT resolve on FactIQ market data: Borsa Istanbul .IS - invalid symbol. Tier-B demote: UNAUDITABLE via FactIQ.
+BOVA11.SA,Bovespa (IBOVESPA),B,value,V_TIERB,177.19,172.25,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (BRL); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+2800.HK,Hang Seng Index,B,value,V_TIERB,26.56,24.84,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (HKD); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+069500.KS,KOSPI 200,B,value,V_TIERB,121885.0,109720,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (KRW); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+000001.SS,Shanghai Composite,B,value,V_TIERB,4218.2173,3967.13,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (CNY); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+1321.T,Nikkei 225,B,value,V_TIERB,66030.0,70050,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (JPY); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+1306.T,TOPIX Index,B,value,V_TIERB,415.4,421.3,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (JPY); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+ZS=F,Soybeans,A,value,V_COMM,12.135,12.135,2026-05-12,2026-07-13/14,0.0,1.0%,PASS,PASS,USD/bu (FactIQ 1213 cents ÷100). exact; units reconciled.
+ZW=F,Wheat,A,value,V_COMM,6.65,6.65,2026-05-12,2026-07-13/14,0.0,1.0%,PASS,PASS,USD/bu (FactIQ 665 cents ÷100). match; units reconciled.
+WIP,FTSE International Government Inflation-Protected Bond Index (USD Hedged),A,value,V_SCALE,40.45,38.83,2026-05-12,2026-07-13/14,1.62,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XCS.TO,S&P/TSX SmallCap,B,value,V_TIERB,37.72,35.54,2026-05-12,2026-07-13/14,,scale,LOW,PROXY,Resolves on FactIQ global exchange (CAD); repo scale consistent. Index-name-on-ETF proxy labeling (finding 11). Directional only.
+USMV,iShares MSCI USA Min Vol Factor ETF,A,value,V_SCALE,94.49,97.82,2026-05-12,2026-07-13/14,-3.33,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+FEZ,Euro Stoxx 50,A,value,V_SCALE,65.96,67.47,2026-05-12,2026-07-13/14,-1.51,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range. (US-listed USD ETF; repo currency label EUR already flagged 9c — value is correct USD price.)
+IWS,Russell Midcap Value Index,A,value,V_SCALE,157.75,165.7,2026-05-12,2026-07-13/14,-7.95,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWP,Russell Midcap Growth Index,A,value,V_SCALE,136.65,140.7,2026-05-12,2026-07-13/14,-4.05,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWO,Russell 2000 Growth,A,value,V_SCALE,368.58,378.97,2026-05-12,2026-07-13/14,-10.39,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWN,Russell 2000 Value,A,value,V_SCALE,209.64,219.78,2026-05-12,2026-07-13/14,-10.14,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWF,Russell 1000 Growth,A,value,V_SCALE,123.35,121.59,2026-05-12,2026-07-13/14,1.76,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWD,Russell 1000 Value,A,value,V_SCALE,234.21,247.62,2026-05-12,2026-07-13/14,-13.41,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IWB,Russell 1000,A,value,V_SCALE,402.41,410.01,2026-05-12,2026-07-13/14,-7.6,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+HYXU,ICE BofA Euro High Yield Bond Index (USD Hedged),A,value,V_SCALE,53.405,53.64,2026-05-12,2026-07-13/14,-0.235,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range. (US-listed USD ETF; repo currency label EUR already flagged 9c — value is correct USD price.)
+IVE,S&P 500 Value,A,value,V_SCALE,224.77,230.88,2026-05-12,2026-07-13/14,-6.11,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IXG,iShares Global Financials ETF,A,value,V_SCALE,121.0,129.45,2026-05-12,2026-07-13/14,-8.45,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+INDA,iShares MSCI India ETF,A,value,V_SCALE,47.52,48.79,2026-05-12,2026-07-13/14,-1.27,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+ILF,iShares Latin America 40 ETF,A,value,V_SCALE,35.98,34.11,2026-05-12,2026-07-13/14,1.87,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IJR,S&P SmallCap 600,A,value,V_SCALE,135.79,144.99,2026-05-12,2026-07-13/14,-9.2,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IGOV,iShares International Treasury Bond ETF,A,value,V_SCALE,41.71,40.58,2026-05-12,2026-07-13/14,1.13,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+GOVT,ICE BofA US Treasury Index,A,value,V_SCALE,22.7,22.52,2026-05-12,2026-07-13/14,0.18,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+FXI,iShares China Large-Cap ETF (HK),A,value,V_SCALE,37.33,33.44,2026-05-12,2026-07-13/14,3.89,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+URTH,iShares MSCI World ETF,A,value,V_SCALE,200.57,203.01,2026-05-12,2026-07-13/14,-2.44,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+EZU,iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),A,value,V_SCALE,66.78,67.9,2026-05-12,2026-07-13/14,-1.12,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IXC,iShares Global Energy ETF,A,value,V_SCALE,54.83,52.54,2026-05-12,2026-07-13/14,2.29,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IVW,S&P 500 Growth,A,value,V_SCALE,135.8,136.46,2026-05-12,2026-07-13/14,-0.66,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IXJ,iShares Global Healthcare ETF,A,value,V_SCALE,92.67,99.21,2026-05-12,2026-07-13/14,-6.54,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+QUAL,iShares MSCI USA Quality Factor ETF,A,value,V_SCALE,210.39,218.65,2026-05-12,2026-07-13/14,-8.26,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+TUR,iShares MSCI Turkey ETF,A,value,V_SCALE,42.89,38.21,2026-05-12,2026-07-13/14,4.68,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SPLV,Invesco S&P 500 Low Volatility ETF,A,value,V_SCALE,73.1,76.41,2026-05-12,2026-07-13/14,-3.31,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IXN,iShares Global Tech ETF,A,value,V_SCALE,131.4,136.67,2026-05-12,2026-07-13/14,-5.27,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SHY,ICE BofA 1-3 Year US Treasury Index,A,value,V_SCALE,82.16,81.79,2026-05-12,2026-07-13/14,0.37,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SCZ,iShares MSCI EAFE Small-Cap ETF,A,value,V_SCALE,85.25,82.5,2026-05-12,2026-07-13/14,2.75,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+SCHD,Schwab US Dividend Equity ETF,A,value,V_SCALE,31.76,32.56,2026-05-12,2026-07-13/14,-0.8,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+RSP,S&P 500 Equal Weight Index,A,value,V_SCALE,203.81,214.23,2026-05-12,2026-07-13/14,-10.42,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+REET,iShares Global REIT ETF,A,value,V_SCALE,27.39,27.91,2026-05-12,2026-07-13/14,-0.52,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+RXI,iShares Global Consumer Discretionary ETF,A,value,V_SCALE,197.29,194.44,2026-05-12,2026-07-13/14,2.85,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+IXP,iShares Global Comm Services ETF,A,value,V_SCALE,123.11,117.58,2026-05-12,2026-07-13/14,5.53,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+MTUM,iShares MSCI USA Momentum Factor ETF,A,value,V_SCALE,303.24,314.63,2026-05-12,2026-07-13/14,-11.39,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+MDY,S&P MidCap 400,A,value,V_SCALE,669.05,685.98,2026-05-12,2026-07-13/14,-16.93,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+MCHI,iShares MSCI China ETF,A,value,V_SCALE,58.21,52.53,2026-05-12,2026-07-13/14,5.68,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+KXI,iShares Global Consumer Staples ETF,A,value,V_SCALE,68.7,68.2,2026-05-12,2026-07-13/14,0.5,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+MXI,iShares Global Materials ETF,A,value,V_SCALE,114.18,104.63,2026-05-12,2026-07-13/14,9.55,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+JXI,iShares Global Utilities ETF,A,value,V_SCALE,85.83,85.33,2026-05-12,2026-07-13/14,0.5,52wk range,PASS,PASS,scale/units/currency/name verified vs FactIQ GLOBAL_QUOTE; repo Last Price within 52wk range.
+XLK,S&P 500 Information Technology,A,value,V_SCALE,175.2,185.78,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+SPY,S&P 500,A,value,V_SCALE,738.18,739.3,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+TLT,ICE BofA 10+ Year US Treasury Index,A,value,V_SCALE,84.99,84.47,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+XLE,S&P 500 Energy,A,value,V_SCALE,57.57,55.08,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+QQQ,NASDAQ Composite,A,value,V_SCALE,707.24,725.51,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+EEM,iShares MSCI Emerging Markets ETF,A,value,V_SCALE,65.82,66.9,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+IWM,Russell 2000,A,value,V_SCALE,282.57,295.99,2026-05-12,2026-07-10 (quote) / 05-11 (SPY),,0.10% (exact-date unavailable via sampling),PASS,PASS,"Last Price correct magnitude, within 52wk range, name+currency match. Exact-date match limited by FactIQ market-data sampling; scale/units/sign verified."
+USDJPY=X,USD/JPY,A,value,V_FX,157.73,157.6198,2026-05-12,2026-05-12,0.1102,0.30%,PASS,PASS,Exact-date FactIQ FX close matches repo; convention correct (FCY-per-USD).
+EURUSD=X,EUR/USD,A,value,V_FX,1.1737,1.1741,2026-05-12,2026-05-12,-0.0004,0.30%,PASS,PASS,Exact-date FactIQ FX close matches repo; convention correct (USD-per-FCY).
+CL=F,WTI Crude,A,value,V_COMM,102.18,102.11877,2026-05-12,2026-05-12,0.0612,1.0%,PASS,PASS,WTI exact-date match (repo CL=F futures vs FactIQ CL1).
+BAMLC0A0CM,ICE BofA US Corporate IG OAS,A,value,V_SCOPE,(repo value),no FactIQ series,,,,,MEDIUM,UNAUDITABLE,"SCOPE: repo 'FRED' data_source rows are ICE BofA OAS/TR indices distributed via FRED. FactIQ carries NO ICE BofA index data (frb=Fed statistical releases, treasury, bls, etc). All ~20 BAML* rows + PIORECRUSDM are UNAUDITABLE vs FactIQ -> must stay direct-from-FRED (not replaceable by FactIQ aggregation). DFII10 potentially checkable vs Treasury real-yield curve in follow-up."
+HYLH.L,ICE BofA Global High Yield Bond Index (USD Hedged),C,value,V_SEMANTICS,5.385,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+GC=F,Gold,A,value,V_COMM,4677.6,4677.0,2026-05-12,05-11/14 bracket,~0,1.0%,PASS,PASS,Gold ~4677 within FactIQ 05-11..05-14 bracket (4652-4735). GC=F COMEX vs XAU/USD spot.
+IFRB.L,France Government Bond Index (OATs),C,value,V_SEMANTICS,1.271,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+IEAG.L,ICE BofA Euro Government Bond Index,C,value,V_SEMANTICS,1.0733,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+IITB.L,Italy Government Bond Index (BTPs),C,value,V_SEMANTICS,1.5079,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+IBGL.L,ICE BofA 10+ Year Euro Government Bond Index,C,value,V_SEMANTICS,1.4152,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+IEAC.L,iShares Core € Corp Bond UCITS ETF,C,value,V_SEMANTICS,1.1912,~120 EUR ETF price (FactIQ),2026-05-12,2026-07-10,~100x,,MEDIUM,UNAUDITABLE,"Repo value is a REBASED synthetic index (hist runs ~0.78->1.5, base~1.0), NOT the ETF market price. Confirmed via market_data_comp_hist. Currency label (EUR/GBP) + Sunday Last Date are misleading; not comparable to FactIQ price. Needs semantics confirmation."
+XIU.TO,S&P/TSX Composite (repo name) / iShares S&P/TSX 60 ETF,B,value,V_SCALE,50.26,52.69,2026-05-12,2026-07-10,-2.43,scale,LOW,FLAG(LOW),"ETF scale correct, but repo Name 'S&P/TSX Composite' mislabels XIU (tracks TSX 60, not Composite) — proxy/name mismatch."
+NIFTYBEES.NS,Nifty 50 (repo name) / Nippon India ETF Nifty BeES,B,value,V_SCALE,264.99,275.07,2026-05-12,2026-07-10,-10.08,scale,PASS,PASS,ETF scale/units match. NOTE: repo Name is the index ('Nifty 50') but Symbol prices the ETF (NIFTYBEES) — proxy labeling.
+^IRX,US 13wk T-Bill,A,value,V_YIELD,3.603,3.7,2026-05-12,2026-05-12,-0.097,5 bps,LOW,RECONCILIATION,"^IRX 13wk bill discount rate (3.60) vs Treasury 3mo PAR yield (3.70): ~10bps gap is expected discount-vs-bond-equivalent convention, not an error."
+^FVX,US 5yr Treasury Yield,A,value,V_YIELD,4.124,4.12,2026-05-12,2026-05-12,0.004,5 bps,PASS,PASS,Independent check vs US Treasury par yield curve (5yr); exact match.
+^TYX,US 30yr Treasury Yield,A,value,V_YIELD,5.031,5.03,2026-05-12,2026-05-12,0.001,5 bps,PASS,PASS,Independent check vs US Treasury par yield curve (30yr); exact match.
+^TNX,US 10yr Treasury Yield,A,value,V_YIELD,4.463,4.46,2026-05-12,2026-05-12,0.003,5 bps,PASS,PASS,Independent check vs US Treasury par yield curve (10yr); exact match.
+CC=F,Cocoa,A,value,V_COMM,4503.0,4600.066,2026-05-12,2026-05-12,,1.0%/scale,PASS,PASS,USD/ton. within 05-12 intraday 4458-4711; scale/units OK. Convention/sign/scale correct.
+CT=F,Cotton No. 2,A,value,V_COMM,0.8632,0.8617,2026-05-12,2026-05-12,,1.0%/scale,PASS,PASS,USD/lb. FactIQ 86.17 cents/lb=$0.8617; matches. Convention/sign/scale correct.
+ALI=F,Aluminium,A,value,V_COMM,3652.5,3575.14624,2026-05-12,2026-05-12,,1.0%/scale,PASS,PASS,USD/ton. ~2.2% vs LME 05-12 close; COMEX-vs-LME basis; scale/units OK. Convention/sign/scale correct.

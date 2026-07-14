@@ -1,0 +1,520 @@
+{
+ "note": "External-value sweep resume 2026-07-13: US ETF scale sweep, FX(5), commodities(13), Tier-B foreign-listed promotion sweep. FactIQ get_market_data GLOBAL_QUOTE/FX_DAILY/commodity.",
+ "etf_scale": {
+  "ACWI": [
+   154.65,
+   157.68
+  ],
+  "URTH": [
+   200.57,
+   204.63
+  ],
+  "KXI": [
+   68.7,
+   68.11
+  ],
+  "IXJ": [
+   92.67,
+   99.21
+  ],
+  "JXI": [
+   85.83,
+   84.83
+  ],
+  "EXI": [
+   196.39,
+   198.01
+  ],
+  "IXC": [
+   54.83,
+   51.03
+  ],
+  "IXN": [
+   131.4,
+   140.73
+  ],
+  "RXI": [
+   197.29,
+   196.01
+  ],
+  "IXG": [
+   121.0,
+   129.24
+  ],
+  "REET": [
+   27.39,
+   27.81
+  ],
+  "MXI": [
+   114.18,
+   106.0
+  ],
+  "ACWV": [
+   120.62,
+   122.4
+  ],
+  "IXP": [
+   123.11,
+   118.15
+  ],
+  "ILF": [
+   35.98,
+   34.51
+  ],
+  "IWD": [
+   234.21,
+   246.84
+  ],
+  "IVE": [
+   224.77,
+   230.49
+  ],
+  "IVW": [
+   135.8,
+   138.59
+  ],
+  "DIA": [
+   497.89,
+   525.78
+  ],
+  "IWB": [
+   402.41,
+   413.11
+  ],
+  "RSP": [
+   203.81,
+   214.3
+  ],
+  "IWS": [
+   157.75,
+   165.43
+  ],
+  "IWP": [
+   136.65,
+   142.55
+  ],
+  "MDY": [
+   669.05,
+   689.82
+  ],
+  "SCZ": [
+   85.25,
+   83.39
+  ],
+  "IWN": [
+   209.64,
+   219.97
+  ],
+  "IWO": [
+   368.58,
+   384.68
+  ],
+  "IJR": [
+   135.79,
+   145.56
+  ],
+  "XLP": [
+   84.44,
+   84.12
+  ],
+  "XLV": [
+   145.85,
+   160.84
+  ],
+  "XLU": [
+   45.19,
+   45.41
+  ],
+  "XLI": [
+   174.35,
+   181.92
+  ],
+  "XLC": [
+   115.86,
+   111.64
+  ],
+  "XLY": [
+   118.29,
+   117.24
+  ],
+  "XLB": [
+   52.14,
+   50.89
+  ],
+  "XLF": [
+   51.58,
+   55.71
+  ],
+  "XLRE": [
+   44.58,
+   44.45
+  ],
+  "SCHD": [
+   31.76,
+   32.4
+  ],
+  "VIG": [
+   228.79,
+   238.84
+  ],
+  "SPLV": [
+   73.1,
+   75.84
+  ],
+  "USMV": [
+   94.49,
+   97.76
+  ],
+  "MTUM": [
+   303.24,
+   321.77
+  ],
+  "QUAL": [
+   210.39,
+   219.69
+  ],
+  "EZU": [
+   66.78,
+   68.56
+  ],
+  "DXJ": [
+   169.09,
+   176.78
+  ],
+  "EWJ": [
+   92.06,
+   94.55
+  ],
+  "AAXJ": [
+   113.74,
+   116.22
+  ],
+  "MCHI": [
+   58.21,
+   53.13
+  ],
+  "INDA": [
+   47.52,
+   49.3
+  ],
+  "EWY": [
+   178.5,
+   183.52
+  ],
+  "EWT": [
+   93.77,
+   106.19
+  ],
+  "FXI": [
+   37.33,
+   33.48
+  ],
+  "EIS": [
+   134.82,
+   119.37
+  ],
+  "EZA": [
+   70.71,
+   63.82
+  ],
+  "TUR": [
+   42.89,
+   38.94
+  ],
+  "EWZ": [
+   38.24,
+   35.93
+  ],
+  "EWW": [
+   79.99,
+   74.86
+  ],
+  "IGOV": [
+   41.71,
+   40.84
+  ],
+  "WIP": [
+   40.45,
+   39.07
+  ],
+  "SHY": [
+   82.16,
+   81.88
+  ],
+  "GOVT": [
+   22.7,
+   22.59
+  ],
+  "CBON": [
+   23.781,
+   23.835
+  ],
+  "DBE": [
+   33.25,
+   27.14
+  ],
+  "DBP": [
+   114.54,
+   94.47
+  ],
+  "DBB": [
+   26.23,
+   24.45
+  ],
+  "DBA": [
+   28.57,
+   27.77
+  ],
+  "DBC": [
+   31.69,
+   27.52
+  ]
+ },
+ "fx": [
+  [
+   "GBPUSD=X",
+   "GBP/USD",
+   1.3535,
+   1.35411,
+   "USD-per-GBP (>1 correct)",
+   "2026-05-12"
+  ],
+  [
+   "CNY=X",
+   "USD/CNY",
+   6.7913,
+   6.79509,
+   "CNY-per-USD (05-11 close; no 05-12 row)",
+   "2026-05-11"
+  ],
+  [
+   "INR=X",
+   "USD/INR",
+   95.665,
+   95.62919,
+   "INR-per-USD",
+   "2026-05-12"
+  ],
+  [
+   "KRW=X",
+   "USD/KRW",
+   1494.67,
+   1493.2144,
+   "KRW-per-USD",
+   "2026-05-12"
+  ],
+  [
+   "TWD=X",
+   "USD/TWD",
+   31.519,
+   31.4915,
+   "TWD-per-USD",
+   "2026-05-12"
+  ]
+ ],
+ "commodities": [
+  [
+   "BZ=F",
+   "Brent Crude Oil",
+   107.77,
+   107.37298,
+   "USD/barrel",
+   "2026-05-12",
+   "0.37% vs 05-12 close; Brent>WTI spread ~$5 correct",
+   "PASS"
+  ],
+  [
+   "NG=F",
+   "Natural Gas (Henry Hub)",
+   2.843,
+   2.83413,
+   "USD/MMBtu",
+   "2026-05-12",
+   "0.31% vs 05-12 close",
+   "PASS"
+  ],
+  [
+   "HG=F",
+   "Copper",
+   6.485,
+   6.58841,
+   "USD/lb",
+   "2026-05-12",
+   "within 05-12 intraday 6.394-6.611; COMEX vs FactIQ HG1",
+   "PASS"
+  ],
+  [
+   "SI=F",
+   "Silver",
+   85.13,
+   86.54485,
+   "USD/oz",
+   "2026-05-12",
+   "within 05-12 intraday 82.98-87.29; SI=F COMEX vs XAG spot",
+   "PASS"
+  ],
+  [
+   "ALI=F",
+   "Aluminium",
+   3652.5,
+   3575.14624,
+   "USD/ton",
+   "2026-05-12",
+   "~2.2% vs LME 05-12 close; COMEX-vs-LME basis; scale/units OK",
+   "PASS"
+  ],
+  [
+   "SB=F",
+   "Sugar No. 11",
+   0.1501,
+   0.1498684,
+   "USD/lb",
+   "2026-05-12",
+   "FactIQ 14.987 cents/lb = $0.14987; repo $/lb matches (cents/100). base_ccy USX label nuance",
+   "PASS"
+  ],
+  [
+   "KC=F",
+   "Coffee (Arabica)",
+   2.948,
+   2.8125,
+   "USD/lb",
+   "2026-05-12",
+   "FactIQ 281.2 cents/lb=$2.8125; repo $2.948 (~4.8% gap, high-vol soft); same scale/convention (cents/100)",
+   "PASS"
+  ],
+  [
+   "ZC=F",
+   "Corn",
+   4.6725,
+   4.667,
+   "USD/bushel",
+   "2026-05-12",
+   "FactIQ 466.7 cents/bu=$4.667; matches. base_ccy USX label nuance",
+   "PASS"
+  ],
+  [
+   "CT=F",
+   "Cotton No. 2",
+   0.8632,
+   0.8617,
+   "USD/lb",
+   "2026-05-12",
+   "FactIQ 86.17 cents/lb=$0.8617; matches",
+   "PASS"
+  ],
+  [
+   "ZW=F",
+   "Wheat",
+   6.65,
+   6.686,
+   "USD/bushel",
+   "2026-05-13",
+   "FactIQ 668.6 cents/bu=$6.686 (05-13; no 05-12 row); matches. USX label nuance",
+   "PASS"
+  ],
+  [
+   "CC=F",
+   "Cocoa",
+   4503.0,
+   4600.066,
+   "USD/ton",
+   "2026-05-12",
+   "within 05-12 intraday 4458-4711; scale/units OK",
+   "PASS"
+  ],
+  [
+   "ZS=F",
+   "Soybeans",
+   12.135,
+   12.209,
+   "USD/bushel",
+   "2026-05-13",
+   "FactIQ 1220.9 cents/bu=$12.209 (05-13); matches. USX label nuance",
+   "PASS"
+  ]
+ ],
+ "tierB_families": {
+  "LSE_pass": [
+   "AGGG.L",
+   "CMOD.L",
+   "CNYB.L",
+   "IBCI.L",
+   "IBCX.L",
+   "IBGM.L",
+   "IBGS.L",
+   "IEFM.L",
+   "IEFQ.L",
+   "IGLS.L",
+   "IGLT.L",
+   "IHYU.L",
+   "INXG.L",
+   "IUKD.L",
+   "IWDA.L",
+   "IWFV.L",
+   "IWMO.L",
+   "IWQU.L",
+   "IWVL.L",
+   "MINV.L",
+   "NDIA.L",
+   "SLXX.L",
+   "UKDV.L",
+   "VDET.L",
+   "VFEM.L",
+   "VGOV.L",
+   "WSML.L"
+  ],
+  "rebased_L_proxy": [
+   "IEAC.L",
+   "IEAG.L",
+   "IBGL.L",
+   "IFRB.L",
+   "IITB.L",
+   "HYLH.L"
+  ],
+  "XETR_pass": [
+   "EUN0.DE",
+   "EXH1.DE",
+   "EXH3.DE",
+   "EXH4.DE",
+   "EXH9.DE",
+   "EXI5.DE",
+   "EXV1.DE",
+   "EXV2.DE",
+   "EXV3.DE",
+   "EXV4.DE",
+   "EXX6.DE",
+   "SPYW.DE",
+   "ZPRG.DE"
+  ],
+  "JPX_pass": [
+   "1306.T",
+   "2561.T"
+  ],
+  "TSX_pass": [
+   "XGB.TO",
+   "XSB.TO",
+   "XLB.TO",
+   "XRB.TO",
+   "XCS.TO"
+  ],
+  "SSE_pass": [
+   "000001.SS",
+   "000300.SS",
+   "000905.SS(promotion)"
+  ],
+  "SZSE_proxy": [
+   "399001.SZ"
+  ],
+  "NSE_proxy": [
+   "SMALLCAP.NS"
+  ],
+  "UNAUDITABLE": [
+   "FTSEMIB.MI",
+   "XU100.IS",
+   "XU030.IS",
+   "IAF.AX(entitlement)",
+   "000852.SS"
+  ]
+ }
+}

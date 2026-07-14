@@ -1,0 +1,58 @@
+{
+  "captured": "2026-07-12",
+  "as_of_repo": "2026-05-12",
+  "source": "FactIQ live (get_market_data / run_sql)",
+  "us_etf_global_quote_2026_07_10": {
+    "SPY": 754.95,
+    "QQQ": 725.51,
+    "TLT": 84.47,
+    "EEM": 66.9,
+    "XLK": 185.78,
+    "IWM": 295.99,
+    "XLE": 55.08
+  },
+  "spy_daily_close": {
+    "2026-05-11": 739.29999,
+    "2026-05-14": 748.16998
+  },
+  "foreign_global_quote_2026_07_10": {
+    "IWDA.L": {
+      "px": 144.23,
+      "ccy": "USD",
+      "name": "iShares Core MSCI World UCITS ETF USD (Acc)",
+      "exch": "LSE"
+    },
+    "IEAC.L": {
+      "px": 120.16,
+      "ccy": "EUR",
+      "name": "iShares Core Corp Bond UCITS ETF",
+      "exch": "LSE"
+    },
+    "XIU.TO": {
+      "px": 52.69,
+      "ccy": "CAD",
+      "name": "iShares S&P/TSX 60 Index ETF",
+      "exch": "TSX"
+    },
+    "NIFTYBEES.NS": {
+      "px": 275.07,
+      "ccy": "INR",
+      "name": "Nippon India ETF Nifty BeES",
+      "exch": "NSE"
+    }
+  },
+  "fx_daily_close_2026_05_12": {
+    "EUR/USD": 1.17409,
+    "USD/JPY": 157.61982
+  },
+  "commodity_close_2026_05_12": {
+    "WTI_CL1": 102.11877,
+    "GOLD_XAUUSD_near": 4677.0
+  },
+  "treasury_par_yield_2026_05_12": {
+    "10yr": 4.46,
+    "30yr": 5.03,
+    "5yr": 4.12,
+    "3mo_par": 3.7
+  }
+}
