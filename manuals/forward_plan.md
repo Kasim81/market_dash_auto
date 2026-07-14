@@ -455,6 +455,12 @@ Distilled from the 2026-06-15 17:48 UTC daily-audit (`data_audit.txt` Section A 
 
 **A13. `JPN_CPI_INDEX` tier-0 upgrade — wire the Statistics Bureau CPI via e-Stat.** ✅ **Resolved 2026-07-09.** The true primary — the **Statistics Bureau 2020-base CPI on e-Stat, `statsDataId 0003427113`** (消費者物価指数（2020年基準）, toukei 00200573) — is now wired at tier 0 in `macro_library_estat.csv`. Slice pinned via a credentialed `getMetaInfo` run (the PR #208 wrong-slice lesson — not committed blind): `cdTab=1` (表章項目 指数 = index measure; siblings are `2`=前月比・前年比 and `3`=前年同月比 YoY), `cdCat01=0001` (2020年基準品目 総合 = all-items headline, 790-classification item dimension), `cdArea=00000` (地域 全国 = nationwide), `lang=J` (the table is absent from the English DB). Verified live via the adapter 2026-07-09: **733 obs 1970-01 → 2026-05 = 113.5** (base 2020=100 confirmed). **Wrong-slice guard applied:** the June-2026 figure in the `getMetaInfo` time dimension is the Tokyo-ward lead cut (`cdArea=13A01`, ~1 month ahead); the national all-items series correctly ends 2026-05 (national June releases ~2026-07-19). Tier merge verified live via `_dedupe_snapshot_rows`: e-Stat (tier 0, 2026-05) wins over the OECD COICOP2018 index (now T1, tier 1, base 2015=100, 2026-04) — same `index` measure-kind, so the cadence-first/lowest-tier rule applies cleanly (no definition collision). `data/source_fallbacks.csv` chain updated (T0 e-Stat LIVE, T1 OECD, T2 dead FRED mirror); the OECD `macro_library_dbnomics.csv` row notes re-marked as the T1 fallback. BoJ was correctly ruled out (its Time-Series DB carries only producer-side prices — PR01 CGPI / PR02 SPPI / PR03 IO / PR04 FD-ID; CPI is MIC's). *Optional follow-up (not done — deferred to avoid repointing the two live OECD YoY rows without a full validation pass): the same table's `cdTab=3` YoY measure can serve `JPN_CPI_YOY` (`cdCat01=0001`) and `JPN_CORE_CPI_YOY` (ex-fresh-food-and-energy item code) at tier 0 in a future slice-pinning session.*
 
+**A17. Re-validate the FactIQ audit's value-level findings against live `market_data_comp.csv` (2026-07-12 audit follow-up).** The 2026-07-12 audit's *structural* findings were already fixed (the 4 remediation fixes via PR #265 — EMB proxy/label, dual-ticker splits, pence-gate currency fix, the new Treasury source); durable state in tech_manual §13. But the audit's **value-level** checks ran against the stale 2026-05-13 snapshot (repo as-of 2026-05-12), so re-run the Tier-A value + Tier-B promotion sweeps against the current `market_data_comp.csv` on `main` if value-level confidence is wanted. Method + tiering in `handover/audit/AUDIT_REPORT.md` / `working_list.csv`. The two independent 2026-07-13/14 passes fully concurred and found **no** new scale/sign/÷100 anomaly across the priced universe, so this is confidence-refresh, not a known-defect chase. Effort: S (mechanical re-run against live data). *Note: FactIQ MCP must be connected in an interactive session — not runnable from CI.*
+
+**A18. CSI 500 (`000905.SS`) re-source candidate (2026-07-12 audit follow-up).** The library marks `000905.SS` UNAVAILABLE, but FactIQ prices it (~8138 CNY) — a candidate to wire a working source (China-listed / HK-listed CSI 500 ETF proxy, or a FactIQ-verified direct series). Its sibling **CSI 1000 `000852.SS` stays genuinely unpriceable — leave it.** Cross-ref §3.8.5 Class 2. Effort: S–M (discovery is the work). *FactIQ price is a candidate to verify against the live catalog.*
+
+**A19. `_load_tier_map()` (+ `_load_override_map()`) encoding one-liner.** ✅ **Verified still open 2026-07-14.** `_load_tier_map()` (`fetch_macro_economic.py:292`) and its twin `_load_override_map()` (`:320`) both `open(path, newline="")` **without** `encoding="utf-8"`, so on a Windows cp1252 default locale a library CSV containing a non-ASCII byte (e.g. a `£`/`€`/Japanese label) raises `UnicodeDecodeError` — harmless on CI's UTF-8, latent for local Windows runs. Pre-existing bug surfaced by the FactIQ audit (`handover/FactIQ handover.md` §5 item 5). Fix: add `encoding="utf-8"` to both `open()` calls. Effort: S (one-line each).
+
 ### §2.B Regime-AA free-sourceable backlog — 15 indicators (2026-06-15)
 
 Distilled from `manuals/regime-aa-asks/regime-aa-sourcing-backlog.md`. Regime-AA carries 162 requested indicator slots: 98 covered, 24 partial, **15 missing-sourceable** (here), 25 missing-hard (proprietary, deferred). Closing all 15 would lift regime-AA fill rate from 60% to ~69%. Grouped by where the work lands:
@@ -542,6 +548,12 @@ Distilled from `manuals/regime-aa-asks/regime-aa-sourcing-backlog.md`. Regime-AA
 - **§3.6 Incremental Fetch Mode** — performance work for `fetch_hist.py`.
 - **§3.8 Weekly Retirement Review Workflow** — closes the auto-remediation gap left by the daily audit.
 - **Regime-AA v2 asks (§3.12–§3.17)** — cross-repo handoff (`manuals/2026-06-10-regime-aa-v2-pipeline-handoff.md`), status-reconciled. **CRITICAL:** §3.12 OECD MEI ingestion (✅ rows in 2026-06-10; continuity verification pending first daily run) and §3.14 monthly z-score sampling (✅ shipped 2026-06-10) — both unblock regime-AA Phase 0 / Phase 2. **HIGH:** §3.13 long-run source modules (✅ Shiller / Ken French / JST + IMF PCPS aggregate all shipped 2026-06-10; BoE Millennium optional, deferred). §3.15 / §3.16 still blocked / consumer-side. §3.17 capability ✅, writer deferred. See §3.12–§3.17 for the per-ask status.
+
+- **FactIQ architecture-teardown ideas (optional / strategic — from the 2026-07-12 audit, `handover/FACTIQ_AUDIT_PLAN.md` §8.3).** Design patterns learned from FactIQ's warehouse while it is free — not committed work, cross-ref §8.3 for each:
+  - Port the per-source `macro_library_*.csv` + `*_hist.csv` into a single **3-table DuckDB store** (`series` / `data_points` / `dimensions`) — the audit's internal checks collapse to 5-line queries (§8.3.1). Overlaps the §5 multifreq native-frequency-storage direction.
+  - **Cache-first discipline** for `fetch_data.py` / `fetch_macro_economic.py` pulls — raw response to disk before transform, so every future audit is diffable (§8.3.2). Overlaps §2.C C11.
+  - A **ChartSpec-style spec layer** between pipeline and outputs before adding any new viz surface (§8.3.6).
+  - Write the audit up as a repeatable **`report-patterns/data-audit.md`** playbook so it re-runs with no rediscovery (§8.3.3).
 
 > **Note: §3.5 and §3.7 are MOVED.** Regime-based indicator labelling, ML-driven regime identification, and the regime-driven back-test / portfolio optimiser have been moved out of this document into `../regime_AA_master_plan.docx`. The stub sections at §3.5 and §3.7 below record the move and direct readers to the relevant master-plan sections.
 
@@ -727,6 +739,66 @@ Outstanding-work-only acceptance criteria for §3.1 closure:
 - ⏳ **Stage E** — survey deep-dive: per-country target list distilled from the demand doc; rows added via existing modules where free; documented gaps where proprietary.
 - ⏳ **Stage G** — closeout: refresh `data/source_fallbacks.csv`, refresh `manuals/macro_market_indicators_coverage.xlsx`, archive working notes; this section enters `Status: Done` posture.
 
+
+#### 3.1.8 Direct-wire replicable upstream sources — FactIQ source-inventory strategy
+
+**Provenance:** distilled from the 2026-07-12 FactIQ audit (`handover/FACTIQ_AUDIT_PLAN.md` §11, `handover/audit/AUDIT_REPORT.md`). FactIQ is an OAuth-gated MCP data-warehouse aggregator (22 upstream official sources, 25M+ series) used *interactively* to cross-check the pipeline — it is **never** a pipeline source (see the access-mechanism note below and tech_manual §14). This subsection captures the outstanding *direct-wire* roadmap: for every source FactIQ aggregates, decide whether the repo should ingest the provider **directly** (its own `sources/*.py`, like FRED/OECD/IMF) or lean on FactIQ as an interactive aggregation layer. Strategic intent (Kas): *replicate what we can replicate, then rely on FactIQ as an additional aggregator for the residue.* The repo already wires sources FactIQ does **not** carry (OECD, ECB, BoE, BoJ, Eurostat, ifo, Nasdaq DL, dbnomics, plus yfinance prices) — so repo ∪ FactIQ is broader than either alone.
+
+**Milestone 1 — done.** `sources/treasury.py` (US Treasury daily par-yield curve, keyless `home.treasury.gov` CSV feed, per-year pagination + backoff, 13 tenors) shipped as fix #4 of the remediation (PR #265) and is the **reference template** for every direct-wire source below. Note: the FiscalData API (`api.fiscaldata.treasury.gov`) does **not** carry the daily par curve (404 — monthly averages only); the daily `home.treasury.gov` feed is the working path.
+
+**Three-bucket model (§11):**
+
+1. **Already covered — add series ids only:** Federal Reserve (policy/market rates, money stock, industrial production — via existing `sources/fred.py`, which *is* the Fed distribution), Department of Labor jobless claims (FRED `ICSA`/`CCSA`), FHFA house-price index (on FRED), plus **IMF** (`sources/imf.py`) and **World Bank** (`sources/worldbank.py`). No new wiring; just extend the relevant `macro_library_*.csv`.
+2. **Replicate directly (clean free public API, high value):** **BEA, Census, EIA, Singapore SingStat** as genuinely-new `sources/*.py` on the `treasury.py` template; **BLS and Japan e-Stat are already wired** (`sources/bls.py`, `sources/estat.py`) so their task is *extend series coverage*, not build-new (see reconciliation below). US Treasury par-yield = done (milestone 1). SEC EDGAR optional (fundamentals — `sources/sec_edgar.py` pilot already exists as a standalone isolated phase; likely out of scope for a price/returns dashboard).
+3. **Rely on FactIQ as aggregator (no clean API / high friction) — the residue:** China NBS + GACC customs, India MOSPI/RBI/DGCI&S, Korea & Taiwan customs, CBO, USDA ERS, BTS. These are exactly the sources where a direct ingester is expensive or infeasible — and (crucially) exactly the otherwise-dead regime-AA gaps below.
+
+> **Reconciliation with what already exists (verified 2026-07-14 via `ls sources/`):** `sources/bls.py` (4 US series) and `sources/estat.py` (4 Japan series) are **already wired and in production** — do **not** frame these as new builds. For BLS the task is adding series ids to `data/macro_library_bls.csv`; for Japan e-Stat, extending `data/macro_library_estat.csv` (and the outstanding METI file-download fetcher for the two Excel-only gaps, §1 Known Data Gaps). The genuinely-new modules are **BEA, Census, EIA, SingStat**.
+
+**Access-mechanism constraint (the hard rule):** the pipeline's Python cannot `import` FactIQ — it is an OAuth-gated MCP server, not a library — so there is **no `sources/factiq.py`**. However, a GitHub-Actions job *could* run Claude Code headlessly (`claude -p` / the Agent SDK) with FactIQ's MCP configured, and that agent could write FactIQ data into the repo's CSVs. This **agent-in-CI** path is a genuine option, distinct from a library import — but the mechanics matter (verified against the Claude Code / Agent SDK docs 2026-07-14):
+
+- **Reusing FactIQ's *interactive* browser-OAuth token in CI is NOT supported** — Claude Code does not expose a documented way to persist/refresh that token for an unattended run, so it can silently expire mid-job with no browser to re-approve. (This is the kernel of truth behind the handover's overstated "never in CI.")
+- **Three feasible paths instead**, all via the headless CLI / Agent SDK: **(A)** a **static/long-lived bearer token** passed in the MCP server's `headers` from a GitHub secret — *only if FactIQ can issue one* (a service credential / long-lived token; an open FactIQ-side question, since its plugin auth is interactive OAuth today); **(B)** a **credential-injecting proxy** run outside the agent boundary that holds the token and handles refresh (Anthropic's documented "secure deployment" pattern — most robust for unattended runs); **(C)** a **custom stdio MCP wrapper** we control that implements the OAuth-refresh logic and re-exposes FactIQ's tools.
+
+All three still carry the same operational caveats: token refresh, the non-determinism/reliability of an LLM step inside a data pipeline, cost, FactIQ's rate limits, its free→paid risk, and its ToS (interactive access is licensed; redistributing the warehouse is not). Therefore the rule holds — **replicate any source that has a clean public API directly; reserve the FactIQ agent-in-CI path (if pursued at all) for the genuinely high-friction sources with no clean public API (China NBS/GACC, India RBI/DGCI&S, Korea/Taiwan customs)**, which are exactly the otherwise-dead regime-AA gaps below. **First feasibility gate: confirm whether FactIQ issues a static/service token (path A) or must be fronted by a proxy/wrapper (paths B/C).**
+
+**FactIQ upstream source inventory (all 22 sources + the market-data layer).** Coverage/disposition per §11. *Every FactIQ-specific coverage claim below is a candidate to verify against FactIQ's live `get_data_catalog` in an interactive agent session — the bundled `schemas.md` is stale and FactIQ MCP is not connected in the CI/repo environment, so none of this can be asserted as fact here.*
+
+| FactIQ source | Coverage | Direct route (verify at build time) | Bucket / disposition |
+|---|---|---|---|
+| BLS | CPI/PPI, employment, JOLTS, wages/ECI | `api.bls.gov/publicAPI/v2` (free key) | **Already wired** (`sources/bls.py`) — extend series |
+| BEA | GDP, PCE, personal income | `apps.bea.gov/api` (free key) | **Replicate** (new module) |
+| Census | Trade (HS-level), retail, housing, business formation | `api.census.gov` (free key) | **Replicate** (esp. HS trade — regime-AA) |
+| EIA | Petroleum/gas/electricity/renewables + prices | `api.eia.gov/v2` (free key) | **Replicate** (new module) |
+| US Treasury | Federal debt, **par yield curve**, TIC | `home.treasury.gov` daily CSV (keyless) | ✅ **Done** — `sources/treasury.py` (milestone 1) |
+| SEC EDGAR | XBRL financials, ~1,000 US large caps | `data.sec.gov` (keyless, UA header) | Optional — `sources/sec_edgar.py` pilot exists |
+| USDA ERS | Farm income, food economics | Bulk downloads / limited API | **Rely-on-FactIQ** (low value) |
+| BTS | Freight, aviation, transit | Data-portal downloads | **Rely-on-FactIQ** (low value) |
+| Federal Reserve | Policy/market rates, money stock, IP | via **FRED** (`sources/fred.py`) | **Covered** — add series ids |
+| Department of Labor | Weekly jobless claims | FRED `ICSA`/`CCSA` | **Covered** — add series ids |
+| FHFA | House Price Index | on FRED | **Covered** — add series ids |
+| CBO | Budget history + 10y projections | Publication downloads, no clean API | **Rely-on-FactIQ** |
+| China NBS | Macro (CPI/PPI/IP/activity) | `data.stats.gov.cn` (no clean API) | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| China GACC | HS customs trade | No clean public API | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| India MOSPI | CPI/WPI/IIP/GDP | `esankhyiki.mospi.gov.in` (moderate) | **Rely-on-FactIQ** (or attempt eSankhyiki) |
+| India RBI | Banking, rates, forex | DBIE portal (awkward) | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| India DGCI&S | HS customs trade | Commerce-dept portal (high friction) | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| Japan customs | HS customs trade | via e-Stat API (moderate key) | **Replicate-possible** (`sources/estat.py` reaches e-Stat) / else FactIQ |
+| Korea customs | HS customs trade | KCS / TRASS (high friction) | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| Taiwan customs | HS customs trade | Customs portal (high friction) | **Rely-on-FactIQ / agent-in-CI** (regime-AA) |
+| Singapore SingStat | National statistics | `tablebuilder` API (clean, low friction) | **Replicate** (new module) |
+| IMF | International macro | via `sources/imf.py` (+`imf_sdmx.py`) | **Covered** |
+| World Bank | International development/macro | via `sources/worldbank.py` | **Covered** |
+| *(market-data layer)* | Equity/index/FX/commodity quotes, OHLCV, OVERVIEW | Alpha-Vantage-style API (`sources/alpha_vantage.py` scaffold exists, free ~25 req/day) | Keep **yfinance** primary; AV documented as fallback (`source_fallbacks.csv`) |
+
+**Regime-AA gap-plugging priorities.** Ranked by value to the regime-AA Growth × Inflation / external frame, cross-referenced against this plan's own open gaps (§1 Known Data Gaps + §2.A). This is the highest-leverage reason to keep FactIQ in the toolkit at all — it uniquely aggregates the Asian NBS/customs residue that is otherwise dead for the pipeline. **All FactIQ series/coverage claims here are candidates to verify against the live `get_data_catalog`; several carry an explicit must-verify flag because the upstream may itself be dead.**
+
+1. **China 10-Year government bond yield** (§1 gap; `AS_CN_R1` / the deliberately-dangling `_get_col(mu, "CHN_GOVT_10Y")` reference in `_calc_AS_CN_R1`) — today only an ETF proxy (`CBON` distribution yield) stands in; no direct CN 10Y series exists on FRED (short-term only) or OECD MEI. FactIQ aggregates China NBS → **candidate direct series** to plug the dangling reference. *Candidate — verify against FactIQ live catalog.*
+2. **China PPI** (§1 gap; `CHN_PPI` leg of `CN_INFL1`) and **China Industrial Production** (§1 gap; `CHN_IND_PROD`) — both currently **ACCEPTED DEAD gaps**: NBS stopped supplying these internationally after 2022 (frozen 2022-12 at FRED OECD-MEI mirror, the IMF's own PPI dataset, *and* the DB.nomics NBS mirror, which is an all-NA shell). **Important nuance:** FactIQ aggregates NBS, but if NBS ceased international supply, FactIQ may **not** carry live post-2022 data either. Mark both **candidate — MUST verify against FactIQ's live `get_data_catalog` in an interactive session before committing effort**; do not assume the gap is closable.
+3. **Japan retail sales** (§1 gap; `JPN_RETAIL_SALES`, dropped as a file-only gap 2026-07-07 — live METI headline is Excel-only, no `getStatsData` table) — FactIQ reaches Japan customs / e-Stat, so it is a **candidate** live monthly source that could restore the `JP_NOWCAST1` retail leg without building the deferred `sources/meti_jp.py` file-download fetcher. *Candidate — verify against FactIQ live catalog.*
+4. **ITA / NLD / IND 10-Year yields** (§2.A A2; `ITA_BTP_10Y` + `NLD_DSL_10Y` + `IND_GOVT_10Y`) — all three share the frozen FRED `IRLTLT01*M156N` OECD-MEI-mirror family (STALE at 101d). The proven escape hatch is a Treasury/IMF-style rates dataflow (A1's `sources/imf_sdmx.py` pattern); FactIQ's IMF/rates dataflows are a parallel **candidate**, especially for IND where no Tier-2 aggregator is wired. *Candidate — verify against FactIQ live catalog.*
+5. **HS-level trade / customs indicators** (China GACC, India DGCI&S, Korea/Taiwan customs) — these are **new** External/Trade regime-AA indicators FactIQ *uniquely* aggregates (no clean public API anywhere). Potential highest-novelty additions to the regime frame's external axis, but also the highest-friction — the exact residue reserved for the FactIQ agent-in-CI path (if pursued) rather than a direct `sources/*.py`. *Candidate — verify against FactIQ live catalog.*
+
+**Golden-snapshot hedge + FactIQ free→paid risk (B5).** FactIQ is free "all data, no limits" *today* (2026-07-12) but may go paid — the single largest strategic risk to any FactIQ-dependent plan. The golden snapshot under `handover/audit/golden/` (`factiq_reference_2026-07-12.json` + the `2026-07-14_sweep.json`) is the hedge captured while access was free: **keep it**, and future re-audits regress against it if live access disappears. This is also why the residue-bucket sources above are marked *rely-on-FactIQ* rather than *committed work* — the honest fallback for a genuinely-blocked source is the golden snapshot or a FRED-as-proxy series, not an assumption of perpetual free FactIQ access.
 
 ### 3.2 Retire the Simple Pipeline
 
@@ -947,6 +1019,21 @@ Decision deferred — it interacts with the Stage A preservation contract and ne
 - `audit_writeback.py` removed from daily workflow; `data/audit_streaks.csv` carries every active streak.
 - `data/retirement_decisions.csv` carries a full historic record of every decision and application date.
 - Daily audit comment (`audit_comment.md`) carries `@kasim81` mention so the operator receives email notifications for daily audits.
+
+#### 3.8.5 FactIQ audit dead-ticker & coverage-gap backlog (2026-07-12)
+
+Surfaced by the 2026-07-12 FactIQ audit (`handover/FACTIQ_AUDIT_PLAN.md` §12, `handover/audit/findings.csv` + `working_list.csv`). This is a `index_library.csv` remediation backlog and belongs to the §3.8 machinery above — it uses the **same `data/removed_tickers.csv` ledger + `data/yfinance_failure_streaks.csv` streak tracker** the weekly review already drives. Three classes:
+
+- **Class 1 — genuinely dead (frozen ≥ 10y, serving stale values — retire, highest priority):** `^CM100` (CAC Mid 60), `^SP500-151050` (Paper & Forest Products), `^SP500-551020` (Gas Utilities). These serve *frozen stale values* today — worse than a blank because they look live.
+- **Class 2 — no-output yfinance gaps (~29 rows, in library but produce no comp row):** ~26 `^SP500-xxxxxx` GICS *industry* sub-indices (yfinance discontinued the industry granularity — keep only the sector level the dashboard already gets, unless industry detail is a hard requirement), plus `000905.SS` (CSI 500) / `000852.SS` (CSI 1000), and `^VXEEM` (CBOE EM Volatility, discontinued by CBOE). Full list in `working_list.csv` where `has_output=False`.
+- **Class 3 — empty output rows (47, comp row present but `Last Price` blank):** almost all foreign-listed UCITS ETF proxies — `.L`/`.DE`/`.PA`/`.JO` (e.g. `IWDA.L`, `ISF.L`, `EXSA.DE`, `C40.PA`, `STX40.JO`). Triage each into (i) fixable (wrong exchange suffix / share-class ambiguity), (ii) genuinely dead → retire, or (iii) needs a fallback source (`source_fallbacks.csv`).
+
+**Guardrails (preserve verbatim):**
+- **Do NOT hard-delete** — retire *through* the `removed_tickers.csv` ledger so history and rationale are preserved (mirror the existing `batch=STOXX600_sector` convention for the Class 2 industry sub-indices).
+- The **52 `validation_status = UNAVAILABLE` rows** (Treasury/Bund/JGB yields, breakevens, SOFR, Fed funds, curve spreads, ICE BofA USD-hedged gilt/EGB families) are **curated-by-design placeholders, NOT dead** — sourced elsewhere (FRED / direct-wire per §3.1.8) or intentionally parked. **Exclude them from cleanup.**
+- **Re-check against the LIVE `index_library.csv` first** — it moved ~28 lines since the audit, so anchor by ticker not line number.
+
+**Effort:** Class 1 ~15 min (3 rows); Class 2 ~1 hr (batch retire + decide China/EM-vol re-sourcing); Class 3 ~half a day (47 rows, many resolve to a suffix correction rather than retirement).
 
 ### 3.9 Long-run commodity prices — LBMA gold (regime-AA-driven)
 
@@ -1234,7 +1321,12 @@ If any of (a)–(d) is missing the indicator silently doesn't appear. (d) is the
 ## 4. Project Chronology
 
 **Priority:** Low — useful project history but doesn't move the pipeline forward.
-**Status:** Not started.
+**Status:** Not started (a full generated chronology is still outstanding; the entries below are logged inline as they land).
+
+**Recent notable entries:**
+- **2026-07-12** — FactIQ data audit run (`handover/FACTIQ_AUDIT_PLAN.md`, `handover/audit/AUDIT_REPORT.md`): full-universe ticker-by-ticker cross-check against the FactIQ warehouse, 676 findings (deduped), **4 real bugs** identified (EMB proxy/ARS-label corruption, dual-ticker currency labels, `.L` pence-gate over-conversion of EUR-quoted London lines, missing Treasury par-yield source). Golden snapshot captured while FactIQ is free (`handover/audit/golden/`).
+- **2026-07-14** — FactIQ remediation merged (**PR #265**): the 4 fixes re-derived on current `main` — `sources/treasury.py` + `data/macro_library_treasury.csv` (new source, direct-wire milestone 1), pence-gate currency fix in `fetch_data.py`, EMB standalone-USD + 8 country-proxy removals and FEZ/ASHR/HYXU currency splits in `index_library.csv`.
+- **2026-07-14** — Handover folder added (**PR #266**): `handover/` (FactIQ handover doc + `FACTIQ_AUDIT_PLAN.md` + `audit/` artefacts + golden snapshot).
 
 ```bash
 git log --oneline --format="%ad  %s" --date=short | grep -v "Update market data + explorer"
