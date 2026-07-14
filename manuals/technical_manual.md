@@ -26,6 +26,8 @@ This manual is the authoritative record of the **current code state** — module
 12. [Environment Setup](#12-environment-setup)
 13. [Known Issues & Status](#13-known-issues--status)
 14. [Operational Notes](#14-operational-notes)
+- [Appendix A — FactIQ Data Audit (2026-07-12)](#appendix-a--factiq-data-audit-2026-07-12)
+- [Appendix B — FactIQ Golden Snapshot](#appendix-b--factiq-golden-snapshot)
 
 ---
 
@@ -87,6 +89,7 @@ market_dash_auto/
 │   ├── brightdata.py                  # Shared Bright Data Web Unlocker client (credentials/available/unlock) with process-wide call cap — bot-protection bypass for ISM press releases (132 lines, 2026-07-02)
 │   ├── ifo.py                         # ifo Institute Excel-workbook fetcher with retry + cache + month-walk + Bright Data fallback (579 lines)
 │   ├── boe.py                         # Bank of England IADB CSV fetcher (252 lines; mirror-rotation retry via shared base.fetch_with_backoff §2.C C3, 2026-07-09)
+│   ├── treasury.py                    # US Treasury Daily Par Yield Curve fetcher — keyless home.treasury.gov per-year CSV feed, 13 tenors, module-level curve cache (354 lines, wired 2026-07-12; direct-wire milestone 1, forward_plan §3.1.8)
 │   ├── ecb.py                         # ECB Data Portal SDMX fetcher (218 lines; retry loop replaced by shared base.fetch_with_backoff §2.C C3, 2026-07-08)
 │   ├── boj.py                         # Bank of Japan Time-Series API fetcher (310 lines; retry via shared base.fetch_with_backoff §2.C C3, 2026-07-09)
 │   ├── estat.py                       # e-Stat (Japan Statistics Bureau) REST API fetcher (318 lines; `_parse_estat_time` monthly @time parser fixed 2026-06-15; retry via shared base.fetch_with_backoff §2.C C3, 2026-07-09)
@@ -125,6 +128,7 @@ market_dash_auto/
 │   ├── macro_library_eurostat.csv     # Eurostat dissemination-API keys (3 rows: EU_ESI/EU_IND_CONF/EU_SVC_CONF, geo EA21, tier 0; 2026-07-09 §2.A A12)
 │   ├── macro_library_ifo.csv          # ifo workbook sheet/column locations (26 rows)
 │   ├── macro_library_boe.csv          # BoE IADB series codes (7 rows)
+│   ├── macro_library_treasury.csv     # US Treasury par-yield tenor definitions (13 rows: UST1MO…UST30YR → USA_UST_* columns)
 │   ├── macro_library_ecb.csv          # ECB Data Portal SDMX keys (11 rows — incl. EA_HICP headline+core via the post-2026 HICP dataflow; +STBS EZ_IND_PROD/EZ_RETAIL_VOL and MNA EA_GDP_INDEX, §3.18)
 │   ├── macro_library_boj.csv          # BoJ Time-Series API codes (10 rows)
 │   ├── macro_library_estat.csv        # e-Stat statsDataIds (5 rows)
@@ -269,7 +273,7 @@ The project maintains two parallel instrument pipelines:
 | **History tab** | *(none — removed)* | `market_data_comp_hist` |
 | **FX coverage** | Same 18-currency cache | Same 18-currency cache |
 | **Sort order** | `lib_sort_key()` from `library_utils.py` | `lib_sort_key()` from `library_utils.py` |
-| **Pence correction** | Dynamic `.endswith(".L")` + median > 50 check | Same |
+| **Pence correction** | Currency-gated `_is_pence_quoted()` (`.L` **and** `base_currency ∈ {GBP,GBX}`) + median > 50 check | Same |
 
 Both pipelines are now library-driven. The simple pipeline reads from `index_library.csv` using the `simple_dash` boolean column to select its subset. Both share the same `collect_comp_assets()` function and FX cache. The simple pipeline is preserved for `trigger.py` (see below) but is slated for retirement — see `forward_plan.md` §3.10.
 
@@ -291,7 +295,7 @@ Every fetched identifier lives in a `data/macro_library_*.csv` file (the "Data-L
 - **Known issues:**
   - Some official index tickers return empty history (STOXX 600 sectors, S&P style indices, TOPIX)
   - Russian tickers have data through mid-2022/mid-2024 only (sanctions)
-  - UK `.L` tickers report prices in pence (GBp) — corrected via `.endswith(".L")` + median > 50 heuristic
+  - UK `.L` tickers report prices in pence (GBp) — corrected via the currency-gated `_is_pence_quoted()` / `_should_convert_pence()` helpers in `fetch_data.py` (`.L` **and** `base_currency ∈ {GBP,GBX}`, plus median > 50). EUR/USD-quoted `.L` listings (e.g. `IEAC.L`) are deliberately excluded — see §10 "LSE Pence Correction"
 
 ### FRED API
 
@@ -570,6 +574,20 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 - **Response shape:** deeply-nested JSON. `parse_response` extracts `GET_STATS_DATA → STATISTICAL_DATA → DATA_INF → VALUE` list of `{"@time": "YYYYMMDD", "$": "value"}`; `_parse_estat_time` handles the 10-digit period encoding. **2026-06-15 (PR #208):** The monthly `@time` parser was corrected — the 10-digit code is `YYYY + group(2) + MM(2) + DD(2)` where group is `00` and MM repeats in the day position for monthly observations (e.g. `2026000303` → March 2026). The previous implementation misread this as `YYYYMM0000`, returning zero observations for every monthly series and making the e-Stat path effectively dead until this fix.
 - **Fetcher:** `sources/estat.py` (336 lines, Stage D).
 
+### US Treasury — daily par-yield curve (2026-07-12)
+
+- **URL:** `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/<YEAR>/all?type=daily_treasury_yield_curve&field_tdr_date_value=<YEAR>` — one keyless CSV per calendar year, newest-first, `MM/DD/YYYY` business days, data begins 1990. **No API key, no User-Agent required.**
+- **Auth:** None (keyless CSV feed).
+- **Not FiscalData.** This is the **Daily Treasury Par Yield Curve** feed on `home.treasury.gov`, deliberately *not* the FiscalData API (`api.fiscaldata.treasury.gov`), which 404s on the daily curve and carries only monthly averages. The par curve is the cleanest independent macro cross-check the repo has (the FactIQ audit matched repo `^TNX`/`^TYX`/`^FVX` against Treasury par to <0.5bp on 2026-05-12).
+- **Used for:** 13 constant-maturity par-yield tenors — `UST1MO`/`UST2MO`/`UST3MO`/`UST4MO`/`UST6MO`/`UST1YR`/`UST2YR`/`UST3YR`/`UST5YR`/`UST7YR`/`UST10YR`/`UST20YR`/`UST30YR`, mapped to the feed's column labels (`1 Mo` … `30 Yr`) by the authoritative `TENOR_LABELS` dict. (The feed also publishes a `1.5 Month` tenor — intentionally not tracked.) Library: `data/macro_library_treasury.csv` (13 rows). Country USA, category Rates / Sovereign, units Percent, daily.
+- **Per-year pagination + backoff:** the module fetches one CSV per year (`FEED_FIRST_YEAR = 1990` → current year) through the shared `sources/base.fetch_with_backoff` engine, then assembles a single wide DataFrame cached at module level (`_CURVE_CACHE`) so the coordinator's 13 per-tenor calls reuse one network pass. The tenor-column set **varies by year** (2 Mo added 2018, 4 Mo added 2022, 20 Yr dropped 1987-1993 & reintroduced 2020), so the parser is robust to missing tenors — an absent column or empty cell simply yields NaN for that tenor/date.
+- **Fetcher:** `sources/treasury.py` (side-effect-free — no CSV writing, no Sheets push; mirrors the `sources/boe.py` public shape: `load_library()` + `fetch_series_as_pandas()`). Wired into the Phase ME coordinator via `SourceSpec("Treasury", "treasury", "treasury")` in `sources/__init__.py`, the `treasury_src` import + `TREASURY_DELAY = 0.6` in `fetch_macro_economic.py`, and a `_make_source_handlers(treasury_src, TREASURY_DELAY)` entry in `_SOURCE_HANDLERS`.
+- **Roadmap position:** milestone 1 of the direct-wire replicable-source roadmap (`forward_plan.md` §3.1.8) — the reference template for future keyless-upstream `sources/*.py` modules. Per that plan's core constraint, we replicate the upstream provider's own public API rather than routing through FactIQ.
+
+### Reference / audit-only data — FactIQ (not a pipeline source)
+
+FactIQ is an authenticated MCP data-warehouse plugin used **interactively** to cross-check the pipeline against an independent reference (read-only, 50-row/call, ~1 req/s, no monthly quota). The pipeline's Python cannot `import` it — it is OAuth-MCP, not a library — so it is **not** a `sources/*.py` module and never a last-writer in the source merge. (A headless GitHub-Actions job *could* in principle run an agent with FactIQ's MCP + a pre-authorized token to pull data into the CSVs, but that is a separate, unattended agent-in-CI path with real caveats — see forward_plan.) The rule stands: **replicate the upstream source where it has a clean public API; do not re-scrape FactIQ's warehouse** (its data isn't licensed for redistribution). The audit is written up in **Appendix A** (findings summary) and **Appendix B** (golden snapshot) of this manual; its data files sit alongside this manual (`manuals/factiq_audit_findings.csv`, `manuals/factiq_audit_working_list.csv`, `manuals/factiq_golden_*.json`). The golden snapshot is the free-now reference hedge against FactIQ going paid. The full narrative report and planning docs are archived in git (PRs #265 / #266).
+
 ---
 
 ### Anti-bot fetching tier
@@ -640,6 +658,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_dbnomics.csv` | 18 | sources/dbnomics.py | DB.nomics series paths. **Stage B (2026-04-30) added 4 T1 fallback rows** for the 9 forcing-function FRED rows: `IMF/IFS/M.JP.FPOLM_PA` (JPN_POLICY_RATE), `IMF/IFS/M.CN.FPOLM_PA` (CHN_POLICY_RATE), `Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20` (EA_HICP), `Eurostat/teiis080/M.PRD.B-D.I21_SCA.DE` (DEU_IND_PROD). Existing 9: 3 Eurostat surveys, 3 ISM PMIs, 3 Eurostat real-economy. **2026-06-10 §3.1.3 follow-up (+2):** `Eurostat/prc_hicp_manr/M.RCH_A.TOT_X_NRG_FOOD.EA20` (EA_HICP_CORE_YOY) + `OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_N_TXCP01_NRG/JPN.M.N.CPI.PA._TXCP01_NRG.N.GY` (JPN_CORE_CPI_YOY) — feed the blended `EU_INFL1` / `JP_INFL1` calculators. **2026-06-15 (+2, PR #206):** `ISM/inventories/in` (ISM_MFG_INVENTORIES, sort_key 111) + `ISM/prices/in` (ISM_MFG_PRICES, sort_key 112) — feed the `US_ISM2` Phase E indicator. **2026-06-17 (+1, PR #221):** `NBS/M_A0D01/A0D0102` (CHN_M2 — China M2 broad money supply YoY%, Money/Liquidity; verified 9.0% @ 2026-02; replaced frozen FRED mirror `MYAGM2CNM189N`). **2026-07-07 (+7, PR #249, CPI-definition split):** OECD COICOP2018 all-items CPI YoY (`DF_PRICES_C2018_ALL/<ISO>.M.N.CPI.PA._T.N.GY`) for `JPN_CPI_YOY` (feeds `JP_INFL1`), `CAN_CPI_YOY`, `CHE_CPI_YOY`, `FRA_CPI_YOY`, `ITA_CPI_YOY`, `NLD_CPI_YOY`, and `DEU_CPI_YOY` (HICP methodology — `DEU.M.HICP.CPI.PA._T.N.GY`). **2026-07-08 (−3, §3.18):** the frozen teiis rows (`EZ_IND_PROD`, `EZ_RETAIL_VOL`, `DEU_IND_PROD` T1) dropped after the 2026-01-22 DB.nomics Eurostat-mirror freeze (§2.A A12); rerouted to ECB STBS / IMF PI. **2026-07-09 (−3, §2.A A12):** the sentiment trio (`EU_ESI`, `EU_IND_CONF`, `EU_SVC_CONF`) dropped and rerouted to the new direct `sources/eurostat.py` fetcher (`EA20`→`EA21` geo migration on Bulgaria's euro adoption). Net 24 → 18 rows. |
 | `macro_library_ifo.csv` | 26 | sources/ifo.py | ifo workbook sheet/column locations for the 26 German business-survey series |
 | `macro_library_boe.csv` | 7 | sources/boe.py | **NEW 2026-04-30 (Stage D + Stage F follow-on).** BoE IADB series codes for UK rates: `IUDBEDR` Bank Rate, `IUDSOIA` SONIA, `IUDSNPY` / `IUDMNPY` / `IUDLNPY` gilt par yield S/M/L, `IUDMNZC` / `IUDLNZC` zero-coupon M/L. |
+| `macro_library_treasury.csv` | 13 | sources/treasury.py | **NEW 2026-07-12 (FactIQ direct-wire milestone 1, forward_plan §3.1.8).** US Treasury Daily Par Yield Curve tenor definitions — one row per constant-maturity tenor `UST1MO`/`UST2MO`/`UST3MO`/`UST4MO`/`UST6MO`/`UST1YR`/`UST2YR`/`UST3YR`/`UST5YR`/`UST7YR`/`UST10YR`/`UST20YR`/`UST30YR` → `USA_UST_*` columns; Rates / Sovereign, Percent, Daily, keyless `home.treasury.gov` feed. `series_id` values are the canonical tenor tokens, mapped to feed column labels by `sources/treasury.py::TENOR_LABELS`. |
 | `macro_library_ecb.csv` | 11 | sources/ecb.py | **NEW 2026-04-30 (Stage D + Stage F follow-on); +2 2026-06-15; +1 2026-06-17.** ECB Data Portal direct (registry path, distinct from the inline YC call in `compute_macro_market.py`): `FM/D.U2.EUR.4F.KR.DFR.LEV` (EA_DEPOSIT_RATE), `YC/...SR_2Y` (EZ_GOVT_2Y), `YC/...SR_30Y` (EZ_GOVT_30Y). **2026-06-15 (+2, PR #204/206):** `CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX` (EZ_CISS — ECB Composite Indicator of Systemic Stress, Credit/Spreads, daily 0–1 index), `CES/M.Z18.ALL.T.C1120.NUM_VAR.WM` (EZ_INFL_EXP_12M — ECB CES 12M-ahead inflation expectations, Sentiment/Survey, monthly weighted median, freshness_override 40d). **2026-06-17 (+1, PR #221):** `BSI/M.U2.Y.V.M30.X.I.U2.2300.Z01.A` (EZ_M3 — Euro area M3 broad money supply YoY%, Money/Liquidity, monthly; verified 2.74% @ 2026-04; replaced frozen FRED mirror `MABMM301EZM189S`). **2026-07-08 (+2, §2.A A10):** `HICP/M.U2.N.000000.4D0.ANR` (EA_HICP) + `HICP/M.U2.N.XEF000.4D0.ANR` (EA_HICP_CORE_YOY). **2026-07-08 (+3, §3.18):** `STBS/M.I9.Y.PROD.NS0020.4D0.N.IX` (EZ_IND_PROD, 1991-01+), `STBS/M.I9.Y.TOVV.2G4700.4D0.N.IX` (EZ_RETAIL_VOL, 2000-01+, headline scope), `MNA/Q.Y.I9.W2.S1.S1.B.B1GQ._Z._Z._Z.EUR.LR.N` (EA_GDP_INDEX, 1995-Q1+). |
 | `macro_library_boj.csv` | 10 | sources/boj.py | **NEW 2026-04-30 (Stage D); +2 2026-06-10; +5 2026-06-11; +1 2026-06-17.** BoJ Time-Series codes (search-screen format with `<DB>'<code>` apostrophe separator): `FM01'STRDCLUCON` (JPN_POLICY_RATE T2 backup), `CO'TK99F1000601GCQ01000` (JP_TANKAN1 — Tankan Large Mfg Business Conditions DI), `PR01'PRCG20_2200000000` (JPN_PPI), `PR02'PRCS20_5200000000` (JPN_SPPI). **2026-06-11 (+5 Tankan sub-DIs):** Large Mfg Forecast DI (JP_TANKAN_LMFG_FCST), Large Non-Mfg DI (JP_TANKAN_LNFG), Large Non-Mfg Forecast DI (JP_TANKAN_LNFG_FCST), Small Mfg DI (JP_TANKAN_SMFG), Small Non-Mfg DI (JP_TANKAN_SNFG) — feed the JP_TANKAN_SPREAD1 / JP_TANKAN_SVC1 / JP_TANKAN_FWD1 Phase E indicators. **2026-06-17 (+1, PR #221):** `MD02'MAM1YAM2M2MO` (JPN_M2 — Japan M2 broad money supply YoY%, Money/Liquidity, monthly; verified 2.5% @ 2026-05; replaced frozen FRED mirror `MYAGM2JPM189S`). |
 | `macro_library_estat.csv` | 4 | sources/estat.py | **NEW 2026-04-30 (Stage D); +5 2026-06-10; revised 2026-06-11; IDs corrected 2026-06-17; slices pinned + `JPN_RETAIL_SALES` dropped 2026-07-07 (PR #250).** e-Stat statsDataIds (source of truth: `data/macro_library_estat.csv`). Current live rows: `0004052177?cdCat01=0001000&lang=J` (JPN_IND_PROD — METI IIP; the earlier `0003446463` was the **Cabinet Office Composite Index of Business Conditions**, not the IIP, repointed by PR #208), `0003355222?cdCat01=160&cdCat02=100` (JPN_MACH_ORDERS — monthly machinery orders; the earlier `0003355224` was an annual fiscal-year table, repointed by PR #208), `0002070001?cdTab=01&cdCat01=059&cdCat02=03&cdArea=00000&lang=J` (JPN_HH_EXP — MIC Family Income & Expenditure; slice pinned 2026-07-07 to 消費支出/二人以上/全国; `@tab` exposes only 金額 so it is a nominal-yen **level**, units corrected to `JPY per month (nominal)`), `0003348427?cdTab=140&cdCat01=100&cdCat02=100&cdCat03=100&cdArea=00000&lang=J` (JPN_EWS_DI — Economy Watchers national Current-Conditions DI; DI slice pinned 2026-07-07). **2026-07-07 drop:** `JPN_RETAIL_SALES` (`0003138782`) removed — confirmed a frozen 2013 annual archive, and the credentialed `getStatsList` sweep found no live monthly `getStatsData` table for METI 商業動態統計 (Excel/file-only); now an accepted Known Data Gap (`forward_plan.md`), with its `_calc_JP_NOWCAST1` reference removed. **2026-06-11 drop:** `JPN_TERT_IND` (METI Tertiary Industry Activity) — no `getStatsData` table exists. Re-add either via a file-download fetcher / `sources/meti_jp.py` module. |
@@ -749,6 +768,8 @@ The library has ~390 rows and 29 columns. It is the **single source of truth** f
 ### Library Maintenance
 
 `index_library.csv` is itself built by a separate Claude project at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. Any changes to instrument metadata should be made in the CSV, not hardcoded in Python.
+
+**Dual-ticker split representation (FactIQ audit, 2026-07-14).** A US-listed ETF that gives exposure to a *foreign* index must **not** carry the underlying index's foreign currency on the ETF row — the ETF trades in USD, and labeling it (e.g.) EUR/CNY makes the USD-adjustment path double-count FX. The accepted representation is **two rows**: a native-currency **index** row (`^STOXX50E` EUR, `000300.SS` CNY) plus a **USD ETF** row (`FEZ`, `ASHR`). This split was applied to FEZ/ASHR by `fixes/split_dual_ticker_rows.py`; single-listing cases with no clean native index (e.g. `HYXU`) are simply relabeled to `USD`. See §13 "Metadata / Label Issues" for the full FactIQ remediation.
 
 ---
 
@@ -903,13 +924,13 @@ Unit-tested in `test_tier_merge.py` (cadence-first, tier tie-break, staleness fa
 
 #### Read order
 
-Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → eurostat → shiller → french → jst → atlanta_fed → ny_fed → imf_sdmx`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema. `alpha_vantage` is registered in `SOURCE_REGISTRY` but its `load_library()` is **not** called here (header-only library, scaffolding — see §9.5.22). This read order still determines candidate-list `order` (the final tie-break inside `_select_winner`), but it no longer determines the winner outright — see the tier-aware merge above.
+Inside `load_all_indicators()`: `countries → fred → oecd → worldbank → imf → dbnomics → ifo → boe → treasury → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → eurostat → shiller → french → jst → atlanta_fed → ny_fed → imf_sdmx`. Each `sources/*.py` exposes `load_library() -> list[dict]` returning the unified indicator schema. `alpha_vantage` is registered in `SOURCE_REGISTRY` but its `load_library()` is **not** called here (header-only library, scaffolding — see §9.5.22). This read order still determines candidate-list `order` (the final tie-break inside `_select_winner`), but it no longer determines the winner outright — see the tier-aware merge above.
 
-### 9.5 `sources/` package (34 modules — 2 scaffolding-only, ~9,200 lines total)
+### 9.5 `sources/` package (35 modules — 2 scaffolding-only, ~9,600 lines total)
 
-**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added). **2026-07-08:** new module `imf_sdmx.py` (185 lines; see §5 "IMF Data Portal — SDMX 2.1" for its full description — it has no numbered §9.5.x subsection of its own) added for the IMF Data Portal SDMX 2.1 API (§2.A A1, China CPI). Same day, **§2.C C3 batch 1** converted five keyless GET modules — `ecb.py`, `boc.py`, `ons.py`, `bundesbank.py`, `abs.py` — from an identical hand-rolled retry loop to the shared `sources/base.fetch_with_backoff` helper, each shrinking by ~15-20 lines (`ecb.py` 230→213, `boc.py` 183→165, `ons.py` 218→200, `bundesbank.py` 218→201, `abs.py` 206→189); `imf_sdmx.py` was written directly on the shared helper. **2026-07-09 — §2.C C3 batch 2 (final):** the helper grew four backwards-compatible extensions (mirror-URL rotation via `url` list, `accept="bytes"`, POST via `json_body`, `context` for "on <series>" log fidelity, per-response `validate` guards, `retry_errors` for flaky-gateway sources) and eleven more modules converted: `fred` (the `context` param preserves the exact skip-line format data_audit Section A scrapes), `boj`, `estat`, `statcan` (POST), `istat` (retry_errors; 2026-06-12 budget unchanged), `boe` + `lbma` (mirror rotation + content sniff), `atlanta_fed` / `ny_fed` / `shiller` (mirror + bytes + file-magic validation), `french` (bytes + retry_errors). Engine pinned by `test_fetch_backoff.py` (16 mock-HTTP tests, ci.yml gate). **Seven modules stay deliberately hand-rolled, each for a named protocol reason** (see forward_plan §2.C C3 ✅ entry): `dbnomics` (status-sensitive circuit breaker), `bls` (app-level throttle field), `insee`/`bdf` (key-gated auth diagnostics), `alpha_vantage` (rate-limit body inspection), `ifo` (3-strategy anti-bot), `nasdaq_data_link` (SDK, not HTTP).
+**Role:** Per-source data providers. Each submodule exposes a small, consistent interface (library loader + snapshot fetcher + history fetcher) with **no CSV or Sheets side effects** — those live in `fetch_macro_economic.py`. The 4 Stage-D modules (`boe.py`, `ecb.py`, `boj.py`, `estat.py`) were added 2026-04-30. The 2 §3.9 modules (`lbma.py`, `nasdaq_data_link.py`) were added 2026-05-08/09 — `lbma.py` is live (gold daily 1968+); `nasdaq_data_link.py` is intentionally retained as empty scaffolding after LBMA/GOLD went paid-tier on NDL (see §5 NDL entry). 7 keyless source adapters (`boc.py`, `statcan.py`, `ons.py`, `bundesbank.py`, `abs.py`, `istat.py`, and `bls.py`) were added 2026-05-28 for Canada, UK, Australia, Italy, and US primary-source overrides. 2 further French-source modules (`insee.py`, `bdf.py`) were added 2026-06-09 (`bdf.py` was rewritten for the Opendatasoft Explore v2.1 stack on 2026-06-10). 4 more modules landed 2026-06-10: `alpha_vantage.py` (§3.3 PE-ratio snapshot scaffold) and the §3.13 long-run trio `shiller.py` / `french.py` / `jst.py`. **2026-06-11:** `atlanta_fed.py` — Atlanta Fed GDPNow keyless Excel download (§3.1.4 GDP Now wiring; 366 lines; feeds `US_GDPNOW1` Phase E indicator); `ny_fed.py` — New York Fed Staff Nowcast keyless Excel download (§3.1.4; 348 lines; feeds `US_NOWCAST1` Phase E indicator). **2026-06-12:** `ifo.py` grows from ~390 → 579 lines (Bright Data Web Unlocker added as a 3rd-strategy fallback for persistent anti-bot challenges — see §5 ifo entry). `istat.py` grows from 280 → 287 lines (retry budget tightened: timeout 90→30s, retries 6→3). **2026-06-15:** `istat.py` grows further from 287 → 395 lines (per-series EDITION cache added — writes `data/istat_edition_cache.csv` on each run; wildcard-on-miss dataset discovery logic added to handle ISTAT API SDMX endpoint changes). **2026-06-17:** `atlanta_fed.py` grows from 392 → 535 lines (GDPNow column-selection fix + CurrentQtrEvolution tab parser added — `_find_nowcast_column()` selects the explicit "GDP Nowcast" column by name; `_extract_current_quarter_series()` reads the CurrentQtrEvolution tab for the live-quarter nowcast series; `test_atlanta_fed_parse.py` 130-line offline regression test suite added). **2026-07-08:** new module `imf_sdmx.py` (185 lines; see §5 "IMF Data Portal — SDMX 2.1" for its full description — it has no numbered §9.5.x subsection of its own) added for the IMF Data Portal SDMX 2.1 API (§2.A A1, China CPI). Same day, **§2.C C3 batch 1** converted five keyless GET modules — `ecb.py`, `boc.py`, `ons.py`, `bundesbank.py`, `abs.py` — from an identical hand-rolled retry loop to the shared `sources/base.fetch_with_backoff` helper, each shrinking by ~15-20 lines (`ecb.py` 230→213, `boc.py` 183→165, `ons.py` 218→200, `bundesbank.py` 218→201, `abs.py` 206→189); `imf_sdmx.py` was written directly on the shared helper. **2026-07-09 — §2.C C3 batch 2 (final):** the helper grew four backwards-compatible extensions (mirror-URL rotation via `url` list, `accept="bytes"`, POST via `json_body`, `context` for "on <series>" log fidelity, per-response `validate` guards, `retry_errors` for flaky-gateway sources) and eleven more modules converted: `fred` (the `context` param preserves the exact skip-line format data_audit Section A scrapes), `boj`, `estat`, `statcan` (POST), `istat` (retry_errors; 2026-06-12 budget unchanged), `boe` + `lbma` (mirror rotation + content sniff), `atlanta_fed` / `ny_fed` / `shiller` (mirror + bytes + file-magic validation), `french` (bytes + retry_errors). Engine pinned by `test_fetch_backoff.py` (16 mock-HTTP tests, ci.yml gate). **Seven modules stay deliberately hand-rolled, each for a named protocol reason** (see forward_plan §2.C C3 ✅ entry): `dbnomics` (status-sensitive circuit breaker), `bls` (app-level throttle field), `insee`/`bdf` (key-gated auth diagnostics), `alpha_vantage` (rate-limit body inspection), `ifo` (3-strategy anti-bot), `nasdaq_data_link` (SDK, not HTTP). **2026-07-12:** new module `treasury.py` (354 lines; §9.5.28) — the US Treasury Daily Par Yield Curve fetcher, milestone 1 of the FactIQ direct-wire roadmap (forward_plan §3.1.8); written directly on the shared `base.fetch_with_backoff` helper and built to `sources/boe.py`'s public shape as the reference template for future keyless-upstream sources. This is the module that takes the package from 34 → 35.
 
-**Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → eurostat → shiller → french → jst → atlanta_fed → ny_fed → imf_sdmx` (`alpha_vantage` is registered but not called here — header-only scaffolding library, §9.5.22). Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Per `col`, the winning source is now chosen by the tier-aware, cadence-first, staleness-fallback merge (`_select_winner` / `_dedupe_snapshot_rows`, §9.4) rather than a plain last-writer-wins rule — this read order only supplies the final tie-break.
+**Coordinator read order in `fetch_macro_economic.py::load_all_indicators()`**: `fred → oecd → worldbank → imf → dbnomics → ifo → boe → treasury → ecb → boj → estat → nasdaqdl → lbma → boc → statcan → ons → bundesbank → abs → istat → bls → insee → bdf → eurostat → shiller → french → jst → atlanta_fed → ny_fed → imf_sdmx` (`alpha_vantage` is registered but not called here — header-only scaffolding library, §9.5.22). Each `sources/*.py` exposes `load_library() → list[dict]` returning the unified indicator schema. Per `col`, the winning source is now chosen by the tier-aware, cadence-first, staleness-fallback merge (`_select_winner` / `_dedupe_snapshot_rows`, §9.4) rather than a plain last-writer-wins rule — this read order only supplies the final tie-break.
 
 #### 9.5.1 `sources/base.py` (318 lines)
 
@@ -1262,6 +1283,21 @@ New York Fed Staff Nowcast keyless Excel fetcher. Downloads the full forecast-hi
 
 Smoke test: `test_ny_fed_smoke.py` (daily CI step — SKIPs when the NY Fed medialibrary host is unreachable from the runner).
 
+#### 9.5.28 `sources/treasury.py` (354 lines, wired 2026-07-12)
+
+US Treasury Daily Par Yield Curve fetcher. Keyless — pulls one CSV per calendar year from the `home.treasury.gov` daily-par-yield feed (**not** FiscalData, which has no daily curve). Side-effect-free; mirrors the `sources/boe.py` public shape (`load_library()` + `fetch_series_as_pandas()`). Milestone 1 of the FactIQ direct-wire roadmap (forward_plan §3.1.8) and the reference template for future keyless-upstream sources. See the §5 "US Treasury — daily par-yield curve" entry for the feed details.
+
+| Function | Purpose |
+|---|---|
+| `load_library()` | Read `data/macro_library_treasury.csv` (13 tenor rows) into the unified indicator schema, sorted by `sort_key` |
+| `fetch_year_csv(year, ...)` | Fetch one calendar year's raw par-yield CSV via the shared `base.fetch_with_backoff` (per-year pagination + exponential backoff) |
+| `parse_year_csv(text, year)` | Parse one year's CSV into a date-indexed frame whose columns are the canonical tenor tokens; missing tenor columns / empty cells → NaN; guards against HTML error pages |
+| `fetch_all_tenors(start, ...)` | Assemble the full daily par-yield history (all tenors, all years from `FEED_FIRST_YEAR = 1990`) into one wide frame, cached at module level (`_CURVE_CACHE`) so the coordinator's 13 per-tenor calls reuse one network pass; `_fetcher` injectable for tests |
+| `fetch_series_as_pandas(series_id, start, col_name)` | Return one tenor as a date-indexed Series (NaNs dropped) — signature matches `boe.fetch_series_as_pandas`, so the coordinator wiring is a copy of the BoE branch |
+| `clear_cache()` | Reset the module-level curve cache (mainly for tests) |
+
+Key module constants: `TENOR_LABELS` (canonical tenor token → feed CSV column label — the single authoritative mapping), `FEED_URL`, `FEED_FIRST_YEAR = 1990`, `DEFAULT_HIST_START = "1990-01-01"`. Self-test via `python sources/treasury.py` (`_self_test()` — fetches the live feed and sanity-checks the 10Y in a 0-10% range; will fail behind a TLS-intercepting proxy, an environment artefact only).
+
 ### 9.6 `compute_macro_market.py` (2,567 lines)
 
 **Role:** Phase E — 107 composite macro-market indicators with z-scores, regime classifications, forward regime signals, and z-score trend diagnostics. Also writes the month-end-sampled `macro_market_monthly_hist.csv` consumed by regime-AA Phase 3 (§3.14).
@@ -1585,16 +1621,19 @@ The full mapping is defined once in `library_utils.py` as `COMP_FX_TICKERS` (18 
 
 ### LSE Pence Correction
 
-UK `.L` tickers may report prices in pence (GBp) rather than pounds (GBP). The correction is applied dynamically:
+UK `.L` tickers may report prices in pence (GBp) rather than pounds (GBP). The ÷100 correction is **currency-gated** — it fires only for a genuinely pence-quoted London line, not for every `.L` ticker. Two helpers in `fetch_data.py` express the gate:
 
 ```python
-if ticker.endswith(".L"):
-    median_val = series.dropna().median()
-    if pd.notna(median_val) and median_val > 50:
-        series = series / 100
+def _is_pence_quoted(ticker, base_currency):
+    return ticker.endswith(".L") and str(base_currency).strip().upper() in ("GBP", "GBX")
+
+def _should_convert_pence(ticker, base_currency, median):
+    return _is_pence_quoted(ticker, base_currency) and pd.notna(median) and median > 50
 ```
 
-This is used in both `collect_comp_assets()` (fetch_data.py) and `fetch_comp_yfinance_history()` (fetch_hist.py). No hardcoded pence ticker list is needed.
+The conversion runs only when `_should_convert_pence(ticker, base_currency, median)` is true — i.e. the line is a GBP/GBX `.L` listing **and** its median price magnitude reads as pence (> 50). This is used in both `collect_comp_assets()` (fetch_data.py) and `fetch_comp_yfinance_history()` (fetch_hist.py); no hardcoded pence ticker list is needed.
+
+**Bug fixed (FactIQ audit, 2026-07-14):** the previous heuristic gated on `.endswith(".L")` alone, so **EUR-quoted London ETFs** — e.g. `IEAC.L` (Euro IG corp, ~€120) — were wrongly divided by 100 down to ~1.2. Adding the `base_currency ∈ {GBP,GBX}` gate excludes them. The bug affected only the `Last Price` **display** column — period returns were computed on the pre/post-conversion ratio and were unaffected. Pinned by the regression test `fixes/test_pence_gate.py`.
 
 ---
 
@@ -2002,9 +2041,22 @@ Going forward, the daily `audit_writeback.py` runs N=14 consecutive days of dead
 | `CYB` | WisdomTree Chinese Yuan ETF | Delisted Dec 2023; `CNYB.L` is replacement |
 | `DX-Y.NYB` | US Dollar Index | Data only from 2008 |
 
-### Metadata / Label Issues — currently clean
+### Metadata / Label Issues — currently clean (last audit 2026-07-14, FactIQ)
 
-Last full audit against `data/index_library.csv`: 2026-04-21. The previously-flagged items below are all resolved; included here as historical record.
+Last full audit against `data/index_library.csv`: **2026-07-14 (FactIQ ticker-by-ticker audit)**, superseding the prior 2026-04-21 sweep. The FactIQ audit (676 findings; see Appendix A + `manuals/factiq_audit_*.csv`) confirmed the priced universe holds on scale/units/sign but surfaced **four currency-label / proxy defects that changed displayed USD numbers** — all four now resolved and merged to `main` (PR #265). The items below are all resolved; included here as historical record.
+
+**Resolved by the 2026-07-14 FactIQ audit** (`data/index_library.csv`):
+
+| Ticker(s) | Issue found | Resolution |
+|---|---|---|
+| `EMB` | One USD ETF (iShares USD EM Debt) was **proxying 9 library rows** (8 country "USD-Hedged" bond indices + the real fund) and carried an `ARS` currency label on a USD-denominated fund — a phantom ARS→USD conversion flipped its 1Y USD return **+11.69% → −13.35%**. | The 8 country-proxy rows were removed; `EMB` kept as a **standalone USD ETF** (currency USD). Script `audit/fix_emb.py`. Library now holds a single `EMB` row. |
+| `FEZ` | US-listed USD ETF mislabeled `EUR` (Euro Stoxx 50 exposure) → USD Perf risked double-counting FX. | **Split** into a native-currency index row (`^STOXX50E`, EUR) + a USD ETF row (`FEZ`, USD). |
+| `ASHR` | US-listed USD ETF mislabeled `CNY` (CSI 300 exposure). | **Split** into a native-currency index row (`000300.SS`, CNY) + a USD ETF row (`ASHR`, USD). |
+| `HYXU` | US-listed USD ETF mislabeled `EUR` (Euro HY exposure). | Relabeled `EUR → USD` (kept as a single USD ETF row). |
+
+The FEZ/ASHR splits and the HYXU relabel were applied by `fixes/fix_currency_labels.py` and `fixes/split_dual_ticker_rows.py`. Verified against the live `data/index_library.csv`: `EMB` and `HYXU` are single USD rows; `FEZ`↔`^STOXX50E` and `ASHR`↔`000300.SS` each carry a USD ETF row plus a native-currency index row.
+
+**Earlier resolved items (2026-04-21 sweep, historical record):**
 
 | Ticker | Previously Flagged | Current State |
 |---|---|---|
@@ -2013,6 +2065,10 @@ Last full audit against `data/index_library.csv`: 2026-04-21. The previously-fla
 | `^MOVE` | Region blank | `region = "North America"`, `country_market = "United States"` |
 | XLE, XLB, XLI, XLK, XLV, XLF, XLU, XLP, XLY, XLRE, IWF | Region "North America" | Unchanged — owner decision: "North America" groups US & Canada deliberately |
 
+### Latent / Open Code Issues
+
+- **`_load_tier_map()` reads library CSVs without an explicit encoding (surfaced by the FactIQ audit, 2026-07-14).** In `fetch_macro_economic.py`, `_load_tier_map()` (and the sibling `_load_override_map()`) open every `data/macro_library_*.csv` with `open(path, newline="")` — **no `encoding="utf-8"`**. On CI (Linux/UTF-8 default) this is harmless, but on a Windows operator machine whose default is cp1252 it raises `UnicodeDecodeError` on any library row containing non-Latin-1 bytes (e.g. the Japanese `cdCat` slice notes). One-line fix: add `encoding="utf-8"` to both `open()` calls. Low priority — CI is unaffected — but it blocks a local Windows run. Mirrored as a backlog item in `forward_plan.md`.
+
 ### Past Refactors (Resolved)
 
 These items previously tracked active refactoring debt and have all landed. Kept as a brief history; for the broader stage-by-stage rebuild record see `forward_plan.md` §1 (Phase summaries) and §2 priority queue (Completed work block).
@@ -2020,7 +2076,7 @@ These items previously tracked active refactoring debt and have all landed. Kept
 | Issue | Resolution |
 |---|---|
 | Simple-pipeline instrument list hardcoded in three places | Library-driven via `simple_dash` column |
-| `PENCE_TICKERS` hardcoded set | Replaced with dynamic `.endswith(".L")` + median > 50 check |
+| `PENCE_TICKERS` hardcoded set | Replaced with the currency-gated `_is_pence_quoted()` / `_should_convert_pence()` helpers (`.L` **and** `base_currency ∈ {GBP,GBX}`, plus median > 50) — see §10 |
 | `broad_asset_class` and `units` computed in code | Read from CSV columns |
 | Hardcoded ratio/spread definitions in the comp pipeline | Moved to `compute_macro_market.py` as indicator calculators |
 | `build_market_meta_prefix()` used hardcoded lists | Metadata read from instrument dicts populated from library |
@@ -2092,6 +2148,96 @@ The §2.6 v2 daily audit posts to a perpetual GitHub Issue rather than emailing 
 ### index_library.csv Maintenance
 
 The library is built and maintained via a separate Claude project at `C:\Users\kasim\OneDrive\Claude\Index Library\build_library.ipynb`. See the `TECHNICAL_MANUAL.md` in that folder for the library build process. To add a new instrument without the library builder, add a row to `data/index_library.csv` with `validation_status = "CONFIRMED"`, verify the ticker, set `base_currency`, and optionally set `simple_dash = True`. Changes take effect on the next pipeline run.
+
+---
+
+## Appendix A — FactIQ Data Audit (2026-07-12)
+
+A permanent record of the one-off FactIQ ticker-by-ticker audit that produced the 4 fixes in §13 and the direct-wire roadmap in `forward_plan.md` §3.1.8. The audit cross-checked every instrument in `data/index_library.csv` against FactIQ as an independent reference (independent of yfinance/FRED). Row-level data lives alongside this manual:
+
+- **`manuals/factiq_audit_findings.csv`** (636 consolidated finding rows) — columns `ticker, name, tier, check_type, check_id, repo_value, factiq_value, as_of_repo, as_of_factiq, delta, tolerance, severity, verdict, notes`.
+- **`manuals/factiq_audit_working_list.csv`** (401 rows) — every instrument with its audit tier (A/B/C), `audit_symbol`, and the `is_level`/`is_yield`/`pence`/`has_output` flags.
+
+The full narrative report (`AUDIT_REPORT.md`) and the planning doc (`FACTIQ_AUDIT_PLAN.md`) are archived in git (PR #266).
+
+### A.1 Headline
+
+Local-currency prices and returns are **fundamentally sound** where independently checkable: every Tier-A instrument tested (US ETFs, FX, commodities, Treasury yields) matched FactIQ on scale, units, sign, currency convention and — where exact-date data existed — value to tolerance. No `÷100` pence bug, `%`-vs-`bps` confusion, or sign flip survived in the priced US/FX/commodity/rates universe. **One material value exception:** several US-listed ETF proxies carried a *foreign* currency label (EMB=ARS, FEZ=EUR, ASHR=CNY, HYXU=EUR); for **EMB** the USD Perf columns were demonstrably corrupted (a phantom ARS→USD conversion flipped 1Y +11.69% local → −13.35% USD on an already-USD fund), and EMB was additionally reused as the single proxy for 9 library rows. These are the four fixes now merged (§13). The rest of the findings are **structural, not value errors**: dataset staleness, coverage gaps, and representation/semantics. The **US Treasury par-yield cross-check was the strongest independent result** — repo `^TNX`/`^TYX`/`^FVX` matched the Treasury par curve on 2026-05-12 to <0.5 bp.
+
+### A.2 Counts
+
+**By tier** (`working_list`, 401 rows):
+
+| Tier | Rows | Has output | Notes |
+|---|---|---|---|
+| A | 89 | 89 | US eq/ETF, FX, commodities, FRED, Rates/yield |
+| B | 94 | 92 | Foreign-listed ETFs/ADRs, exchange-suffixed |
+| C | 218 | 139 | Index-level tickers, VIX family, `UNAVAILABLE` |
+| **Total** | **401** | **320 covered** | 81 uncovered (52 `UNAVAILABLE` by design + 29 true gaps) |
+
+**By verdict** (676 findings across both passes, before final consolidation to the 636-row CSV):
+
+| Verdict | Count | | Check type | Count |
+|---|---|---|---|---|
+| FLAG(HIGH) | 336 | | freshness (F1) | 305 |
+| FLAG(MEDIUM) | 76 | | coverage | 139 |
+| FLAG(LOW) | 72 | | value | 130 |
+| PASS | 154 | | metadata | 76 |
+| PROXY | 15 | | consistency | 26 |
+| UNAUDITABLE | 22 | | | | |
+| RECONCILIATION | 1 | | | |
+
+### A.3 Most-severe findings (triage, worst first)
+
+| # | Finding | Severity | Root cause |
+|---|---|---|---|
+| 1 | Entire committed dataset ~2 months stale (Last Date 2026-05-12; 321 rows ≈60-65d gap) | HIGH (systematic) | Committed CSV not regenerated (audit did not re-run the pipeline) |
+| 2 | `^CM100` dead ~10.6 years (frozen ~2015) | HIGH | yfinance stopped serving the ticker |
+| 3 | `^SP500-151050` (Paper & Forest) dead since 2015-12-18 | HIGH | yfinance GICS sub-index discontinued |
+| 4 | `^SP500-551020` (Gas Utilities) dead since 2016-06-30 | HIGH | yfinance GICS sub-index discontinued |
+| 5 | 29 library rows produce no output (CSI 500/1000, VXEEM, ~26 `^SP500-xxxxxx` industry sub-indices) | HIGH | yfinance returns nothing for these |
+| 6 | 47 output rows have empty Last Price (`.L`/`.DE` UCITS ETF proxies) | MEDIUM | ETF-proxy fetch failed / dead symbol |
+| 7 | 6 `.L` bond rows are rebased indices, not prices (IEAC.L=1.19, IBGL.L=1.42…) | MEDIUM | By-design base~1.0 but labelled EUR/GBP with Sunday dates |
+| 9a | `EMB` reused as proxy for 9 library rows | HIGH | Broken proxy validity |
+| 9b | `EMB` USD returns corrupted — Currency=ARS on a USD fund; 1Y +11.69% → −13.35% USD | HIGH | phantom ARS→USD FX (**fixed**, §13) |
+| 9c | US-listed ETF proxies labelled foreign currency — FEZ=EUR, ASHR=CNY, HYXU=EUR | MEDIUM | FX double-count risk (**fixed**, §13) |
+| 10 | `PIORECRUSDM` (Iron Ore, monthly) stale 133d | MEDIUM | Publication lag / genuine staleness |
+| 11 | Index-name-on-ETF-proxy labelling — XIU.TO "S&P/TSX Composite", 2800.HK "Hang Seng"… | LOW (systematic) | Proxy convention |
+| 13 | 26 `simple_dash=True` rows absent from `market_data.csv` (M8) | MEDIUM | Subset-file inconsistency |
+| 14 | `000905.SS` (CSI 500) priceable on FactIQ (~8138 CNY) but library marks it UNAVAILABLE | LOW (promotion) | Re-source candidate (forward_plan §2.A A18) |
+
+**No CRITICAL findings** — no sign flips, no order-of-magnitude/÷100 errors — survived in the audited universe. The 2026-07-13 resume sweep confirmed this across all 72 Tier-A US ETFs, 7 FX pairs, and 14+ commodities (zero anomalies).
+
+### A.4 Method notes & open judgment calls
+
+- **As-of alignment.** The repo was ~2 months stale, so comparisons used FactIQ's close on the repo's as-of date (2026-05-12) where the tool exposed it (FX/commodities/Treasury — all matched), and a scale/units/52-week-range sanity check for equities (FactIQ's market-data endpoint samples rows and omits arbitrary dates, so exact-date equity close verification to ±0.10% is not reliably achievable — it is robust for catching ÷100/sign/gross errors, which is what matters).
+- **Treasury yields are the cleanest independent check** (`treasury.yield_curve.*` exposes exact daily par yields). This directly motivated `sources/treasury.py` (§5).
+- **The "FRED" rows are ICE BofA indices** (BAML* OAS/TR) — FactIQ carries no ICE BofA data, so they are UNAUDITABLE against FactIQ and must stay direct-from-FRED.
+- **Open judgment calls** (recorded for whoever re-runs the audit): the rebased `.L` bond rows (units label + non-Sunday date), pruning the dead/discontinued sub-indices (forward_plan §3.8.5), and whether the CSI 500 promotion is worth wiring (§2.A A18).
+
+## Appendix B — FactIQ Golden Snapshot
+
+Reference values captured from FactIQ **while access was free/unlimited (2026-07-12/14)** — the insurance set for re-auditing if FactIQ later goes paid (`forward_plan.md` §3.1.8, free→paid risk). The machine-readable originals are kept as sibling files for automated re-verification:
+
+- **`manuals/factiq_golden_2026-07-12.json`** — the headline reference set (embedded below).
+- **`manuals/factiq_golden_2026-07-14_sweep.json`** — the full Tier-A/Tier-B sweep (72 US ETFs with close + 52-week range + repo-as-of-2026-05-12 value, 5 FX pairs, 9 commodities, 7 Tier-B resolved quotes, 9 Tier-B unresolvable). Summarised in B.2.
+
+### B.1 Headline reference set (2026-07-12, FactIQ live)
+
+US-listed ETF quotes (`GLOBAL_QUOTE`, 2026-07-10): SPY **754.95**, QQQ **725.51**, TLT **84.47**, EEM **66.90**, XLK **185.78**, IWM **295.99**, XLE **55.08**. SPY daily close: 2026-05-11 **739.30**, 2026-05-14 **748.17**.
+
+| Foreign proxy (2026-07-10) | Px | Ccy | Name / exch |
+|---|---|---|---|
+| IWDA.L | 144.23 | USD | iShares Core MSCI World UCITS (Acc), LSE |
+| IEAC.L | 120.16 | EUR | iShares Core € Corp Bond UCITS, LSE (the EUR-quoted `.L` that motivated the pence-gate fix) |
+| XIU.TO | 52.69 | CAD | iShares S&P/TSX 60, TSX |
+| NIFTYBEES.NS | 275.07 | INR | Nippon India ETF Nifty BeES, NSE |
+
+FX close 2026-05-12: EUR/USD **1.17409**, USD/JPY **157.61982**. Commodity close 2026-05-12: WTI (CL1) **102.11877**, Gold (XAU near) **4677.0**. Treasury par yield 2026-05-12: 10yr **4.46**, 30yr **5.03**, 5yr **4.12**, 3mo par **3.70** (repo `^TNX`/`^TYX`/`^FVX` matched to <0.5 bp — the audit's strongest independent check).
+
+### B.2 Full sweep (2026-07-14) — summary
+
+The sweep JSON holds per-ticker `close` / `wk52_low` / `wk52_high` / `repo_0512` for **72 US-listed ETFs** (AAXJ…XLY). **Key verification result:** because the repo's as-of date (2026-05-12) falls inside the trailing 52 weeks of the 2026-07-13 quotes, every repo Last Price *must* sit within FactIQ's [52wk-low, 52wk-high] — **all 72 did**, confirming no scale/sign/÷100 anomaly anywhere in the priced ETF universe. It also carries FX close 2026-05-12 (GBP/USD 1.35243, USD/CNY 6.79289, USD/INR 95.52, USD/KRW 1493.0, USD/TWD 31.4915), 9 commodity closes (Brent 107.37, Copper 6.41, Nat Gas 2.834, Silver 86.54, Coffee 2.81, Sugar 0.1501, Corn 4.67, Wheat 6.65, Soybeans 12.135), 7 Tier-B resolved quotes (XCS.TO, 1306.T, 1321.T, 000001.SS, 069500.KS, 2800.HK, BOVA11.SA), and 9 Tier-B unresolvable symbols (XU100.IS, XU030.IS, FTSEMIB.MI, IMIB.MI, NAFTRAC.MX, IOZ.AX, VAS.AX, SSO.AX, IAF.AX). See `manuals/factiq_golden_2026-07-14_sweep.json` for the full per-ticker table.
 
 ---
 
