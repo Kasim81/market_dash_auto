@@ -289,7 +289,7 @@ def _load_tier_map() -> dict[tuple[str, str], int]:
         if not src:
             continue
         try:
-            with open(path, newline="") as fh:
+            with open(path, newline="", encoding="utf-8") as fh:
                 rdr = _csv.DictReader(fh)
                 if "tier" not in (rdr.fieldnames or []):
                     continue
@@ -317,7 +317,7 @@ def _load_override_map() -> dict[tuple[str, str], int]:
         if not src:
             continue
         try:
-            with open(path, newline="") as fh:
+            with open(path, newline="", encoding="utf-8") as fh:
                 rdr = _csv.DictReader(fh)
                 if "freshness_override_days" not in (rdr.fieldnames or []):
                     continue

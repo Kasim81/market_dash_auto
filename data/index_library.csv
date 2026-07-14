@@ -46,7 +46,7 @@ S&P/ASX Small Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,Fa
 Shanghai Composite,Equity,Equity,Index,Equity Broad,Asia Pacific,China,,Broad,,,,CNY,False,,False,,yfinance PR,CONFIRMED,000001.SS,,,,,,,,1997-07-02,True
 CSI 300 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,CONFIRMED,000300.SS,,,,,,,,2021-03-11,False
 Xtrackers Harvest CSI 300 China A-Shares ETF,Equity,Equity,Price,,Asia Pacific,China,,,,,,USD,False,,False,,yfinance TR,CONFIRMED,,ASHR,,,,,,,2021-03-11,False
-CSI 500 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,,False
+CSI 500 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,True,ETF,yfinance TR,CONFIRMED,,510500.SS,,,,,,,2013-02-06,False
 CSI 1000 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,,False
 Hang Seng Index,Equity,Equity,Index,,Asia Pacific,Hong Kong,,,,,,HKD,False,,False,,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31,False
 S&P BSE Sensex,Equity,Equity,Index,Equity Large Cap,Asia Pacific,India,,Large,,,,INR,False,,False,,yfinance PR,CONFIRMED,^BSESN,,,,,,,,1997-07-01,True
