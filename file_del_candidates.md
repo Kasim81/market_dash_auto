@@ -14,6 +14,25 @@ Each dated handoff / audit / spec `.md` was checked for: (1) is its work **imple
 
 **Headline:** the transient handoff/audit notes are overwhelmingly **fully implemented and their durable outcomes already live in the manuals** (forward_plan §2.A/§2.B/§2.C/§3.12–§3.17 chronology, technical_manual §9/§12/§13 + Appendix A/B). **Nothing of durable value needs to be *added* to either manual** — every "keep" file below already *is* the durable home for its unique content. The one adjacent fix (not a manual edit): `manuals/multifreq_plan.md` carries **stale counts** (50 indicators / 302 tickers / 8.4M cells) that should be refreshed to match forward_plan §5 (91 / 390 / 8.8M) — forward_plan §5 already flags this drift.
 
+## Resolution log — 2026-07-14 cleanup pass (branch `claude/find-prompt-9vtb0t`)
+
+The `REPO_CLEANUP_HANDOVER.md` work-order was executed collaboratively with the owner.
+Outcome of each item:
+
+**Actioned — deleted (with inbound references rewired to surviving homes):**
+- **#1 `AUDIT_HANDOVER_2026-06-15.md`** — deleted. Its audit is fully closed; it had no inbound references. (The handover §0 wrongly assumed PR #267 had already removed it.)
+- **#5 (B5) `manuals/2026-06-17-m2-units-trio-recommendation.md`** — deleted. Provenance note in `macro_library_{ecb,boj,dbnomics}.csv` (and the regenerated `macro_economic.csv` snapshot) repointed to "forward_plan §2.B / chronology (PR #221)".
+- **#6 (B6) `manuals/2026-07-07-eu-freeze-freshness-china-handover.md`** — deleted. forward_plan A10 discovery-notes parenthetical dropped.
+- **#10 (C10) `manuals/2026-06-15-source-tier-audit.md`** — deleted. The live `compute_macro_market.py` `_calc_UK_INFL1` docstring comment and the 3 forward_plan refs (384/411/541) repointed to the codified tier model (`technical_manual.md` §9.4).
+- **#11 (C11) `manuals/2026-06-15-label-vs-data-audit.md`** — deleted (owner elected to retire the audit-of-record). forward_plan 396 + technical_manual §12 closure line reworded to drop the file path. Note: the KEEP file `…source-wiring-audit-proposal.md` does **not** in fact reference it (register #11's `:40` pointer was stale).
+
+**Deferred / kept by owner decision (unchanged this pass):**
+- **#4 (B4) + #12 (C12)** `…regime-aa-v2-pipeline-handoff.md` and `…-corrections.md` — **kept**. They are coupled (C12 cross-references B4) and gated on confirming the outbound "file back to regime-aa" inverse-direction proposal was delivered; not yet confirmed. (B4 also carries an extra live pointer at `…alpha-vantage-evaluation.md:8` §7.2 that would need handling on deletion.)
+- **Group E — #7/#8/#9 (B7/B8/B9) + #13 (C13)** the generated `regime-aa-asks/` `.md` layer — **kept**. Owner chose to keep committing the generated layer (the generators are not run in CI, so a durable deletion would require `.gitignore`/build-script changes); skipped.
+- **Section D non-`.md` (archive `.py`+`.xlsx`, the two `manuals/*.docx`)** — **kept**. Owner elected no deletions in Group D this pass.
+
+---
+
 ## Confidence definitions
 
 - **High** — provably superseded/orphaned; deleting has no functional impact and no (or one trivial) reference to fix.
