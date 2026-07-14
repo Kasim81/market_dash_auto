@@ -584,7 +584,7 @@ If `DE_IFO*` columns ever go missing again, the four-step contract is:
 
 ### Reference / audit-only data — FactIQ (not a pipeline source)
 
-FactIQ is an authenticated MCP data-warehouse plugin used **interactively** to cross-check the pipeline against an independent reference (read-only, 50-row/call, ~1 req/s, no monthly quota). The pipeline's Python cannot `import` it — it is OAuth-MCP, not a library — so it is **not** a `sources/*.py` module and never a last-writer in the source merge. (A headless GitHub-Actions job *could* in principle run an agent with FactIQ's MCP + a pre-authorized token to pull data into the CSVs, but that is a separate, unattended agent-in-CI path with real caveats — see forward_plan.) The rule stands: **replicate the upstream source where it has a clean public API; do not re-scrape FactIQ's warehouse** (its data isn't licensed for redistribution). The audit workstream lives under `handover/`; the golden snapshot (`handover/audit/golden/`) is the free-now reference hedge against FactIQ going paid.
+FactIQ is an authenticated MCP data-warehouse plugin used **interactively** to cross-check the pipeline against an independent reference (read-only, 50-row/call, ~1 req/s, no monthly quota). The pipeline's Python cannot `import` it — it is OAuth-MCP, not a library — so it is **not** a `sources/*.py` module and never a last-writer in the source merge. (A headless GitHub-Actions job *could* in principle run an agent with FactIQ's MCP + a pre-authorized token to pull data into the CSVs, but that is a separate, unattended agent-in-CI path with real caveats — see forward_plan.) The rule stands: **replicate the upstream source where it has a clean public API; do not re-scrape FactIQ's warehouse** (its data isn't licensed for redistribution). The audit's data backing remains under `handover/audit/` (golden snapshot `handover/audit/golden/`, plus `findings.csv` / `working_list.csv`); the golden snapshot is the free-now reference hedge against FactIQ going paid. The full audit write-up and planning docs are archived in git (PRs #265 / #266).
 
 ---
 
@@ -2041,7 +2041,7 @@ Going forward, the daily `audit_writeback.py` runs N=14 consecutive days of dead
 
 ### Metadata / Label Issues — currently clean (last audit 2026-07-14, FactIQ)
 
-Last full audit against `data/index_library.csv`: **2026-07-14 (FactIQ ticker-by-ticker audit)**, superseding the prior 2026-04-21 sweep. The FactIQ audit (676 findings; workstream under `handover/`) confirmed the priced universe holds on scale/units/sign but surfaced **four currency-label / proxy defects that changed displayed USD numbers** — all four now resolved and merged to `main` (PR #265). The items below are all resolved; included here as historical record.
+Last full audit against `data/index_library.csv`: **2026-07-14 (FactIQ ticker-by-ticker audit)**, superseding the prior 2026-04-21 sweep. The FactIQ audit (676 findings; data under `handover/audit/`, full write-up archived in git PR #266) confirmed the priced universe holds on scale/units/sign but surfaced **four currency-label / proxy defects that changed displayed USD numbers** — all four now resolved and merged to `main` (PR #265). The items below are all resolved; included here as historical record.
 
 **Resolved by the 2026-07-14 FactIQ audit** (`data/index_library.csv`):
 
