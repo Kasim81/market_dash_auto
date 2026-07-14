@@ -16,9 +16,9 @@ Each dated handoff / audit / spec `.md` was checked for: (1) is its work **imple
 
 ## Resolution log — 2026-07-14 cleanup pass (branch `claude/find-prompt-9vtb0t`)
 
-The repo-cleanup work-order (formerly the standalone `REPO_CLEANUP_HANDOVER.md`, now
-folded into `forward_plan.md` §2 "Repo file-hygiene — doc-deletion sweep" + the §4
-chronology and retired) was executed collaboratively with the owner. Outcome of each item:
+The repo-cleanup work-order — now folded into `forward_plan.md` §2 "Repo file-hygiene —
+doc-deletion sweep" plus the §4 chronology, and retired as a standalone file — was
+executed collaboratively with the owner. Outcome of each item:
 
 **Actioned — deleted (with inbound references rewired to surviving homes):**
 - **#1 `AUDIT_HANDOVER_2026-06-15.md`** — deleted. Its audit is fully closed; it had no inbound references. (The handover §0 wrongly assumed PR #267 had already removed it.)
