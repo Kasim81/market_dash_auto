@@ -28,14 +28,16 @@ Date_SPY  | SPY_Local | SPY_USD | Date_UNRATE | UNRATE  | ...
 
 ### Cell budget (1990 start)
 
+> **Counts reconciled to `forward_plan.md` §5 on 2026-07-14** — the authoritative current figures are **91 indicators / 390 comp tickers / ~8.8M cells** (was 50 / 302 / 8.4M when this plan was first drafted). Note the macro layer is now the **unified `macro_economic_hist`** (Phase ME) rather than the old split `macro_us_hist` / `macro_intl_hist`; those two rows are retained below only as an illustrative pre-unification breakdown (see `forward_plan.md` §5 for the condensed current table and `technical_manual.md` §9.4 for the current module layout — `fetch_macro_international.py` / `fetch_macro_us_fred.py` referenced later in this plan were merged into `fetch_macro_economic.py`).
+
 | Tab | Columns | Max rows | Cells |
 |-----|---------|----------|-------|
-| `market_data_comp_hist` | 302 x 3 = 906 | ~9,000 | ~8.15M |
-| `macro_us_hist` | 25 x 2 = 50 | ~430 (monthly) | ~22K |
-| `macro_intl_hist` | 56 x 2 = 112 | ~430 | ~48K |
-| `macro_market_hist` | 150 (keep weekly) | ~1,300 | ~195K |
+| `market_data_comp_hist` | 390 x 3 = ~906 | ~9,000 | ~8.15M |
+| `macro_us_hist` *(now unified)* | 25 x 2 = 50 | ~430 (monthly) | ~22K |
+| `macro_intl_hist` *(now unified)* | 56 x 2 = 112 | ~430 | ~48K |
+| `macro_market_hist` | 91 indicators × ~4 = ~365 (keep weekly) | ~1,300 | ~475K |
 | Snapshots | small | small | ~10K |
-| **Total** | | | **~8.4M** |
+| **Total** | | | **~8.8M** |
 
 Headroom is limited. Future optimization: drop `_Local` for USD-base tickers (saves ~150 cols).
 
@@ -99,7 +101,7 @@ This is the largest step. Key changes:
 
 - Run both branches end-to-end via `python fetch_data.py`
 - Compare `macro_market_hist` indicator values between branches for overlapping Friday dates
-- Verify all 50 indicators produce equivalent results (within floating-point tolerance)
+- Verify all 91 indicators produce equivalent results (within floating-point tolerance)
 - Confirm Sheets tab sizes are within 10M cell budget
 - Spot-check ragged columns: per-ticker dates should match yfinance/FRED source data
 
@@ -111,14 +113,14 @@ This is the largest step. Key changes:
 |------|--------|
 | `fetch_hist.py` | Rewrite build functions to ragged |
 | `library_utils.py` | Add alignment utilities |
-| `compute_macro_market.py` | Update loaders + all 50 calculators |
+| `compute_macro_market.py` | Update loaders + all 91 calculators |
 | `fetch_macro_international.py` | Remove Friday spine, native freq |
 | `fetch_data.py` | No change (snapshots unchanged) |
 | `fetch_macro_us_fred.py` | No change (snapshot only) |
 
 ## Risks
 
-1. **Sheets cell budget tight (8.4M/10M)**: If more tickers added, drop `_Local` for USD-base or split tabs
-2. **50 indicator functions to update**: Test each individually against weekly branch output
+1. **Sheets cell budget tight (8.8M/10M)**: If more tickers added, drop `_Local` for USD-base or split tabs
+2. **91 indicator functions to update**: Test each individually against weekly branch output
 3. **Z-score window equivalence**: 260 weekly != 1300 daily (trading vs calendar days) — verify regime classifications match
 4. **Cherry-pick conflicts**: Hist/compute changes won't merge cleanly between branches — manual adaptation needed

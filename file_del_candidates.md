@@ -7,6 +7,16 @@
 > re-audited **every `.md` file in the repo** against the current code and the two
 > manuals (`manuals/technical_manual.md`, `manuals/forward_plan.md`), and refreshed
 > the prior 2026-04-27 non-`.md` candidates. Supersedes the 2026-04-27 audit.
+>
+> **Status (2026-07-14):** all **3 Section-A High-confidence deletes are now executed**
+> (with every inbound reference rewired), and `manuals/multifreq_plan.md` had its stale
+> counts refreshed to match forward_plan §5. These did **not** all land in one PR:
+> `AUDIT_HANDOVER_2026-06-15.md` was removed by the repo-cleanup PR #269; the remaining
+> two (`…codespace-secrets-checklist.md`, `…cpi-split-codespace-spec.md`) plus the
+> multifreq refresh and the CSV/HTML reference repoints are landed in this reconciliation
+> PR (the FactIQ manuals-integration PR #267 did **not** carry them). **Everything else**
+> in this register (Sections B, C, D) remains packaged as an executable work-order for a
+> dedicated repo-cleanup session — see `REPO_CLEANUP_HANDOVER.md`.
 
 ## Method & headline
 
@@ -42,13 +52,16 @@ executed collaboratively with the owner. Outcome of each item:
 
 ---
 
-## A. DELETE — ready (High confidence)
+## A. DELETE — ✅ EXECUTED 2026-07-14
 
-| # | Path | Size | Status / why | Reference cleanup |
+All three deleted, with inbound references rewired first. (Removed across two PRs,
+not one — see the per-row provenance below.)
+
+| # | Path | Size | Status / why | Reference cleanup done |
 |---|---|---|---|---|
-| 1 | `AUDIT_HANDOVER_2026-06-15.md` | 9.5 KB | Pure "resume-if-the-Codespace-dies" scaffolding for the label-vs-data audit, which is **100% closed** (PR #250, forward_plan §2.A A8/A17). No durable content. | **None** — unreferenced (only self-matches). |
-| 2 | `manuals/2026-06-15-codespace-secrets-checklist.md` | 7.7 KB | One-time Codespace secret-mirroring checklist; every secret is already in **technical_manual §12** with richer notes, and matches the workflow `env:` block. | Only referenced by #1 and the (deferred) label-vs-data audit — both retiring. |
-| 3 | `manuals/2026-06-18-cpi-split-codespace-spec.md` | 7.3 KB | One-shot work-order for the CPI-definition split; **executed** (PR #249). Its resolution record lives in the source-wiring-audit-proposal + forward_plan §2.A A1/A13. | Update 1 line in `…source-wiring-audit-proposal.md:174` (a KEEP file) when deleting. |
+| 1 | `AUDIT_HANDOVER_2026-06-15.md` | 9.5 KB | ✅ **DELETED** (repo-cleanup PR #269). Pure "resume-if-the-Codespace-dies" scaffolding for the label-vs-data audit, which is **100% closed** (PR #250, forward_plan §2.A A8/A17). No durable content. | None needed — was unreferenced. |
+| 2 | `manuals/2026-06-15-codespace-secrets-checklist.md` | 7.7 KB | ✅ **DELETED** (this reconciliation PR). One-time Codespace secret-mirroring checklist; every secret is already in **technical_manual §12**, matching the workflow `env:` block. | Only inbound ref was `label-vs-data-audit.md`, itself since deleted by PR #269 — no live pointer remained. |
+| 3 | `manuals/2026-06-18-cpi-split-codespace-spec.md` | 7.3 KB | ✅ **DELETED** (this reconciliation PR). One-shot work-order for the CPI-definition split; **executed** (PR #249). Resolution record lives in `2026-06-18-source-wiring-audit-proposal.md` (§Resolution) + forward_plan §2.A A1/A13. | `source-wiring-audit-proposal.md` §Resolution reworded; **5 data-provenance refs repointed** to the Resolution section — `macro_library_worldbank.csv`, `macro_indicator_library.csv` (JP_INFL1), generated `macro_economic.csv` (×3), and the embedded copy in `docs/indicator_explorer.html`. Re-grepped: zero dangling references. |
 
 ## B. DELETE — after a small reference cleanup (Medium)
 
@@ -99,7 +112,7 @@ executed collaboratively with the owner. Outcome of each item:
 | `manuals/2026-06-10-alpha-vantage-evaluation.md` | **Open work item** — cited by forward_plan §3.3 as the decision-record for the un-shipped PE-snapshot writer (`equity_pe_snapshot.csv` does not exist; AV library empty). |
 | `manuals/2026-06-18-source-wiring-audit-proposal.md` | **Companion doc** for the committed `build_source_inventory.py` (technical_manual §9.11 cites it); **sole home** of the workbook `FLAG_*` definitions + the CPI-split resolution record. |
 | `manuals/community_datasets_review.md` | Cited **Stage F deliverable** (forward_plan §3.1.8) for 14 shipped tickers + BoE/ECB codes; sole home of durable deferred notes (STOXX-600 sector-label caveat, UK-corp-bond-yield gap, ECB MIR lead). |
-| `manuals/multifreq_plan.md` | **Active, unstarted Phase 2** design (forward_plan §5 + technical_manual §2). Needs a counts refresh, not deletion. |
+| `manuals/multifreq_plan.md` | **Active, unstarted Phase 2** design (forward_plan §5 + technical_manual §2). ✅ Counts refreshed 2026-07-14 (50/302/8.4M → 91/390/8.8M) to match §5. |
 | `manuals/regime-aa-asks/regime-aa-indicator-req.md` | The **external requirements contract** (§5 of the regime-AA master plan) the whole coverage subsystem is built against; forward_plan §2.B distils only a 15-item slice. Holds cycle-timing priors + the per-region matrix found nowhere else. |
 | `manuals/Macro Market Indicators Reference.docx` | Original 206-indicator source doc (irreplaceable; drove `data/reference_indicators.csv`). |
 | `manuals/build_docx.py`, `manuals/md_to_docx.py` | Regenerate the `.docx` artefacts (become candidates only if both `.docx` are dropped). |

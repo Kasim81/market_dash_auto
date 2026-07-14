@@ -12,18 +12,21 @@ need the analysis doc to execute it (though the full rationale lives in
 
 ## 0. What has already been done (do NOT redo)
 
-In **PR #267** (branch `claude/youthful-gates-iyqv23`):
-- The FactIQ audit workstream was folded into the manuals; the `handover/` folder
-  was retired (data relocated to `manuals/factiq_*`).
-- **Three High-confidence deletes were executed** (with their inbound refs rewired):
-  `AUDIT_HANDOVER_2026-06-15.md`, `manuals/2026-06-15-codespace-secrets-checklist.md`,
-  `manuals/2026-06-18-cpi-split-codespace-spec.md`.
-- `manuals/multifreq_plan.md` stale counts were refreshed (50/302/8.4M → 91/390/8.8M).
-- `file_del_candidates.md` was rebuilt as the full analytical register.
+**PR #267** (branch `claude/youthful-gates-iyqv23`) folded the FactIQ audit workstream
+into the manuals and retired the `handover/` folder (data relocated to `manuals/factiq_*`),
+and rebuilt `file_del_candidates.md` as the full analytical register.
 
-**This handover covers everything that was left (Sections B, C, D below).** If PR #267
-has not yet merged when you start, rebase this onto the branch that carries it, or
-wait for the merge — the three files above are already gone there.
+The three Section-A **High-confidence deletes were *not* carried by #267** (they were
+a post-merge commit that never landed) and were completed afterwards:
+- `AUDIT_HANDOVER_2026-06-15.md` — removed by repo-cleanup **PR #269**.
+- `manuals/2026-06-15-codespace-secrets-checklist.md` and
+  `manuals/2026-06-18-cpi-split-codespace-spec.md` — removed by the **reconciliation PR**
+  that also refreshed `manuals/multifreq_plan.md` counts (50/302/8.4M → 91/390/8.8M) and
+  repointed all inbound references (incl. 5 CSV/HTML data-provenance citations of the
+  cpi-split spec → `2026-06-18-source-wiring-audit-proposal.md` §Resolution).
+
+**All three Section-A files are now gone from `main`.** This handover covers everything
+that remains (Sections B, C, D below).
 
 > ⚠️ **Line numbers drift.** The daily pipeline commits to `main` constantly and
 > PR #267 changed line counts, so every reference below is given by **filename +
