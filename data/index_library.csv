@@ -44,7 +44,8 @@ S&P/ASX 200,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,y
 S&P/ASX All Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AORD,VAS.AX,,,,,,,1984-08-03,False
 S&P/ASX Small Ordinaries,Equity,Equity,Index,,Asia Pacific,Australia,,,,,,AUD,False,,False,,yfinance PR,CONFIRMED,^AXSO,SSO.AX,,,,,,,2004-05-03,False
 Shanghai Composite,Equity,Equity,Index,Equity Broad,Asia Pacific,China,,Broad,,,,CNY,False,,False,,yfinance PR,CONFIRMED,000001.SS,,,,,,,,1997-07-02,True
-CSI 300 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,CONFIRMED,000300.SS,ASHR,,,,,,,2021-03-11,False
+CSI 300 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,CONFIRMED,000300.SS,,,,,,,,2021-03-11,False
+Xtrackers Harvest CSI 300 China A-Shares ETF,Equity,Equity,Price,,Asia Pacific,China,,,,,,USD,False,,False,,yfinance TR,CONFIRMED,,ASHR,,,,,,,2021-03-11,False
 CSI 500 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000905.SS,,,,,,,,,False
 CSI 1000 Index,Equity,Equity,Index,,Asia Pacific,China,,,,,,CNY,False,,False,,yfinance PR,UNAVAILABLE,000852.SS,,,,,,,,,False
 Hang Seng Index,Equity,Equity,Index,,Asia Pacific,Hong Kong,,,,,,HKD,False,,False,,yfinance PR,CONFIRMED,^HSI,2800.HK,,,,,,,1986-12-31,False
@@ -64,7 +65,8 @@ FTSE/JSE Top 40,Equity,Equity,Index,,Middle East & Africa,South Africa,,,,,,ZAR,
 Borsa Istanbul 100,Equity,Equity,Index,,Europe,Turkey,,,,,,TRY,False,,False,,yfinance PR,CONFIRMED,XU100.IS,,,,,,,,1997-07-01,False
 Borsa Istanbul 30,Equity,Equity,Index,,Europe,Turkey,,,,,,TRY,False,,False,,yfinance PR,CONFIRMED,XU030.IS,,,,,,,,1997-01-02,False
 MERVAL (Argentina),Equity,Equity,Index,,Latin America,Argentina,,,,,,ARS,False,,False,,yfinance PR,CONFIRMED,^MERV,,,,,,,,1996-10-08,False
-Euro Stoxx 50,Equity,Equity,Index,Equity Large Cap,Europe,Developed Europe,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX50E,FEZ,,,,,,,2007-03-30,True
+Euro Stoxx 50,Equity,Equity,Index,Equity Large Cap,Europe,Developed Europe,,Large,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX50E,,,,,,,,2007-03-30,False
+SPDR EURO STOXX 50 ETF,Equity,Equity,Price,Equity Large Cap,Europe,Developed Europe,,Large,,,,USD,False,,False,,yfinance TR,CONFIRMED,,FEZ,,,,,,,2007-03-30,True
 STOXX Europe 600,Equity,Equity,Index,Equity Broad,Europe,Developed Europe,,Broad,,,,EUR,False,,False,,yfinance PR,CONFIRMED,^STOXX,EXSA.DE,,,,,,,2004-04-26,False
 STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Europe,,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV1.DE,,,,,,,2008-01-02,False
 STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Europe,Health Care,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV4.DE,,,,,,,2008-01-02,False
@@ -328,21 +330,13 @@ China Government Bond Index (USD Hedged),Fixed Income,Bonds,Index,Govt Bond,Asia
 India Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,India,,,,Government,,INR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 India Government Bond Index (USD Hedged),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,India,,,,Government,,INR,True,USD,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
 Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Bonds,Index,Govt Bond,Latin America,Brazil,,,,Government,,BRL,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Brazil Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,BRL,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 South Korea Government Bond Index (KTBs),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,South Korea,,,,Government,,KRW,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-South Korea Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,KRW,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Mexico Government Bond Index (Bonos M),Fixed Income,Bonds,Index,Govt Bond,Latin America,Mexico,,,,Government,,MXN,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Mexico Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,MXN,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Indonesia Government Bond Index (SBN),Fixed Income,Bonds,Index,Govt Bond,Asia Pacific,Indonesia,,,,Government,,IDR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Indonesia Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,IDR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Bonds,Index,Govt Bond,Middle East & Africa,Saudi Arabia,,,,Government,,SAR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,SAR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 South Africa Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Middle East & Africa,South Africa,,,,Government,,ZAR,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-South Africa Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ZAR,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Turkey Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Europe,Turkey,,,,Government,,TRY,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Turkey Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,TRY,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 Argentina Government Bond Index,Fixed Income,Bonds,Index,Govt Bond,Latin America,Argentina,,,,Government,,ARS,False,,True,,UNAVAILABLE,UNAVAILABLE,,,,,,,,,,False
-Argentina Government Bond Index (USD Hedged),Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,ARS,True,USD,True,ETF,yfinance TR,UNAVAILABLE,,EMB,,,,,,,2007-12-19,False
 ICE BofA Global Corporate Bond Index,Fixed Income,Bonds,Price,Corp IG,Global,Global,,,Broad,Corp IG,,USD,False,,True,ETF,FRED,CONFIRMED,,VCIT,,BAMLCC0A0CMTRIV,,,,,2009-11-23,False
 ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp IG,Global,Global,,,,Corp IG,,USD,True,USD,True,FRED,FRED,CONFIRMED,,,,BAMLCC0A0CMTRIV,,,,,1972-12-31,False
 ICE BofA Euro Corporate Bond Index,Fixed Income,Bonds,Price,Corp IG,Europe,Europe,,,,Corp IG,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IBCX.L,,,,,,,2008-01-02,False
@@ -350,8 +344,8 @@ ICE BofA Euro Corporate Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp IG
 ICE BofA Global High Yield Bond Index,Fixed Income,Bonds,Price,Corp HY,Global,Global,,,Broad,High Yield,,USD,False,,True,ETF,FRED,CONFIRMED,,JNK,,BAMLHYH0A0HYM2TRIV,,,,,2007-12-04,False
 ICE BofA Global High Yield Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp HY,Global,Global,,,,High Yield,,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,HYLH.L,,,,,,,2026-01-20,False
 ICE BofA Euro High Yield Bond Index,Fixed Income,Bonds,Price,Corp HY,Europe,Europe,,,,High Yield,,EUR,False,,True,ETF,FRED,CONFIRMED,,IHYG.L,,BAMLHE00EHYITRIV,,,,,2010-09-03,False
-ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp HY,Europe,Europe,,,Broad,High Yield,,EUR,True,USD,True,ETF,yfinance TR,CONFIRMED,,HYXU,,,,,,,2012-04-03,False
-JP Morgan  USD Emerging Market Debt,Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
+ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Bonds,Price,Corp HY,Europe,Europe,,,Broad,High Yield,,USD,False,,True,ETF,yfinance TR,CONFIRMED,,HYXU,,,,,,,2012-04-03,False
+iShares J.P. Morgan USD Emerging Markets Bond ETF,Fixed Income,Bonds,Price,EM Bond,Emerging Markets,Emerging Markets,,,Broad,EMD,,USD,False,,False,,yfinance TR,CONFIRMED,,EMB,,,,,,,2007-12-19,False
 FTSE International Government Inflation-Protected Bond Index (USD Hedged),Fixed Income,Bonds,Price,Government Inflation-Linked,Global,Global,,,,Government,,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,WIP,,,,,,,2008-03-19,False
 WTI Crude Oil,Commodity,Commodities,Price,Energy,Global,United States,,,,,Energy,USD,False,,False,,yfinance PR,CONFIRMED,CL=F,,,,,,,,2000-08-23,True
 Brent Crude Oil,Commodity,Commodities,Price,Energy,Global,United States,,,,,Energy,USD,False,,False,,yfinance PR,CONFIRMED,BZ=F,,,,,,,,2007-07-30,True

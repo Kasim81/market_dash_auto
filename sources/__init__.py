@@ -49,6 +49,7 @@ SOURCE_REGISTRY: tuple[SourceSpec, ...] = (
     SourceSpec("DB.nomics",        "dbnomics",       "dbnomics"),
     SourceSpec("ifo",              "ifo",            "ifo"),
     SourceSpec("BoE",              "boe",            "boe"),
+    SourceSpec("Treasury",         "treasury",       "treasury"),
     SourceSpec("ECB",              "ecb",            "ecb"),
     SourceSpec("BoJ",              "boj",            "boj"),
     SourceSpec("e-Stat",           "estat",          "estat"),

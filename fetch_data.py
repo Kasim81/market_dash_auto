@@ -49,6 +49,19 @@ except Exception:
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────
 
+def _is_pence_quoted(ticker, base_currency):
+    """A London-listed (.L) line is pence-quoted (GBX) only when its currency is
+    GBP/GBX. EUR/USD-quoted .L listings (e.g. IEAC.L) must NOT be treated as
+    pence, or the ÷100 conversion below turns ~€120 into ~1.2."""
+    return ticker.endswith(".L") and str(base_currency).strip().upper() in ("GBP", "GBX")
+
+
+def _should_convert_pence(ticker, base_currency, median):
+    """True when the pence→pounds ÷100 correction should apply: a genuine GBX .L
+    line whose price magnitude (median > 50) reads as pence rather than pounds."""
+    return _is_pence_quoted(ticker, base_currency) and pd.notna(median) and median > 50
+
+
 def get_ytd_start():
     now = datetime.now(timezone.utc)
     return datetime(now.year, 1, 1, tzinfo=timezone.utc)
@@ -281,7 +294,7 @@ def load_simple_library():
                 "broad_asset_class": broad_ac,
                 "currency":          ccy,
                 "ticker_type":       ticker_type,
-                "pence":             ticker.endswith(".L"),
+                "pence":             _is_pence_quoted(ticker, ccy),
                 "usx":               str(row["base_currency"]).strip() == "USX",
             }
 
@@ -450,7 +463,7 @@ def load_instrument_library():
                 "broad_asset_class": broad_ac,
                 "currency":          ccy,
                 "ticker_type":       ticker_type,
-                "pence":             ticker.endswith(".L"),
+                "pence":             _is_pence_quoted(ticker, ccy),
                 "usx":               str(row["base_currency"]).strip() == "USX",
             }
 
@@ -528,7 +541,7 @@ def collect_comp_assets(instruments, comp_fx_cache):
 
         if is_pence:
             median_val = series.dropna().median()
-            if pd.notna(median_val) and median_val > 50:
+            if _should_convert_pence(ticker, ccy, median_val):
                 series = series / 100
         elif is_usx:
             # Agricultural futures quoted in US cents — convert to USD
