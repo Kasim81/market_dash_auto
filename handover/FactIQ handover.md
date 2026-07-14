@@ -133,9 +133,9 @@ Ordered by suggested priority. Cross-references are to `FACTIQ_AUDIT_PLAN.md`.
 
 | Branch | Commit | State | Contents |
 |---|---|---|---|
-| `main` | — | live | Includes all 4 fixes (via PR #265) and this `handover/` folder (via PR for `docs/factiq-handover`). |
+| `main` | — | live | Includes all 4 fixes (via PR #265) and this `handover/` folder (via PR #266). |
 | `fix/factiq-remediation-live` | `b51d85e` | **merged → PR #265** | The 4 fixes, re-derived on current `main`. |
-| `docs/factiq-handover` | — | this delivery | Adds the `handover/` folder (this document + all planning/audit docs). |
+| `docs/factiq-handover` | — | **merged → PR #266** | Adds the `handover/` folder (this document + all planning/audit docs). |
 | `fix/factiq-audit-remediation` | `b9191d8` | **superseded, local-only (never pushed)** | The FIRST fix attempt, built on a 9-week-STALE base — do NOT merge. Its audit deliverables have been copied into this `handover/` folder, so it is now safe to delete. |
 
 ---
