@@ -60,6 +60,7 @@ from sources import jst as jst_src
 from sources import atlanta_fed as atlanta_fed_src
 from sources import ny_fed as ny_fed_src
 from sources import imf_sdmx as imf_sdmx_src
+from sources import treasury as treasury_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
 from library_utils import write_hist_with_archive, bounded_spine_fill
@@ -124,6 +125,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(dbn_src.load_library())
     indicators.extend(ifo_src.load_library())
     indicators.extend(boe_src.load_library())
+    indicators.extend(treasury_src.load_library())
     indicators.extend(ecb_src.load_library())
     indicators.extend(boj_src.load_library())
     indicators.extend(estat_src.load_library())
@@ -738,6 +740,7 @@ def _fetch_dbnomics_snapshot(indic: dict, fetched_at: str) -> list[dict]:
 # workbook/ZIP/.dta per process so the whole library costs one download —
 # their delay only matters between distinct downloads, keep it short.
 BOE_DELAY = 0.6
+TREASURY_DELAY = 0.6   # daily par-yield curve (keyless home.treasury.gov feed)
 ECB_DELAY = 0.6
 BOC_DELAY = 0.4
 STATCAN_DELAY = 0.4
@@ -1052,6 +1055,7 @@ _SOURCE_HANDLERS: dict[str, tuple] = {
     "IMF":        (_fetch_imf_snapshot, _fetch_imf_history),
     "DB.nomics":  (_fetch_dbnomics_snapshot, _fetch_dbnomics_history),
     "BoE":        _make_source_handlers(boe_src, BOE_DELAY),
+    "Treasury":   _make_source_handlers(treasury_src, TREASURY_DELAY),
     "ECB":        _make_source_handlers(ecb_src, ECB_DELAY,
                                         snapshot_kwargs={"last_n": 2}),
     "BoJ":        _make_source_handlers(boj_src, BOJ_DELAY),
