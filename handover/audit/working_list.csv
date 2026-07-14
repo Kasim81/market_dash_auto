@@ -1,0 +1,402 @@
+name,asset_class,broad_asset_class,region,country_market,base_currency,hedged,units,data_source,validation_status,audit_symbol,is_level,is_yield,pence,tier,simple_dash,has_output
+S&P 500,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^GSPC,False,False,False,C,True,True
+Dow Jones Industrial Average,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^DJI,False,False,False,C,False,True
+NASDAQ Composite,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^IXIC,False,False,False,C,False,True
+NYSE Composite,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^NYA,False,False,False,C,False,True
+Russell 1000,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RUI,False,False,False,C,False,True
+S&P MidCap 400,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^MID,False,False,False,C,False,True
+Russell 2000,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RUT,False,False,False,C,True,True
+S&P SmallCap 600,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP600,False,False,False,C,False,True
+S&P 500 Value,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,IVE,False,False,False,A,False,True
+S&P 500 Growth,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,IVW,False,False,False,A,False,True
+Russell 1000 Value,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RLV,False,False,False,C,False,True
+Russell 1000 Growth,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RLG,False,False,False,C,True,True
+Russell 2000 Value,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RUJ,False,False,False,C,False,True
+Russell 2000 Growth,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^RUO,False,False,False,C,False,True
+S&P 500 Energy,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^GSPE,False,False,False,C,True,True
+S&P 500 Materials,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-15,False,False,False,C,True,True
+S&P 500 Industrials,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-20,False,False,False,C,True,True
+S&P 500 Consumer Discretionary,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-25,False,False,False,C,True,True
+S&P 500 Consumer Staples,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-30,False,False,False,C,True,True
+S&P 500 Health Care,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-35,False,False,False,C,True,True
+S&P 500 Financials,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-40,False,False,False,C,True,True
+S&P 500 Information Technology,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-45,False,False,False,C,True,True
+S&P 500 Communication Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-50,False,False,False,C,True,True
+S&P 500 Utilities,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-55,False,False,False,C,True,True
+S&P 500 Real Estate,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-60,False,False,False,C,True,True
+FTSE 100,Equity,Equity,UK,United Kingdom,GBP,False,Index,yfinance PR,CONFIRMED,^FTSE,False,False,False,C,True,True
+FTSE 250,Equity,Equity,UK,United Kingdom,GBP,False,Index,yfinance PR,CONFIRMED,^FTMC,False,False,False,C,True,True
+FTSE All-Share,Equity,Equity,UK,United Kingdom,GBP,False,Index,yfinance PR,CONFIRMED,^FTAS,False,False,False,C,False,True
+FTSE SmallCap,Equity,Equity,UK,United Kingdom,GBP,False,Index,yfinance PR,CONFIRMED,^FTSC,False,False,False,C,False,True
+DAX 40,Equity,Equity,Europe,Germany,EUR,False,Index,yfinance PR,CONFIRMED,^GDAXI,False,False,False,C,True,True
+MDAX,Equity,Equity,Europe,Germany,EUR,False,Index,yfinance PR,CONFIRMED,^MDAXI,False,False,False,C,False,True
+SDAX,Equity,Equity,Europe,Germany,EUR,False,Index,yfinance PR,CONFIRMED,^SDAXI,False,False,False,C,False,True
+TecDAX,Equity,Equity,Europe,Germany,EUR,False,Index,yfinance PR,CONFIRMED,^TECDAX,False,False,False,C,False,True
+CAC 40,Equity,Equity,Europe,France,EUR,False,Index,yfinance PR,CONFIRMED,^FCHI,False,False,False,C,False,True
+CAC Mid 60,Equity,Equity,Europe,France,EUR,False,Index,yfinance PR,CONFIRMED,^CM100,False,False,False,C,False,True
+FTSE MIB Index,Equity,Equity,Europe,Italy,EUR,False,Index,yfinance PR,CONFIRMED,FTSEMIB.MI,False,False,False,B,False,True
+Nikkei 225,Equity,Equity,Japan,Japan,JPY,False,Index,yfinance PR,CONFIRMED,^N225,False,False,False,C,True,True
+TOPIX Index,Equity,Equity,Japan,Japan,JPY,False,Index,yfinance TR,CONFIRMED,1306.T,False,False,False,B,False,True
+S&P/TSX Composite,Equity,Equity,North America,Canada,CAD,False,Index,yfinance PR,CONFIRMED,^GSPTSE,False,False,False,C,False,True
+S&P/TSX 60,Equity,Equity,North America,Canada,CAD,False,Index,yfinance TR,CONFIRMED,XIU.TO,False,False,False,B,False,True
+S&P/TSX SmallCap,Equity,Equity,North America,Canada,CAD,False,Index,yfinance TR,CONFIRMED,XCS.TO,False,False,False,B,False,True
+S&P/ASX 200,Equity,Equity,Asia Pacific,Australia,AUD,False,Index,yfinance PR,CONFIRMED,^AXJO,False,False,False,C,False,True
+S&P/ASX All Ordinaries,Equity,Equity,Asia Pacific,Australia,AUD,False,Index,yfinance PR,CONFIRMED,^AORD,False,False,False,C,False,True
+S&P/ASX Small Ordinaries,Equity,Equity,Asia Pacific,Australia,AUD,False,Index,yfinance PR,CONFIRMED,^AXSO,False,False,False,C,False,True
+Shanghai Composite,Equity,Equity,Asia Pacific,China,CNY,False,Index,yfinance PR,CONFIRMED,000001.SS,False,False,False,B,True,True
+CSI 300 Index,Equity,Equity,Asia Pacific,China,CNY,False,Index,yfinance PR,CONFIRMED,000300.SS,False,False,False,B,False,True
+CSI 500 Index,Equity,Equity,Asia Pacific,China,CNY,False,Index,yfinance PR,UNAVAILABLE,000905.SS,False,False,False,B,False,False
+CSI 1000 Index,Equity,Equity,Asia Pacific,China,CNY,False,Index,yfinance PR,UNAVAILABLE,000852.SS,False,False,False,B,False,False
+Hang Seng Index,Equity,Equity,Asia Pacific,Hong Kong,HKD,False,Index,yfinance PR,CONFIRMED,^HSI,False,False,False,C,False,True
+S&P BSE Sensex,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^BSESN,False,False,False,C,True,True
+Nifty 50,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^NSEI,False,False,False,C,True,True
+Nifty Midcap 100,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CRSMID,False,False,False,C,False,True
+Nifty Smallcap 100,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance TR,CONFIRMED,SMALLCAP.NS,False,False,False,B,False,True
+Bovespa (IBOVESPA),Equity,Equity,Latin America,Brazil,BRL,False,Index,yfinance PR,CONFIRMED,^BVSP,False,False,False,C,False,True
+KOSPI,Equity,Equity,Asia Pacific,South Korea,KRW,False,Index,yfinance PR,CONFIRMED,^KS11,False,False,False,C,False,True
+KOSPI 200,Equity,Equity,Asia Pacific,South Korea,KRW,False,Index,yfinance PR,CONFIRMED,^KS200,False,False,False,C,False,True
+KOSDAQ,Equity,Equity,Asia Pacific,South Korea,KRW,False,Index,yfinance PR,CONFIRMED,^KQ11,False,False,False,C,False,True
+S&P/BMV IPC Index (Mexico),Equity,Equity,Latin America,Mexico,MXN,False,Index,yfinance PR,CONFIRMED,^MXX,False,False,False,C,False,True
+Jakarta Composite (IDX Composite),Equity,Equity,Asia Pacific,Indonesia,IDR,False,Index,yfinance PR,CONFIRMED,^JKSE,False,False,False,C,False,True
+Tadawul All Share Index (Saudi),Equity,Equity,Middle East & Africa,Saudi Arabia,SAR,False,Index,yfinance PR,CONFIRMED,^TASI.SR,False,False,False,C,False,True
+FTSE/JSE All Share,Equity,Equity,Middle East & Africa,South Africa,ZAR,False,Index,yfinance PR,CONFIRMED,^J203.JO,False,False,False,C,False,True
+FTSE/JSE Top 40,Equity,Equity,Middle East & Africa,South Africa,ZAR,False,Index,yfinance PR,CONFIRMED,^J200.JO,False,False,False,C,False,True
+Borsa Istanbul 100,Equity,Equity,Europe,Turkey,TRY,False,Index,yfinance PR,CONFIRMED,XU100.IS,False,False,False,B,False,True
+Borsa Istanbul 30,Equity,Equity,Europe,Turkey,TRY,False,Index,yfinance PR,CONFIRMED,XU030.IS,False,False,False,B,False,True
+MERVAL (Argentina),Equity,Equity,Latin America,Argentina,ARS,False,Index,yfinance PR,CONFIRMED,^MERV,False,False,False,C,False,True
+Euro Stoxx 50,Equity,Equity,Europe,Developed Europe,EUR,False,Index,yfinance PR,CONFIRMED,^STOXX50E,False,False,False,C,True,True
+STOXX Europe 600,Equity,Equity,Europe,Developed Europe,EUR,False,Index,yfinance PR,CONFIRMED,^STOXX,False,False,False,C,False,True
+STOXX Europe 600 Banks,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXV1.DE,False,False,False,B,False,True
+STOXX Europe 600 Health Care,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXV4.DE,False,False,False,B,False,True
+STOXX Europe 600 Technology,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXV3.DE,False,False,False,B,False,True
+STOXX Europe 600 Energy,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXH1.DE,False,False,False,B,False,True
+STOXX Europe 600 Industrials,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXH4.DE,False,False,False,B,False,True
+STOXX Europe 600 Consumer Staples,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXH3.DE,False,False,False,B,False,True
+STOXX Europe 600 Utilities,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXH9.DE,False,False,False,B,False,True
+STOXX Europe 600 Telecom,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXV2.DE,False,False,False,B,False,True
+STOXX Europe 600 Real Estate,Equity,Equity,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,EXI5.DE,False,False,False,B,False,True
+iShares MSCI ACWI ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance TR,CONFIRMED,ACWI,False,False,False,A,False,True
+iShares MSCI World ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance TR,CONFIRMED,URTH,False,False,False,A,False,True
+iShares MSCI Emerging Markets ETF,Equity,Equity,Emerging Markets,Emerging Markets,USD,False,Index,yfinance TR,CONFIRMED,EEM,False,False,False,B,False,True
+iShares MSCI Japan ETF,Equity,Equity,Japan,Japan,USD,False,Index,yfinance TR,CONFIRMED,EWJ,False,False,False,B,True,True
+iShares MSCI All Country Asia ex Japan ETF,Equity,Equity,Asia ex Japan,Asia ex Japan,USD,False,Index,yfinance TR,CONFIRMED,AAXJ,False,False,False,B,True,True
+iShares MSCI Eurozone ETF (MSCI Europe ex UK proxy),Equity,Equity,Europe,Europe,USD,False,Index,yfinance TR,CONFIRMED,EZU,False,False,False,B,False,True
+S&P 500 Capital Goods,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2010,False,False,False,C,False,True
+S&P 500 Commercial & Professional Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2020,False,False,False,C,False,True
+S&P 500 Transportation,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2030,False,False,False,C,False,True
+S&P 500 Automobiles & Components,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2510,False,False,False,C,False,True
+S&P 500 Consumer Durables & Apparel,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2520,False,False,False,C,False,True
+S&P 500 Consumer Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2530,False,False,False,C,False,True
+S&P 500 Consumer Discretionary Distribution & Retail,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-2550,False,False,False,C,False,True
+S&P 500 Food & Staples Retailing,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-3010,False,False,False,C,False,True
+S&P 500 Food Beverage & Tobacco,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-3020,False,False,False,C,False,True
+S&P 500 Household & Personal Products,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-3030,False,False,False,C,False,True
+S&P 500 Health Care Equipment & Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-3510,False,False,False,C,False,True
+S&P 500 Pharma Biotech & Life Sciences,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-3520,False,False,False,C,False,True
+S&P 500 Banks,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4010,False,False,False,C,False,True
+S&P 500 Financial Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4020,False,False,False,C,False,True
+S&P 500 Insurance,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4030,False,False,False,C,False,True
+S&P 500 Software & Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4510,False,False,False,C,False,True
+S&P 500 Technology Hardware & Equipment,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4520,False,False,False,C,False,True
+S&P 500 Semiconductors & Equipment,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-4530,False,False,False,C,False,True
+S&P 500 Telecommunication Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-5010,False,False,False,C,False,True
+S&P 500 Media & Entertainment,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-5020,False,False,False,C,False,True
+S&P 500 Equity Real Estate Investment Trusts,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-6020,False,False,False,C,False,False
+Nifty IT,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXIT,False,False,False,C,False,True
+Nifty Auto,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXAUTO,False,False,False,C,False,True
+Nifty Bank,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^NSEBANK,False,False,False,C,False,True
+Nifty Energy,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXENERGY,False,False,False,C,False,True
+Nifty FMCG,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXFMCG,False,False,False,C,False,True
+Nifty Infrastructure,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXINFRA,False,False,False,C,False,True
+Nifty Metal,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXMETAL,False,False,False,C,False,True
+Nifty Pharma,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXPHARMA,False,False,False,C,False,True
+Nifty Realty,Equity,Equity,Asia Pacific,India,INR,False,Index,yfinance PR,CONFIRMED,^CNXREALTY,False,False,False,C,False,True
+CBOE VIX Volatility Index,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^VIX,True,False,False,C,True,True
+CBOE VIX9D - 9-Day VIX,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^VIX9D,True,False,False,C,False,True
+CBOE VIX3M - 3-Month VIX,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^VIX3M,True,False,False,C,False,True
+CBOE VVIX - Volatility of VIX,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^VVIX,True,False,False,C,False,True
+CBOE SKEW Index,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SKEW,True,False,False,C,False,True
+CBOE VXEFA - EAFE Volatility,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^VXEFA,True,False,False,C,False,True
+CBOE VXEEM - EM Volatility,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^VXEEM,True,False,False,C,False,False
+MOVE Index - Bond Volatility,Volatility,Macro-Market Indicators,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^MOVE,True,False,False,C,False,True
+CBOE GVZ - Gold Volatility Index,Volatility,Macro-Market Indicators,Global,United States,USD,False,Index,yfinance PR,CONFIRMED,^GVZ,True,False,False,C,False,True
+CBOE OVX - Crude Oil Volatility,Volatility,Macro-Market Indicators,Global,United States,USD,False,Index,yfinance PR,CONFIRMED,^OVX,True,False,False,C,False,True
+NYSE FANG+ Index,Equity,Equity,,,USD,False,Index,yfinance PR,CONFIRMED,^NYFANG,False,False,False,C,False,True
+S&P 500 Equal Weight Index,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SPXEW,False,False,False,C,False,True
+Russell Midcap Growth Index,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,IWP,False,False,False,A,False,True
+Russell Midcap Value Index,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,IWS,False,False,False,A,False,True
+Wilshire US Large-Cap Growth Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Wilshire US Large-Cap Value Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Wilshire US Mid-Cap Growth Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Wilshire US Mid-Cap Value Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Wilshire US Small-Cap Growth Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Wilshire US Small-Cap Value Index,Equity,Equity,North America,United States,USD,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+iShares MSCI USA Momentum Factor ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,MTUM,False,False,False,A,False,True
+Vanguard Dividend Appreciation ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,VIG,False,False,False,A,False,True
+iShares MSCI USA Quality Factor ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,QUAL,False,False,False,A,False,True
+Schwab US Dividend Equity ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,SCHD,False,False,False,A,False,True
+Invesco S&P 500 Low Volatility ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,SPLV,False,False,False,A,False,True
+iShares MSCI USA Min Vol Factor ETF,Equity,Equity,North America,United States,USD,False,Price,yfinance TR,CONFIRMED,USMV,False,False,False,A,False,True
+iShares MSCI Europe Momentum Factor UCITS ETF,Equity,Equity,Europe,Europe,GBP,False,Price,yfinance TR,CONFIRMED,IEFM.L,False,False,True,B,False,True
+iShares MSCI Europe Min Vol UCITS ETF,Equity,Equity,Europe,Europe,EUR,False,Price,yfinance TR,CONFIRMED,EUN0.DE,False,False,False,B,False,True
+iShares MSCI Europe Quality Factor UCITS ETF,Equity,Equity,Europe,Europe,GBP,False,Price,yfinance TR,CONFIRMED,IEFQ.L,False,False,True,B,False,True
+SPDR S&P UK Dividend Aristocrats UCITS ETF,Equity,Equity,UK,United Kingdom,GBP,False,Price,yfinance TR,CONFIRMED,UKDV.L,False,False,True,B,False,True
+SPDR S&P Euro Dividend Aristocrats UCITS ETF,Equity,Equity,Europe,Germany,EUR,False,Price,yfinance TR,CONFIRMED,SPYW.DE,False,False,False,B,False,True
+iShares MSCI World Small Cap UCITS ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance TR,CONFIRMED,WSML.L,False,False,True,B,False,True
+iShares MSCI World Quality Factor UCITS ETF,Equity,Equity,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,IWQU.L,False,False,True,B,False,True
+iShares MSCI World Min Vol UCITS ETF,Equity,Equity,Global,Global,GBP,False,Price,yfinance TR,CONFIRMED,MINV.L,False,False,True,B,False,True
+iShares MSCI World Momentum UCITS ETF,Equity,Equity,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,IWMO.L,False,False,True,B,False,True
+SPDR S&P Global Dividend Aristocrats UCITS ETF,Equity,Equity,Global,Global,EUR,False,Price,yfinance TR,CONFIRMED,ZPRG.DE,False,False,False,B,False,True
+iShares MSCI World Value Factor UCITS ETF,Equity,Equity,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,IWVL.L,False,False,True,B,False,True
+iShares MSCI ACWI Min Vol Factor ETF,Equity,Equity,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,ACWV,False,False,False,A,False,True
+iShares MSCI EAFE Small-Cap ETF,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,SCZ,False,False,False,A,False,True
+iShares Latin America 40 ETF,Equity,Equity,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,ILF,False,False,False,A,True,True
+DXY Dollar Index,FX,FX,North America,United States,USD,False,Rate,yfinance PR,CONFIRMED,DX-Y.NYB,False,False,False,A,True,True
+GBP/USD,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,GBPUSD=X,False,False,False,A,True,True
+EUR/USD,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,EURUSD=X,False,False,False,A,True,True
+USD/JPY,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,USDJPY=X,False,False,False,A,True,True
+USD/CNY,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,CNY=X,False,False,False,A,True,True
+USD/INR,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,INR=X,False,False,False,A,True,True
+USD/KRW,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,KRW=X,False,False,False,A,True,True
+USD/TWD,FX,FX,Global,Global,USD,False,Rate,yfinance PR,CONFIRMED,TWD=X,False,False,False,A,True,True
+Bitcoin,Crypto,Crypto,Global,Global,USD,False,Price,yfinance PR,CONFIRMED,BTC-USD,False,False,False,A,True,True
+Ethereum,Crypto,Crypto,Global,Global,USD,False,Price,yfinance PR,CONFIRMED,ETH-USD,False,False,False,A,True,True
+US 3-Month Treasury Yield,Rates,Bonds,,,USD,False,% pa,yfinance PR,CONFIRMED,^IRX,True,True,False,A,True,True
+US 5-Year Treasury Yield,Rates,Bonds,,,USD,False,% pa,yfinance PR,CONFIRMED,^FVX,True,True,False,A,True,True
+US 10-Year Treasury Yield,Rates,Bonds,,,USD,False,% pa,yfinance PR,CONFIRMED,^TNX,True,True,False,A,True,True
+US 30-Year Treasury Yield,Rates,Bonds,,,USD,False,% pa,yfinance PR,CONFIRMED,^TYX,True,True,False,A,True,True
+US 2-Year Treasury Yield,Rates,Bonds,,,,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,True,False
+UK 10-Year Gilt Yield,Rates,Bonds,UK,United Kingdom,GBP,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,True,False
+Germany 10-Year Bund Yield,Rates,Bonds,Europe,Germany,EUR,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,True,False
+Japan 10-Year JGB Yield,Rates,Bonds,Japan,Japan,JPY,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,True,False
+5-Year Breakeven Inflation Rate,Rates,Bonds,,,,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+10-Year Breakeven Inflation Rate,Rates,Bonds,,,,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+5-Year 5-Year Forward Inflation Rate,Rates,Bonds,,,,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+US 10Y-2Y Treasury Yield Spread,Rates,Bonds,,,,False,bps,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+US 10Y-3M Treasury Yield Spread,Rates,Bonds,,,,False,bps,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+Federal Funds Effective Rate,Rates,Bonds,North America,United States,USD,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+Secured Overnight Financing Rate (SOFR),Rates,Bonds,North America,United States,USD,False,% pa,UNAVAILABLE,CONFIRMED,,False,True,False,C,False,False
+iShares Global Energy ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,IXC,False,False,False,A,False,True
+iShares Global Materials ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,MXI,False,False,False,A,False,True
+iShares Global Industrials ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,EXI,False,False,False,A,False,True
+iShares Global Consumer Discretionary ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,RXI,False,False,False,A,False,True
+iShares Global Consumer Staples ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,KXI,False,False,False,A,False,True
+iShares Global Healthcare ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,IXJ,False,False,False,A,False,True
+iShares Global Financials ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,IXG,False,False,False,A,False,True
+iShares Global Tech ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,IXN,False,False,False,A,False,True
+iShares Global Comm Services ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,IXP,False,False,False,A,False,True
+iShares Global Utilities ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,JXI,False,False,False,A,False,True
+iShares Global REIT ETF,Equity,Equity,Global,Global,USD,False,Index,yfinance PR,CONFIRMED,REET,False,False,False,A,False,True
+S&P 500 Energy Equipment & Serv,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-101010,False,False,False,C,False,True
+"S&P 500 Oil, Gas & Consumable F",Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-101020,False,False,False,C,False,True
+S&P 500 Chemicals (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-151010,False,False,False,C,False,False
+S&P 500 Construction Materials,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-151020,False,False,False,C,False,True
+S&P 500 Containers & Packaging,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-151030,False,False,False,C,False,False
+S&P 500 Metals & Mining (Indust,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-151040,False,False,False,C,False,True
+S&P 500 Paper & Forest Products (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-151050,False,False,False,C,False,True
+S&P 500 Aerospace & Defense (In,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201010,False,False,False,C,False,True
+S&P 500 Building Products (Indu,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201020,False,False,False,C,False,True
+S&P 500 Construction & Engineer,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201030,False,False,False,C,False,True
+S&P 500 Electrical Equipment (I,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201040,False,False,False,C,False,True
+S&P 500 Industrial Conglomerate,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201050,False,False,False,C,False,True
+S&P 500 Machinery (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201060,False,False,False,C,False,True
+S&P 500 Trading Companies & Dis,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-201070,False,False,False,C,False,True
+S&P 500 - Commercial Services &,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-202010,False,False,False,C,False,True
+S&P 500 - Professional Services,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-202020,False,False,False,C,False,False
+S&P 500 Air Freight & Logistics,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-203010,False,False,False,C,False,True
+S&P 500 Passenger Airlines (Ind,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-203020,False,False,False,C,False,True
+,Equity,Equity,,,,False,Index,yfinance PR,UNAVAILABLE,^SP500-203030,False,False,False,C,False,False
+S&P 500 Ground Transportation (,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-203040,False,False,False,C,False,True
+S&P 500 Automobile Components (,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-251010,False,False,False,C,False,True
+S&P 500 Automobiles (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-251020,False,False,False,C,False,True
+S&P 500 Household Durables (Ind,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-252010,False,False,False,C,False,True
+S&P 500 Leisure Products (Indus,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-252020,False,False,False,C,False,True
+"S&P 500 Textiles, Apparel & Lux",Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-252030,False,False,False,C,False,True
+S&P 500 Hotels Restaurants & Le,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-253010,False,False,False,C,False,False
+S&P 500 Distributors (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-255010,False,False,False,C,False,True
+S&P 500 Broadline Retail (Indus,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-255030,False,False,False,C,False,False
+S&P 500 Specialty Retail (Indus,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-255040,False,False,False,C,False,True
+S&P 500 Consumer Staples Distri,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-301010,False,False,False,C,False,False
+S&P 500 Beverages (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-302010,False,False,False,C,False,True
+S&P 500 Food Products (Industry,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-302020,False,False,False,C,False,True
+S&P 500 Tobacco (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-302030,False,False,False,C,False,True
+S&P 500 Household Products (Ind,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-303010,False,False,False,C,False,True
+S&P 500 Personal Care Products,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-303020,False,False,False,C,False,True
+S&P 500 Health Care Equipment &,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-351010,False,False,False,C,False,True
+S&P 500 Health Care Providers &,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-351020,False,False,False,C,False,True
+S&P 500 - Biotechnology (Indust,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-352010,False,False,False,C,False,True
+S&P 500 - Pharmaceuticals (Indu,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-352020,False,False,False,C,False,True
+S&P 500 - Life Sciences Tools &,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-352030,False,False,False,C,False,False
+S&P 500 Banks (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-401010,False,False,False,C,False,False
+S&P 500 Financial Services (Ind,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-402010,False,False,False,C,False,True
+S&P 500 Consumer Finance (Indus,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-402020,False,False,False,C,False,True
+S&P 500 Capital Markets (Indust,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-402030,False,False,False,C,False,True
+S&P 500 Insurance (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-403010,False,False,False,C,False,False
+S&P 500 IT Services (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-451020,False,False,False,C,False,True
+S&P 500 Software (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-451030,False,False,False,C,False,True
+S&P 500 Communications Equipmen,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-452010,False,False,False,C,False,True
+"S&P 500 Technology Hardware, St",Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-452020,False,False,False,C,False,False
+"S&P 500 - Electronic Equipment,",Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-452030,False,False,False,C,False,True
+S&P 500 Semiconductor & Semicon,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-453010,False,False,False,C,False,True
+S&P 500 Diversified Telecommuni,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-501010,False,False,False,C,False,True
+S&P 500 Wireless Telecommunicat,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-501020,False,False,False,C,False,False
+S&P 500 Media (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-502010,False,False,False,C,False,False
+S&P 500 Entertainment (Industry,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-502020,False,False,False,C,False,False
+S&P 500 Interactive Media & Ser,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-502030,False,False,False,C,False,False
+S&P 500 Electric Utilities (Ind,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-551010,False,False,False,C,False,True
+S&P 500 Gas Utilities (Industry,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-551020,False,False,False,C,False,True
+S&P 500 Multi-Utilities (Indust,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^SP500-551030,False,False,False,C,False,True
+S&P 500 Water Utilities (Indust,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-551040,False,False,False,C,False,False
+S&P 500 Independent Power and R,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-551050,False,False,False,C,False,False
+S&P 500 Industrial REITs (Indus,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601025,False,False,False,C,False,False
+S&P 500 Hotel & Resort REITs (I,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601030,False,False,False,C,False,False
+S&P 500 Office REITs (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601040,False,False,False,C,False,False
+S&P 500 Health Care REITs (Indu,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601050,False,False,False,C,False,False
+S&P 500 - Residential REITs (In,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601060,False,False,False,C,False,False
+S&P 500 Retail REITs (Industry),Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601070,False,False,False,C,False,False
+S&P 500 Specialized REITs (Indu,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-601080,False,False,False,C,False,False
+S&P 500 -Real Estate Management,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,UNAVAILABLE,^SP500-602010,False,False,False,C,False,False
+iShares Core Global Aggregate Bond UCITS ETF,Fixed Income,Bonds,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,AGGG.L,False,False,True,B,True,True
+iShares Core GBP Corporate Bond UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Price,yfinance TR,CONFIRMED,SLXX.L,False,False,True,B,True,True
+iShares USD High Yield Corp Bond UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,USD,False,Price,yfinance TR,CONFIRMED,IHYU.L,False,False,True,B,True,True
+Vanguard USD EM Government Bond UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,USD,False,Price,yfinance TR,CONFIRMED,VDET.L,False,False,True,B,True,True
+iShares Core UK Gilts UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IGLT.L,False,False,True,B,True,True
+iShares UK Short Duration Gilt UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IGLS.L,False,False,True,B,True,True
+iShares China CNY Bond UCITS ETF,Fixed Income,Bonds,Asia Pacific,China,CNY,False,Index,yfinance TR,CONFIRMED,CNYB.L,False,False,True,B,True,True
+ICE BofA US Corporate IG OAS,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLC0A0CM,False,True,False,A,False,True
+ICE BofA US AAA Corporate OAS,Fixed Income,Bonds,North America,United States,USD,False,bps,FRED,CONFIRMED,BAMLC0A1CAAA,False,True,False,A,False,True
+ICE BofA US AA Corporate OAS,Fixed Income,Bonds,North America,United States,USD,False,bps,FRED,CONFIRMED,BAMLC0A2CAA,False,True,False,A,False,True
+ICE BofA US A Corporate OAS,Fixed Income,Bonds,North America,United States,USD,False,bps,FRED,CONFIRMED,BAMLC0A3CA,False,True,False,A,False,True
+ICE BofA US BBB Corporate OAS,Fixed Income,Bonds,North America,United States,USD,False,bps,FRED,CONFIRMED,BAMLC0A4CBBB,False,True,False,A,False,True
+ICE BofA US High Yield OAS,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLH0A0HYM2,False,True,False,A,False,True
+ICE BofA US BB High Yield OAS,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLH0A1HYBB,False,True,False,A,False,True
+ICE BofA US Single-B High Yield OAS,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLH0A2HYB,False,True,False,A,False,True
+ICE BofA US CCC & Lower HY OAS,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLH0A3HYC,False,True,False,A,False,True
+ICE BofA Euro High Yield OAS,Fixed Income,Bonds,Europe,Europe,EUR,False,Price,FRED,CONFIRMED,BAMLHE00EHYIOAS,False,True,False,A,False,True
+ICE BofA EM Corporate Plus OAS,Fixed Income,Bonds,Emerging Markets,Emerging Markets,USD,False,bps,FRED,CONFIRMED,BAMLEMCBPIOAS,False,True,False,A,False,True
+ICE BofA EM High Yield Corporate OAS,Fixed Income,Bonds,,,,False,Price,FRED,CONFIRMED,BAMLEMHBHYCRPIOAS,False,True,False,A,False,True
+ICE BofA EM Asia Corporate OAS,Fixed Income,Bonds,,,,False,bps,FRED,CONFIRMED,BAMLEMRACRPIASIAOAS,False,True,False,A,False,True
+ICE BofA EM BBB Corporate OAS,Fixed Income,Bonds,,,,False,bps,FRED,CONFIRMED,BAMLEM2BRRBBBCRPIOAS,False,True,False,A,False,True
+ICE BofA US Treasury Index,Fixed Income,Bonds,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,GOVT,False,False,False,A,False,True
+ICE BofA 1-3 Year US Treasury Index,Fixed Income,Bonds,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,SHY,False,False,False,A,False,True
+ICE BofA 10+ Year US Treasury Index,Fixed Income,Bonds,North America,United States,USD,False,Index,yfinance TR,CONFIRMED,TLT,False,False,False,A,False,True
+ICE BofA US Inflation-Linked Treasury Index (TIPS),Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,DFII10,False,True,False,A,False,True
+ICE BofA US Corporate Index,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLCC0A0CMTRIV,False,True,False,A,False,True
+ICE BofA US High Yield Index,Fixed Income,Bonds,North America,United States,USD,False,Price,FRED,CONFIRMED,BAMLHYH0A0HYM2TRIV,False,True,False,A,False,True
+ICE BofA UK Gilt Index,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IGLT.L,False,False,True,B,False,True
+ICE BofA UK Gilt Index (USD Hedged),Fixed Income,Bonds,UK,United Kingdom,GBP,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 1-3 Year UK Gilt Index,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IGLS.L,False,False,True,B,False,True
+ICE BofA 1-3 Year UK Gilt Index (USD Hedged),Fixed Income,Bonds,UK,United Kingdom,GBP,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 10+ Year UK Gilt Index,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IGLT.L,False,False,True,B,False,True
+ICE BofA 10+ Year UK Gilt Index (USD Hedged),Fixed Income,Bonds,UK,United Kingdom,GBP,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA UK Inflation-Linked Gilt Index,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Price,yfinance TR,CONFIRMED,INXG.L,False,False,True,B,False,True
+ICE BofA UK Inflation-Linked Gilt Index (USD Hedged),Fixed Income,Bonds,UK,United Kingdom,GBP,True,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Euro Government Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,IEAG.L,False,False,True,B,False,True
+ICE BofA Euro Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 1-3 Year Euro Government Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,IBGS.L,False,False,True,B,False,True
+ICE BofA 1-3 Year Euro Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 10+ Year Euro Government Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,IBGL.L,False,False,True,B,False,True
+ICE BofA 10+ Year Euro Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Euro Inflation-Linked Government Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Price,yfinance TR,CONFIRMED,IBCI.L,False,False,True,B,False,True
+ICE BofA Euro Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Japan Government Bond Index,Fixed Income,Bonds,Japan,Japan,JPY,False,Index,yfinance TR,CONFIRMED,2561.T,False,False,False,B,False,True
+ICE BofA Japan Government Bond Index (USD Hedged),Fixed Income,Bonds,Japan,Japan,JPY,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 1-3 Year Japan Government Bond Index,Fixed Income,Bonds,Japan,Japan,JPY,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 1-3 Year Japan Government Bond Index (USD Hedged),Fixed Income,Bonds,Japan,Japan,JPY,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 10+ Year Japan Government Bond Index,Fixed Income,Bonds,Japan,Japan,JPY,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 10+ Year Japan Government Bond Index (USD Hedged),Fixed Income,Bonds,Japan,Japan,JPY,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Japan Inflation-Linked Government Bond Index,Fixed Income,Bonds,Japan,Japan,JPY,False,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Japan Inflation-Linked Government Bond Index (USD Hedged),Fixed Income,Bonds,Japan,Japan,JPY,True,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Canada Government Bond Index,Fixed Income,Bonds,North America,Canada,CAD,False,Index,yfinance TR,CONFIRMED,XGB.TO,False,False,False,B,False,True
+ICE BofA Canada Government Bond Index (USD Hedged),Fixed Income,Bonds,North America,Canada,CAD,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 1-3 Year Canada Government Bond Index,Fixed Income,Bonds,North America,Canada,CAD,False,Index,yfinance TR,CONFIRMED,XSB.TO,False,False,False,B,False,True
+ICE BofA 1-3 Year Canada Government Bond Index (USD Hedged),Fixed Income,Bonds,North America,Canada,CAD,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA 10+ Year Canada Government Bond Index,Fixed Income,Bonds,North America,Canada,CAD,False,Index,yfinance TR,CONFIRMED,XLB.TO,False,False,False,B,False,True
+ICE BofA 10+ Year Canada Government Bond Index (USD Hedged),Fixed Income,Bonds,North America,Canada,CAD,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Canada Real Return Bond Index (Inflation-Linked),Fixed Income,Bonds,North America,Canada,CAD,False,Price,yfinance TR,CONFIRMED,XRB.TO,False,False,False,B,False,True
+Canada Real Return Bond Index (USD Hedged),Fixed Income,Bonds,North America,Canada,CAD,True,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Germany Government Bond Index (Bunds),Fixed Income,Bonds,Europe,Germany,EUR,False,Index,yfinance TR,CONFIRMED,EXX6.DE,False,False,False,B,True,True
+ICE BofA Germany Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Germany,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+France Government Bond Index (OATs),Fixed Income,Bonds,Europe,France,EUR,False,Index,yfinance TR,CONFIRMED,IFRB.L,False,False,True,B,False,True
+France Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,France,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Italy Government Bond Index (BTPs),Fixed Income,Bonds,Europe,Italy,EUR,False,Index,yfinance TR,CONFIRMED,IITB.L,False,False,True,B,False,True
+Italy Government Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Italy,EUR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Australia Government Bond Index,Fixed Income,Bonds,Asia Pacific,Australia,AUD,False,Index,yfinance TR,CONFIRMED,IAF.AX,False,False,False,B,False,True
+Australia Government Bond Index (USD Hedged),Fixed Income,Bonds,Asia Pacific,Australia,AUD,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+China Government Bond Index (CGBs),Fixed Income,Bonds,Asia Pacific,China,CNY,False,Index,yfinance TR,CONFIRMED,CNYB.L,False,False,True,B,False,True
+China Government Bond Index (USD Hedged),Fixed Income,Bonds,Asia Pacific,China,CNY,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+India Government Bond Index,Fixed Income,Bonds,Asia Pacific,India,INR,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+India Government Bond Index (USD Hedged),Fixed Income,Bonds,Asia Pacific,India,INR,True,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Brazil Government Bond Index (Tesouro Nacional),Fixed Income,Bonds,Latin America,Brazil,BRL,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Brazil Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,BRL,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+South Korea Government Bond Index (KTBs),Fixed Income,Bonds,Asia Pacific,South Korea,KRW,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+South Korea Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,KRW,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+Mexico Government Bond Index (Bonos M),Fixed Income,Bonds,Latin America,Mexico,MXN,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Mexico Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,MXN,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+Indonesia Government Bond Index (SBN),Fixed Income,Bonds,Asia Pacific,Indonesia,IDR,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Indonesia Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,IDR,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+Saudi Arabia Government Bond / Sukuk Index,Fixed Income,Bonds,Middle East & Africa,Saudi Arabia,SAR,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Saudi Arabia Government Bond / Sukuk Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,SAR,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+South Africa Government Bond Index,Fixed Income,Bonds,Middle East & Africa,South Africa,ZAR,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+South Africa Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,ZAR,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+Turkey Government Bond Index,Fixed Income,Bonds,Europe,Turkey,TRY,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Turkey Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,TRY,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+Argentina Government Bond Index,Fixed Income,Bonds,Latin America,Argentina,ARS,False,Index,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+Argentina Government Bond Index (USD Hedged),Fixed Income,Bonds,Emerging Markets,Emerging Markets,ARS,True,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+ICE BofA Global Corporate Bond Index,Fixed Income,Bonds,Global,Global,USD,False,Price,FRED,CONFIRMED,BAMLCC0A0CMTRIV,False,False,False,A,False,True
+ICE BofA Global Corporate Bond Index (USD Hedged),Fixed Income,Bonds,Global,Global,USD,True,Price,FRED,CONFIRMED,BAMLCC0A0CMTRIV,False,False,False,A,False,True
+ICE BofA Euro Corporate Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Price,yfinance TR,CONFIRMED,IBCX.L,False,False,True,B,False,True
+ICE BofA Euro Corporate Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Price,UNAVAILABLE,UNAVAILABLE,,False,False,False,C,False,False
+ICE BofA Global High Yield Bond Index,Fixed Income,Bonds,Global,Global,USD,False,Price,FRED,CONFIRMED,BAMLHYH0A0HYM2TRIV,False,False,False,A,False,True
+ICE BofA Global High Yield Bond Index (USD Hedged),Fixed Income,Bonds,Global,Global,USD,True,Price,yfinance TR,CONFIRMED,HYLH.L,False,False,True,B,False,True
+ICE BofA Euro High Yield Bond Index,Fixed Income,Bonds,Europe,Europe,EUR,False,Price,FRED,CONFIRMED,BAMLHE00EHYITRIV,False,False,False,A,False,True
+ICE BofA Euro High Yield Bond Index (USD Hedged),Fixed Income,Bonds,Europe,Europe,EUR,True,Price,yfinance TR,CONFIRMED,HYXU,False,False,False,B,False,True
+JP Morgan  USD Emerging Market Debt,Fixed Income,Bonds,Emerging Markets,Emerging Markets,USD,False,Price,yfinance TR,CONFIRMED,EMB,False,False,False,B,False,True
+FTSE International Government Inflation-Protected Bond Index (USD Hedged),Fixed Income,Bonds,Global,Global,USD,True,Price,yfinance TR,CONFIRMED,WIP,False,False,False,A,False,True
+WTI Crude Oil,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,CL=F,False,False,False,A,True,True
+Brent Crude Oil,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,BZ=F,False,False,False,A,True,True
+Natural Gas (Henry Hub),Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,NG=F,False,False,False,A,False,True
+Gasoline (RBOB),Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,RB=F,False,False,False,A,False,True
+Heating Oil,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,HO=F,False,False,False,A,False,True
+Gold,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,GC=F,False,False,False,A,True,True
+Silver,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,SI=F,False,False,False,A,True,True
+Copper,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,HG=F,False,False,False,A,True,True
+Aluminium,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,ALI=F,False,False,False,A,True,True
+Soybeans,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,ZS=F,False,False,False,A,False,True
+Corn,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,ZC=F,False,False,False,A,False,True
+Wheat,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,ZW=F,False,False,False,A,False,True
+Sugar No. 11,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,SB=F,False,False,False,A,False,True
+Cotton No. 2,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,CT=F,False,False,False,A,True,True
+Coffee (Arabica),Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,KC=F,False,False,False,A,True,True
+Cocoa,Commodity,Commodities,Global,United States,USD,False,Price,yfinance PR,CONFIRMED,CC=F,False,False,False,A,False,True
+Live Cattle,Commodity,Commodities,Global,United States,USX,False,Price,yfinance PR,CONFIRMED,LE=F,False,False,False,A,False,True
+Iron Ore (World Bank Price Index),Commodity,Commodities,Global,Industrial Metals,USD,False,Price,FRED,CONFIRMED,PIORECRUSDM,False,False,False,A,False,True
+Invesco DB Energy Fund,Commodity,Commodities,Global,United States,USD,False,Price,yfinance TR,CONFIRMED,DBE,False,False,False,A,False,True
+Invesco DB Precious Metals Fund,Commodity,Commodities,Global,United States,USD,False,Price,yfinance TR,CONFIRMED,DBP,False,False,False,A,False,True
+Invesco DB Base Metals Fund,Commodity,Commodities,Global,United States,USD,False,Price,yfinance TR,CONFIRMED,DBB,False,False,False,A,False,True
+Invesco DB Agriculture Fund,Commodity,Commodities,Global,United States,USD,False,Price,yfinance TR,CONFIRMED,DBA,False,False,False,A,False,True
+Invesco DB Commodity Index Fund,Commodity,Commodities,Global,United States,USD,False,Price,yfinance TR,CONFIRMED,DBC,False,False,False,A,False,True
+Nasdaq 100,Equity,Equity,North America,United States,USD,False,Index,yfinance PR,CONFIRMED,^NDX,False,False,False,C,True,True
+Shenzhen Composite,Equity,Equity,Asia Pacific,China,CNY,False,Index,yfinance PR,CONFIRMED,399001.SZ,False,False,False,B,True,True
+iShares Core MSCI World UCITS ETF,Equity,Equity,Global,Global,GBP,False,Index,yfinance TR,CONFIRMED,IWDA.L,False,False,True,B,True,True
+Vanguard FTSE Emerging Markets UCITS ETF,Equity,Equity,Emerging Markets,Emerging Markets,GBP,False,Index,yfinance TR,CONFIRMED,VFEM.L,False,False,True,B,True,True
+iShares MSCI South Korea ETF,Equity,Equity,Asia Pacific,South Korea,USD,False,Index,yfinance TR,CONFIRMED,EWY,False,False,False,B,True,True
+iShares MSCI Taiwan ETF,Equity,Equity,Asia Pacific,Taiwan,USD,False,Index,yfinance TR,CONFIRMED,EWT,False,False,False,B,True,True
+iShares India 50 ETF,Equity,Equity,Asia Pacific,India,GBP,False,Index,yfinance TR,CONFIRMED,NDIA.L,False,False,True,B,True,True
+iShares MSCI World Value Factor UCITS ETF,Equity,Equity,Global,Global,GBP,False,Price,yfinance TR,CONFIRMED,IWFV.L,False,False,True,B,True,True
+iShares International Treasury Bond ETF,Fixed Income,Bonds,Global,Global,USD,False,Price,yfinance TR,CONFIRMED,IGOV,False,False,False,A,True,True
+L&G All Commodities UCITS ETF,Commodity,Commodities,Global,Global,GBP,False,Price,yfinance TR,CONFIRMED,CMOD.L,False,False,True,B,True,True
+iShares Core € Corp Bond UCITS ETF,Fixed Income,Bonds,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,IEAC.L,False,False,True,B,False,True
+VanEck China AMC China Bond ETF,Fixed Income,Bonds,Asia Pacific,China,USD,False,Index,yfinance TR,CONFIRMED,CBON,False,False,False,B,False,True
+iShares UK Dividend UCITS ETF,Equity,Equity,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,IUKD.L,False,False,True,B,False,True
+iShares MSCI Brazil ETF,Equity,Equity,Latin America,Brazil,USD,False,Index,yfinance TR,CONFIRMED,EWZ,False,False,False,B,False,True
+iShares MSCI Mexico ETF,Equity,Equity,Latin America,Mexico,USD,False,Index,yfinance TR,CONFIRMED,EWW,False,False,False,B,False,True
+iShares MSCI India ETF,Equity,Equity,Asia Pacific,India,USD,False,Index,yfinance TR,CONFIRMED,INDA,False,False,False,B,False,True
+iShares MSCI South Africa ETF,Equity,Equity,Middle East & Africa,South Africa,USD,False,Index,yfinance TR,CONFIRMED,EZA,False,False,False,B,False,True
+iShares MSCI Turkey ETF,Equity,Equity,Middle East & Africa,Turkey,USD,False,Index,yfinance TR,CONFIRMED,TUR,False,False,False,B,False,True
+iShares MSCI Israel ETF,Equity,Equity,Middle East & Africa,Israel,USD,False,Index,yfinance TR,CONFIRMED,EIS,False,False,False,B,False,True
+iShares MSCI China ETF,Equity,Equity,Asia Pacific,China,USD,False,Index,yfinance TR,CONFIRMED,MCHI,False,False,False,B,False,True
+iShares China Large-Cap ETF (HK),Equity,Equity,Asia Pacific,China,USD,False,Index,yfinance TR,CONFIRMED,FXI,False,False,False,B,False,True
+WisdomTree Japan Hedged Equity Fund,Equity,Equity,Japan,Japan,USD,True,Index,yfinance TR,CONFIRMED,DXJ,False,False,False,B,False,True
+Vanguard UK Gilt UCITS ETF,Fixed Income,Bonds,UK,United Kingdom,GBP,False,Index,yfinance TR,CONFIRMED,VGOV.L,False,False,True,B,False,True
+iShares Eur Govt Bond 7-10yr UCITS ETF,Fixed Income,Bonds,Europe,Europe,EUR,False,Index,yfinance TR,CONFIRMED,IBGM.L,False,False,True,B,False,True
