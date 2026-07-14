@@ -171,8 +171,9 @@ validation is the first step after merge.
 
 ## Resolution — CPI-definition split shipped (2026-07-07)
 
-Executed per `manuals/2026-06-18-cpi-split-codespace-spec.md` in the credentialed
-Codespace. Branch `claude/cpi-split-infl1-2026-07-07` (off `main`; P1 already merged).
+Executed as a one-shot credentialed-Codespace work-order (2026-06-18) — this
+Resolution section is the durable record; the original spec is archived in git.
+Branch `claude/cpi-split-infl1-2026-07-07` (off `main`; P1 already merged).
 
 **Sourcing decided per country (verified live on DB.nomics 2026-07-07):**
 
