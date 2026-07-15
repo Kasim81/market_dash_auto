@@ -178,8 +178,8 @@ market_dash_auto/
 │
 ├── docs/                          # Indicator Explorer generator
 │   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,932 lines)
-│   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer
-│   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON
+│   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer (§2.C C9: gitignored, → GitHub Pages)
+│   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON (§2.C C9: gitignored, → GitHub Pages)
 │
 ├── scripts/                       # Operator utilities (not in the daily run)
 │   ├── backadjust_hist_splits.py      # One-off back-adjustment of committed hist + sister CSVs for splits in manual_splits.csv (§11 Pattern 11; idempotent) (165 lines)
@@ -257,7 +257,7 @@ fetch_data.py
 
 The retired Phase A (`fetch_macro_us_fred.py` → `macro_us[_hist]`), Phase C (`fetch_macro_international.py` → `macro_intl[_hist]`), Phase D Tier 2 (`fetch_macro_dbnomics.py` → `macro_dbnomics[_hist]`) and Phase D ifo (`fetch_macro_ifo.py` → `macro_ifo[_hist]`) coordinators were consolidated into Phase ME on 2026-04-23. All four modules and their 8 tabs have been deleted; the tab names live on in `SHEETS_LEGACY_TABS_TO_DELETE` so the daily run sweeps them on the Sheet side.
 
-After `fetch_data.py` finishes, the workflow runs `python docs/build_html.py` to rebuild the Indicator Explorer (`docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js`) from the freshly updated CSVs. Both Python steps are piped through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits all updated CSVs, the two explorer files, **and `pipeline.log`** back to git (on the `main` branch) with message: `Update market data + explorer - YYYY-MM-DD HH:MM UTC`. Logging always lands even if a phase crashes.
+After `fetch_data.py` finishes, the workflow runs `python docs/build_html.py` to rebuild the Indicator Explorer (`docs/indicator_explorer.html` + `docs/indicator_explorer_mkt.js`) from the freshly updated CSVs. Both Python steps are piped through `tee pipeline.log` with `set -o pipefail`; an `if: always()` step then commits all updated CSVs **and `pipeline.log`** back to git (on the `main` branch) with message: `Update market data + explorer - YYYY-MM-DD HH:MM UTC`. Logging always lands even if a phase crashes. **§2.C C9 (2026-07-14):** the two explorer artefacts (~30 MB/day) are **no longer committed** — they are `.gitignore`d and published to **GitHub Pages** by a separate `deploy-pages` job (`actions/upload-pages-artifact` + `actions/deploy-pages`), gated to run only on a healthy build (explorer freshly rebuilt, no CRITICAL audit). Served at `https://kasim81.github.io/market_dash_auto/`.
 
 ---
 
@@ -1443,8 +1443,8 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 
 #### Output Files
 
-- `docs/indicator_explorer.html` — self-contained HTML (committed to git)
-- `docs/indicator_explorer_mkt.js` — embedded market data JSON (committed to git)
+- `docs/indicator_explorer.html` — self-contained HTML (§2.C C9: gitignored; published to GitHub Pages, not committed)
+- `docs/indicator_explorer_mkt.js` — embedded market data JSON (§2.C C9: gitignored; published to GitHub Pages, not committed)
 
 ### 9.8 `data_audit.py` (1,500 lines)
 
@@ -1948,7 +1948,7 @@ python docs/build_html.py           # Indicator Explorer rebuild only (requires 
 - **Python version:** 3.11
 - **Timeout:** 120 minutes
 - **Steps:** (1) `git pull --rebase`, (2) `python fetch_data.py`, (3) `cd docs && python build_html.py`, (4) commit + push
-- **Post-run:** Auto-commits updated CSVs plus `docs/indicator_explorer.html` and `docs/indicator_explorer_mkt.js` to `main` branch with message `Update market data + explorer - YYYY-MM-DD HH:MM UTC`
+- **Post-run:** Auto-commits updated CSVs to `main` branch with message `Update market data + explorer - YYYY-MM-DD HH:MM UTC`. The two explorer artefacts are published to GitHub Pages (§2.C C9), not committed.
 
 ### GitHub Secrets
 
