@@ -1179,7 +1179,7 @@ _JUMP_RATIO_LO = 1.0 / 3.0
 _LEVEL_UNIT_MARKERS = ("per barrel", "per ton", "per pound", "per oz", "/oz",
                        "per mmbtu", "per share", "per hour", "cents per", "per usd",
                        "cad per", "millions", "million ", "thousand", "level)",
-                       " level")
+                       " level", "person")
 # units that are NOT positive levels even if they share a keyword above
 _NONLEVEL_UNIT_MARKERS = ("yoy", "% change", "change yoy", "growth rate",
                           "per month", "balance", "net percent", "% points",

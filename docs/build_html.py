@@ -348,7 +348,7 @@ def build_macro_economic() -> dict:
         # Direct national-statistics offices / central banks
         "BoE", "ECB", "BoJ", "e-Stat", "ifo",
         "BoC", "StatCan", "ONS", "Bundesbank", "ABS", "ISTAT", "BLS",
-        "INSEE", "Banque de France", "Eurostat", "BoE Survey",
+        "INSEE", "Banque de France", "Eurostat", "BoE Survey", "ONS RTI",
         # Commodity / market reference
         "LBMA", "Nasdaq Data Link", "Alpha Vantage",
         # §3.13 long-run sources
