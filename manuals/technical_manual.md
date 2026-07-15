@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-07-14
+> Last updated: 2026-07-15
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -54,7 +54,7 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ### Codebase Size
 
-9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 34-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, the 2026-07-08 `imf_sdmx.py`, plus `__init__.py` itself since §2.C C2 gave it real content — `SOURCE_REGISTRY`) + `docs/build_html.py` + `scripts/` utilities, totalling ~22,100 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 32 input CSV libraries (1 instrument library + 29 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
+9 top-level Python modules (incl. `data_audit.py` + the 2026-07-03 `build_source_inventory.py` static wiring audit) + 35-module `sources/` package (1 scaffolding-only NDL, 1 scaffolding-only Alpha Vantage, 1 standalone SEC EDGAR equity-fundamentals feed, the 2026-07-02 ISM-fallback pair `brightdata.py` + `ism_prnewswire.py`, the 2026-07-08 `imf_sdmx.py`, the 2026-07-09 `eurostat.py`, the 2026-07-12 `treasury.py`, plus `__init__.py` itself since §2.C C2 gave it real content — `SOURCE_REGISTRY`) + `docs/build_html.py` + `scripts/` utilities, totalling ~23,000 lines (pipeline + sources + docs + scripts, excluding test files). Configuration: 34 input CSV libraries (1 instrument library + 31 raw-source libraries + 1 composite-indicator library + `manual_splits.csv`) + `reference_indicators.csv` for the cycle-timing cross-reference + `freshness_thresholds.csv` for the §2.6 audit + `source_fallbacks.csv` for the T0–T3 fallback chain. Output: 7 daily-tab CSVs + `macro_market_monthly_hist.csv` (regime-AA Phase 3 input) + `equity_fundamentals.csv` (SEC EDGAR revenue/EPS history) + `pipeline.log` + `data_audit.txt` + `audit_comment.md`.
 
 ---
 
