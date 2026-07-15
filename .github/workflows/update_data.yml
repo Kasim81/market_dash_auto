@@ -14,6 +14,10 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      # §2.C C9: gate for the deploy-pages job — true only on a healthy run
+      # (explorer freshly built, no CRITICAL audit).
+      deploy_pages: ${{ steps.pages_gate.outputs.deploy }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v5
@@ -166,17 +170,64 @@ jobs:
               [ -n "$CID" ] && gh api -X DELETE \
                 "repos/${{ github.repository }}/issues/comments/$CID" || true
             done
+    - name: Upload run logs artifact
+      # §2.C C10: pipeline.log (+ data_audit.txt as a convenience copy) uploaded
+      # as a 90-day artifact instead of committed to git every run. `if: always()`
+      # so a crashed run still yields the diagnostic log.
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-logs-${{ github.run_id }}
+        path: |
+          pipeline.log
+          data_audit.txt
+        retention-days: 90
+        if-no-files-found: ignore
+    - name: Pages deploy gate
+      # §2.C C9: decide whether this run's explorer is publishable. Skip on a
+      # CRITICAL audit (§2.C C8 wrote data_audit_critical.flag) or when the
+      # rebuild step didn't run (explorer absent — e.g. an earlier crash). The
+      # output feeds both the upload steps below and the deploy-pages job's `if`.
+      if: always()
+      id: pages_gate
+      run: |
+        if [ -f data_audit_critical.flag ] || [ ! -f docs/indicator_explorer.html ]; then
+          echo "deploy=false" >> "$GITHUB_OUTPUT"
+          echo "Pages deploy gate: SKIP (critical flag present or explorer missing)"
+        else
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          echo "Pages deploy gate: OK"
+        fi
+    - name: Stage explorer for Pages
+      # Co-locate the two generated files (the HTML loads the JS by relative
+      # <script src>) plus a root redirect so the site root opens the explorer.
+      if: always() && steps.pages_gate.outputs.deploy == 'true'
+      run: |
+        rm -rf _site && mkdir -p _site
+        cp docs/indicator_explorer.html _site/indicator_explorer.html
+        cp docs/indicator_explorer_mkt.js _site/indicator_explorer_mkt.js
+        printf '%s\n' \
+          '<!doctype html><meta charset="utf-8">' \
+          '<meta http-equiv="refresh" content="0; url=indicator_explorer.html">' \
+          '<title>Indicator Explorer</title>' \
+          '<a href="indicator_explorer.html">Indicator Explorer</a>' > _site/index.html
+    - name: Upload Pages artifact
+      if: always() && steps.pages_gate.outputs.deploy == 'true'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
     - name: Commit and push if changed
-      # `if: always()` so even a crashed run still commits the
-      # pipeline.log so we can diagnose without re-opening the GitHub
-      # Actions UI.
+      # `if: always()` so even a crashed run still commits the audit reports
+      # so we can diagnose without re-opening the GitHub Actions UI.
       if: always()
       run: |
         git config --global user.name 'GitHub Actions Bot'
         git config --global user.email 'actions@github.com'
-        # Pipeline log first — this is the diagnostic record of every
-        # run.  Always commit it, even on failure.
-        [ -f pipeline.log ] && git add -f pipeline.log || true
+        # §2.C C10 (2026-07-14): pipeline.log is no longer committed (it was
+        # rewritten whole every run → permanent churn); it is uploaded as a
+        # 90-day workflow artifact by the step below. data_audit.txt stays in
+        # git (small, meaningful diffs for >90-day forensics), as does the
+        # audit_comment.md that mirrors the daily Issue comment.
         [ -f data_audit.txt ] && git add -f data_audit.txt || true
         [ -f audit_comment.md ] && git add -f audit_comment.md || true
         # §2.C C8 CRITICAL gate: data_audit.py writes this flag (and exits
@@ -184,8 +235,8 @@ jobs:
         # protected-tab output empty/all-NaN or a hist CSV losing >10%
         # rows/columns vs HEAD.  Committing those artefacts would bake the
         # catastrophe into git history and downstream automations, so we
-        # stop after the diagnostics above.  The flag itself is never
-        # committed (explicit adds only).
+        # stop after the diagnostics above (pipeline.log is still uploaded as
+        # an artifact).  The flag itself is never committed (explicit adds only).
         if [ -f data_audit_critical.flag ]; then
           echo "CRITICAL audit findings — skipping the data-file commit:"
           cat data_audit_critical.flag
@@ -229,8 +280,10 @@ jobs:
         [ -f data/macro_dbnomics_hist.csv ] && git rm -f data/macro_dbnomics_hist.csv || true
         [ -f data/macro_ifo.csv ] && git rm -f data/macro_ifo.csv || true
         [ -f data/macro_ifo_hist.csv ] && git rm -f data/macro_ifo_hist.csv || true
-        [ -f docs/indicator_explorer.html ] && git add -f docs/indicator_explorer.html || true
-        [ -f docs/indicator_explorer_mkt.js ] && git add -f docs/indicator_explorer_mkt.js || true
+        # §2.C C9 (2026-07-14): the explorer artefacts (docs/indicator_explorer.html
+        # ~14 MB + indicator_explorer_mkt.js ~16 MB) are no longer committed to git —
+        # they are published to GitHub Pages by the deploy-pages job below. They are
+        # gitignored and untracked; nothing stages them here.
         # Retry commit-and-push up to 3 times. Without this, a parallel
         # PR merging onto main during the ~1-2h run window causes the
         # final push to be rejected (e.g. run 27292302120, 2026-06-10).
@@ -256,3 +309,23 @@ jobs:
           echo "Push still rejected after 3 attempts — failing loudly"
           exit 1
         fi
+
+  # §2.C C9 (2026-07-14): publish the indicator explorer to GitHub Pages instead
+  # of committing the ~30 MB/day of HTML+JS to git. Runs only after a healthy
+  # update-data run (deploy_pages gate = true → explorer freshly built, no
+  # CRITICAL audit). One-time repo setup: Settings → Pages → Source = "GitHub
+  # Actions". Published at https://kasim81.github.io/market_dash_auto/.
+  deploy-pages:
+    needs: update-data
+    if: needs.update-data.outputs.deploy_pages == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

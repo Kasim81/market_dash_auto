@@ -2228,6 +2228,89 @@ _PHASE_D_CALCULATORS = {
 }
 
 
+# ===========================================================================
+# INDICATOR CALCULATORS — TAYLOR RULE (§2.B B10-B13)
+#
+# Taylor-rule policy-stance gap for UK / EZ / JP / CN. The pipeline carries a
+# policy rate and an inflation YoY per region but no output-gap or neutral-rate
+# series, so two terms are constructed rather than read:
+#   • the output gap is a *standardized activity gap* — the rolling z of the
+#     region's growth nowcast (UK/EU/JP_NOWCAST1), or of CHN_IND_PROD for CN
+#     which has no nowcast composite. Being a z (unitless, ~0-centred) not a
+#     literal % output gap, the 0.5 weight makes this a Taylor-STYLE stance
+#     gauge — direction + magnitude of policy vs. a rule — NOT a bp-accurate
+#     Taylor rate.
+#   • the neutral real rate r* is a hard-coded regional assumption (below).
+#
+#   taylor_implied = r* + pi + 0.5*(pi - target) + 0.5*activity_gap_z
+#   gap            = policy_rate - taylor_implied
+#     gap > 0  → policy tighter than the rule prescribes (restrictive / hawkish)
+#     gap < 0  → policy looser than the rule prescribes (accommodative / dovish)
+#
+# r* / target assumptions (documented, adjustable in one place here):
+#   UK  r*=0.5  target=2.0      EZ  r*=0.0  target=2.0
+#   JP  r*=0.0  target=2.0      CN  r*=1.5  target=3.0 (PBoC has no formal point
+#                                          target; ~3% CPI anchor as reference)
+# If the output-gap nowcast is missing the gap term drops to 0 and the rule
+# degrades to its inflation legs (graceful, same discipline as the composites).
+# ===========================================================================
+
+def _taylor_gap(policy, pi, activity_gap_z, r_star, target):
+    """Assemble the Taylor-style stance gap on the weekly-Friday spine.
+
+    policy / pi are % levels; activity_gap_z is the ~0-centred standardized
+    activity gap (empty → the gap term is 0). Requires policy and pi to
+    overlap; returns policy_rate − taylor_implied."""
+    policy = _to_weekly_friday(policy)
+    pi = _to_weekly_friday(pi)
+    if policy is None or policy.empty or pi is None or pi.empty:
+        return pd.Series(dtype=float)
+    frame = pd.concat({"policy": policy, "pi": pi}, axis=1)
+    if activity_gap_z is not None and not activity_gap_z.empty:
+        frame = frame.join(activity_gap_z.rename("gap"), how="left")
+    else:
+        frame["gap"] = 0.0
+    frame["gap"] = frame["gap"].fillna(0.0)
+    frame = frame.dropna(subset=["policy", "pi"])
+    if frame.empty:
+        return pd.Series(dtype=float)
+    taylor_implied = r_star + frame["pi"] + 0.5 * (frame["pi"] - target) + 0.5 * frame["gap"]
+    return frame["policy"] - taylor_implied
+
+
+def _calc_UK_TAYLOR1(mu=None, **_):
+    gap = _rolling_zscore(_calc_UK_NOWCAST1(mu=mu))
+    return _taylor_gap(_get_col(mu, "GBR_BANK_RATE"), _get_col(mu, "GBR_CPI_YOY"),
+                       gap, r_star=0.5, target=2.0)
+
+
+def _calc_EU_TAYLOR1(mu=None, dbn=None, **_):
+    gap = _rolling_zscore(_calc_EU_NOWCAST1(dbn=dbn if dbn is not None else mu))
+    return _taylor_gap(_get_col(mu, "EA_DEPOSIT_RATE"), _get_col(mu, "EA_HICP"),
+                       gap, r_star=0.0, target=2.0)
+
+
+def _calc_JP_TAYLOR1(mu=None, **_):
+    gap = _rolling_zscore(_calc_JP_NOWCAST1(mu=mu))
+    return _taylor_gap(_get_col(mu, "JPN_POLICY_RATE"), _get_col(mu, "JPN_CPI_YOY"),
+                       gap, r_star=0.0, target=2.0)
+
+
+def _calc_CN_TAYLOR1(mu=None, **_):
+    # CN has no nowcast composite — use the z of industrial-production YoY.
+    gap = _rolling_zscore(_to_weekly_friday(_get_col(mu, "CHN_IND_PROD")))
+    return _taylor_gap(_get_col(mu, "CHN_POLICY_RATE"), _get_col(mu, "CHN_CPI_YOY"),
+                       gap, r_star=1.5, target=3.0)
+
+
+_TAYLOR_CALCULATORS = {
+    "UK_TAYLOR1": _calc_UK_TAYLOR1,
+    "EU_TAYLOR1": _calc_EU_TAYLOR1,
+    "JP_TAYLOR1": _calc_JP_TAYLOR1,
+    "CN_TAYLOR1": _calc_CN_TAYLOR1,
+}
+
+
 # Master dispatcher — union of all regional dicts
 _ALL_CALCULATORS = {
     **_US_CALCULATORS,
@@ -2236,6 +2319,7 @@ _ALL_CALCULATORS = {
     **_PHASE_D_CALCULATORS,
     **_INFLATION_CALCULATORS,
     **_NOWCAST_CALCULATORS,
+    **_TAYLOR_CALCULATORS,
 }
 
 

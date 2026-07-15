@@ -25,5 +25,14 @@ data/.sec_edgar_cache/
 docs/payload_main.json
 docs/payload_mkt.json
 
+# §2.C C9: generated explorer artefacts (~30 MB/day) — published to GitHub
+# Pages by the deploy-pages job, no longer committed to git.
+docs/indicator_explorer.html
+docs/indicator_explorer_mkt.js
+/_site/
+
 # Subagent worktree mounts (temporary; per-agent isolated working copies)
 .claude/worktrees/
+
+# §2.C C10: pipeline.log uploaded as a workflow artifact, not committed
+pipeline.log

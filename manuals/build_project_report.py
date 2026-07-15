@@ -2060,8 +2060,8 @@ def add_section_10(doc):
          "Programmatic consumption surface; every output is pinned to "
          "a Git commit with date-stamped message."),
         ("Indicator Explorer (HTML)",
-         "Self-contained HTML + JavaScript bundle, committed to "
-         "docs/indicator_explorer.html and published to GitHub Pages. "
+         "Self-contained HTML + JavaScript bundle, published to GitHub "
+         "Pages (§2.C C9: gitignored, not committed to git). "
          "Reads the freshly-written CSVs for every rebuild."),
         ("Pipeline log (pipeline.log)",
          "Captured stdout and stderr of the daily Python run, "
