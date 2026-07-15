@@ -942,10 +942,20 @@ def section_d_history_preservation() -> dict:
 # (real value ~3.3%) that no audit section caught — this section is the backstop
 # for that whole failure class.
 #
-# Bands are (min, max), inclusive, on the latest observed value. The built-in
-# table below covers the headline growth nowcasts; any per-source library CSV
-# row may also declare optional `plausible_min` / `plausible_max` columns to add
-# a band declaratively without editing this file.
+# Bands are (min, max), inclusive, on the latest observed value. Precedence
+# (weakest→strongest): a WIDE family default inferred from units/concept
+# (`_family_default_band`, A9 2026-07-15 — ~185 columns covered automatically),
+# then the built-in table below, then any per-row `plausible_min`/`plausible_max`
+# in a macro_library_*.csv (the declarative tightening path — always wins).
+#
+# Escalation contract (A9): this section stays a WARNING channel in the daily
+# fetch — Section E never fails the build (only Section F does), so already-fetched
+# data still commits and the operator is alerted via the daily Issue. The HARD
+# gate lives in `test_plausibility.py` (ci.yml): CI fires on every pull_request
+# and every push to main (incl. the daily data commit), so a credibility
+# regression BLOCKS a PR and turns the daily push red — caught even when the
+# fetch "succeeds". Bands are deliberately wide: the target is gross regressions
+# (sign flip, x100/÷100, wrong-column), not tight economic surveillance.
 
 # col_id -> (min, max). Keep this short and physically motivated.
 PLAUSIBILITY_BANDS_BY_COL: dict[str, tuple[float, float]] = {
@@ -959,24 +969,117 @@ PLAUSIBILITY_BANDS_BY_COL: dict[str, tuple[float, float]] = {
 }
 
 
-def load_plausibility_bands() -> dict[str, tuple[float, float]]:
-    """Built-in bands overlaid with optional per-row `plausible_min` /
-    `plausible_max` declarations from any macro_library_*.csv (library wins)."""
-    bands = dict(PLAUSIBILITY_BANDS_BY_COL)
+def _family_default_band(units: str, concept: str, subcategory: str,
+                         col: str) -> tuple[float, float] | None:
+    """Wide, physically-motivated fallback band inferred from a column's
+    units / concept / subcategory (A9, 2026-07-15).
+
+    Applied only when a column has no explicit band (built-in table or per-row
+    `plausible_min`/`plausible_max`). Deliberately WIDE: the target is *gross*
+    regressions — a sign flip, an x100/÷100 unit error, a wrong-column mapping
+    (the Atlanta-Fed-24%-nowcast class) — not tight economic surveillance.
+    Tighten a specific column by declaring bands in its library row; that always
+    wins over this family default.
+
+    Returns None for families whose values legitimately trend across orders of
+    magnitude — equity total-return indices, nominal GDP / money levels,
+    commodity & FX price levels — where a static family band is either useless
+    or wrong; those rely on an explicit per-column band."""
+    u = (units or "").strip().lower()
+    c = (concept or "").strip().lower()
+    s = (subcategory or "").strip().lower()
+    cl = (col or "").strip().lower()
+
+    # YoY / period-change growth & inflation rates (%). Wide enough for volatile
+    # trade YoY and high-inflation tails; catches x100 and sign errors.
+    if ("yoy" in u or "year-on-year" in u or "year on year" in u
+            or "prev year=100" in u or "q/q saar" in u or "% change" in u):
+        return (-80.0, 160.0)
+    # Diffusion PMIs (0-100, 50 = neutral)
+    if "diffusion" in u and "50" in u:
+        return (5.0, 100.0)
+    if u.startswith("di ") or "di (50" in u:
+        return (0.0, 100.0)
+    # Net-balance surveys (% positive minus % negative): Tankan / ifo / ECB / EC
+    if ("balance" in u or "net percent" in u or "% points" in u
+            or "positive minus" in u or "positive-minus" in u):
+        return (-100.0, 100.0)
+    # Any other sentiment / survey / confidence composite (OECD BCI/CCI, ifo,
+    # EU ESI, INSEE). Deliberately spans both normalisations: these FRED/OECD
+    # "normal value = 100" series are heterogeneous — some are amplitude-adjusted
+    # around 100 (CHN_CON_CONF ~85-127), others are net balances (DEU_BUS_CONF
+    # ~-42..25) — so one band must cover both; a x100/sign gross error still trips.
+    if ("normal value = 100" in u or "long-run avg = 100" in u or "mean=100" in u
+            or "normalised" in u or "composite indicator" in u or "confidence" in u
+            or ("index" in u and "survey" in c) or "sentiment" in c):
+        return (-100.0, 200.0)
+    if "probability" in u:
+        return (0.0, 100.0)
+    if "0-1" in u:                      # CISS financial-stress index
+        return (0.0, 1.5)
+    if u == "ratio":                    # Shiller CAPE etc.
+        return (0.0, 200.0)
+    if "per month" in u and "percent" in u:   # Fama-French factor returns
+        return (-60.0, 60.0)
+    # Unemployment / participation / employment RATES (%)
+    if (u.startswith("percent")
+            and ("unemploy" in s or "labour" in c or "labor" in c
+                 or "part_rate" in cl or "emp_rate" in cl or "unemploy" in cl)):
+        return (0.0, 80.0)
+    # Rates / yields (policy, sovereign, money-market, lending) — allow negative
+    if ("per annum" in u or "rates / yields" in c
+            or any(k in s for k in ("policy rate", "sovereign", "government yield",
+                                    "government bond yield", "money market", "yields"))):
+        return (-6.0, 60.0)
+    # CPI / IP / activity INDEX levels (wide: old base years + long JST history)
+    if u.startswith("index") and any(k in c for k in ("inflation", "growth",
+                                                       "consumer", "prices")):
+        return (0.5, 1500.0)
+    # Generic bare "Percent" not otherwise classified → treat as a rate
+    if u.startswith("percent"):
+        return (-6.0, 60.0)
+    # Level / price / nominal families: no static family band.
+    return None
+
+
+def load_plausibility_bands(with_family_defaults: bool = True
+                            ) -> dict[str, tuple[float, float]]:
+    """Plausibility bands per data column, in precedence order (lowest first):
+
+        1. family default inferred from units/concept (A9; wide, gross-error net)
+        2. built-in ``PLAUSIBILITY_BANDS_BY_COL`` table
+        3. per-row ``plausible_min`` / ``plausible_max`` in a macro_library_*.csv
+
+    Later sources override earlier ones, so an explicit per-row band always wins
+    and the family default only fills the gap. Pass ``with_family_defaults=False``
+    to get only the explicitly-declared bands (the pre-A9 behaviour)."""
+    family: dict[str, tuple[float, float]] = {}
+    explicit: dict[str, tuple[float, float]] = {}
     for lib_name in SOURCE_BY_LIBRARY:
         path = DATA / f"macro_library_{lib_name}.csv"
         if not path.exists():
             continue
-        with path.open(newline="") as f:
+        with path.open(newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 col = (row.get("col") or "").strip()
+                if not col:
+                    continue
+                if with_family_defaults:
+                    fb = _family_default_band(row.get("units", ""),
+                                              row.get("concept", ""),
+                                              row.get("subcategory", ""), col)
+                    if fb is not None:
+                        family[col] = fb
                 lo = (row.get("plausible_min") or "").strip()
                 hi = (row.get("plausible_max") or "").strip()
-                if col and lo and hi:
+                if lo and hi:
                     try:
-                        bands[col] = (float(lo), float(hi))
+                        explicit[col] = (float(lo), float(hi))
                     except ValueError:
                         pass
+    bands = dict(family)
+    bands.update(PLAUSIBILITY_BANDS_BY_COL)
+    bands.update(explicit)
     return bands
 
 
