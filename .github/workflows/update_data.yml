@@ -170,6 +170,19 @@ jobs:
               [ -n "$CID" ] && gh api -X DELETE \
                 "repos/${{ github.repository }}/issues/comments/$CID" || true
             done
+    - name: Upload run logs artifact
+      # §2.C C10: pipeline.log (+ data_audit.txt as a convenience copy) uploaded
+      # as a 90-day artifact instead of committed to git every run. `if: always()`
+      # so a crashed run still yields the diagnostic log.
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-logs-${{ github.run_id }}
+        path: |
+          pipeline.log
+          data_audit.txt
+        retention-days: 90
+        if-no-files-found: ignore
     - name: Pages deploy gate
       # §2.C C9: decide whether this run's explorer is publishable. Skip on a
       # CRITICAL audit (§2.C C8 wrote data_audit_critical.flag) or when the
@@ -204,16 +217,17 @@ jobs:
       with:
         path: _site
     - name: Commit and push if changed
-      # `if: always()` so even a crashed run still commits the
-      # pipeline.log so we can diagnose without re-opening the GitHub
-      # Actions UI.
+      # `if: always()` so even a crashed run still commits the audit reports
+      # so we can diagnose without re-opening the GitHub Actions UI.
       if: always()
       run: |
         git config --global user.name 'GitHub Actions Bot'
         git config --global user.email 'actions@github.com'
-        # Pipeline log first — this is the diagnostic record of every
-        # run.  Always commit it, even on failure.
-        [ -f pipeline.log ] && git add -f pipeline.log || true
+        # §2.C C10 (2026-07-14): pipeline.log is no longer committed (it was
+        # rewritten whole every run → permanent churn); it is uploaded as a
+        # 90-day workflow artifact by the step below. data_audit.txt stays in
+        # git (small, meaningful diffs for >90-day forensics), as does the
+        # audit_comment.md that mirrors the daily Issue comment.
         [ -f data_audit.txt ] && git add -f data_audit.txt || true
         [ -f audit_comment.md ] && git add -f audit_comment.md || true
         # §2.C C8 CRITICAL gate: data_audit.py writes this flag (and exits
@@ -221,8 +235,8 @@ jobs:
         # protected-tab output empty/all-NaN or a hist CSV losing >10%
         # rows/columns vs HEAD.  Committing those artefacts would bake the
         # catastrophe into git history and downstream automations, so we
-        # stop after the diagnostics above.  The flag itself is never
-        # committed (explicit adds only).
+        # stop after the diagnostics above (pipeline.log is still uploaded as
+        # an artifact).  The flag itself is never committed (explicit adds only).
         if [ -f data_audit_critical.flag ]; then
           echo "CRITICAL audit findings — skipping the data-file commit:"
           cat data_audit_critical.flag

@@ -33,3 +33,6 @@ docs/indicator_explorer_mkt.js
 
 # Subagent worktree mounts (temporary; per-agent isolated working copies)
 .claude/worktrees/
+
+# §2.C C10: pipeline.log uploaded as a workflow artifact, not committed
+pipeline.log
