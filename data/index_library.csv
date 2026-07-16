@@ -394,3 +394,12 @@ iShares China Large-Cap ETF (HK),Equity,Equity,Index,Equity Large Cap,Asia Pacif
 WisdomTree Japan Hedged Equity Fund,Equity,Equity,Index,Equity Broad,Japan,Japan,Blend,Broad,,,,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,DXJ,,,,,,,2006-06-16,False
 Vanguard UK Gilt UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,UK,United Kingdom,,,,Government,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,VGOV.L,,,,,,,2009-06-19,False
 iShares Eur Govt Bond 7-10yr UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,Europe,Europe,,,Long (7-10yr),Government,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IBGM.L,,,,,,,2006-04-26,False
+STOXX Europe 600 Automobiles & Parts,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Discretionary,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Basic Resources,Equity,Equity,Index,Equity Sector,Europe,Europe,Materials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV6.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Chemicals,Equity,Equity,Index,Equity Sector,Europe,Europe,Materials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV7.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Construction & Materials,Equity,Equity,Index,Equity Sector,Europe,Europe,Materials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV8.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Travel & Leisure,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Discretionary,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXV9.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Insurance,Equity,Equity,Index,Equity Sector,Europe,Europe,Financials,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Media,Equity,Equity,Index,Equity Sector,Europe,Europe,Communication Services,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH6.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Personal & Household Goods,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Staples,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH7.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Retail,Equity,Equity,Index,Equity Sector,Europe,Europe,Consumer Discretionary,Broad,,,,EUR,False,,False,,yfinance TR,CONFIRMED,,EXH8.DE,,,,,,,2008-01-02,False

@@ -83,7 +83,21 @@ jobs:
       run: |
         echo "" >> pipeline.log
         echo "=== Primary-source smoke tests (BLS, INSEE, BdF, Alpha Vantage, Shiller, Ken French, JST, Atlanta Fed, NY Fed, SEC EDGAR, IMF SDMX) ===" >> pipeline.log
-        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke test_sec_edgar_smoke test_imf_sdmx_smoke test_boe_survey_smoke test_ons_rti_smoke -v 2>&1 | tee -a pipeline.log
+        python -m unittest test_bls_smoke test_insee_smoke test_bdf_smoke test_alpha_vantage_smoke test_shiller_smoke test_french_smoke test_jst_smoke test_atlanta_fed_smoke test_ny_fed_smoke test_sec_edgar_smoke test_imf_sdmx_smoke test_boe_survey_smoke test_ons_rti_smoke test_ons_housing_smoke test_equity_pe_smoke -v 2>&1 | tee -a pipeline.log
+    - name: Equity P/E snapshot (§3.3)
+      # Resolve trailing/forward P/E for the major-index ETF set (yfinance ->
+      # Alpha Vantage chain) and upsert data/equity_pe_snapshot.csv under today's
+      # UTC date — a daily valuation history. Non-fatal: a total miss leaves the
+      # existing history untouched and exits 0. ALPHAVANTAGE_API_KEY is the
+      # fallback source's key (yfinance needs none).
+      if: always()
+      continue-on-error: true
+      env:
+        ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+      run: |
+        echo "" >> pipeline.log
+        echo "=== Equity P/E snapshot (§3.3) ===" >> pipeline.log
+        python fetch_pe.py 2>&1 | tee -a pipeline.log
     - name: Rebuild indicator explorer
       run: |
         set -o pipefail
@@ -264,6 +278,7 @@ jobs:
         [ -f data/macro_market_hist_x.csv ] && git add -f data/macro_market_hist_x.csv || true
         # SEC EDGAR equity fundamentals (revenue + diluted EPS), isolated phase:
         [ -f data/equity_fundamentals.csv ] && git add -f data/equity_fundamentals.csv || true
+        [ -f data/equity_pe_snapshot.csv ] && git add -f data/equity_pe_snapshot.csv || true
         # §3.1 sub-track 3 — audit_writeback artefacts:
         [ -f data/yfinance_failure_streaks.csv ] && git add -f data/yfinance_failure_streaks.csv || true
         [ -f data/index_library.csv ] && git add -f data/index_library.csv || true
