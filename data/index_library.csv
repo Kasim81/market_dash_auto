@@ -394,3 +394,20 @@ iShares China Large-Cap ETF (HK),Equity,Equity,Index,Equity Large Cap,Asia Pacif
 WisdomTree Japan Hedged Equity Fund,Equity,Equity,Index,Equity Broad,Japan,Japan,Blend,Broad,,,,USD,True,USD,True,ETF,yfinance TR,CONFIRMED,,DXJ,,,,,,,2006-06-16,False
 Vanguard UK Gilt UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,UK,United Kingdom,,,,Government,,GBP,False,,True,ETF,yfinance TR,CONFIRMED,,VGOV.L,,,,,,,2009-06-19,False
 iShares Eur Govt Bond 7-10yr UCITS ETF,Fixed Income,Bonds,Index,Govt Bond,Europe,Europe,,,Long (7-10yr),Government,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,IBGM.L,,,,,,,2006-04-26,False
+STOXX Europe 600 Banks,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Banks,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Telecommunications,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Telecommunications,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV2.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Technology,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Technology,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Health Care,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Health Care,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Automobiles & Parts,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Automobiles & Parts,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Basic Resources,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Basic Resources,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV6.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Chemicals,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Chemicals,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV7.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Construction & Materials,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Construction & Materials,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV8.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Travel & Leisure,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Travel & Leisure,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXV9.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Oil & Gas,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Oil & Gas,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH1.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Food & Beverage,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Food & Beverage,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH3.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Industrial Goods & Services,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Industrial Goods & Services,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH4.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Insurance,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Insurance,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH5.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Media,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Media,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH6.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Personal & Household Goods,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Personal & Household Goods,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH7.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Retail,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Retail,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH8.DE,,,,,,,2008-01-02,False
+STOXX Europe 600 Utilities,Equity,Equity,Index,Equity Sector,Europe,Developed Europe,Utilities,,,,,EUR,False,,True,ETF,yfinance TR,CONFIRMED,,EXH9.DE,,,,,,,2008-01-02,False

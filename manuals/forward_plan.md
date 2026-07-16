@@ -890,6 +890,8 @@ All three still carry the same operational caveats: token refresh, the non-deter
 
 **Priority:** Medium — broadens market coverage.
 
+**Progress 2026-07-16:** Added the full **iShares STOXX Europe 600 sector ETF suite** (17 rows) to `index_library.csv` — the European counterpart to the existing US `XL*` sector rows, previously a total gap. All EUR-denominated Xetra (`.DE`) ETFs, each verified live via the Yahoo chart API (`query1.finance.yahoo.com/v8/finance/chart/<t>` with a browser UA — yfinance's own `curl_cffi` path is sandbox-blocked, but that endpoint is reachable): name, `EUR` currency and 2008-01-02 inception confirmed per ticker. Rows mirror the CSI 500 ETF-proxy precedent (`units=Index`, `proxy_flag=True`, `proxy_type=ETF`, `data_source=yfinance TR`, ETF in the TR slot, `validation_status=CONFIRMED`, `country_market=Developed Europe`). EUR already in `COMP_FX_TICKERS`, so no `library_utils.py` change. Sectors: Banks (EXV1), Telecommunications (EXV2), Technology (EXV3), Health Care (EXV4), Automobiles & Parts (EXV5), Basic Resources (EXV6), Chemicals (EXV7), Construction & Materials (EXV8), Travel & Leisure (EXV9), Oil & Gas (EXH1), Food & Beverage (EXH3), Industrial Goods & Services (EXH4), Insurance (EXH5), Media (EXH6), Personal & Household Goods (EXH7), Retail (EXH8), Utilities (EXH9). Remaining categories below (EM regional, UK style, additional Asia) still open for a future incremental pass.
+
 Categories to consider:
 
 - Europe sector ETFs (`.DE`, EUR-denominated)
