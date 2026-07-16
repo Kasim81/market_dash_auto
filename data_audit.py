@@ -1213,14 +1213,87 @@ def load_col_units() -> dict[str, str]:
     return units
 
 
+def load_full_column_series(col_ids: set[str]) -> dict[str, list[tuple[date, float]]]:
+    """Full (date, value) history for the named columns from
+    macro_economic_hist.csv, oldest-first. Only the requested columns are
+    materialised (cheap for the handful the cross-series checks need)."""
+    path = DATA / "macro_economic_hist.csv"
+    with path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    meta_rows, data_rows = _split_meta_and_data(rows)
+    if not meta_rows or not data_rows:
+        return {}
+    labels = [r[0] for r in meta_rows]
+    label_idx = {label: i for i, label in enumerate(labels)}
+    col_at: dict[int, str] = {}
+    for ci in range(1, len(rows[0])):
+        cid = meta_rows[label_idx["Column ID"]][ci].strip()
+        if cid in col_ids:
+            col_at[ci] = cid
+    out: dict[str, list[tuple[date, float]]] = {cid: [] for cid in col_at.values()}
+    for dr in data_rows:
+        d = parse_date(dr[0].strip())
+        if d is None:
+            continue
+        for ci, cid in col_at.items():
+            if ci < len(dr) and dr[ci].strip():
+                try:
+                    out[cid].append((d, float(dr[ci].strip())))
+                except ValueError:
+                    pass
+    return out
+
+
+# Cross-series consistency: a served <C>_CPI_YOY must roughly track the 12-month
+# change implied by its own <C>_CPI_INDEX sibling. Catches the frozen-YoY-while-
+# index-moves class (the JP_INFL1 freeze). Tolerance is wide (committed pairs
+# agree to <0.8pp; different source/vintage + base effects account for the rest),
+# so only a gross divergence — the freeze signature — trips it.
+_CPI_CONSISTENCY_TOL_PP = 3.0
+
+
+def _cpi_yoy_index_consistency(latest: dict) -> list[dict]:
+    pairs = [(y, y[:-len("_CPI_YOY")] + "_CPI_INDEX")
+             for y in latest if y.endswith("_CPI_YOY")]
+    pairs = [(y, i) for y, i in pairs if i in latest]
+    if not pairs:
+        return []
+    series = load_full_column_series({i for _, i in pairs})
+    out: list[dict] = []
+    for yoy_col, idx_col in sorted(pairs):
+        idata = series.get(idx_col) or []
+        if len(idata) < 2:
+            continue
+        last_d, last_v = idata[-1]
+        # index point closest to 12 months before the latest, within [300,430]d
+        best = min(idata[:-1], key=lambda dv: abs((last_d - dv[0]).days - 365))
+        gap = (last_d - best[0]).days
+        if not (300 <= gap <= 430) or best[1] == 0:
+            continue
+        implied = (last_v / best[1] - 1) * 100.0
+        yoy_val = latest[yoy_col]["value"]
+        if abs(yoy_val - implied) > _CPI_CONSISTENCY_TOL_PP:
+            out.append({
+                "col_id":      yoy_col,
+                "index_col":   idx_col,
+                "source":      latest[yoy_col].get("source", ""),
+                "yoy_value":   yoy_val,
+                "implied_yoy": implied,
+                "diff":        yoy_val - implied,
+            })
+    return out
+
+
 def section_e_plausibility() -> dict:
     """Value-credibility checks on the committed macro_economic_hist.
 
-    Returns {"implausible": [...], "jumps": [...]}:
+    Returns {"implausible": [...], "jumps": [...], "inconsistent": [...]}:
       - implausible: latest value outside its plausibility band (static families).
       - jumps: for columns WITHOUT a static band (level/price families the bands
         deliberately skip), the latest real print is a x3+/÷3+ move — or a sign
-        flip — vs the prior print (a x100/÷100 unit-error signature)."""
+        flip — vs the prior print (a x100/÷100 unit-error signature).
+      - inconsistent: a served <C>_CPI_YOY diverges >3pp from the 12-month change
+        implied by its own <C>_CPI_INDEX sibling (the frozen-YoY signature)."""
     bands = load_plausibility_bands()
     latest = load_latest_macro_values()
     issues: list[dict] = []
@@ -1263,7 +1336,8 @@ def section_e_plausibility() -> dict:
                 "last_date": ldate,
                 "ratio":     ratio,
             })
-    return {"implausible": issues, "jumps": jumps}
+    inconsistent = _cpi_yoy_index_consistency(latest)
+    return {"implausible": issues, "jumps": jumps, "inconsistent": inconsistent}
 
 
 # =============================================================================
@@ -1475,9 +1549,10 @@ def render_report(sections: dict) -> str:
     lines.append("")
 
     # Section E — Value plausibility
-    e = sections.get("e", {"implausible": [], "jumps": []})
+    e = sections.get("e", {"implausible": [], "jumps": [], "inconsistent": []})
     jumps = e.get("jumps", [])
-    n_e = len(e["implausible"]) + len(jumps)
+    inconsistent = e.get("inconsistent", [])
+    n_e = len(e["implausible"]) + len(jumps) + len(inconsistent)
     lines.append(f"--- Section E: Value plausibility ({n_e} issues) ---")
     if n_e == 0:
         lines.append("  (none)")
@@ -1493,6 +1568,12 @@ def render_report(sections: dict) -> str:
                 f"  JUMP         {j['col_id']:32s}  src={j['source']:11s}  "
                 f"{j['prev']:g} ({j['prev_date']}) → {j['last']:g} ({j['last_date']})  "
                 f"ratio={j['ratio']:.3g}  (level/price x3+/÷3+ move — likely a unit error)"
+            )
+        for k in inconsistent:
+            lines.append(
+                f"  INCONSISTENT {k['col_id']:32s}  src={k['source']:11s}  "
+                f"yoy={k['yoy_value']:g}  vs {k['index_col']}-implied={k['implied_yoy']:.2f}  "
+                f"diff={k['diff']:.2f}pp  (frozen/mismatched YoY vs its index)"
             )
     lines.append("")
 
@@ -1529,8 +1610,8 @@ def render_comment(sections: dict) -> str:
     n_anchors_overdue = len(c.get("anchors_overdue", []))
     n_anchors_active  = len(c.get("anchors_active", []))
     n_d = len(d["issues"])
-    e = sections.get("e", {"implausible": [], "jumps": []})
-    n_e = len(e["implausible"]) + len(e.get("jumps", []))
+    e = sections.get("e", {"implausible": [], "jumps": [], "inconsistent": []})
+    n_e = len(e["implausible"]) + len(e.get("jumps", [])) + len(e.get("inconsistent", []))
     f_sec = sections.get("f", {"critical": []})
     n_f = len(f_sec["critical"])
     total = n_a + n_b + n_stale + n_anchors_overdue + n_d + n_e + n_f
@@ -1693,6 +1774,18 @@ def render_comment(sections: dict) -> str:
             lines.append(
                 f"| `{j['col_id']}` | {j['source']} | {j['prev']:g} ({j['prev_date']}) | "
                 f"**{j['last']:g}** ({j['last_date']}) | {j['ratio']:.3g} |"
+            )
+        lines.append("\n</details>\n")
+
+    inconsistent = e.get("inconsistent", [])
+    if inconsistent:
+        lines.append("<details open><summary>YoY vs index inconsistency — a CPI YoY that doesn't match its own index</summary>\n")
+        lines.append("| Column | Source | Served YoY | Index-implied YoY | Diff (pp) |")
+        lines.append("|---|---|---|---|---|")
+        for k in inconsistent:
+            lines.append(
+                f"| `{k['col_id']}` | {k['source']} | **{k['yoy_value']:g}** | "
+                f"{k['implied_yoy']:.2f} (`{k['index_col']}`) | {k['diff']:.2f} |"
             )
         lines.append("\n</details>\n")
 
