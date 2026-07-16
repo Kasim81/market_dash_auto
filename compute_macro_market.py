@@ -2311,6 +2311,33 @@ _TAYLOR_CALCULATORS = {
 }
 
 
+def _calc_GL_MONPOL1(mu, **_):
+    """Global Monetary Policy Tracker (§2.B B15): net diffusion of 3-month
+    policy-rate changes across the six major central banks — Fed (FEDFUNDS),
+    ECB (EA_DEPOSIT_RATE), BoE (GBR_BANK_RATE), BoJ (JPN_POLICY_RATE), PBoC
+    (CHN_POLICY_RATE), BoC (CAN_POLICY_RATE). Each bank contributes +1 if its
+    policy rate is higher than ~3 months (13 weeks) ago (hiking), −1 if lower
+    (cutting), 0 if unchanged; the raw output is the mean across the banks with
+    data, in [−1, +1]. > 0 = net global tightening cycle; < 0 = net global
+    easing; ≈ 0 = mixed / on hold. Degrades gracefully as banks drop out."""
+    cols = ["FEDFUNDS", "EA_DEPOSIT_RATE", "GBR_BANK_RATE",
+            "JPN_POLICY_RATE", "CHN_POLICY_RATE", "CAN_POLICY_RATE"]
+    signs = []
+    for c in cols:
+        s = _to_weekly_friday(_get_col(mu, c))
+        if s is None or s.empty:
+            continue
+        signs.append(np.sign(s - s.shift(13)))   # 13 weeks ≈ one quarter
+    if not signs:
+        return pd.Series(dtype=float)
+    return pd.concat(signs, axis=1).mean(axis=1)
+
+
+_GLOBAL_CALCULATORS = {
+    "GL_MONPOL1": _calc_GL_MONPOL1,
+}
+
+
 # Master dispatcher — union of all regional dicts
 _ALL_CALCULATORS = {
     **_US_CALCULATORS,
@@ -2320,6 +2347,7 @@ _ALL_CALCULATORS = {
     **_INFLATION_CALCULATORS,
     **_NOWCAST_CALCULATORS,
     **_TAYLOR_CALCULATORS,
+    **_GLOBAL_CALCULATORS,
 }
 
 

@@ -1130,10 +1130,97 @@ def load_latest_macro_values() -> dict[str, dict]:
     return out
 
 
+def load_recent_distinct_values(n: int = 2) -> dict[str, list[tuple[str, float]]]:
+    """Return {col_id: [(date, value), ...]} of the last ``n`` DISTINCT numeric
+    values per data column (most recent last). Consecutive-equal cells (the
+    Friday-spine forward-fill) collapse to one entry, so consumers see real
+    prints — the input the period-jump credibility check needs, not ffill."""
+    path = DATA / "macro_economic_hist.csv"
+    with path.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    meta_rows, data_rows = _split_meta_and_data(rows)
+    if not meta_rows or not data_rows:
+        return {}
+    labels = [r[0] for r in meta_rows]
+    label_idx = {label: i for i, label in enumerate(labels)}
+    n_cols = len(rows[0])
+    out: dict[str, list[tuple[str, float]]] = {}
+    for ci in range(1, n_cols):
+        seq: list[tuple[str, float]] = []
+        for dr in data_rows:
+            if ci >= len(dr):
+                continue
+            cell = dr[ci].strip()
+            if cell == "":
+                continue
+            try:
+                fval = float(cell)
+            except ValueError:
+                continue
+            if seq and seq[-1][1] == fval:
+                continue                       # collapse ffill runs
+            seq.append((dr[0].strip(), fval))
+        if seq:
+            col_id = meta_rows[label_idx["Column ID"]][ci].strip()
+            out[col_id] = seq[-n:]
+    return out
+
+
+# Period-over-period jump: gross unit-error net for the LEVEL/PRICE families that
+# get no static band. A x3+/÷3+ move between the two most recent real prints is
+# almost always a x100/÷100/x10 parser error, never a legitimate one-period move
+# for a nominal level or price. Applied ONLY to strictly-positive level/price
+# series (currency-denominated levels, commodity prices, employment levels) — NOT
+# to returns, growth rates, balances, or indices centred on 0/100, which cross
+# zero and vary and would false-positive.
+_JUMP_RATIO_HI = 3.0
+_JUMP_RATIO_LO = 1.0 / 3.0
+
+_LEVEL_UNIT_MARKERS = ("per barrel", "per ton", "per pound", "per oz", "/oz",
+                       "per mmbtu", "per share", "per hour", "cents per", "per usd",
+                       "cad per", "millions", "million ", "thousand", "level)",
+                       " level", "person")
+# units that are NOT positive levels even if they share a keyword above
+_NONLEVEL_UNIT_MARKERS = ("yoy", "% change", "change yoy", "growth rate",
+                          "per month", "balance", "net percent", "% points",
+                          "diffusion", "ratio", "0-1", "probability", "normalised",
+                          "normal value", "avg = 100", "mean=100", "= 100)",
+                          "percent", "index")
+
+
+def _is_level_price_units(units: str) -> bool:
+    """True for strictly-positive nominal-level / price series (the jump-check
+    universe); False for rates, returns, growth, balances, and indices centred
+    on 0 or 100."""
+    u = (units or "").strip().lower()
+    if not u or any(k in u for k in _NONLEVEL_UNIT_MARKERS):
+        return False
+    return any(k in u for k in _LEVEL_UNIT_MARKERS)
+
+
+def load_col_units() -> dict[str, str]:
+    """Map served ``col`` -> ``units`` string across every macro_library_*.csv."""
+    units: dict[str, str] = {}
+    for lib_name in SOURCE_BY_LIBRARY:
+        path = DATA / f"macro_library_{lib_name}.csv"
+        if not path.exists():
+            continue
+        with path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                col = (row.get("col") or "").strip()
+                if col:
+                    units[col] = (row.get("units") or "").strip()
+    return units
+
+
 def section_e_plausibility() -> dict:
-    """Flag columns whose latest committed value falls outside its plausibility
-    band. Returns {"implausible": [ {col_id, series_id, source, value, date,
-    min, max}, ... ]}."""
+    """Value-credibility checks on the committed macro_economic_hist.
+
+    Returns {"implausible": [...], "jumps": [...]}:
+      - implausible: latest value outside its plausibility band (static families).
+      - jumps: for columns WITHOUT a static band (level/price families the bands
+        deliberately skip), the latest real print is a x3+/÷3+ move — or a sign
+        flip — vs the prior print (a x100/÷100 unit-error signature)."""
     bands = load_plausibility_bands()
     latest = load_latest_macro_values()
     issues: list[dict] = []
@@ -1152,7 +1239,31 @@ def section_e_plausibility() -> dict:
                 "min":       lo,
                 "max":       hi,
             })
-    return {"implausible": issues}
+
+    jumps: list[dict] = []
+    recent = load_recent_distinct_values(2)
+    units = load_col_units()
+    for col_id, seq in sorted(recent.items()):
+        if col_id in bands or len(seq) < 2:
+            continue                           # bands already cover banded cols
+        if not _is_level_price_units(units.get(col_id, "")):
+            continue                           # only strictly-positive levels/prices
+        (pdate, prev), (ldate, last) = seq[-2], seq[-1]
+        if prev <= 0 or last <= 0:
+            continue                           # a level that isn't positive → skip
+        ratio = last / prev
+        if ratio >= _JUMP_RATIO_HI or ratio <= _JUMP_RATIO_LO:
+            rec = latest.get(col_id, {})
+            jumps.append({
+                "col_id":    col_id,
+                "source":    rec.get("source", ""),
+                "prev":      prev,
+                "prev_date": pdate,
+                "last":      last,
+                "last_date": ldate,
+                "ratio":     ratio,
+            })
+    return {"implausible": issues, "jumps": jumps}
 
 
 # =============================================================================
@@ -1364,8 +1475,9 @@ def render_report(sections: dict) -> str:
     lines.append("")
 
     # Section E — Value plausibility
-    e = sections.get("e", {"implausible": []})
-    n_e = len(e["implausible"])
+    e = sections.get("e", {"implausible": [], "jumps": []})
+    jumps = e.get("jumps", [])
+    n_e = len(e["implausible"]) + len(jumps)
     lines.append(f"--- Section E: Value plausibility ({n_e} issues) ---")
     if n_e == 0:
         lines.append("  (none)")
@@ -1375,6 +1487,12 @@ def render_report(sections: dict) -> str:
                 f"  IMPLAUSIBLE  {r['col_id']:32s}  src={r['source']:11s}  "
                 f"series={r['series_id']:24s}  value={r['value']:g}  "
                 f"band=[{r['min']:g}, {r['max']:g}]  last_obs={r['date'] or '—'}"
+            )
+        for j in jumps:
+            lines.append(
+                f"  JUMP         {j['col_id']:32s}  src={j['source']:11s}  "
+                f"{j['prev']:g} ({j['prev_date']}) → {j['last']:g} ({j['last_date']})  "
+                f"ratio={j['ratio']:.3g}  (level/price x3+/÷3+ move — likely a unit error)"
             )
     lines.append("")
 
@@ -1411,8 +1529,8 @@ def render_comment(sections: dict) -> str:
     n_anchors_overdue = len(c.get("anchors_overdue", []))
     n_anchors_active  = len(c.get("anchors_active", []))
     n_d = len(d["issues"])
-    e = sections.get("e", {"implausible": []})
-    n_e = len(e["implausible"])
+    e = sections.get("e", {"implausible": [], "jumps": []})
+    n_e = len(e["implausible"]) + len(e.get("jumps", []))
     f_sec = sections.get("f", {"critical": []})
     n_f = len(f_sec["critical"])
     total = n_a + n_b + n_stale + n_anchors_overdue + n_d + n_e + n_f
@@ -1563,6 +1681,18 @@ def render_comment(sections: dict) -> str:
             lines.append(
                 f"| `{r['col_id']}` | {r['source']} | `{r['series_id']}` | "
                 f"**{r['value']:g}** | [{r['min']:g}, {r['max']:g}] | {r['date'] or '—'} |"
+            )
+        lines.append("\n</details>\n")
+
+    jumps = e.get("jumps", [])
+    if jumps:
+        lines.append("<details open><summary>Level/price value jumps — likely a x100/÷100 unit error</summary>\n")
+        lines.append("| Column | Source | Prev | Latest | Ratio |")
+        lines.append("|---|---|---|---|---|")
+        for j in jumps:
+            lines.append(
+                f"| `{j['col_id']}` | {j['source']} | {j['prev']:g} ({j['prev_date']}) | "
+                f"**{j['last']:g}** ({j['last_date']}) | {j['ratio']:.3g} |"
             )
         lines.append("\n</details>\n")
 

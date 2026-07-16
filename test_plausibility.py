@@ -76,6 +76,17 @@ class TestFamilyBands(unittest.TestCase):
         self.assertIsNone(self._band("GBP millions (level)", "Money / Liquidity",
                                      "Money Supply", "GBR_M2"))
 
+    def test_level_price_units_gate(self):
+        # The jump check must fire only on strictly-positive level/price units...
+        self.assertTrue(da._is_level_price_units("USD per barrel"))
+        self.assertTrue(da._is_level_price_units("GBP millions (level)"))
+        self.assertTrue(da._is_level_price_units("Thousands of Persons (SCA)"))
+        # ...and never on returns, rates, growth, balances, or centred indices.
+        for u in ("Percent Change YoY", "Percent", "% per annum", "Balance (% points)",
+                  "Diffusion Index (50 = neutral)", "Index 2020=100",
+                  "USD Growth Rate YoY", "Composite indicator (normal value = 100)"):
+            self.assertFalse(da._is_level_price_units(u), u)
+
 
 class TestCommittedDataPlausibility(unittest.TestCase):
     """Every committed macro_economic column's latest value is inside its band."""
@@ -95,6 +106,19 @@ class TestCommittedDataPlausibility(unittest.TestCase):
                 "unit (x100/÷100) error, or wrong-column mapping, OR a family band "
                 "that needs tightening/widening in data_audit._family_default_band "
                 "/ the column's plausible_min|max:\n" + "\n".join(lines)
+            )
+
+    def test_no_level_price_jumps(self):
+        jumps = da.section_e_plausibility().get("jumps", [])
+        if jumps:
+            lines = [
+                f"  {j['col_id']}: {j['prev']:g} ({j['prev_date']}) -> "
+                f"{j['last']:g} ({j['last_date']}) ratio={j['ratio']:.3g}"
+                for j in sorted(jumps, key=lambda j: j["col_id"])
+            ]
+            self.fail(
+                "Section E flagged a x3+/÷3+ move in a level/price column — almost "
+                "always a x100/÷100 unit-error regression:\n" + "\n".join(lines)
             )
 
     def test_bands_cover_a_meaningful_share_of_columns(self):
