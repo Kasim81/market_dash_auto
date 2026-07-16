@@ -75,6 +75,21 @@ from datetime import datetime, timezone
 
 from library_utils import write_hist_with_archive, load_hist_with_archive
 
+# --- C7: calculators split into the calculators/ package ---
+from calculators.common import (
+    _to_weekly_friday, _rolling_zscore, _get_col, _p, _log_ratio,
+    _arith_diff, _sum_log_ratio, _yoy, _taylor_gap,
+    ZSCORE_WINDOW, ZSCORE_MIN_PERIODS, _ALIGN_FFILL_LIMIT,
+)
+from calculators.us import *        # noqa: F401,F403
+from calculators.europe import *    # noqa: F401,F403
+from calculators.uk import *        # noqa: F401,F403
+from calculators.japan import *     # noqa: F401,F403
+from calculators.asia import *      # noqa: F401,F403
+from calculators.fx import *        # noqa: F401,F403
+from calculators.monetary import *  # noqa: F401,F403
+from calculators.global_ import *   # noqa: F401,F403
+
 # ---------------------------------------------------------------------------
 # CONFIG — credentials, sheet IDs, output paths
 # ---------------------------------------------------------------------------
@@ -124,8 +139,6 @@ HIST_START = "2000-01-01"
 #   ZSCORE_WINDOW = None
 # pandas rolling(window=None, min_periods=...) becomes an expanding window.
 # ===========================================================================
-ZSCORE_WINDOW      = 156    # 3-year rolling window (weeks)
-ZSCORE_MIN_PERIODS = 52     # 1-year minimum warm-up (weeks)
 
 # ---------------------------------------------------------------------------
 # INDICATOR METADATA — loaded from data/macro_indicator_library.csv
@@ -293,121 +306,11 @@ def fetch_fxi_prices() -> pd.Series:
 # UTILITY FUNCTIONS
 # ===========================================================================
 
-def _to_weekly_friday(series: pd.Series) -> pd.Series:
-    """
-    Resample an arbitrary-frequency series to weekly Friday close.
-    Uses last observation in the week then forward-fills gaps (for monthly data).
-
-    NaNs are dropped first so the returned series *ends at the last real
-    value*: the unified hist leaves NaN beyond each column's bounded-fill
-    window (2026-07-08 bounded-fill change), and resampling over those
-    trailing NaNs then ffilling would re-fabricate the very currency the
-    writer bound removed. Interior gaps (weeks between monthly prints)
-    still fill as before.
-    """
-    if series.empty:
-        return series
-    series = series.dropna()
-    if series.empty:
-        return series
-    return series.resample("W-FRI").last().ffill()
-
-
-def _rolling_zscore(series: pd.Series) -> pd.Series:
-    """
-    Apply a rolling z-score normalisation to a weekly price/level series.
-
-    Window and min_periods are controlled by the module-level constants:
-      ZSCORE_WINDOW      — rolling window in weeks (default 260 = 5 years)
-      ZSCORE_MIN_PERIODS — minimum observations before emitting a value (default 52)
-
-    To change to a full-history expanding z-score set ZSCORE_WINDOW = None.
-    See the Z-SCORE CONFIGURATION section at the top of this file.
-    """
-    roll = series.rolling(window=ZSCORE_WINDOW, min_periods=ZSCORE_MIN_PERIODS)
-    mu   = roll.mean()
-    sig  = roll.std().replace(0, np.nan)
-    return (series - mu) / sig
-
-
-def _get_col(df: pd.DataFrame, col: str) -> pd.Series:
-    """
-    Safely extract a column from a DataFrame.
-    Returns an empty Series with the df index if the column is absent,
-    so callers never receive a KeyError — they just get NaN-filled results.
-    """
-    if col in df.columns:
-        return df[col].copy()
-    return pd.Series(dtype=float, index=df.index, name=col)
-
-
-def _p(df_comp: pd.DataFrame, ticker: str, usd: bool = False) -> pd.Series:
-    """
-    Extract a price series from the comp_hist DataFrame.
-    Variant is 'USD' when usd=True, otherwise 'Local'.
-    Falls back to the other variant if the requested one is empty/absent.
-    """
-    variant  = "USD" if usd else "Local"
-    fallback = "Local" if usd else "USD"
-    col      = f"{ticker}_{variant}"
-    fb_col   = f"{ticker}_{fallback}"
-    s = _get_col(df_comp, col).dropna()
-    if s.empty:
-        s = _get_col(df_comp, fb_col).dropna()
-    return s
-
 
 # Cross-series alignment fill cap (weekly rows, ~one quarter). Aligning
 # mixed-cadence legs on a union index needs some forward-fill, but an
 # unbounded one lets a dead leg extend to a live leg's end — the same
 # fabrication the hist writer's bounded fill removes (2026-07-08).
-_ALIGN_FFILL_LIMIT = 13
-
-
-def _log_ratio(num: pd.Series, den: pd.Series) -> pd.Series:
-    """
-    Compute log(num / den) on the aligned intersection of both series.
-    Returns an empty Series if either input is empty or denominator is zero.
-    """
-    aligned = pd.concat([num, den], axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
-    if aligned.empty or aligned.shape[1] < 2:
-        return pd.Series(dtype=float)
-    n = aligned.iloc[:, 0]
-    d = aligned.iloc[:, 1].replace(0, np.nan)
-    return np.log(n / d).dropna()
-
-
-def _arith_diff(a: pd.Series, b: pd.Series) -> pd.Series:
-    """Arithmetic difference a - b on aligned intersection."""
-    aligned = pd.concat([a, b], axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
-    if aligned.empty or aligned.shape[1] < 2:
-        return pd.Series(dtype=float)
-    return (aligned.iloc[:, 0] - aligned.iloc[:, 1]).dropna()
-
-
-def _sum_log_ratio(nums: list, dens: list) -> pd.Series:
-    """
-    log(sum(num_prices) / sum(den_prices)) on aligned intersection.
-    nums / dens are lists of pd.Series already extracted from comp_hist.
-    """
-    all_s = nums + dens
-    aligned = pd.concat(all_s, axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna()
-    if aligned.empty or aligned.shape[1] < len(nums) + len(dens):
-        return pd.Series(dtype=float)
-    num_sum = aligned.iloc[:, :len(nums)].sum(axis=1)
-    den_sum = aligned.iloc[:, len(nums):].sum(axis=1)
-    den_sum = den_sum.replace(0, np.nan)
-    return np.log(num_sum / den_sum).dropna()
-
-
-def _yoy(series: pd.Series, freq: int = 52) -> pd.Series:
-    """
-    Year-over-year percentage change for a weekly series.
-    freq=52 for weekly; uses shift(52) → one year back.
-    Returns 100 * (x / x_1y_ago - 1).
-    """
-    prior = series.shift(freq)
-    return (100.0 * (series / prior.replace(0, np.nan) - 1)).dropna()
 
 
 def _annualised_change(series: pd.Series, periods: int = 6) -> pd.Series:
@@ -891,336 +794,36 @@ def load_macro_economic_hist() -> pd.DataFrame:
 # GROWTH / RISK APPETITE  (US_G1–G4)
 # ---------------------------------------------------------------------------
 
-def _calc_US_G1(cp, **_):
-    """Consumer Discretionary vs Staples: log(XLY / XLP)."""
-    return _log_ratio(_p(cp, "XLY"), _p(cp, "XLP"))
-
-
-def _calc_US_G2(cp, **_):
-    """Cyclicals vs Defensives: log((XLI+XLF) / (XLU+XLP))."""
-    return _sum_log_ratio(
-        [_p(cp, "XLI"), _p(cp, "XLF")],
-        [_p(cp, "XLU"), _p(cp, "XLP")],
-    )
-
-
-def _calc_US_EQ_F3(cp, **_):
-    """Small Cap vs Large Cap: log(IWM / IWB)."""
-    return _log_ratio(_p(cp, "IWM"), _p(cp, "IWB"))
-
-
-def _calc_US_G3(cp, **_):
-    """Banks vs Utilities: log(^SP500-4010 / XLU)."""
-    return _log_ratio(_p(cp, "^SP500-4010"), _p(cp, "XLU"))
-
-
-def _calc_US_EQ_F4(cp, **_):
-    """Small Cap vs Large Cap (S&P proxy): log(IWM / SPY)."""
-    return _log_ratio(_p(cp, "IWM"), _p(cp, "SPY"))
-
-
-def _calc_US_EQ_F1(cp, **_):
-    """Value vs Growth: log(IWD / IWF)."""
-    return _log_ratio(_p(cp, "IWD"), _p(cp, "IWF"))
-
-
-def _calc_US_EQ_F2(cp, **_):
-    """Value vs Growth (S&P 500): log(IVE / IVW)."""
-    return _log_ratio(_p(cp, "IVE"), _p(cp, "IVW"))
-
 
 # ---------------------------------------------------------------------------
 # CREDIT / FINANCIAL CONDITIONS  (US_I1–I10)
 # ---------------------------------------------------------------------------
-
-def _calc_US_R1(mu, **_):
-    """10Y–3M yield-curve spread (bps), direct from FRED T10Y3M."""
-    return _to_weekly_friday(_get_col(mu, "T10Y3M"))
-
-
-def _calc_US_Cr2(mu, **_):
-    """US HY OAS spread (bps), direct from FRED BAMLH0A0HYM2."""
-    return _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2"))
-
-
-def _calc_GL_CA_I1(cp, **_):
-    """Commodities vs Bonds: log(DBC / GOVT) — inflation vs deflation signal."""
-    return _log_ratio(_p(cp, "DBC"), _p(cp, "GOVT"))
-
-
-def _calc_US_Cr1(mu, **_):
-    """US IG OAS spread (bps), direct from FRED BAMLC0A0CM."""
-    return _to_weekly_friday(_get_col(mu, "BAMLC0A0CM"))
-
-
-def _calc_US_Cr3(mu, **_):
-    """HY–IG spread differential: BAMLH0A0HYM2 − BAMLC0A0CM."""
-    return _arith_diff(
-        _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2")),
-        _to_weekly_friday(_get_col(mu, "BAMLC0A0CM")),
-    )
-
-
-def _calc_US_R2(mu, **_):
-    """10Y–2Y yield curve: direct from FRED T10Y2Y."""
-    return _to_weekly_friday(_get_col(mu, "T10Y2Y"))
-
-
-def _calc_US_R3(cp, mu, **_):
-    """10Y-2Y yield curve from market prices: ^TNX (yfinance) minus DGS2 (FRED).
-    Both are in % pa; result is in percentage points."""
-    tnx = _to_weekly_friday(_p(cp, "^TNX"))
-    dgs2 = _to_weekly_friday(_get_col(mu, "DGS2"))
-    return _arith_diff(tnx, dgs2)
-
-
-def _calc_US_R4(mu, **_):
-    """10Y breakeven inflation: direct from FRED T10YIE."""
-    return _to_weekly_friday(_get_col(mu, "T10YIE"))
-
-
-def _calc_US_CA_G1(cp, **_):
-    """Risk-On vs Risk-Off: log(SPY / GOVT)."""
-    return _log_ratio(_p(cp, "SPY"), _p(cp, "GOVT"))
-
-
-def _calc_US_Cr4(cp, **_):
-    """HY vs Treasuries (credit risk): log(IHYU.L / GOVT)."""
-    return _log_ratio(_p(cp, "IHYU.L"), _p(cp, "GOVT"))
 
 
 # ---------------------------------------------------------------------------
 # RISK / VOLATILITY REGIME  (US_R1–R2)
 # ---------------------------------------------------------------------------
 
-def _calc_US_V1(cp, **_):
-    """VIX term structure: ^VIX3M − ^VIX (bps; positive = contango = calm)."""
-    return _arith_diff(_p(cp, "^VIX3M"), _p(cp, "^VIX"))
-
-
-def _calc_US_V2(cp, **_):
-    """Cross-asset vol: log(^MOVE / ^VIX) — bond vol relative to equity vol."""
-    return _log_ratio(_p(cp, "^MOVE"), _p(cp, "^VIX"))
-
 
 # ---------------------------------------------------------------------------
 # REAL RATES  (US_RR1)
 # ---------------------------------------------------------------------------
-
-def _calc_US_R5(mu, **_):
-    """10Y TIPS real yield: direct from FRED DFII10."""
-    return _to_weekly_friday(_get_col(mu, "DFII10"))
 
 
 # ---------------------------------------------------------------------------
 # FX / COMMODITIES  (US_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_FX_CMD2(cp, **_):
-    """EM vs DXY: log(EEM_USD / DX-Y.NYB) — EM risk appetite vs dollar."""
-    return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "DX-Y.NYB"))
-
-
-def _calc_FX_CMD1(cp, **_):
-    """Copper vs Gold: log(HG=F / GC=F) — industrial demand vs safe-haven."""
-    return _log_ratio(_p(cp, "HG=F"), _p(cp, "GC=F"))
-
 
 # ---------------------------------------------------------------------------
 # MOMENTUM / TREND  (M1–M5)
 # ---------------------------------------------------------------------------
-
-def _calc_M1(cp, **_):
-    """
-    S&P 500 vs 40-week SMA momentum filter.
-    Raw = log(SPY / SMA_40w); z-score drives regime.
-    """
-    spy = _to_weekly_friday(_p(cp, "SPY"))
-    sma40 = spy.rolling(40, min_periods=20).mean()
-    return _log_ratio(spy, sma40)
-
-
-def _calc_M2(cp, **_):
-    """
-    Multi-asset trend breadth: fraction of {SPY,URTH,GOVT,REET,DBC} above 40wk SMA.
-    Raw = fraction (0.0–1.0).  ≥0.6 → risk-on, <0.4 → defensive.
-    """
-    assets = ["SPY", "URTH", "GOVT", "REET", "DBC"]
-    scores = []
-    for ticker in assets:
-        px = _to_weekly_friday(_p(cp, ticker))
-        sma = px.rolling(40, min_periods=20).mean()
-        above = (px > sma).astype(float)
-        scores.append(above)
-    combined = pd.concat(scores, axis=1).mean(axis=1)
-    return combined
-
-
-def _calc_M3(cp, **_):
-    """
-    Antonacci Dual Momentum: max(SPY_12m, URTH_12m) - SHY_12m.
-    Positive → equity regime; negative → bond regime.
-    """
-    spy  = _to_weekly_friday(_p(cp, "SPY"))
-    urth = _to_weekly_friday(_p(cp, "URTH"))
-    shy  = _to_weekly_friday(_p(cp, "SHY"))
-    spy_12m  = spy  / spy.shift(52)  - 1
-    urth_12m = urth / urth.shift(52) - 1
-    shy_12m  = shy  / shy.shift(52)  - 1
-    rel_mom = pd.concat([spy_12m, urth_12m], axis=1).max(axis=1)
-    return rel_mom.subtract(shy_12m).dropna()
-
-
-def _calc_M4(cp, mu, **_):
-    """
-    HY credit trend + spread override.
-    Raw = log(BAMLHYH0A0HYM2TRIV / 40wk SMA), overridden to -1 when
-    HY OAS (BAMLH0A0HYM2) > 600 bps (stress flag).
-    """
-    hy_tr = _to_weekly_friday(_p(cp, "BAMLHYH0A0HYM2TRIV"))
-    sma40 = hy_tr.rolling(40, min_periods=20).mean()
-    raw = _log_ratio(hy_tr, sma40)
-    # Spread override: if OAS > 600 bps treat as risk-off regardless of trend
-    oas = _to_weekly_friday(_get_col(mu, "BAMLH0A0HYM2"))
-    oas, raw = oas.align(raw, join="inner")
-    raw = raw.where(oas <= 600, other=-1.0)
-    return raw
-
-
-def _calc_M5(cp, **_):
-    """
-    VIX vol-regime filter: log(VIX_13w_SMA / VIX_52w_SMA).
-    Negative (3-month MA < 12-month MA) → vol trending down → equity-friendly.
-    Positive (3-month MA > 12-month MA) → vol expanding → defensive.
-    52-week anchor ensures the signal reflects sustained regime shifts
-    rather than short-term spikes.
-    """
-    vix = _to_weekly_friday(_p(cp, "^VIX"))
-    ma13 = vix.rolling(13, min_periods=7).mean()
-    ma52 = vix.rolling(52, min_periods=26).mean()
-    return _log_ratio(ma13, ma52)
 
 
 # ---------------------------------------------------------------------------
 # US MACRO FUNDAMENTALS  (US_JOBS1, US_JOBS2, US_JOBS3, US_G6, US_GROWTH1,
 #                          US_HOUS1, US_M2, US_ISM1)
 # ---------------------------------------------------------------------------
-
-
-def _calc_US_JOBS1(mu, **_):
-    """Initial Claims YoY: IC4WSA year-on-year % change (inverted — rising = bad)."""
-    ic = _to_weekly_friday(_get_col(mu, "IC4WSA"))
-    return _yoy(ic)
-
-
-def _calc_US_JOBS3(mu, **_):
-    """
-    Labour market composite z-score.
-    Components: USA_UNEMPLOYMENT (inverted), PAYEMS YoY, IC4WSA YoY (inverted).
-    Equal-weight average of the three rolling z-scores.
-    """
-    unrate  = _to_weekly_friday(_get_col(mu, "USA_UNEMPLOYMENT"))
-    payems  = _to_weekly_friday(_get_col(mu, "PAYEMS"))
-    claims  = _to_weekly_friday(_get_col(mu, "IC4WSA"))
-
-    z_unrate  = _rolling_zscore(unrate)   * -1   # invert: low = good
-    z_payems  = _rolling_zscore(_yoy(payems))
-    z_claims  = _rolling_zscore(_yoy(claims)) * -1  # invert: rising = bad
-
-    composite = pd.concat([z_unrate, z_payems, z_claims], axis=1).mean(axis=1)
-    return composite
-
-
-def _calc_US_G6(mu, **_):
-    """
-    US Growth composite: equal-weight z-score of INDPRO YoY and RSXFS YoY.
-    """
-    indpro = _to_weekly_friday(_get_col(mu, "INDPRO"))
-    rsxfs  = _to_weekly_friday(_get_col(mu, "RSXFS"))
-
-    z_indpro = _rolling_zscore(_yoy(indpro))
-    z_rsxfs  = _rolling_zscore(_yoy(rsxfs))
-
-    composite = pd.concat([z_indpro, z_rsxfs], axis=1).mean(axis=1)
-    return composite
-
-
-def _calc_US_HOUS1(mu, **_):
-    """Housing permits YoY: PERMIT year-on-year % change."""
-    permit = _to_weekly_friday(_get_col(mu, "PERMIT"))
-    return _yoy(permit)
-
-
-def _calc_US_M2(mu, **_):
-    """M2 liquidity YoY: M2SL year-on-year % change."""
-    m2 = _to_weekly_friday(_get_col(mu, "M2SL"))
-    return _yoy(m2)
-
-
-def _calc_US_G5(cp, **_):
-    """
-    Technology leadership: log(QQQ / SPY).
-    Positive → growth/tech leading broad market; negative → defensive rotation.
-    """
-    return _log_ratio(_p(cp, "QQQ"), _p(cp, "SPY"))
-
-
-def _calc_US_G4(cp, **_):
-    """
-    Market breadth: log(RSP / SPY) — S&P 500 equal-weight vs cap-weight.
-    Positive → broad participation; negative → rally concentrated in mega-caps.
-    """
-    return _log_ratio(_p(cp, "RSP"), _p(cp, "SPY"))
-
-
-def _calc_US_ISM1(dbn, **_):
-    """
-    ISM Manufacturing New Orders Index — level form, forward-filled to
-    weekly.  Level > 52 = expansion, < 48 = contraction.  Naturally
-    leads activity by ~6 weeks.
-
-    Source: DB.nomics ISM/neword (column ISM_MFG_NEWORD on the unified
-    macro_economic_hist).  Replaces the retired FRED series NAPMOI
-    that returned HTTP 400 from late April 2026 onward.
-    """
-    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
-
-
-def _calc_US_ISM2(dbn, **_):
-    """
-    ISM Manufacturing New Orders minus Inventories spread — level form,
-    forward-filled to weekly.  When new orders outpace inventory build the
-    spread is positive, a powerful leading signal of future PMI direction
-    that typically leads the headline ISM by 2-3 months; a negative spread
-    flags an inventory overhang and slowing orders.
-
-    Sources: DB.nomics ISM/neword (ISM_MFG_NEWORD) and ISM/inventories
-    (ISM_MFG_INVENTORIES) on the unified macro_economic_hist.
-    """
-    neword = _to_weekly_friday(_get_col(dbn, "ISM_MFG_NEWORD"))
-    inv    = _to_weekly_friday(_get_col(dbn, "ISM_MFG_INVENTORIES"))
-    return _arith_diff(neword, inv)
-
-
-def _calc_US_R6(mu, **_):
-    """
-    Mortgage affordability / credit stress: MORTGAGE30US − DGS10.
-    Wider spread = lender risk aversion / tight housing credit; leads housing activity.
-    """
-    mort = _to_weekly_friday(_get_col(mu, "MORTGAGE30US"))
-    us10 = _to_weekly_friday(_get_col(mu, "DGS10"))
-    return _arith_diff(mort, us10)
-
-
-def _calc_US_JOBS2(mu, **_):
-    """
-    JOLTS labour market tightness: JTSJOL / UNEMPLOY (openings per unemployed person).
-    Ratio > 1 = more openings than unemployed → wage pressure; leads CPI by ~2 months.
-    """
-    openings   = _to_weekly_friday(_get_col(mu, "JTSJOL"))
-    unemployed = _to_weekly_friday(_get_col(mu, "UNEMPLOY"))
-    ratio = openings / unemployed.replace(0, np.nan)
-    return ratio
 
 
 # ---------------------------------------------------------------------------
@@ -1277,161 +880,20 @@ _US_CALCULATORS = {
 # EU GROWTH / RISK APPETITE  (EU_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_EU_G3(cp, **_):
-    """
-    STOXX 600 Cyclicals vs Defensives (Europe):
-    log((Industrials + Banks + Technology) / (Utilities + Consumer Staples))
-    Uses iShares STOXX 600 sector TR ETFs — all EUR-denominated on Xetra:
-      EXH4.DE = Industrials  EXV1.DE = Banks  EXV3.DE = Technology
-      EXH9.DE = Utilities    EXH3.DE = Consumer Staples
-    """
-    return _sum_log_ratio(
-        [_p(cp, "EXH4.DE"), _p(cp, "EXV1.DE"), _p(cp, "EXV3.DE")],
-        [_p(cp, "EXH9.DE"), _p(cp, "EXH3.DE")],
-    )
-
-
-def _calc_UK_G1(cp, **_):
-    """
-    UK domestic vs global: log(^FTMC / ^FTSE).
-    FTSE 250 is predominantly domestic UK-revenue companies; FTSE 100 is
-    ~70% overseas earnings. Rising ratio → domestic UK confidence recovering.
-    """
-    return _log_ratio(_p(cp, "^FTMC"), _p(cp, "^FTSE"))
-
-
-def _calc_EU_G2(cp, **_):
-    """
-    Eurozone vs US equity leadership: log(FEZ / SPY).
-    FEZ = iShares Euro Stoxx 50 ETF (USD-denominated); SPY = S&P 500 ETF.
-    Both in USD — ratio is purely relative fundamental/sentiment, no FX noise.
-    Rising → Eurozone equity outperformance; signals improving EU growth outlook.
-    """
-    return _log_ratio(_p(cp, "FEZ"), _p(cp, "SPY"))
-
 
 # ---------------------------------------------------------------------------
 # EU FINANCIAL CONDITIONS  (EU_I1–I3)
 # ---------------------------------------------------------------------------
-
-def _calc_EU_Cr1(supp, mu, **_):
-    """
-    Euro IG spread: Euro IG corporate yield minus ECB AAA govt yield.
-
-    EU_Cr1 explicitly tracks the Euro investment-grade spread, so it returns
-    only the genuine IG spread or empty — no HY substitute (Euro HY is a
-    separate regime, captured by EU_Cr2).
-
-    Source: fetch_ecb_euro_ig_spread() stored in supp['euro_ig_spread'].
-    The Euro IG corporate yield component is currently unsourced — see
-    forward_plan.md §1 Known Data Gaps. Until a free historical source is
-    wired in, EU_Cr1 returns an empty Series (regime 'n/a').
-    """
-    s = supp.get("euro_ig_spread")
-    if s is None or s.empty:
-        return pd.Series(dtype=float)
-    return _to_weekly_friday(s)
-
-
-def _calc_EU_Cr2(mu, **_):
-    """Euro HY OAS, direct from FRED BAMLHE00EHYIOAS (Percent)."""
-    return _to_weekly_friday(_get_col(mu, "BAMLHE00EHYIOAS"))
-
-
-def _calc_UK_R2(cp, **_):
-    """
-    UK inflation expectations proxy: log(INXG.L / IGLT.L).
-    INXG.L = iShares UK IL Gilt ETF (inflation-linked); IGLT.L = nominal gilt ETF.
-    Rising ratio → market pricing higher long-run UK inflation; falling → disinflation.
-    """
-    return _log_ratio(_p(cp, "INXG.L"), _p(cp, "IGLT.L"))
-
-
-def _calc_UK_R1(mu, **_):
-    """
-    UK–Germany gilt-bund yield spread: GBR_GILT_10Y − DEU_BUND_10Y
-    (FRED IRLTLT01GBM156N / IRLTLT01DEM156N, monthly OECD series,
-    forward-filled to weekly via the unified macro_economic_hist).
-    Rising spread → UK-specific risk premium rising (fiscal/political/inflation premium).
-    """
-    uk = _to_weekly_friday(_get_col(mu, "GBR_GILT_10Y"))
-    de = _to_weekly_friday(_get_col(mu, "DEU_BUND_10Y"))
-    return _arith_diff(uk, de)
 
 
 # ---------------------------------------------------------------------------
 # EU CREDIT / RATES  (EU_R1)
 # ---------------------------------------------------------------------------
 
-def _calc_UK_Cr1(cp, **_):
-    """
-    UK credit conditions: log(SLXX.L / IGLT.L).
-    SLXX.L = iShares GBP Corporate Bond ETF; IGLT.L = UK Gilt ETF.
-    Rising ratio → credit spreads tightening, risk appetite improving in UK.
-    """
-    return _log_ratio(_p(cp, "SLXX.L"), _p(cp, "IGLT.L"))
-
 
 # ---------------------------------------------------------------------------
 # EU FX / MACRO COMPOSITE  (EU_FX1)
 # ---------------------------------------------------------------------------
-
-def _calc_EU_G4(cp, **_):
-    """
-    EUR macro composite: equal-weight z-score of EUR strength + EU cyclical tilt.
-    Component 1: log(EURUSD=X)           — EUR/USD spot level
-    Component 2: log(EXH4.DE / EXH9.DE) — EU Industrials vs Utilities (risk tilt)
-    Both components are individually z-scored then averaged.
-    Rising composite → EUR strengthening AND European cyclicals leading defensives.
-    """
-    log_eurusd  = np.log(_to_weekly_friday(_p(cp, "EURUSD=X")).replace(0, np.nan))
-    log_cyc_def = _log_ratio(_p(cp, "EXH4.DE"), _p(cp, "EXH9.DE"))
-    z1 = _rolling_zscore(log_eurusd)
-    z2 = _rolling_zscore(log_cyc_def)
-    composite = pd.concat([z1, z2], axis=1).mean(axis=1)
-    # Return the composite z-score series; make_result will z-score it again,
-    # so we return the raw composite directly (before final standardisation)
-    return composite
-
-
-def _calc_EU_R1(mu, **_):
-    """
-    BTP-Bund peripheral sovereign stress: ITA_BTP_10Y − DEU_BUND_10Y
-    (FRED IRLTLT01ITM156N / IRLTLT01DEM156N via the unified
-    macro_economic_hist).  Spread > 2.5% = peripheral stress; z > +1.5
-    = historically elevated risk premium.  Key gauge of ECB credibility
-    and Eurozone fiscal tail risk.
-    """
-    ita = _to_weekly_friday(_get_col(mu, "ITA_BTP_10Y"))
-    deu = _to_weekly_friday(_get_col(mu, "DEU_BUND_10Y"))
-    return _arith_diff(ita, deu)
-
-
-def _calc_EU_G1(cp, **_):
-    """
-    Eurozone vs global equities: log(EZU / URTH).
-    Positive → Eurozone outperforming MSCI World; driven by EUR, ECB posture, China trade.
-    """
-    return _log_ratio(_p(cp, "EZU"), _p(cp, "URTH"))
-
-
-def _calc_JP_G1(cp, **_):
-    """
-    Japan vs global equities: log(EWJ / URTH).
-    Japan outperforms when: JPY weakens (exporter earnings), BOJ stays dovish,
-    or China reflates (Japan supply-chain benefit).
-    """
-    return _log_ratio(_p(cp, "EWJ"), _p(cp, "URTH"))
-
-
-def _calc_FX_2(cp, **_):
-    """
-    JPY carry trade signal: USDJPY=X 26-week log momentum.
-    Positive z → yen weakening → carry trade ON.
-    Negative z (< -1) → rapid yen strength → carry unwind risk (systemic risk-off signal).
-    """
-    usdjpy = _to_weekly_friday(_p(cp, "USDJPY=X"))
-    return np.log(usdjpy / usdjpy.shift(26).replace(0, np.nan))
 
 
 # ---------------------------------------------------------------------------
@@ -1467,193 +929,25 @@ _EU_CALCULATORS = {
 # ASIA GROWTH / RISK APPETITE  (AS_G1–G3)
 # ---------------------------------------------------------------------------
 
-def _calc_AS_CN_G3(cp, supp, **_):
-    """
-    China small vs large cap: log(ASHR / FXI).
-    ASHR = CSI 300 ETF (large-cap proxy); FXI = iShares China Large-Cap ETF.
-    Note: CSI 500 (000905.SS) is unavailable on yfinance; ASHR/FXI is the
-    agreed small/large proxy.  FXI prices are in supp['fxi'].
-    """
-    ashr = _to_weekly_friday(_p(cp, "ASHR"))
-    fxi  = supp.get("fxi", pd.Series(dtype=float))
-    fxi  = _to_weekly_friday(fxi)
-    return _log_ratio(ashr, fxi)
-
-
-def _calc_AS_CN_G2(cp, **_):
-    """
-    India mid vs large cap: log(^CRSMID / ^NSEI).
-    ^CRSMID = Nifty Midcap 100; ^NSEI = Nifty 50.
-    """
-    return _log_ratio(_p(cp, "^CRSMID"), _p(cp, "^NSEI"))
-
-
-def _calc_AS_IN_G1(cp, **_):
-    """
-    Japan: TOPIX (^N225 proxy) — z-score of log returns used as risk gauge.
-    Raw = log(000001.SS / URTH) i.e. Shanghai Comp vs World equity.
-    Captures Chinese equity risk appetite relative to global.
-    """
-    return _log_ratio(_p(cp, "000001.SS"), _p(cp, "URTH", usd=True))
-
 
 # ---------------------------------------------------------------------------
 # ASIA FINANCIAL CONDITIONS  (AS_I1–I2)
 # ---------------------------------------------------------------------------
-
-def _calc_AS_CN_R1(mu, **_):
-    """
-    China 10Y yield spread vs US 10Y: CHN_GOVT_10Y − DGS10.
-    Positive spread → Chinese bonds offer premium over US Treasuries;
-    rising spread → capital-flow support for CNY and EM risk appetite.
-
-    Currently returns NaN.  FRED does not host an OECD-compiled CN
-    long-term rate (only the short-term IR3TTS01CNM156N), and the OECD
-    MEI long-term-rate dataset doesn't carry a China series.  To
-    restore this indicator, add a CHN_GOVT_10Y row to one of the
-    macro_library_*.csv files (likely DB.nomics — PBoC / ChinaBond /
-    Investing.com mirror) so it flows through the unified
-    macro_economic_hist; this calculator then picks it up automatically.
-    """
-    chn = _to_weekly_friday(_get_col(mu, "CHN_GOVT_10Y"))
-    us  = _to_weekly_friday(_get_col(mu, "DGS10"))
-    return _arith_diff(chn, us)
-
-
-def _calc_AS_IN_R1(mu, **_):
-    """
-    India 10Y yield spread vs US 10Y: IND_GOVT_10Y − DGS10
-    (FRED INDIRLTLT01STM / DGS10 via the unified macro_economic_hist).
-    Positive spread → Indian bonds offer carry over US Treasuries;
-    rising spread widens EM carry opportunity (but also flags INR risk).
-
-    Note: FRED uses an inverted naming convention for India
-    (INDIRLTLT01STM, not IRLTLT01INM156N), so the macro_library_fred.csv
-    row uses the canonical INDIRLTLT01STM series_id with col=IND_GOVT_10Y.
-    """
-    ind = _to_weekly_friday(_get_col(mu, "IND_GOVT_10Y"))
-    us  = _to_weekly_friday(_get_col(mu, "DGS10"))
-    return _arith_diff(ind, us)
 
 
 # ---------------------------------------------------------------------------
 # ASIA FX  (AS_FX1–FX2)
 # ---------------------------------------------------------------------------
 
-def _calc_FX_CN1(cp, **_):
-    """
-    CNY directional momentum: log(CNY=X / 26wk SMA).
-    CNY=X = USD per CNY (higher = CNY stronger).
-    Positive momentum → CNY strengthening (China macro-friendly);
-    negative momentum → CNY weakening (capital outflow pressure).
-    """
-    cny = _to_weekly_friday(_p(cp, "CNY=X"))
-    sma26 = cny.rolling(26, min_periods=13).mean()
-    return np.log(cny / sma26.replace(0, np.nan))
-
-
-def _calc_FX_1(cp, **_):
-    """
-    INR directional momentum: log(INR=X / 26wk SMA).
-    INR=X = USD per INR (higher = INR stronger).
-    Positive momentum → INR strengthening (India macro-friendly);
-    negative momentum → INR weakening (inflation/current-account pressure).
-    """
-    inr = _to_weekly_friday(_p(cp, "INR=X"))
-    sma26 = inr.rolling(26, min_periods=13).mean()
-    return np.log(inr / sma26.replace(0, np.nan))
-
-
-def _calc_FX_EM1(cp, **_):
-    """
-    EMFX basket momentum: equal-weight CNY, INR, KRW, TWD vs USD.
-    Each FX=X quote is indirect (FCY per USD). Invert via -log so a
-    RISING basket corresponds to the EM currencies collectively
-    STRENGTHENING vs USD. Raw = basket − 26wk SMA (already in log space).
-    Positive → EMFX strengthening (EM-risk-on, weak-USD, capital inflows).
-    """
-    tickers = ["CNY=X", "INR=X", "KRW=X", "TWD=X"]
-    legs = []
-    for t in tickers:
-        s = _to_weekly_friday(_p(cp, t)).dropna()
-        if s.empty:
-            continue
-        legs.append(-np.log(s.replace(0, np.nan)))
-    if not legs:
-        return pd.Series(dtype=float)
-    basket = pd.concat(legs, axis=1).ffill(limit=_ALIGN_FFILL_LIMIT).dropna().mean(axis=1)
-    sma26 = basket.rolling(26, min_periods=13).mean()
-    return (basket - sma26).dropna()
-
 
 # ---------------------------------------------------------------------------
 # ASIA COMMODITIES  (AS_C1–C2)
 # ---------------------------------------------------------------------------
 
-def _calc_FX_CMD5(mu, **_):
-    """
-    Iron ore price (USD/tonne): FRED PIORECRUSDM (monthly, forward-filled
-    to weekly via the unified macro_economic_hist).  Raw = price level;
-    z-score reflects steel demand cycle.
-    """
-    return _to_weekly_friday(_get_col(mu, "PIORECRUSDM"))
-
-
-def _calc_FX_CMD4(cp, **_):
-    """
-    Copper/Gold ratio: log(HG=F / GC=F) — same as US_FX2, EM-demand lens.
-    Captures Asian industrial cycle vs safe-haven demand.
-    """
-    return _log_ratio(_p(cp, "HG=F"), _p(cp, "GC=F"))
-
 
 # ---------------------------------------------------------------------------
 # REGIONAL CLI COMPOSITES  (REG_CLI1–CLI5)
 # ---------------------------------------------------------------------------
-
-def _calc_GL_CLI1(mi, **_):
-    """
-    US vs Eurozone growth differential: USA_CLI − avg(DEU_CLI, FRA_CLI).
-    Positive → US momentum outpacing Europe; negative → Europe catching up or leading.
-    EA19 composite not available in OECD pull; DEU+FRA equal-weight used as proxy.
-    """
-    usa = _to_weekly_friday(_get_col(mi, "USA_CLI"))
-    deu = _to_weekly_friday(_get_col(mi, "DEU_CLI"))
-    fra = _to_weekly_friday(_get_col(mi, "FRA_CLI"))
-    eu_avg = pd.concat([deu, fra], axis=1).mean(axis=1)
-    eu_avg = _to_weekly_friday(eu_avg)
-    return _arith_diff(usa, eu_avg)
-
-
-def _calc_GL_CLI2(mi, **_):
-    """
-    US vs China growth differential: USA_CLI − CHN_CLI.
-    Positive → US cycle outpacing China; negative → China leading.
-    """
-    usa = _to_weekly_friday(_get_col(mi, "USA_CLI"))
-    chn = _to_weekly_friday(_get_col(mi, "CHN_CLI"))
-    return _arith_diff(usa, chn)
-
-
-def _calc_EU_CLI1(mi, **_):
-    """
-    Europe block CLI: equal-weight average of DEU_CLI, FRA_CLI, GBR_CLI.
-    Above 100 = Europe running above long-run trend; below 100 = below trend.
-    ITA_CLI excluded as not consistently available in pull.
-    """
-    cols = ["DEU_CLI", "FRA_CLI", "GBR_CLI"]
-    series_list = [_to_weekly_friday(_get_col(mi, c)) for c in cols]
-    return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
-
-
-def _calc_AS_CLI1(mi, **_):
-    """
-    Asia block CLI: equal-weight average of CHN_CLI, JPN_CLI, AUS_CLI.
-    Above 100 = Asia running above long-run trend; below 100 = below trend.
-    """
-    cols = ["CHN_CLI", "JPN_CLI", "AUS_CLI"]
-    series_list = [_to_weekly_friday(_get_col(mi, c)) for c in cols]
-    return _to_weekly_friday(pd.concat(series_list, axis=1).mean(axis=1))
 
 
 # ---------------------------------------------------------------------------
@@ -1662,101 +956,6 @@ def _calc_AS_CLI1(mi, **_):
 # Each calculator simply returns the country's CLI series resampled to weekly
 # Fridays; `make_result` handles z-scoring and regime/fwd_regime assignment.
 # ---------------------------------------------------------------------------
-
-def _calc_US_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "USA_CLI"))
-def _calc_CA_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "CAN_CLI"))
-def _calc_DE_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "DEU_CLI"))
-def _calc_FR_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "FRA_CLI"))
-def _calc_UK_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "GBR_CLI"))
-def _calc_IT_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "ITA_CLI"))
-def _calc_JP_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "JPN_CLI"))
-def _calc_CN_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "CHN_CLI"))
-def _calc_AU_CLI1(mi, **_): return _to_weekly_friday(_get_col(mi, "AUS_CLI"))
-
-
-def _calc_GL_CLI5(mi, **_):
-    """
-    Global growth breadth (diffusion): fraction of 9 countries where
-    CLI > 100 AND CLI > CLI_6M_ago (i.e. above trend AND improving).
-    Countries: USA, DEU, FRA, GBR, ITA, JPN, CHN, AUS, CAN.
-    Raw = 0.0–1.0 fraction; >= 0.7 = broad expansion, < 0.4 = contracting.
-    """
-    cols = ["USA_CLI", "DEU_CLI", "FRA_CLI", "GBR_CLI", "ITA_CLI",
-            "JPN_CLI", "CHN_CLI", "AUS_CLI", "CAN_CLI"]
-    series_list = []
-    for c in cols:
-        try:
-            s = _to_weekly_friday(_get_col(mi, c))
-            lag26 = s.shift(26)
-            above = ((s > 100) & (s > lag26)).astype(float)
-            series_list.append(above)
-        except Exception:
-            pass  # skip countries not available in this pull
-    if not series_list:
-        return pd.Series(dtype=float)
-    return pd.concat(series_list, axis=1).mean(axis=1)
-
-
-def _calc_AS_CN_G1(cp, **_):
-    """
-    China vs broad EM divergence: log(FXI / EEM).
-    Positive → China large-caps outperforming broad EM (policy support, credit easing).
-    Strong signal for commodity-currency pairs (AUD, BRL, CLP) and EM risk appetite.
-    """
-    return _log_ratio(_p(cp, "FXI"), _p(cp, "EEM", usd=True))
-
-
-def _calc_GL_G2(cp, **_):
-    """
-    Global multi-asset risk appetite: log(ACWI / GOVT).
-    ACWI = iShares MSCI All Country World ETF; GOVT = US Treasury bond ETF.
-    Positive → global capital flowing into equities over bonds (risk-on).
-    Broader than US_I8 (SPY/GOVT) because ACWI includes all DM+EM equity markets.
-    """
-    return _log_ratio(_p(cp, "ACWI"), _p(cp, "GOVT"))
-
-
-def _calc_GL_G1(cp, **_):
-    """
-    EM vs DM equity relative cycle: log(EEM / URTH).
-    Positive → emerging markets outperforming MSCI World (requires: weak USD +
-    positive EM growth differentials + commodity support).
-    Complements US_FX1 (EEM/DXY) by isolating the equity relative vs the FX channel.
-    """
-    return _log_ratio(_p(cp, "EEM", usd=True), _p(cp, "URTH"))
-
-
-def _calc_FX_CMD6(cp, **_):
-    """
-    Global commodity cycle: DBC 12-month log return.
-    Positive z → commodities in a multi-month bull cycle; leads EM equity outperformance
-    and commodity-exporting equity markets (AUS, BRA, SA, CA) by 8-12 weeks.
-    """
-    dbc = _to_weekly_friday(_p(cp, "DBC"))
-    return np.log(dbc / dbc.shift(52).replace(0, np.nan))
-
-
-def _calc_FX_CMD3(cp, **_):
-    """
-    Oil vs gold inflation regime: log(CL=F / GC=F).
-    Positive → oil outpacing gold = growth-driven inflation (bullish cyclicals).
-    Negative → gold outpacing oil = deflation scare or safe-haven demand (risk-off).
-    Separates growth-driven inflation from fear-driven safe-haven flows.
-    """
-    return _log_ratio(_p(cp, "CL=F"), _p(cp, "GC=F"))
-
-
-def _calc_GLOBAL_GOLD1(mu, **_):
-    """
-    LBMA gold PM fix (USD/oz) — long-run daily gold benchmark from 1968.
-
-    Source column GOLD_USD_PM is provisioned by sources/lbma.py from the
-    `gold_pm` row in data/macro_library_lbma.csv (LBMA daily PM auction fix),
-    replacing FRED's discontinued GOLDPMGBD228NLBM. Returned as the raw price
-    level — the framework's 156-week rolling z-score handles the regime
-    classification.
-    """
-    return _to_weekly_friday(_get_col(mu, "GOLD_USD_PM"))
 
 
 # ---------------------------------------------------------------------------
@@ -1769,77 +968,6 @@ def _calc_GLOBAL_GOLD1(mu, **_):
 # spread therefore inherits that range, and the framework's 156w rolling
 # z-score handles regime classification.
 # ---------------------------------------------------------------------------
-
-def _calc_JP_TANKAN_SPREAD1(mu, **_):
-    """Tankan Large-Mfg minus Small-Mfg Business Conditions DI spread.
-    The canonical Japan domestic-vs-export-cycle signal: Large enterprises
-    are dominated by exporters (cycle reflects global demand); Small
-    enterprises track domestic demand. Widening Large > Small = export-led
-    cycle (yen-driven, global-cycle-driven); narrowing or Small > Large =
-    domestic-demand-led (consumption / fiscal stimulus driven).
-
-    Resampled to weekly Friday from quarterly Tankan releases."""
-    large = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
-    small = _to_weekly_friday(_get_col(mu, "JP_TANKAN_SMFG"))
-    if large is None or large.empty or small is None or small.empty:
-        return pd.Series(dtype=float)
-    return large - small
-
-
-def _calc_JP_TANKAN_SVC1(mu, **_):
-    """Tankan Large Non-Mfg minus Large Mfg Business Conditions DI spread.
-    Positive spread = services-led economy (typical mature-expansion,
-    consumption-cycle-driven); negative spread = mfg-led (investment-cycle
-    or external-demand-driven). Captures the goods-vs-services rotation
-    that drives regime classification on the BoJ's main framework."""
-    nmfg = _to_weekly_friday(_get_col(mu, "JP_TANKAN_LNFG"))
-    mfg = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
-    if nmfg is None or nmfg.empty or mfg is None or mfg.empty:
-        return pd.Series(dtype=float)
-    return nmfg - mfg
-
-
-def _calc_JP_NOWCAST1(mu, **_):
-    """Equal-weight Japan real-time growth nowcast (§3.1.4).
-    Z-score-normalises each real-economy + survey component on its own
-    156-week window, then averages available z-scores. Inputs:
-      - JPN_IND_PROD     (e-Stat METI Indices of Industrial Production)
-      - JP_TANKAN1       (BoJ Tankan Large-Mfg Business Conditions DI)
-      - JPN_MACH_ORDERS  (e-Stat Cabinet Office Machinery Orders)
-    Same z-composite shape as EU_NOWCAST1 / GL_PMI1 — raw output is the
-    composite z (≈ 0-centred). Degrades gracefully if a component is
-    missing. JPN_RETAIL_SALES was dropped 2026-07-07: the METI Current
-    Survey of Commerce (商業動態統計) live monthly headline is Excel/file-only
-    and not exposed via the e-Stat getStatsData API (every DB table is a
-    vintaged archive ending 2013/2019; the OECD MEI mirror is frozen at
-    2023-10) — see label-vs-data audit #1 and forward_plan Known Data Gaps.
-    Flagged as the Phase E composite for §3.1.4 JP nowcast."""
-    components = [
-        _to_weekly_friday(_get_col(mu, "JPN_IND_PROD")),
-        _to_weekly_friday(_get_col(mu, "JP_TANKAN1")),
-        _to_weekly_friday(_get_col(mu, "JPN_MACH_ORDERS")),
-    ]
-    zscores = []
-    for s in components:
-        if s is not None and not s.empty:
-            zscores.append(_rolling_zscore(s))
-    if not zscores:
-        return pd.Series(dtype=float)
-    return pd.concat(zscores, axis=1).mean(axis=1)
-
-
-def _calc_JP_TANKAN_FWD1(mu, **_):
-    """Tankan Large Mfg Forecast DI minus Actual DI. Quarter-ahead
-    leading-indicator signal: the forecast captures next-quarter
-    expectations, actual captures this-quarter conditions. Widening
-    positive = optimism (cycle turning up); negative = expected
-    deterioration (cycle turning down). Among the cleanest quarterly
-    turning-point detectors for JP."""
-    fwd = _to_weekly_friday(_get_col(mu, "JP_TANKAN_LMFG_FCST"))
-    actual = _to_weekly_friday(_get_col(mu, "JP_TANKAN1"))
-    if fwd is None or fwd.empty or actual is None or actual.empty:
-        return pd.Series(dtype=float)
-    return fwd - actual
 
 
 # ---------------------------------------------------------------------------
@@ -1905,138 +1033,19 @@ _ASIA_REGIONAL_CALCULATORS = {
 
 # --- US ISM (DB.nomics — mirror may lag 4-8 months) ---
 
-def _calc_US_PMI1(dbn, **_):
-    """ISM Manufacturing PMI composite — raw level, 156w z-score. Source: DB.nomics ISM/pmi."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI"))
 
 # US_PMI2 (ISM New Orders) was removed 2026-07-03: it duplicated US_ISM1 exactly
 # (both _to_weekly_friday(ISM_MFG_NEWORD)). New Orders is kept as US_ISM1, which
 # pairs with the US_ISM2 New-Orders-minus-Inventories spread.
 
-def _calc_US_SVC1(dbn, **_):
-    """ISM Services PMI composite — raw level, 156w z-score. Source: DB.nomics ISM/nm-pmi."""
-    return _to_weekly_friday(_get_col(dbn, "ISM_SVC_PMI"))
 
 # --- Eurozone (DB.nomics Eurostat) ---
 
-def _calc_EU_ESI1(dbn, **_):
-    """EC Economic Sentiment Indicator (EA) — raw level, 156w z-score. Source: DB.nomics Eurostat."""
-    return _to_weekly_friday(_get_col(dbn, "EU_ESI"))
 
 # --- PMI proxies (free survey equivalents) ---
 
-def _calc_EU_PMI1(dbn, **_):
-    """Eurozone Manufacturing survey proxy — EC Industry Confidence (ICI).
-    Same 3 PMI questions (production expectations, order books, stocks).
-    Source: DB.nomics Eurostat ei_bssi_m_r2."""
-    return _to_weekly_friday(_get_col(dbn, "EU_IND_CONF"))
-
-def _calc_EU_PMI2(dbn, **_):
-    """Eurozone Services survey proxy — EC Services Confidence.
-    Source: DB.nomics Eurostat ei_bssi_m_r2."""
-    return _to_weekly_friday(_get_col(dbn, "EU_SVC_CONF"))
-
-def _calc_DE_ZEW1(**_):
-    """ZEW Economic Sentiment — PROPRIETARY (ZEW Mannheim).
-    No free API/redistribution. German business sentiment covered by
-    DE_IFO1 (ifo) and DEU_BUS_CONF (OECD BCI via FRED)."""
-    return pd.Series(dtype=float)
-
-def _calc_DE_IFO1(dbn, **_):
-    """IFO Business Climate (Germany, 2015=100, SA) — raw level, 156w z-score.
-    Source: ifo Institute Excel (ifo.de/en/ifo-time-series)."""
-    return _to_weekly_friday(_get_col(dbn, "DE_IFO"))
-
-def _calc_UK_PMI1(mi, **_):
-    """UK Manufacturing survey proxy — OECD Business Confidence (monthly).
-    CBI-survey-derived composite, 100 = long-run average.
-    Source: FRED BSCICP02GBM460S."""
-    return _to_weekly_friday(_get_col(mi, "GBR_BUS_CONF"))
-
-def _calc_JP_PMI1(**_):
-    """Japan Manufacturing PMI — PROPRIETARY (S&P Global / au Jibun Bank).
-    No monthly free source on FRED or DB.nomics. BoJ Tankan (quarterly)
-    is the best free alternative; requires dedicated fetcher (future work)."""
-    return pd.Series(dtype=float)
-
-def _calc_CN_PMI1(mi, **_):
-    """China Manufacturing survey proxy — OECD BCI (NBS PMI components, monthly).
-    100 = long-run average. Source: FRED CHNBSCICP02STSAM."""
-    return _to_weekly_friday(_get_col(mi, "CHN_BUS_CONF"))
-
-def _calc_CN_PMI2(**_):
-    """Caixin China Manufacturing PMI — PROPRIETARY (S&P Global / Caixin).
-    Chinese manufacturing covered by CN_PMI1 (OECD BCI from NBS components)."""
-    return pd.Series(dtype=float)
 
 # --- Global composite ---
-
-def _calc_GL_PMI1(dbn, mi, **_):
-    """Equal-weight global manufacturing survey composite.
-    Z-score-normalises each component individually (different scales),
-    then averages available z-scores. Degrades gracefully when components
-    are missing — uses whatever is available."""
-    components = [
-        _to_weekly_friday(_get_col(dbn, "ISM_MFG_PMI")),
-        _to_weekly_friday(_get_col(dbn, "EU_IND_CONF")),
-        _to_weekly_friday(_get_col(mi, "GBR_BUS_CONF")),
-        _to_weekly_friday(_get_col(mi, "CHN_BUS_CONF")),
-    ]
-    zscores = []
-    for s in components:
-        if s is not None and not s.empty:
-            zscores.append(_rolling_zscore(s))
-    if not zscores:
-        return pd.Series(dtype=float)
-    combined = pd.concat(zscores, axis=1).mean(axis=1)
-    return combined
-
-
-def _calc_EU_NOWCAST1(dbn, **_):
-    """Equal-weight Eurozone real-time growth nowcast (§3.1.4).
-    Z-score-normalises each of four real-economy + sentiment components
-    on their own 156-week window, then averages available z-scores. Inputs:
-      - EZ_IND_PROD     (ECB STBS industrial production index)
-      - EZ_RETAIL_VOL   (ECB STBS deflated retail turnover index)
-      - EU_ESI          (EC Economic Sentiment Indicator)
-      - EU_IND_CONF     (EC Industrial Confidence Indicator)
-    Same z-composite shape as GL_PMI1 / US_INFEXP1 — raw output is the
-    composite z (≈ 0-centred). Degrades gracefully if a component is
-    missing. Equivalent to a home-built Eurocoin proxy at zero new
-    dependencies; flagged as the Phase E composite for §3.1.4 EZ
-    nowcast per forward_plan.md."""
-    components = [
-        _to_weekly_friday(_get_col(dbn, "EZ_IND_PROD")),
-        _to_weekly_friday(_get_col(dbn, "EZ_RETAIL_VOL")),
-        _to_weekly_friday(_get_col(dbn, "EU_ESI")),
-        _to_weekly_friday(_get_col(dbn, "EU_IND_CONF")),
-    ]
-    zscores = []
-    for s in components:
-        if s is not None and not s.empty:
-            zscores.append(_rolling_zscore(s))
-    if not zscores:
-        return pd.Series(dtype=float)
-    return pd.concat(zscores, axis=1).mean(axis=1)
-
-
-def _calc_UK_NOWCAST1(mu, **_):
-    """UK growth nowcast (§3.1.4): ONS monthly real GDP (GBR_GDP_MONTHLY,
-    ONS CDID ECY2 — Gross Value Added Monthly Index CVM SA) resampled to
-    weekly Friday and converted to YoY %. ONS publishes monthly with ~6
-    week lag — the cleanest UK nowcast at zero new fetcher cost since
-    sources/ons.py is already wired.
-
-    Single-input passthrough composite — same trivial shape as
-    _calc_US_GDPNOW1; the value of the composite layer is the regime-rule
-    mapping (see REGIME_RULES above), not averaging multiple already-noisy
-    nowcasts. YoY conversion gives a clean economic-growth-rate output so
-    the level-based regime thresholds (>2.5 above-trend, <0 contraction)
-    sit on absolute growth-level buckets calibrated to UK trend (~1.5%)."""
-    monthly_index = _to_weekly_friday(_get_col(mu, "GBR_GDP_MONTHLY"))
-    if monthly_index is None or monthly_index.empty:
-        return pd.Series(dtype=float)
-    return _yoy(monthly_index)
 
 
 # ===========================================================================
@@ -2050,107 +1059,6 @@ def _calc_UK_NOWCAST1(mu, **_):
 # US_INFEXP1 is a z-score composite of differently-scaled expectations series
 # (z-score each, then average — same pattern as GL_PMI1).
 # ===========================================================================
-
-def _calc_US_INFL1(mu, **_):
-    """US inflation gauge: mean of headline CPI YoY, core PCE YoY, and the
-    5y5y-forward breakeven (all %), so the regime reads as a target-relative
-    level. Degrades gracefully if a component is missing.
-
-    `USA_CPI_INDEX` is the BLS/FRED CPI level (1982-84=100); we convert to
-    YoY% here. The old code looked for `USA_CPI` which doesn't actually
-    exist as a column — fixed 2026-06-10 so the calculator now uses all
-    three components instead of silently dropping the headline."""
-    cpi = _yoy(_to_weekly_friday(_get_col(mu, "USA_CPI_INDEX")))  # BLS/FRED CPI level → YoY %
-    pce = _yoy(_to_weekly_friday(_get_col(mu, "PCEPILFE")))       # core PCE index → YoY %
-    fwd = _to_weekly_friday(_get_col(mu, "T5YIFR"))               # 5y5y fwd %, level
-    parts = [s for s in (cpi, pce, fwd) if s is not None and not s.empty]
-    if not parts:
-        return pd.Series(dtype=float)
-    return pd.concat(parts, axis=1).mean(axis=1)
-
-
-def _calc_UK_INFL1(mu, **_):
-    """UK inflation: mean of headline CPI YoY and core CPI YoY (both %).
-    Headline = GBR_CPI_YOY (ONS D7G7 — All-Items annual rate, already YoY %);
-    core = GBR_CORE_CPI_YOY (ONS DKO8 — already YoY % ex energy / food /
-    alcohol / tobacco). Same blend shape as US_INFL1, now sourced wholly from
-    ONS (Tier 1). Re-pointed off the frozen FRED `GBRCPIALLMINMEI` OECD-MEI
-    mirror (last value-change 2025-03) — see the source-tier model in
-    technical_manual.md §9.4. Falls back to headline-only if core is absent."""
-    head = _to_weekly_friday(_get_col(mu, "GBR_CPI_YOY"))        # ONS D7G7 — already YoY %
-    core = _to_weekly_friday(_get_col(mu, "GBR_CORE_CPI_YOY"))    # already YoY %
-    parts = [s for s in (head, core) if s is not None and not s.empty]
-    if not parts:
-        return pd.Series(dtype=float)
-    return pd.concat(parts, axis=1).mean(axis=1)
-
-
-def _calc_EU_INFL1(mu, **_):
-    """Euro-area inflation: mean of headline HICP YoY and core HICP YoY
-    (both already %). Headline = EA_HICP (ECB Data Portal `HICP` dataset
-    all-items annual rate — already YoY %); core = EA_HICP_CORE_YOY (same
-    dataset, ex energy/food — the standard ECB core HICP YoY definition).
-    Falls back to headline-only if core is absent."""
-    head = _to_weekly_friday(_get_col(mu, "EA_HICP"))             # already YoY %
-    core = _to_weekly_friday(_get_col(mu, "EA_HICP_CORE_YOY"))    # already YoY %
-    parts = [s for s in (head, core) if s is not None and not s.empty]
-    if not parts:
-        return pd.Series(dtype=float)
-    return pd.concat(parts, axis=1).mean(axis=1)
-
-
-def _calc_JP_INFL1(mu, **_):
-    """Japan inflation: mean of headline CPI YoY and core CPI YoY (both %).
-    Headline = JPN_CPI_YOY (OECD COICOP2018 national all-items CPI growth
-    over 1 year — already YoY %, monthly); core = JPN_CORE_CPI_YOY (OECD
-    COICOP2018 ex-food-and-energy — already YoY %). Re-pointed 2026-07-07
-    off the old `_yoy(JPN_CPI index)` path: FRED `JPNCPIALLMINMEI` was
-    discontinued (dead since 2022-04), which had frozen this composite at a
-    flat ~8.49. Both components are now fresh monthly OECD YoY. Falls back to
-    headline-only if core is absent."""
-    head = _to_weekly_friday(_get_col(mu, "JPN_CPI_YOY"))        # OECD all-items — already YoY %
-    core = _to_weekly_friday(_get_col(mu, "JPN_CORE_CPI_YOY"))    # already YoY %
-    parts = [s for s in (head, core) if s is not None and not s.empty]
-    if not parts:
-        return pd.Series(dtype=float)
-    return pd.concat(parts, axis=1).mean(axis=1)
-
-
-def _calc_CN_INFL1(mu, **_):
-    """China inflation: mean of CPI YoY and PPI YoY (both %).
-    Headline = CHN_CPI_YOY (IMF Data Portal CPI dataset — monthly national
-    all-items YoY %, repointed 2026-07-08 per §2.A A1; previously derived
-    via `_yoy(CHN_CPI_INDEX)` from the FRED mirror that froze 2025-04).
-    PPI = CHN_PPI (FRED `CHNPIEATI01GYM` — YoY %, frozen at 2022-12 by NBS
-    upstream: China stopped supplying PPI to every international aggregator,
-    so the PPI leg contributes history only and the composite tracks CPI
-    alone after the bounded-fill window past 2022-12 — see §1 Known Data
-    Gaps. The hist's bounded fill (2026-07-08) ends the dead column
-    instead of forward-filling it to the present, and the mean skips the
-    missing leg — no per-series handling needed here)."""
-    cpi = _to_weekly_friday(_get_col(mu, "CHN_CPI_YOY"))          # already YoY %
-    ppi = _to_weekly_friday(_get_col(mu, "CHN_PPI"))              # already YoY %
-    parts = [s for s in (cpi, ppi) if s is not None and not s.empty]
-    if not parts:
-        return pd.Series(dtype=float)
-    return pd.concat(parts, axis=1).mean(axis=1)
-
-
-def _calc_US_INFEXP1(mu, **_):
-    """US inflation-expectations composite: z-score-normalised average of the
-    5y & 10y breakevens, the 5y5y forward, and Michigan 1y expectations.
-    Components are on different scales so each is z-scored before averaging;
-    the returned series is the composite z (≈0-centred)."""
-    comps = [
-        _to_weekly_friday(_get_col(mu, "T5YIE")),
-        _to_weekly_friday(_get_col(mu, "T10YIE")),
-        _to_weekly_friday(_get_col(mu, "T5YIFR")),
-        _to_weekly_friday(_get_col(mu, "MICH")),
-    ]
-    zs = [_rolling_zscore(s) for s in comps if s is not None and not s.empty]
-    if not zs:
-        return pd.Series(dtype=float)
-    return pd.concat(zs, axis=1).mean(axis=1)
 
 
 _INFLATION_CALCULATORS = {
@@ -2173,29 +1081,6 @@ _INFLATION_CALCULATORS = {
 # of EZ industrial production / retail / ESI / industrial confidence) lives
 # in the European calculators block.
 # ===========================================================================
-
-def _calc_US_GDPNOW1(mu, **_):
-    """Atlanta Fed GDPNow headline nowcast — US real GDP growth, Q/Q SAAR %.
-
-    Single-input passthrough: take `US_GDPNOW` (irregular within-quarter
-    publication-date observations from the Atlanta Fed xlsx), resample to
-    weekly Friday, forward-fill across the quiet windows. The forward-fill
-    is appropriate here because the published vintage *is* the model's
-    current best estimate until the next update; between releases the
-    nowcast is "the most recent reading", not "missing". Same trivial shape
-    as the original _calc_UK_INFL1 (headline-only)."""
-    return _to_weekly_friday(_get_col(mu, "US_GDPNOW"))
-
-
-def _calc_US_NOWCAST1(mu, **_):
-    """New York Fed Staff Nowcast headline — US real GDP growth, Q/Q SAAR %.
-
-    Single-input passthrough: take `US_NYFED_NOWCAST` (weekly Friday
-    publication-date observations from the NY Fed xlsx), resample to weekly
-    Friday, forward-fill across the model's quiet windows around BEA's
-    advance estimate. Same trivial shape as _calc_US_GDPNOW1 — provides the
-    second-opinion read on US growth alongside Atlanta Fed GDPNow."""
-    return _to_weekly_friday(_get_col(mu, "US_NYFED_NOWCAST"))
 
 
 _NOWCAST_CALCULATORS = {
@@ -2255,53 +1140,6 @@ _PHASE_D_CALCULATORS = {
 # degrades to its inflation legs (graceful, same discipline as the composites).
 # ===========================================================================
 
-def _taylor_gap(policy, pi, activity_gap_z, r_star, target):
-    """Assemble the Taylor-style stance gap on the weekly-Friday spine.
-
-    policy / pi are % levels; activity_gap_z is the ~0-centred standardized
-    activity gap (empty → the gap term is 0). Requires policy and pi to
-    overlap; returns policy_rate − taylor_implied."""
-    policy = _to_weekly_friday(policy)
-    pi = _to_weekly_friday(pi)
-    if policy is None or policy.empty or pi is None or pi.empty:
-        return pd.Series(dtype=float)
-    frame = pd.concat({"policy": policy, "pi": pi}, axis=1)
-    if activity_gap_z is not None and not activity_gap_z.empty:
-        frame = frame.join(activity_gap_z.rename("gap"), how="left")
-    else:
-        frame["gap"] = 0.0
-    frame["gap"] = frame["gap"].fillna(0.0)
-    frame = frame.dropna(subset=["policy", "pi"])
-    if frame.empty:
-        return pd.Series(dtype=float)
-    taylor_implied = r_star + frame["pi"] + 0.5 * (frame["pi"] - target) + 0.5 * frame["gap"]
-    return frame["policy"] - taylor_implied
-
-
-def _calc_UK_TAYLOR1(mu=None, **_):
-    gap = _rolling_zscore(_calc_UK_NOWCAST1(mu=mu))
-    return _taylor_gap(_get_col(mu, "GBR_BANK_RATE"), _get_col(mu, "GBR_CPI_YOY"),
-                       gap, r_star=0.5, target=2.0)
-
-
-def _calc_EU_TAYLOR1(mu=None, dbn=None, **_):
-    gap = _rolling_zscore(_calc_EU_NOWCAST1(dbn=dbn if dbn is not None else mu))
-    return _taylor_gap(_get_col(mu, "EA_DEPOSIT_RATE"), _get_col(mu, "EA_HICP"),
-                       gap, r_star=0.0, target=2.0)
-
-
-def _calc_JP_TAYLOR1(mu=None, **_):
-    gap = _rolling_zscore(_calc_JP_NOWCAST1(mu=mu))
-    return _taylor_gap(_get_col(mu, "JPN_POLICY_RATE"), _get_col(mu, "JPN_CPI_YOY"),
-                       gap, r_star=0.0, target=2.0)
-
-
-def _calc_CN_TAYLOR1(mu=None, **_):
-    # CN has no nowcast composite — use the z of industrial-production YoY.
-    gap = _rolling_zscore(_to_weekly_friday(_get_col(mu, "CHN_IND_PROD")))
-    return _taylor_gap(_get_col(mu, "CHN_POLICY_RATE"), _get_col(mu, "CHN_CPI_YOY"),
-                       gap, r_star=1.5, target=3.0)
-
 
 _TAYLOR_CALCULATORS = {
     "UK_TAYLOR1": _calc_UK_TAYLOR1,
@@ -2309,28 +1147,6 @@ _TAYLOR_CALCULATORS = {
     "JP_TAYLOR1": _calc_JP_TAYLOR1,
     "CN_TAYLOR1": _calc_CN_TAYLOR1,
 }
-
-
-def _calc_GL_MONPOL1(mu, **_):
-    """Global Monetary Policy Tracker (§2.B B15): net diffusion of 3-month
-    policy-rate changes across the six major central banks — Fed (FEDFUNDS),
-    ECB (EA_DEPOSIT_RATE), BoE (GBR_BANK_RATE), BoJ (JPN_POLICY_RATE), PBoC
-    (CHN_POLICY_RATE), BoC (CAN_POLICY_RATE). Each bank contributes +1 if its
-    policy rate is higher than ~3 months (13 weeks) ago (hiking), −1 if lower
-    (cutting), 0 if unchanged; the raw output is the mean across the banks with
-    data, in [−1, +1]. > 0 = net global tightening cycle; < 0 = net global
-    easing; ≈ 0 = mixed / on hold. Degrades gracefully as banks drop out."""
-    cols = ["FEDFUNDS", "EA_DEPOSIT_RATE", "GBR_BANK_RATE",
-            "JPN_POLICY_RATE", "CHN_POLICY_RATE", "CAN_POLICY_RATE"]
-    signs = []
-    for c in cols:
-        s = _to_weekly_friday(_get_col(mu, c))
-        if s is None or s.empty:
-            continue
-        signs.append(np.sign(s - s.shift(13)))   # 13 weeks ≈ one quarter
-    if not signs:
-        return pd.Series(dtype=float)
-    return pd.concat(signs, axis=1).mean(axis=1)
 
 
 _GLOBAL_CALCULATORS = {

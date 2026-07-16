@@ -44,4 +44,5 @@ jobs:
             test_data_audit_critical \
             test_fetch_backoff \
             test_equity_pe \
+            test_calculators_parity \
             test_plausibility
