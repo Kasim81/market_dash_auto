@@ -15,7 +15,7 @@ from sources import boe_survey
 
 class TestBoESurveySmoke(unittest.TestCase):
     def test_uk_5y_inflation_expectations_live(self):
-        sid = "long-run.xlsx|LONG-RUN|five years|Median"
+        sid = "inflation-attitudes|long-run.xlsx|LONG-RUN|five years|Median"
         try:
             s = boe_survey.fetch_series_as_pandas(sid, col_name="GBR_INFL_EXP_5Y")
         except Exception as e:                       # noqa: BLE001
@@ -29,6 +29,23 @@ class TestBoESurveySmoke(unittest.TestCase):
         )
         # It is quarterly and started ~2009 — expect a decent history depth.
         self.assertGreater(len(s), 40, f"only {len(s)} obs — parse likely broke")
+
+    def test_uk_credit_availability_live(self):
+        # B6: dynamic-URL walk-back + year/quarter-header parse.
+        sid = ("credit-conditions|Corporate annex|"
+               "availability of credit provided to the corporate sector|Past three months")
+        try:
+            s = boe_survey.fetch_series_as_pandas(sid, col_name="GBR_CREDIT_AVAIL")
+        except Exception as e:                       # noqa: BLE001
+            self.skipTest(f"BoE CCS fetch raised (network?): {e}")
+        if s is None or s.empty:
+            self.skipTest("BoE CCS fetch returned nothing (network/host down)")
+        last = float(s.iloc[-1])
+        self.assertTrue(
+            -100.0 <= last <= 100.0,
+            f"UK credit-availability net balance {last} outside [-100, 100]",
+        )
+        self.assertGreater(len(s), 40, f"only {len(s)} obs — CCS parse likely broke")
 
 
 if __name__ == "__main__":
