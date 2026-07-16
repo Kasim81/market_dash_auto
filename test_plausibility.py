@@ -121,6 +121,45 @@ class TestCommittedDataPlausibility(unittest.TestCase):
                 "always a x100/÷100 unit-error regression:\n" + "\n".join(lines)
             )
 
+    def test_no_cpi_yoy_index_inconsistency(self):
+        bad = da.section_e_plausibility().get("inconsistent", [])
+        if bad:
+            lines = [
+                f"  {k['col_id']} served YoY {k['yoy_value']:g} vs "
+                f"{k['index_col']}-implied {k['implied_yoy']:.2f} "
+                f"(diff {k['diff']:.2f}pp)"
+                for k in sorted(bad, key=lambda k: k["col_id"])
+            ]
+            self.fail(
+                "A served CPI YoY diverges >3pp from its own index's 12-month "
+                "change — the frozen/mismatched-YoY signature (JP_INFL1 class):\n"
+                + "\n".join(lines)
+            )
+
+
+class TestConsistencyLogic(unittest.TestCase):
+    """The consistency check catches a synthetic frozen YoY."""
+
+    def test_frozen_yoy_is_flagged(self):
+        import datetime as _dt
+        # index rising ~2%/yr; a frozen YoY stuck at 9% must be flagged.
+        base = _dt.date(2024, 1, 1)
+        idx = [(base.replace(year=2025, month=6), 100.0),
+               (base.replace(year=2026, month=6), 102.0)]  # implied ~2% YoY
+        latest = {
+            "ZZ_CPI_YOY":   {"value": 9.0, "source": "TEST"},   # frozen high
+            "ZZ_CPI_INDEX": {"value": 102.0, "source": "TEST"},
+        }
+        orig = da.load_full_column_series
+        da.load_full_column_series = lambda cols: {"ZZ_CPI_INDEX": idx}
+        try:
+            out = da._cpi_yoy_index_consistency(latest)
+        finally:
+            da.load_full_column_series = orig
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["col_id"], "ZZ_CPI_YOY")
+        self.assertGreater(abs(out[0]["diff"]), 3.0)
+
     def test_bands_cover_a_meaningful_share_of_columns(self):
         # Guard against a refactor silently disabling the family-default layer
         # (which would drop coverage back to the ~20 explicitly-declared bands).

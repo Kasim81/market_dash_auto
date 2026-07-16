@@ -74,6 +74,7 @@ SOURCE_REGISTRY: tuple[SourceSpec, ...] = (
     SourceSpec("IMF SDMX",         "imf_sdmx",       "imf_sdmx"),
     SourceSpec("BoE Survey",       "boe_survey",     "boe_survey"),
     SourceSpec("ONS RTI",          "ons_rti",        "ons_rti"),
+    SourceSpec("ONS Housing",      "ons_housing",    "ons_housing"),
 )
 
 LABEL_BY_STEM: dict[str, str] = {s.stem: s.label for s in SOURCE_REGISTRY}

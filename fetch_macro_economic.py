@@ -60,6 +60,7 @@ from sources import jst as jst_src
 from sources import atlanta_fed as atlanta_fed_src
 from sources import boe_survey as boe_survey_src
 from sources import ons_rti as ons_rti_src
+from sources import ons_housing as ons_housing_src
 from sources import ny_fed as ny_fed_src
 from sources import imf_sdmx as imf_sdmx_src
 from sources import treasury as treasury_src
@@ -151,6 +152,7 @@ def load_all_indicators() -> list[dict]:
     indicators.extend(imf_sdmx_src.load_library())
     indicators.extend(boe_survey_src.load_library())
     indicators.extend(ons_rti_src.load_library())
+    indicators.extend(ons_housing_src.load_library())
     return _attach_tiers(indicators)
 
 
@@ -1061,6 +1063,7 @@ _SOURCE_HANDLERS: dict[str, tuple] = {
     "BoE":        _make_source_handlers(boe_src, BOE_DELAY),
     "BoE Survey": _make_source_handlers(boe_survey_src, BOE_DELAY),
     "ONS RTI":    _make_source_handlers(ons_rti_src, ONS_DELAY),
+    "ONS Housing": _make_source_handlers(ons_housing_src, ONS_DELAY),
     "Treasury":   _make_source_handlers(treasury_src, TREASURY_DELAY),
     "ECB":        _make_source_handlers(ecb_src, ECB_DELAY,
                                         snapshot_kwargs={"last_n": 2}),
