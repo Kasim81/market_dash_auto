@@ -66,7 +66,8 @@ from sources import imf_sdmx as imf_sdmx_src
 from sources import treasury as treasury_src
 from sources.base import build_friday_spine, get_sheets_service, push_df_to_sheets
 
-from library_utils import write_hist_with_archive, bounded_spine_fill
+from library_utils import (write_hist_with_archive, bounded_spine_fill,
+                           stable_hist_column_order)
 
 
 # ---------------------------------------------------------------------------
@@ -1344,6 +1345,12 @@ def save_hist_csv(df: pd.DataFrame, provenance: dict[str, dict]) -> None:
     sister before the 2026-07-08 bounded-fill change is cleared on the first
     run, and can never re-enter (the writer knows real-vs-fill exactly).
     """
+    # C11: pin the physical column order to the existing file's order (new
+    # columns appended) BEFORE building the per-column metadata rows, so the
+    # non-deterministic fan-out column order no longer rewrites the whole file
+    # every run and the metadata stays aligned to the reordered data.
+    df = df[stable_hist_column_order(HIST_CSV, list(df.columns), date_col="Date")]
+
     columns = list(df.columns)
     meta_rows = _build_hist_metadata_rows(columns, provenance)
 

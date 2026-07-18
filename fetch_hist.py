@@ -45,6 +45,7 @@ from library_utils import (
     COMP_FCY_PER_USD,
     lib_sort_key as _comp_inst_sort_key,
     write_hist_with_archive,
+    stable_hist_column_order,
     apply_manual_splits,
     bounded_spine_fill,
 )
@@ -813,6 +814,13 @@ def run_comp_hist() -> None:
             comp_spine, instruments, fred_rates,
             local_yf, usd_yf, local_fr, usd_fr,
         )
+
+        # C11: pin physical column order to the existing file's order (new
+        # tickers appended) before building metadata, so the file stays
+        # append-stable across runs instead of re-writing every line.
+        _comp_data = [c for c in comp_df.columns if c != "Date"]
+        comp_df = comp_df[["Date"] + stable_hist_column_order(
+            COMP_HIST_CSV, _comp_data, date_col="Date")]
 
         # 7. Metadata prefix
         comp_meta = build_comp_market_meta_prefix(comp_df, instruments, fred_rates)

@@ -45,4 +45,5 @@ jobs:
             test_fetch_backoff \
             test_equity_pe \
             test_calculators_parity \
+            test_hist_stability \
             test_plausibility
