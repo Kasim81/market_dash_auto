@@ -495,12 +495,58 @@ def sniff_hist_prefix_rows(path, date_col="Date", max_scan=40):
     return None
 
 
+# C11 hist append-stability: a canonical float representation collapses the
+# spurious daily churn from last-ULP float-repr wobble (the same mathematical
+# value re-serialised differently run-to-run). Paired with a stable column order
+# (see stable_hist_column_order, applied caller-side before the per-column
+# metadata rows are built), the daily git diff shrinks from ~100 % of lines to
+# only the cells whose value actually moved. 8 significant figures preserve all
+# meaningful precision for these series.
+_HIST_FLOAT_FORMAT = "%.8g"
+
+
+def stable_hist_column_order(existing_path, data_cols, date_col="Date"):
+    """Canonical order for a hist file's *data* columns (i.e. excluding
+    ``date_col`` / any leading id columns the caller manages): the existing
+    file's order is preserved and only genuinely-new columns are appended, so an
+    existing column never changes position (zero column-order churn in steady
+    state; adding a column shifts nothing before it). Columns absent from
+    ``data_cols`` fall away naturally.
+
+    Returns a reordered list of the same members as ``data_cols``. When there is
+    no existing file to anchor to, returns ``data_cols`` unchanged (first write
+    keeps the caller's order). Callers apply this to the DataFrame *before*
+    building metadata prefix rows so the per-column metadata stays aligned.
+    """
+    data_cols = list(data_cols)
+    if not _hp_os.path.exists(existing_path):
+        return data_cols
+    n_prefix = sniff_hist_prefix_rows(existing_path, date_col)
+    if n_prefix is None:
+        return data_cols
+    import csv as _csv
+    header = None
+    with open(existing_path, "r", encoding="utf-8", newline="") as f:
+        for i, row in enumerate(_csv.reader(f)):
+            if i == n_prefix:
+                header = row
+                break
+    if not header:
+        return data_cols
+    present = set(data_cols)
+    preserved = [c for c in header if c in present and c != date_col]
+    preserved_set = set(preserved)
+    appended = [c for c in data_cols if c not in preserved_set]  # new → end
+    return preserved + appended
+
+
 def _write_hist_payload(path, df, prefix_rows, date_col):
     """Write `df` to `path`, prepending `prefix_rows` metadata if provided.
 
     Mirrors the existing `fetch_hist.save_csv()` / `fetch_macro_economic.save_hist_csv()`
     file shape: N prefix rows, then a single header row, then the data rows.
-    The Date column is formatted as YYYY-MM-DD strings.
+    The Date column is formatted as YYYY-MM-DD strings; floats use a canonical
+    fixed-precision format (C11) so re-writing unchanged history is byte-stable.
     """
     _hp_os.makedirs(_hp_os.path.dirname(path) or ".", exist_ok=True)
 
@@ -515,9 +561,9 @@ def _write_hist_payload(path, df, prefix_rows, date_col):
         _csv.writer(buf, lineterminator="\n").writerows(prefix_rows)
         with open(path, "w", encoding="utf-8") as f:
             f.write(buf.getvalue())
-            out.to_csv(f, index=False)
+            out.to_csv(f, index=False, float_format=_HIST_FLOAT_FORMAT)
     else:
-        out.to_csv(path, index=False)
+        out.to_csv(path, index=False, float_format=_HIST_FLOAT_FORMAT)
 
 
 def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col,
