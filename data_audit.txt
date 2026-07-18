@@ -1,99 +1,96 @@
-=== Data audit @ 2026-07-17 ===
+=== Data audit @ 2026-07-18 ===
 
 --- Section A: Fetch outcomes (9 issues) ---
   YFINANCE_DEAD       HYXU
   YFINANCE_DEAD       IFRB.L
   FALLBACK_DEMOTIONS  [FALLBACK] (snapshot) FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)
-  FALLBACK_DEMOTIONS  [FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 138d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
-  FALLBACK_DEMOTIONS  [FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 138d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
+  FALLBACK_DEMOTIONS  [FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
+  FALLBACK_DEMOTIONS  [FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
   FALLBACK_DEMOTIONS  [FALLBACK] FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-31)
-  FALLBACK_DEMOTIONS  [FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 138d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
-  FALLBACK_DEMOTIONS  [FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 138d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
+  FALLBACK_DEMOTIONS  [FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
+  FALLBACK_DEMOTIONS  [FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)
   OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
 
 --- Section B: Static checks (0 issues) ---
   (none)
 
---- Section C: Value-change staleness (FRESH 230  STALE 71  EXPIRED 6  ANCHORS 39  OVERDUE-ANCHORS 0) ---
+--- Section C: Value-change staleness (FRESH 233  STALE 68  EXPIRED 6  ANCHORS 39  OVERDUE-ANCHORS 0) ---
   EXPIRED (6):
-    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-01  age=1324d     tolerance=45d
-    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-01  age=989d      tolerance=45d
-    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-30  age=382d      tolerance=120d*
-    Monthly     JPN_IND_PROD                      src=e-Stat       series=0004052177?cdCat01=0001000&lang=J  last_obs=2026-03-01  age=138d      tolerance=60d*
-    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-04-01  age=107d      tolerance=45d
-    Monthly     ITA_UNEMPLOYMENT                  src=ISTAT        series=151_874/M.IT.UNEM_R.N.1.Y15-74.  last_obs=2026-04-01  age=107d      tolerance=45d*
-  STALE (71):
-    Annual      USA_CPI_YOY                       src=World Bank   series=FP.CPI.TOTL.ZG            last_obs=2024-12-31  age=563d      tolerance=540d
-    Quarterly   ULCNFB                            src=FRED         series=ULCNFB                    last_obs=2026-01-01  age=197d      tolerance=180d*
-    Quarterly   CP                                src=FRED         series=CP                        last_obs=2026-01-01  age=197d      tolerance=180d*
-    Quarterly   JP_TANKAN_LNFG                    src=BoJ          series=CO'TK99F2000601GCQ01000   last_obs=2026-02-01  age=166d      tolerance=100d*
-    Quarterly   JP_TANKAN_SMFG                    src=BoJ          series=CO'TK99F1000601GCQ03000   last_obs=2026-02-01  age=166d      tolerance=100d*
-    Quarterly   JP_TANKAN_SNFG                    src=BoJ          series=CO'TK99F2000601GCQ03000   last_obs=2026-02-01  age=166d      tolerance=100d*
-    Monthly     GBR_RATE_3M                       src=OECD         series=RATE_3M                   last_obs=2026-02-28  age=139d      tolerance=90d*
-    Monthly     CHN_M2                            src=DB.nomics    series=NBS/M_A0D01/A0D0102       last_obs=2026-02-28  age=139d      tolerance=120d*
-    Quarterly   JP_TANKAN_LMFG_FCST               src=BoJ          series=CO'TK99F1000601GCQ11000   last_obs=2026-03-01  age=138d      tolerance=100d*
-    Quarterly   JP_TANKAN_LNFG_FCST               src=BoJ          series=CO'TK99F2000601GCQ11000   last_obs=2026-03-01  age=138d      tolerance=100d*
-    Quarterly   GBR_GDP_REAL                      src=ONS          series=economy/grossdomesticproductgdp/timeseries/abmi/pn2  last_obs=2026-03-01  age=138d      tolerance=90d*
-    Quarterly   AUS_CPI_INDEX                     src=ABS          series=CPI/1.10001.10.50.Q       last_obs=2026-03-01  age=138d      tolerance=120d*
-    Quarterly   AUS_GDP_REAL                      src=ABS          series=ANA_AGG/M1.GPM.20.AUS.Q   last_obs=2026-03-01  age=138d      tolerance=120d*
-    Quarterly   FRA_GDP_INDEX                     src=INSEE        series=SERIES_BDM/011794860      last_obs=2026-03-01  age=138d      tolerance=120d
-    Monthly     EZ_BUILD_PERMITS                  src=Eurostat     series=sts_cobp_m?indic_bt=BPRM_SQM&cpa2_1=CPA_F41001_41002&s_adj=SCA&unit=I21&geo=EA21&freq=M  last_obs=2026-03-01  age=138d      tolerance=120d*
-    Monthly     USA_SP500_DIV_SHILLER             src=Shiller      series=D                         last_obs=2026-03-31  age=108d      tolerance=90d*
-    Monthly     USA_SP500_EPS_SHILLER             src=Shiller      series=E                         last_obs=2026-03-31  age=108d      tolerance=90d*
-    Monthly     CAN_GDP_MONTHLY                   src=StatCan      series=65201210                  last_obs=2026-04-01  age=107d      tolerance=60d*
-    Monthly     M2SL                              src=FRED         series=M2SL                      last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-05-01  age=77d       tolerance=45d
-    Monthly     INDPRO                            src=FRED         series=INDPRO                    last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     PCETRIM12M159SFRBDAL              src=FRED         series=PCETRIM12M159SFRBDAL      last_obs=2026-05-01  age=77d       tolerance=45d
-    Monthly     MICH                              src=FRED         series=MICH                      last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     UMCSENT                           src=FRED         series=UMCSENT                   last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     TCU                               src=FRED         series=TCU                       last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     CFNAI                             src=FRED         series=CFNAI                     last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     CHN_BUS_CONF                      src=FRED         series=CHNBSCICP02STSAM          last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     GBR_CPI_INDEX                     src=ONS          series=economy/inflationandpriceindices/timeseries/d7bt/mm23  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     JPN_REER                          src=FRED         series=RBJPBIS                   last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     AUS_UNEMPLOYMENT                  src=ABS          series=LF/M13.3.1599.20.AUS.M    last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     EZ_M3                             src=ECB          series=BSI/M.U2.Y.V.M30.X.I.U2.2300.Z01.A  last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     EZ_INFL_EXP_12M                   src=ECB          series=CES/M.Z18.ALL.T.C1120.NUM_VAR.WM  last_obs=2026-05-01  age=77d       tolerance=40d*
-    Monthly     JPN_SPPI                          src=BoJ          series=PR02'PRCS20_5200000000    last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     JPN_MACH_ORDERS                   src=e-Stat       series=0003355222?cdCat01=160&cdCat02=100  last_obs=2026-05-01  age=77d       tolerance=60d*
-    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     CAN_CPI_INDEX                     src=StatCan      series=41690973                  last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     GBR_CPIH_YOY                      src=ONS          series=economy/inflationandpriceindices/timeseries/l55o/mm23  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     GBR_CORE_CPI_YOY                  src=ONS          series=economy/inflationandpriceindices/timeseries/dko8/mm23  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     GBR_GDP_MONTHLY                   src=ONS          series=economy/grossdomesticproductgdp/timeseries/ecy2/mgdp  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     GBR_CLAIMANT_COUNT                src=ONS          series=employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcjd/unem  last_obs=2026-05-01  age=77d       tolerance=40d*
-    Monthly     GBR_PPI_OUTPUT                    src=ONS          series=economy/inflationandpriceindices/timeseries/gd6y/ppi  last_obs=2026-05-01  age=77d       tolerance=40d*
-    Monthly     GBR_RPI                           src=ONS          series=economy/inflationandpriceindices/timeseries/chaw/mm23  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     AUS_CPI_MONTHLY                   src=ABS          series=CPI/1.10001.10.50.M       last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     AUS_EMPLOYMENT                    src=ABS          series=LF/M3.3.1599.20.AUS.M     last_obs=2026-05-01  age=77d       tolerance=45d*
-    Monthly     ITA_IND_PROD                      src=ISTAT        series=115_333/M.IT.IND_PROD_21.Y.0020  last_obs=2026-05-01  age=77d       tolerance=60d*
-    Monthly     FRA_LOAN_RATE_HOUSE               src=Banque de France  series=observations|series_key='MIR1.M.FR.B.A22.A.R.A.2250U6.EUR.N'  last_obs=2026-05-01  age=77d       tolerance=45d
-    Monthly     FRA_LOAN_RATE_NFC                 src=Banque de France  series=observations|series_key='MIR1.M.FR.B.A20.A.R.A.2240U6.EUR.N'  last_obs=2026-05-01  age=77d       tolerance=45d
-    Monthly     EZ_PPI                            src=Eurostat     series=sts_inpp_m?indic_bt=PRC_PRR&nace_r2=B-E36&s_adj=NSA&unit=I21&geo=EA21&freq=M  last_obs=2026-05-01  age=77d       tolerance=75d*
-    Monthly     GBR_PAYROLLS                      src=ONS RTI      series=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/realtimeinformationstatisticsreferencetableseasonallyadjusted/current|1. Payrolled employees (UK)|Payrolled employees  last_obs=2026-05-01  age=77d       tolerance=60d*
-    Monthly     USA_UNEMPLOYMENT                  src=BLS          series=LNS14000000               last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     USA_CPI_INDEX                     src=BLS          series=CUSR0000SA0               last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     USA_CORE_CPI_INDEX                src=BLS          series=CUSR0000SA0L1E            last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     MEDCPIM158SFRBCLE                 src=FRED         series=MEDCPIM158SFRBCLE         last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     TRMMEANCPIM158SFRBCLE             src=FRED         series=TRMMEANCPIM158SFRBCLE     last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     BACTUAMFRBDAL                     src=FRED         series=BACTUAMFRBDAL             last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     FRA_BUS_CONF                      src=INSEE        series=SERIES_BDM/001565530      last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     EA_HICP                           src=ECB          series=HICP/M.U2.N.000000.4D0.ANR  last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     CAN_UNEMPLOYMENT                  src=StatCan      series=2062815                   last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     EA_HICP_CORE_YOY                  src=ECB          series=HICP/M.U2.N.XEF000.4D0.ANR  last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     JPN_M2                            src=BoJ          series=MD02'MAM1YAM2M2MO         last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     JPN_PPI                           src=BoJ          series=PR01'PRCG20_2200000000    last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     CAN_EMPLOYMENT                    src=StatCan      series=2062811                   last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     DEU_HICP_YOY                      src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.VGJ.LV  last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     DEU_HICP_INDEX                    src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.I.A  last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     USA_AVG_HOURLY_EARN               src=BLS          series=CES0500000003             last_obs=2026-06-01  age=46d       tolerance=45d*
-    Monthly     EU_ESI                            src=Eurostat     series=ei_bssi_m_r2?indic=BS-ESI-I&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     EU_IND_CONF                       src=Eurostat     series=ei_bssi_m_r2?indic=BS-ICI-BAL&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=46d       tolerance=45d
-    Monthly     EU_SVC_CONF                       src=Eurostat     series=ei_bssi_m_r2?indic=BS-SCI-BAL&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=46d       tolerance=45d
-    Weekly      TOTCI                             src=FRED         series=TOTCI                     last_obs=2026-07-01  age=16d       tolerance=14d*
+    Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-01  age=1325d     tolerance=45d
+    Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-01  age=990d      tolerance=45d
+    Monthly     CHN_POLICY_RATE                   src=DB.nomics    series=IMF/IFS/M.CN.FPOLM_PA     last_obs=2025-06-30  age=383d      tolerance=120d*
+    Monthly     JPN_IND_PROD                      src=e-Stat       series=0004052177?cdCat01=0001000&lang=J  last_obs=2026-03-01  age=139d      tolerance=60d*
+    Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-04-01  age=108d      tolerance=45d
+    Monthly     ITA_UNEMPLOYMENT                  src=ISTAT        series=151_874/M.IT.UNEM_R.N.1.Y15-74.  last_obs=2026-04-01  age=108d      tolerance=45d*
+  STALE (68):
+    Annual      USA_CPI_YOY                       src=World Bank   series=FP.CPI.TOTL.ZG            last_obs=2024-12-31  age=564d      tolerance=540d
+    Quarterly   ULCNFB                            src=FRED         series=ULCNFB                    last_obs=2026-01-01  age=198d      tolerance=180d*
+    Quarterly   CP                                src=FRED         series=CP                        last_obs=2026-01-01  age=198d      tolerance=180d*
+    Quarterly   JP_TANKAN_LNFG                    src=BoJ          series=CO'TK99F2000601GCQ01000   last_obs=2026-02-01  age=167d      tolerance=100d*
+    Quarterly   JP_TANKAN_SMFG                    src=BoJ          series=CO'TK99F1000601GCQ03000   last_obs=2026-02-01  age=167d      tolerance=100d*
+    Quarterly   JP_TANKAN_SNFG                    src=BoJ          series=CO'TK99F2000601GCQ03000   last_obs=2026-02-01  age=167d      tolerance=100d*
+    Monthly     GBR_RATE_3M                       src=OECD         series=RATE_3M                   last_obs=2026-02-28  age=140d      tolerance=90d*
+    Monthly     CHN_M2                            src=DB.nomics    series=NBS/M_A0D01/A0D0102       last_obs=2026-02-28  age=140d      tolerance=120d*
+    Quarterly   JP_TANKAN_LMFG_FCST               src=BoJ          series=CO'TK99F1000601GCQ11000   last_obs=2026-03-01  age=139d      tolerance=100d*
+    Quarterly   JP_TANKAN_LNFG_FCST               src=BoJ          series=CO'TK99F2000601GCQ11000   last_obs=2026-03-01  age=139d      tolerance=100d*
+    Quarterly   GBR_GDP_REAL                      src=ONS          series=economy/grossdomesticproductgdp/timeseries/abmi/pn2  last_obs=2026-03-01  age=139d      tolerance=90d*
+    Quarterly   AUS_CPI_INDEX                     src=ABS          series=CPI/1.10001.10.50.Q       last_obs=2026-03-01  age=139d      tolerance=120d*
+    Quarterly   AUS_GDP_REAL                      src=ABS          series=ANA_AGG/M1.GPM.20.AUS.Q   last_obs=2026-03-01  age=139d      tolerance=120d*
+    Quarterly   FRA_GDP_INDEX                     src=INSEE        series=SERIES_BDM/011794860      last_obs=2026-03-01  age=139d      tolerance=120d
+    Monthly     EZ_BUILD_PERMITS                  src=Eurostat     series=sts_cobp_m?indic_bt=BPRM_SQM&cpa2_1=CPA_F41001_41002&s_adj=SCA&unit=I21&geo=EA21&freq=M  last_obs=2026-03-01  age=139d      tolerance=120d*
+    Monthly     USA_SP500_DIV_SHILLER             src=Shiller      series=D                         last_obs=2026-03-31  age=109d      tolerance=90d*
+    Monthly     USA_SP500_EPS_SHILLER             src=Shiller      series=E                         last_obs=2026-03-31  age=109d      tolerance=90d*
+    Monthly     CAN_GDP_MONTHLY                   src=StatCan      series=65201210                  last_obs=2026-04-01  age=108d      tolerance=60d*
+    Monthly     M2SL                              src=FRED         series=M2SL                      last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     PCETRIM12M159SFRBDAL              src=FRED         series=PCETRIM12M159SFRBDAL      last_obs=2026-05-01  age=78d       tolerance=45d
+    Monthly     MICH                              src=FRED         series=MICH                      last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     UMCSENT                           src=FRED         series=UMCSENT                   last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     CFNAI                             src=FRED         series=CFNAI                     last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     CHN_BUS_CONF                      src=FRED         series=CHNBSCICP02STSAM          last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     GBR_CPI_INDEX                     src=ONS          series=economy/inflationandpriceindices/timeseries/d7bt/mm23  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     JPN_REER                          src=FRED         series=RBJPBIS                   last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     AUS_UNEMPLOYMENT                  src=ABS          series=LF/M13.3.1599.20.AUS.M    last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     EZ_M3                             src=ECB          series=BSI/M.U2.Y.V.M30.X.I.U2.2300.Z01.A  last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     EZ_INFL_EXP_12M                   src=ECB          series=CES/M.Z18.ALL.T.C1120.NUM_VAR.WM  last_obs=2026-05-01  age=78d       tolerance=40d*
+    Monthly     JPN_SPPI                          src=BoJ          series=PR02'PRCS20_5200000000    last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     JPN_MACH_ORDERS                   src=e-Stat       series=0003355222?cdCat01=160&cdCat02=100  last_obs=2026-05-01  age=78d       tolerance=60d*
+    Monthly     CAN_CPI_MEDIAN                    src=BoC          series=CPI_MEDIAN                last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     CAN_CPI_INDEX                     src=StatCan      series=41690973                  last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     GBR_CPIH_YOY                      src=ONS          series=economy/inflationandpriceindices/timeseries/l55o/mm23  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     GBR_CORE_CPI_YOY                  src=ONS          series=economy/inflationandpriceindices/timeseries/dko8/mm23  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     GBR_GDP_MONTHLY                   src=ONS          series=economy/grossdomesticproductgdp/timeseries/ecy2/mgdp  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     GBR_CLAIMANT_COUNT                src=ONS          series=employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcjd/unem  last_obs=2026-05-01  age=78d       tolerance=40d*
+    Monthly     GBR_PPI_OUTPUT                    src=ONS          series=economy/inflationandpriceindices/timeseries/gd6y/ppi  last_obs=2026-05-01  age=78d       tolerance=40d*
+    Monthly     GBR_RPI                           src=ONS          series=economy/inflationandpriceindices/timeseries/chaw/mm23  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     AUS_PART_RATE                     src=ABS          series=LF/M12.3.1599.20.AUS.M    last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     AUS_CPI_MONTHLY                   src=ABS          series=CPI/1.10001.10.50.M       last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     AUS_EMPLOYMENT                    src=ABS          series=LF/M3.3.1599.20.AUS.M     last_obs=2026-05-01  age=78d       tolerance=45d*
+    Monthly     ITA_IND_PROD                      src=ISTAT        series=115_333/M.IT.IND_PROD_21.Y.0020  last_obs=2026-05-01  age=78d       tolerance=60d*
+    Monthly     FRA_LOAN_RATE_HOUSE               src=Banque de France  series=observations|series_key='MIR1.M.FR.B.A22.A.R.A.2250U6.EUR.N'  last_obs=2026-05-01  age=78d       tolerance=45d
+    Monthly     FRA_LOAN_RATE_NFC                 src=Banque de France  series=observations|series_key='MIR1.M.FR.B.A20.A.R.A.2240U6.EUR.N'  last_obs=2026-05-01  age=78d       tolerance=45d
+    Monthly     EZ_PPI                            src=Eurostat     series=sts_inpp_m?indic_bt=PRC_PRR&nace_r2=B-E36&s_adj=NSA&unit=I21&geo=EA21&freq=M  last_obs=2026-05-01  age=78d       tolerance=75d*
+    Monthly     GBR_PAYROLLS                      src=ONS RTI      series=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/realtimeinformationstatisticsreferencetableseasonallyadjusted/current|1. Payrolled employees (UK)|Payrolled employees  last_obs=2026-05-01  age=78d       tolerance=60d*
+    Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     USA_UNEMPLOYMENT                  src=BLS          series=LNS14000000               last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     USA_CPI_INDEX                     src=BLS          series=CUSR0000SA0               last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     USA_CORE_CPI_INDEX                src=BLS          series=CUSR0000SA0L1E            last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     MEDCPIM158SFRBCLE                 src=FRED         series=MEDCPIM158SFRBCLE         last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     TRMMEANCPIM158SFRBCLE             src=FRED         series=TRMMEANCPIM158SFRBCLE     last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     FEDFUNDS                          src=FRED         series=FEDFUNDS                  last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     BACTUAMFRBDAL                     src=FRED         series=BACTUAMFRBDAL             last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     FRA_BUS_CONF                      src=INSEE        series=SERIES_BDM/001565530      last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     EA_HICP                           src=ECB          series=HICP/M.U2.N.000000.4D0.ANR  last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     CAN_UNEMPLOYMENT                  src=StatCan      series=2062815                   last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     EA_HICP_CORE_YOY                  src=ECB          series=HICP/M.U2.N.XEF000.4D0.ANR  last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     JPN_M2                            src=BoJ          series=MD02'MAM1YAM2M2MO         last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     JPN_PPI                           src=BoJ          series=PR01'PRCG20_2200000000    last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     CAN_EMPLOYMENT                    src=StatCan      series=2062811                   last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     DEU_HICP_YOY                      src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.VGJ.LV  last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     DEU_HICP_INDEX                    src=Bundesbank   series=BBDP1/M.DE.N.HVPI.C.A00000.I.A  last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     USA_AVG_HOURLY_EARN               src=BLS          series=CES0500000003             last_obs=2026-06-01  age=47d       tolerance=45d*
+    Monthly     EU_ESI                            src=Eurostat     series=ei_bssi_m_r2?indic=BS-ESI-I&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     EU_IND_CONF                       src=Eurostat     series=ei_bssi_m_r2?indic=BS-ICI-BAL&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=47d       tolerance=45d
+    Monthly     EU_SVC_CONF                       src=Eurostat     series=ei_bssi_m_r2?indic=BS-SCI-BAL&s_adj=SA&geo=EA21&freq=M  last_obs=2026-06-01  age=47d       tolerance=45d
   ANCHORS-ACTIVE (39) — historical anchors, no frequency-based staleness check (release cadence intrinsic):
     Annual      USA_CPI_JST                       src=JST          series=USA|cpi                   last_obs=2020-12-31  next_expected_release=2026-12-31
     Annual      USA_GDP_JST                       src=JST          series=USA|gdp                   last_obs=2020-12-31  next_expected_release=2026-12-31
