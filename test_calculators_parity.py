@@ -1,57 +1,38 @@
 """
-test_calculators_parity.py — C7 refactor safety net (offline gate).
+test_calculators_parity.py — C7 calculator-integrity gate (offline).
 
-Asserts that every one of the 112 macro-market calculators still produces the
-exact output frozen in test_fixtures/calculators_parity_golden.json. The golden
-was generated from the pre-C7 monolith; the C7 split of compute_macro_market.py
-into a calculators/ package must reproduce it byte-for-byte (a pure code move).
-
-Regenerate intentionally with:  python calculators_parity_harness.py
-
-See calculators_parity_harness.py for why each calc is fingerprinted directly
-(EMPTY / RAISED:<type> / hash) rather than via the assembled CSV.
+Guards the lasting risk from the C7 split of compute_macro_market.py into a
+calculators/ package: a moved calc that references a helper not imported into its
+new module raises NameError (which compute_all_indicators would silently swallow
+into an empty indicator). Data-independent by design — see
+calculators_parity_harness for why the earlier value-hash golden was replaced
+(it broke CI on ordinary daily data commits).
 """
 
-import json
 import unittest
 
 import calculators_parity_harness as harness
+import compute_macro_market as cm
 
 
-class TestCalculatorParity(unittest.TestCase):
-    def test_all_calculators_match_golden(self):
-        with open(harness.GOLDEN_PATH, encoding="utf-8") as f:
-            golden = json.load(f)
-        live = harness.compute_fingerprints()
+class TestCalculatorIntegrity(unittest.TestCase):
+    def test_every_indicator_has_a_callable_calculator(self):
+        self.assertGreaterEqual(len(cm.ALL_INDICATOR_IDS), 112)
+        missing = [i for i in cm.ALL_INDICATOR_IDS
+                   if not callable(cm._ALL_CALCULATORS.get(i))]
+        self.assertFalse(missing, f"indicator id(s) with no calculator: {missing}")
 
-        self.assertEqual(
-            set(golden), set(live),
-            "indicator id set changed vs golden:\n"
-            f"  only in golden: {sorted(set(golden) - set(live))}\n"
-            f"  only in live:   {sorted(set(live) - set(golden))}",
-        )
-
-        diffs = [
-            f"  {k}: golden={golden[k][:16]}… live={live[k][:16]}…"
-            if len(golden[k]) == 64 or len(live[k]) == 64
-            else f"  {k}: golden={golden[k]!r} live={live[k]!r}"
-            for k in sorted(golden) if golden[k] != live[k]
-        ]
+    def test_no_calculator_has_import_breakage(self):
+        result = harness.classify_calculators()
+        broken = {k: v for k, v in result.items() if v.startswith("BROKEN:")}
         self.assertFalse(
-            diffs,
-            f"{len(diffs)} calculator(s) diverged from the pre-C7 golden — the "
-            "refactor changed behaviour (or a moved calc lost a helper import, "
-            "flipping a result to RAISED):\n" + "\n".join(diffs),
+            broken,
+            "calculator(s) raised an import-class error — a moved calc likely "
+            "lost a helper import in the calculators/ package:\n"
+            + "\n".join(f"  {k}: {v}" for k, v in sorted(broken.items())),
         )
-
-    def test_golden_is_meaningfully_populated(self):
-        # Guard against a golden that silently degraded to all-EMPTY (which would
-        # make the parity assertion vacuous).
-        with open(harness.GOLDEN_PATH, encoding="utf-8") as f:
-            golden = json.load(f)
-        hashed = sum(1 for v in golden.values() if len(v) == 64)
-        self.assertGreater(hashed, 100,
-                           f"golden has only {hashed} hashed calcs — regenerate it")
+        no_calc = [k for k, v in result.items() if v == "NO_CALC"]
+        self.assertFalse(no_calc, f"indicator(s) with no registered calculator: {no_calc}")
 
 
 if __name__ == "__main__":
