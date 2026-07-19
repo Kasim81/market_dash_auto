@@ -414,6 +414,35 @@ def _resolve_data_frame() -> pd.DataFrame | None:
 # SERIES FETCH
 # ---------------------------------------------------------------------------
 
+# Derived series computed from workbook columns rather than read directly.
+# Convention: a ``COMPUTE:<name>`` series_id is resolved by _compute_series
+# instead of a Data-sheet column lookup.
+_COMPUTED_PREFIX = "COMPUTE:"
+
+
+def _compute_series(name: str, col_name: str | None) -> pd.Series | None:
+    """Derive a series the ie_data.xls workbook doesn't carry directly.
+
+    ``PE`` — trailing S&P 500 P/E = Composite Price (``P``) ÷ trailing Earnings
+    (``E``), both monthly from the same workbook (so their date indices align
+    exactly). Months with non-positive earnings (e.g. the 2008-09 earnings
+    collapse) yield an undefined trailing P/E and are dropped; genuine
+    earnings-driven spikes (2009 trailing P/E ran ~120) are kept."""
+    if name == "PE":
+        p = fetch_series_as_pandas("P")
+        e = fetch_series_as_pandas("E")
+        if p is None or e is None:
+            return None
+        e = e.reindex(p.index)
+        s = (p / e)[e > 0].dropna()      # e>0 strictly → finite, no div-by-zero
+        if s.empty:
+            return None
+        s.name = col_name or f"{_COMPUTED_PREFIX}{name}"
+        return s
+    print(f"    [Shiller] unknown computed series {name!r}")
+    return None
+
+
 def fetch_series_as_pandas(
     series_id: str,
     col_name: str | None = None,
@@ -421,11 +450,14 @@ def fetch_series_as_pandas(
     """Fetch one Shiller series and return a date-indexed pd.Series, or None.
 
     series_id : header from the Data sheet, e.g. "CAPE", "S&P Comp. P",
-                "Dividend D", "Earnings E", "CPI", "Long Interest Rate GS10".
+                "Dividend D", "Earnings E", "CPI", "Long Interest Rate GS10";
+                or a ``COMPUTE:<name>`` derived series (e.g. ``COMPUTE:PE``).
     col_name  : optional name for the returned Series (default = series_id).
 
     Returns None on download / parse failure (logged to stdout for
     pipeline.log capture)."""
+    if series_id.startswith(_COMPUTED_PREFIX):
+        return _compute_series(series_id[len(_COMPUTED_PREFIX):], col_name)
     df = _resolve_data_frame()
     if df is None:
         return None
