@@ -89,6 +89,22 @@ class ShillerLiveSmokeTest(unittest.TestCase):
             f"(< 2020-01); workbook may not have refreshed"
         )
 
+    def test_computed_trailing_pe_in_plausible_range(self):
+        # USA_SP500_PE = COMPUTE:PE — derived P/E = Composite Price / trailing
+        # Earnings, both from the same workbook (§3.4 valuation redundancy).
+        s = shiller_src.fetch_series_as_pandas("COMPUTE:PE", col_name="USA_SP500_PE")
+        self.assertIsNotNone(s, "COMPUTE:PE returned None despite reachable workbook")
+        self.assertFalse(s.empty, "computed trailing P/E parsed as empty")
+        last = float(s.iloc[-1])
+        self.assertTrue(
+            3.0 <= last <= 80.0,
+            f"trailing S&P 500 P/E {last} outside plausible [3, 80] "
+            f"(current ~26; only earnings-collapse quarters spike higher)",
+        )
+        self.assertTrue((s > 0).all(), "computed P/E has non-positive values")
+        self.assertGreater(len(s), 500,
+                           f"only {len(s)} P/E obs — the P or E column may be missing")
+
     def test_series_spans_long_run_window(self):
         # Series_id "P" is the workbook's actual column header for the
         # S&P Composite Price series. (The verbose "S&P Comp. P" is the
