@@ -1,23 +1,20 @@
-## Daily audit — 2026-07-18 — **83 ISSUES** (9 fetch errors, 74 stale series)
+## Daily audit — 2026-07-19 — **81 ISSUES** (8 fetch errors, 73 stale series)
 
-_Run: 2026-07-18 04:13 UTC_
+_Run: 2026-07-19 04:41 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**yfinance_dead** (2):
-- `HYXU`
-- `IFRB.L`
-
-**fallback_demotions** (6):
+**fallback_demotions** (7):
+- `[FALLBACK] (snapshot) ITA_UNEMPLOYMENT: declared primary ISTAT/151_874/M.IT.UNEM_R.N.1.Y15-74. (tier 0) demoted — primary returned no data this run; serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
 - `[FALLBACK] (snapshot) FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
-- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 140d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 140d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 - `[FALLBACK] FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-31)`
-- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 139d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 140d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 140d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 
 **other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
@@ -31,48 +28,48 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1325d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 990d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 383d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 139d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 108d | 45d |
-| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 108d | 45d\* |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1326d | 45d |
+| `CHN_POLICY_RATE` | FRED | Monthly | 2023-11-01 | 991d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 991d | 45d |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 140d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 109d | 45d |
+| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 109d | 45d\* |
 
-**STALE** (68):
+**STALE** (67):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 564d | 540d |
-| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 198d | 180d\* |
-| `CP` | FRED | Quarterly | 2026-01-01 | 198d | 180d\* |
-| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 167d | 100d\* |
-| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 167d | 100d\* |
-| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 167d | 100d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 140d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 140d | 120d\* |
-| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 139d | 100d\* |
-| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 139d | 100d\* |
-| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 139d | 90d\* |
-| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 139d | 120d\* |
-| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 139d | 120d\* |
-| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 139d | 120d |
-| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 139d | 120d\* |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 109d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 109d | 90d\* |
-| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 108d | 60d\* |
-| `M2SL` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 78d | 45d |
-| `MICH` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `UMCSENT` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `CFNAI` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `GBR_CPI_INDEX` | ONS | Monthly | 2026-05-01 | 78d | 75d\* |
-| `JPN_REER` | FRED | Monthly | 2026-05-01 | 78d | 75d\* |
-| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 78d | 45d\* |
-| `EZ_M3` | ECB | Monthly | 2026-05-01 | 78d | 45d\* |
-| `EZ_INFL_EXP_12M` | ECB | Monthly | 2026-05-01 | 78d | 40d\* |
-| `JPN_SPPI` | BoJ | Monthly | 2026-05-01 | 78d | 45d\* |
-| _… 38 more in `data_audit.txt`_ |  |  |  |  |  |
+| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 565d | 540d |
+| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 199d | 180d\* |
+| `CP` | FRED | Quarterly | 2026-01-01 | 199d | 180d\* |
+| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 168d | 100d\* |
+| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 168d | 100d\* |
+| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 168d | 100d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 141d | 90d\* |
+| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 140d | 100d\* |
+| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 140d | 100d\* |
+| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 140d | 90d\* |
+| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 140d | 120d\* |
+| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 140d | 120d\* |
+| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 140d | 120d |
+| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 140d | 120d\* |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 110d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 110d | 90d\* |
+| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 109d | 60d\* |
+| `M2SL` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 79d | 45d |
+| `MICH` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `UMCSENT` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `CFNAI` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `GBR_CPI_INDEX` | ONS | Monthly | 2026-05-01 | 79d | 75d\* |
+| `JPN_REER` | FRED | Monthly | 2026-05-01 | 79d | 75d\* |
+| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 79d | 45d\* |
+| `EZ_M3` | ECB | Monthly | 2026-05-01 | 79d | 45d\* |
+| `EZ_INFL_EXP_12M` | ECB | Monthly | 2026-05-01 | 79d | 40d\* |
+| `JPN_SPPI` | BoJ | Monthly | 2026-05-01 | 79d | 45d\* |
+| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 79d | 60d\* |
+| _… 37 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -125,5 +122,3 @@ Full report attached as `data_audit.txt` in today's commit.
 
 </details>
 
-
-_audit_writeback: 2 ticker(s) on active dead-list streak (threshold 14d); none flipped this run._
