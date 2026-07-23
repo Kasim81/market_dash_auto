@@ -1,6 +1,6 @@
-## Daily audit — 2026-07-22 — **84 ISSUES** (8 fetch errors, 76 stale series)
+## Daily audit — 2026-07-23 — **81 ISSUES** (7 fetch errors, 74 stale series)
 
-_Run: 2026-07-22 04:31 UTC_
+_Run: 2026-07-23 04:29 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -9,68 +9,65 @@ Full report attached as `data_audit.txt` in today's commit.
 
 **fallback_demotions** (6):
 - `[FALLBACK] (snapshot) FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-28)`
-- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 143d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 143d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 144d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] (snapshot) ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 144d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 - `[FALLBACK] FRA_UNEMPLOYMENT: declared primary INSEE/SERIES_BDM/001688527 (tier 0) demoted — finer-cadence fallback outranks coarser primary (cadence-first); serving OECD/UNEMPLOYMENT (tier 1, Monthly, last 2026-05-31)`
-- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 143d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
-- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 143d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] AUS_GDP_GROWTH: declared primary ABS/ANA_AGG/M2.GPM.20.AUS.Q (tier 0) demoted — stale 144d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
+- `[FALLBACK] ITA_GDP_GROWTH: declared primary ISTAT/163_156/Q.IT.B1GQ_B_W2_S1.G1.Y. (tier 0) demoted — stale 144d (last obs 2026-03-01, group freshest 2031-12-31, gate 2x93d); serving IMF/NGDP_RPCH (tier 1, Annual, last 2031-12-31)`
 
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5590 obs`
 
 </details>
 
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (8):
+**EXPIRED** (6):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1329d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 994d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 387d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 143d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 112d | 45d |
-| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-04-01 | 112d | 45d\* |
-| `EZ_INFL_EXP_12M` | ECB | Monthly | 2026-05-01 | 82d | 40d\* |
-| `GBR_PPI_OUTPUT` | ONS | Monthly | 2026-05-01 | 82d | 40d\* |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1330d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 995d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 388d | 120d\* |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 144d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 113d | 45d |
+| `EZ_INFL_EXP_12M` | ECB | Monthly | 2026-05-01 | 83d | 40d\* |
 
 **STALE** (68):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 202d | 180d\* |
-| `CP` | FRED | Quarterly | 2026-01-01 | 202d | 180d\* |
-| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 171d | 100d\* |
-| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 171d | 100d\* |
-| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 171d | 100d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 144d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 144d | 120d\* |
-| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 143d | 100d\* |
-| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 143d | 100d\* |
-| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 143d | 90d\* |
-| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 143d | 120d\* |
-| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 143d | 120d\* |
-| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 143d | 120d |
-| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 143d | 120d\* |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 113d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 113d | 90d\* |
-| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 113d | 90d\* |
-| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 112d | 60d\* |
-| `M2SL` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 82d | 45d |
-| `MICH` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `UMCSENT` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `CFNAI` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `GBR_CPI_INDEX` | ONS | Monthly | 2026-05-01 | 82d | 75d\* |
-| `JPN_REER` | FRED | Monthly | 2026-05-01 | 82d | 75d\* |
-| `AUS_UNEMPLOYMENT` | ABS | Monthly | 2026-05-01 | 82d | 45d\* |
-| `EZ_M3` | ECB | Monthly | 2026-05-01 | 82d | 45d\* |
-| `JPN_SPPI` | BoJ | Monthly | 2026-05-01 | 82d | 45d\* |
-| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 82d | 60d\* |
+| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 569d | 540d |
+| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 203d | 180d\* |
+| `CP` | FRED | Quarterly | 2026-01-01 | 203d | 180d\* |
+| `JP_TANKAN_LNFG` | BoJ | Quarterly | 2026-02-01 | 172d | 100d\* |
+| `JP_TANKAN_SMFG` | BoJ | Quarterly | 2026-02-01 | 172d | 100d\* |
+| `JP_TANKAN_SNFG` | BoJ | Quarterly | 2026-02-01 | 172d | 100d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 145d | 90d\* |
+| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 145d | 120d\* |
+| `JP_TANKAN_LMFG_FCST` | BoJ | Quarterly | 2026-03-01 | 144d | 100d\* |
+| `JP_TANKAN_LNFG_FCST` | BoJ | Quarterly | 2026-03-01 | 144d | 100d\* |
+| `GBR_GDP_REAL` | ONS | Quarterly | 2026-03-01 | 144d | 90d\* |
+| `AUS_CPI_INDEX` | ABS | Quarterly | 2026-03-01 | 144d | 120d\* |
+| `AUS_GDP_REAL` | ABS | Quarterly | 2026-03-01 | 144d | 120d\* |
+| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 144d | 120d |
+| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 144d | 120d\* |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 114d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 114d | 90d\* |
+| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 114d | 90d\* |
+| `CAN_GDP_MONTHLY` | StatCan | Monthly | 2026-04-01 | 113d | 60d\* |
+| `M2SL` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 83d | 45d |
+| `MICH` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `UMCSENT` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `CFNAI` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `JPN_REER` | FRED | Monthly | 2026-05-01 | 83d | 75d\* |
+| `ITA_UNEMPLOYMENT` | ISTAT | Monthly | 2026-05-01 | 83d | 45d\* |
+| `EZ_M3` | ECB | Monthly | 2026-05-01 | 83d | 45d\* |
+| `JPN_SPPI` | BoJ | Monthly | 2026-05-01 | 83d | 45d\* |
+| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 83d | 60d\* |
 | _… 38 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
