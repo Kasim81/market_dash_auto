@@ -1,6 +1,6 @@
 # Market Dashboard — Technical Manual
 
-> Last updated: 2026-07-18
+> Last updated: 2026-07-24
 
 This manual is the authoritative record of the **current code state** — modules, data flow, schemas, operational behaviour. It is paired with two forward-looking documents:
 
@@ -62,9 +62,9 @@ The pipeline runs automatically every day at **00:34 UTC** via GitHub Actions (`
 
 ```
 market_dash_auto/
-├── fetch_data.py                  # Master orchestrator — runs all phases (984 lines)
-├── fetch_hist.py                  # Comp-pipeline weekly history (854 lines)
-├── fetch_macro_economic.py        # Unified raw-macro coordinator (~1,390 lines; §2.C C2 registry dispatch — _SOURCE_HANDLERS + _make_source_handlers replaced the two 27-branch ladders and ~42 template wrappers)
+├── fetch_data.py                  # Master orchestrator — runs all phases (997 lines)
+├── fetch_hist.py                  # Comp-pipeline weekly history (862 lines; +8 for C11 stable column ordering on the comp-hist write, 2026-07-18)
+├── fetch_macro_economic.py        # Unified raw-macro coordinator (~1,408 lines; §2.C C2 registry dispatch — _SOURCE_HANDLERS + _make_source_handlers replaced the two 27-branch ladders and ~42 template wrappers)
 ├── compute_macro_market.py        # 112 macro-market composite indicators + monthly-hist writer — thin dispatcher over calculators/ since C7 (1,495 lines)
 ├── calculators/                   # Phase E indicator calculators, split by region from compute_macro_market.py (C7, 2026-07-16)
 │   ├── common.py                       # Shared helpers/constants (_to_weekly_friday, _rolling_zscore, _get_col, _p, _log_ratio, _arith_diff, _sum_log_ratio, _yoy, _taylor_gap) (161 lines)
@@ -76,8 +76,8 @@ market_dash_auto/
 │   ├── fx.py                          # FX & commodity calculators — FX_CMD1-6/FX_CN1/FX_1/FX_2 (10 functions, 129 lines)
 │   ├── monetary.py                    # US momentum/monetary M-series calculators — M1-M5 (5 functions, 92 lines)
 │   └── global_.py                     # Global/cross-asset calculators — GL_*/CA_CLI1/AU_CLI1/GLOBAL_GOLD1/GL_MONPOL1 (11 functions, 161 lines)
-├── calculators_parity_harness.py  # C7 parity harness — hashes all 112 calculator outputs over committed data + fixed synthetic supp for before/after-move comparison (115 lines)
-├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER (732 lines)
+├── calculators_parity_harness.py  # C7 calculator-integrity check — runs all 112 calculators over committed data + fixed synthetic supp and fails on an import-class error (NameError/ImportError), i.e. a moved calc that lost a helper reference; rewritten data-independent 2026-07-19 after the original golden-fingerprint version turned CI red on every daily data commit (69 lines)
+├── library_utils.py               # Shared sort-order dicts, FX maps, sort key, SHEETS_* tab sets, INDICATOR_CONCEPT_ORDER, stable_hist_column_order + canonical hist float_format (C11) (778 lines)
 ├── data_audit.py                  # Daily integrated audit — fetch outcomes + static checks + staleness + registry drift + §3.11 explorer pre-flight + §2.A A9 family-default plausibility/credibility gates (§2.6 v2; 1,826 lines)
 ├── data_audit.txt                 # OUTPUT — full sorted audit report (regenerated each run)
 ├── audit_comment.md               # OUTPUT — GitHub Issue comment body posted to perpetual `daily-audit` Issue
@@ -163,7 +163,7 @@ market_dash_auto/
 │   ├── macro_library_insee.csv        # INSEE BDM idbanks (3 rows: FRA business climate, unemployment, GDP volume)
 │   ├── macro_library_bdf.csv          # BdF Webstat Opendatasoft Explore v2.1 keys (2 rows: FRA MFI lending rates FRA_LOAN_RATE_HOUSE/NFC — verified 2026-07-09 — observations|series_key='...' format)
 │   ├── macro_library_alpha_vantage.csv # Header-only — Alpha Vantage OVERVIEW scaffolding (§3.3, population deferred)
-│   ├── macro_library_shiller.csv      # Yale ie_data.xls column headers (6 rows: CAPE, S&P composite price/dividend/earnings, US CPI 1871+, 10Y long rate 1871+)
+│   ├── macro_library_shiller.csv      # Yale ie_data.xls column headers (7 rows: CAPE, S&P composite price/dividend/earnings, US CPI 1871+, 10Y long rate 1871+, + derived COMPUTE:PE trailing P/E §3.4 2026-07-19)
 │   ├── macro_library_french.csv       # Ken French ZIP-stem|column keys (6 rows: US 5-factor Mkt-RF/SMB/HML/RMW/CMA + 1m RF)
 │   ├── macro_library_jst.csv          # JST Macrohistory R6 <iso>|<column> keys (39 rows: 10 priority economies × cpi/gdp (nominal)/eq_tr/ltrate; CAN eq_tr dropped 2026-06-11)
 │   ├── macro_library_atlanta_fed.csv  # Atlanta Fed GDPNow series (1 row: US_GDPNOW — US Real GDP Q/Q SAAR nowcast, daily)
@@ -228,7 +228,7 @@ market_dash_auto/
 │
 └── .github/workflows/
     ├── update_data.yml            # GitHub Actions daily scheduler (00:34 UTC); pipes both runs through `tee pipeline.log`; runs `data_audit.py`; posts the audit to the perpetual `daily-audit` GitHub Issue; commits data CSVs + Pattern-9 sister archives + data_audit.txt/audit_comment.md (pipeline.log no longer committed, §2.C C10); uploads pipeline.log + data_audit.txt as a 90-day workflow artifact; gates + deploys the Indicator Explorer to GitHub Pages (§2.C C9, separate `deploy-pages` job)
-    └── ci.yml                     # Offline unit-test gate on pull_request + push-to-main — 15 deterministic modules, ~168 tests, no network/keys (forward_plan §2.C C5, 2026-07-08; test_bounded_fill + test_source_registry added 2026-07-08/09; test_library_sync + test_data_audit_critical + test_fetch_backoff added 2026-07-09; test_equity_pe + test_calculators_parity + test_plausibility added 2026-07-15/16)
+    └── ci.yml                     # Offline unit-test gate on pull_request + push-to-main — 16 deterministic modules, 174 tests, no network/keys (forward_plan §2.C C5, 2026-07-08; test_bounded_fill + test_source_registry added 2026-07-08/09; test_library_sync + test_data_audit_critical + test_fetch_backoff added 2026-07-09; test_equity_pe + test_calculators_parity + test_plausibility added 2026-07-15/16; test_hist_stability added 2026-07-18, §2.C C11)
 ```
 
 ---
@@ -506,10 +506,10 @@ Two more ONS series aren't exposed as classic CDID timeseries (so `sources/ons.p
 
 - **URL:** `http://www.shillerdata.com/data/ie_data.xls` (primary host, 2026-06-11 update); Yale `http://www.econ.yale.edu/~shiller/data/ie_data.xls` is the fallback. Excel workbook; the "Data" sheet has 7 pre-header rows, header on row 8, monthly observations from Jan 1871.
 - **Auth:** None required.
-- **Used for:** 6 US monthly series — Shiller CAPE (`USA_CAPE`), S&P 500 Composite Price (`USA_SP500_SHILLER`), dividends (`USA_SP500_DIV_SHILLER`), earnings (`USA_SP500_EPS_SHILLER`), US CPI 1871+ (`USA_CPI_SHILLER`), US 10Y long rate 1871+ (`USA_TREAS_10Y_SHILLER`). Library: `data/macro_library_shiller.csv`. **Role:** confirmatory pre-1950 cross-validation anchor per the regime-AA v2 §3.13 handoff memo — column names are deliberately distinct from the modern BLS/FRED canonicals (`USA_CPI_INDEX`, `USA_TREAS_10Y`) so the long-run rows don't shadow the production columns.
+- **Used for:** 6 US monthly series read straight from the workbook — Shiller CAPE (`USA_CAPE`), S&P 500 Composite Price (`USA_SP500_SHILLER`), dividends (`USA_SP500_DIV_SHILLER`), earnings (`USA_SP500_EPS_SHILLER`), US CPI 1871+ (`USA_CPI_SHILLER`), US 10Y long rate 1871+ (`USA_TREAS_10Y_SHILLER`) — plus one **derived** 7th series (§3.4, 2026-07-19): `USA_SP500_PE` (trailing S&P 500 P/E = Composite Price ÷ trailing Earnings, both from the same workbook), computed via a `COMPUTE:<name>` series-id convention (`series_id="COMPUTE:PE"` in the library row) resolved by `_compute_series()` rather than read from a workbook column. Months with non-positive earnings are dropped; genuine earnings-collapse spikes (2009 trailing P/E ~120) are kept. A free, reliable US valuation series independent of the crumb-gated yfinance/Alpha Vantage snapshot path (§3.4 equity P/E), and a cross-check on the `equity_pe_snapshot` SPY row. Library: `data/macro_library_shiller.csv` (7 rows). **Role:** confirmatory pre-1950 cross-validation anchor per the regime-AA v2 §3.13 handoff memo — column names are deliberately distinct from the modern BLS/FRED canonicals (`USA_CPI_INDEX`, `USA_TREAS_10Y`) so the long-run rows don't shadow the production columns.
 - **Date-column quirk:** Shiller's "Date" column is decimal-year format where the fractional part is the month — `1871.10` is October 1871, **not** the first decile. The parser does `month = round((val - year) * 100)`; when the workbook serialises as strings the convention `"1871.1" → January, "1871.10" → October` is preserved (no zero-padding rewrite).
 - **Caching:** the downloaded workbook is process-cached (success + failure) — a fan-out that pulls CAPE + CPI + 10Y from the same library only hits Yale once. Same shape as `sources/ifo.py::_resolve_workbook_impl()`.
-- **Fetcher:** `sources/shiller.py` (449 lines; mirror+bytes retries via shared `base.fetch_with_backoff` since §2.C C3 batch 2, 2026-07-09). Smoke test: `test_shiller_smoke.py` (daily CI step — SKIPs when shillerdata.com and the Yale fallback are unreachable from the runner, which is expected in the local sandbox).
+- **Fetcher:** `sources/shiller.py` (481 lines; mirror+bytes retries via shared `base.fetch_with_backoff` since §2.C C3 batch 2, 2026-07-09; `COMPUTE:PE` derived-series path added 2026-07-19). Smoke test: `test_shiller_smoke.py` (daily CI step — SKIPs when shillerdata.com and the Yale fallback are unreachable from the runner, which is expected in the local sandbox; gained a `test_computed_trailing_pe_in_plausible_range` assertion 2026-07-19).
 
 ### Kenneth French — Dartmouth Tuck Data Library (2026-06-10)
 
@@ -724,7 +724,7 @@ These are the "Data-Layer Registry" — every fetched identifier in the pipeline
 | `macro_library_insee.csv` | 4 | sources/insee.py | **NEW 2026-06-09.** INSEE BDM idbanks (SERIES_BDM/ prefix): `FRA_BUS_CONF` (001565530 — Business Climate), `FRA_UNEMPLOYMENT` (001688527 — ILO unemployment rate Quarterly), `FRA_GDP_INDEX` (011794860 — GDP chained volume SA-WDA). INSEE is the ultimate source; supersedes OECD/Eurostat. Keyless (optional INSEE_API_KEY). **2026-07-08 (+1, §3.18):** `FRA_IND_PROD` (010768261 — IPI total industry item BE, SA-WDA 2021=100, 1990-01+, ~M-2 lag; tier-0 winner over the IMF PI T1 row). |
 | `macro_library_bdf.csv` | 2 | sources/bdf.py | **NEW 2026-06-09; rewritten 2026-06-10 for Opendatasoft Explore v2.1; rows verified 2026-07-09 (§2.A A6).** Banque de France Webstat keys in `<dataset_id>|<odsql_where>` form — both resolve to `observations|series_key='<KEY>'` against the single flat `observations` store: `FRA_LOAN_RATE_HOUSE` (`MIR1.M.FR.B.A22.A.R.A.2250U6.EUR.N`, 3.10% @ 2026-05) and `FRA_LOAN_RATE_NFC` (`MIR1.M.FR.B.A20.A.R.A.2240U6.EUR.N`, 3.54% @ 2026-05), 281 obs each 2003-01 → 2026-05. |
 | `macro_library_alpha_vantage.csv` | 0 | sources/alpha_vantage.py | **NEW 2026-06-10 (§3.3 scaffolding).** Header-only. Alpha Vantage OVERVIEW endpoint serves snapshot PE / forward PE / PEG / dividend yield / EPS / book value via `?function=OVERVIEW&symbol=<SYM>`. Free-tier cap (25 req/day) is too thin for a daily comp fan-out; population deferred per `manuals/alpha_vantage_evaluation.md`. The schema header is in place so the day the storage shape lands, only CSV rows need to be added. |
-| `macro_library_shiller.csv` | 6 | sources/shiller.py | **NEW 2026-06-10 (§3.13).** Yale `ie_data.xls` column headers: `CAPE` → USA_CAPE, `S&P Comp. P` → USA_SP500_SHILLER, `Dividend D` → USA_SP500_DIV_SHILLER, `Earnings E` → USA_SP500_EPS_SHILLER, `CPI` → USA_CPI_SHILLER, `Long Interest Rate GS10` → USA_TREAS_10Y_SHILLER. Monthly from 1871. Distinct from the modern BLS/FRED canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. |
+| `macro_library_shiller.csv` | 7 | sources/shiller.py | **NEW 2026-06-10 (§3.13).** Yale `ie_data.xls` column headers: `CAPE` → USA_CAPE, `S&P Comp. P` → USA_SP500_SHILLER, `Dividend D` → USA_SP500_DIV_SHILLER, `Earnings E` → USA_SP500_EPS_SHILLER, `CPI` → USA_CPI_SHILLER, `Long Interest Rate GS10` → USA_TREAS_10Y_SHILLER. Monthly from 1871. Distinct from the modern BLS/FRED canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. **2026-07-19 (+1, §3.4):** `COMPUTE:PE` → USA_SP500_PE, a derived trailing P/E (Price ÷ Earnings, both above) resolved by `_compute_series()` rather than a workbook column — a free valuation-redundancy series alongside the yfinance/Alpha Vantage equity P/E snapshot. |
 | `macro_library_french.csv` | 6 | sources/french.py | **NEW 2026-06-10 (§3.13).** Ken French Data Library `<zip_stem>|<column>` keys against `F-F_Research_Data_5_Factors_2x3_CSV.zip`: Mkt-RF / SMB / HML / RMW / CMA + 1-month T-bill RF. US 5-factor monthly returns from 1926-07 (RMW + CMA from 1963-07). Mapped to columns USA_FF_MKT_RF / USA_FF_SMB / USA_FF_HML / USA_FF_RMW / USA_FF_CMA / USA_FF_RF. International (Developed_5_Factors) + emerging (Emerging_5_Factors) extensions deferred. |
 | `macro_library_jst.csv` | 39 | sources/jst.py | **NEW 2026-06-10 (§3.13); −1 2026-06-11.** JST Macrohistory R6 `<iso>|<column>` keys: 10 priority economies (USA, GBR, DEU, FRA, ITA, JPN, NLD, CAN, AUS, CHE) × 4 columns (`cpi` / `gdp` / `eq_tr` / `ltrate`). Annual cadence, 1870+ depth. **2026-06-11:** CAN_EQUITY_TR_JST row dropped (JST R6 does not carry a Canadian equity total-return series). Column names like USA_CPI_JST / GBR_GDP_JST deliberately don't shadow modern canonicals — confirmatory pre-1950 cross-validation anchor for regime-AA Phase 0c. **2026-06-17 (PR #222):** all 10 `gdp` rows relabelled 'Real GDP' → 'Nominal GDP', units '(real)' → '(nominal)' — JST R6 `gdp` column is current-prices nominal GDP, not chain-linked real. |
 | `macro_library_atlanta_fed.csv` | 1 | sources/atlanta_fed.py | **NEW 2026-06-11 (§3.1.4).** Atlanta Fed GDPNow series. Single row: `gdpnow_us_qoq_saar` → `US_GDPNOW` (Atlanta Fed GDPNow — US Real GDP Growth Q/Q SAAR, daily, 2014+; freshness_override 14d). Keyless — no API key required. |
@@ -826,7 +826,7 @@ The library has ~404 rows and 29 columns. It is the **single source of truth** f
 
 ## 9. Module Reference
 
-### 9.1 `library_utils.py` (732 lines)
+### 9.1 `library_utils.py` (778 lines)
 
 **Role:** Shared constants and helpers — single authoritative source for sort logic, FX maps, and the Sheets tab-state frozensets used by every writer.
 
@@ -853,8 +853,9 @@ The library has ~404 rows and 29 columns. It is the **single source of truth** f
 | `SHEETS_LEGACY_TABS_TO_DELETE` | frozenset | The 12 retired tab titles swept on every run (4 pre-Stage-2 simple-pipeline tabs + 8 Stage-2-retired macro tabs). |
 | `write_hist_with_archive(df, path, prefix_rows=None, date_col="Date")` | function | **NEW 2026-04-30 (Stage A).** History-preservation writer. Per-column floor-advancement detection: for each column where the new fetch's earliest non-null date is later than the locally-stored earliest non-null date, the rows about to disappear are appended to `<path>_x.csv` (sister, deduped by date) before the live file is rewritten with the new (truncated) window. Used by every `*_hist.csv` writer (`fetch_data.py`, `fetch_hist.py`, `fetch_macro_economic.py`, `compute_macro_market.py`). See §11 Pattern 9. |
 | `load_hist_with_archive(path, **read_csv_kwargs)` | function | **NEW 2026-04-30 (Stage A).** History-preservation reader. Drop-in replacement for `pd.read_csv(path, ...)` that transparently unions live + sister via `combine_first` semantics — live wins on cells where it has a non-null value, sister fills cells where live is NaN. Used by `compute_macro_market.py` Phase E calculators and `docs/build_html.py` payload builders. |
+| `stable_hist_column_order(existing_path, data_cols, date_col="Date")` | function | **NEW 2026-07-18 (§2.C C11).** Pins the physical column order of a `*_hist.csv` write to the existing committed file's order, appending only genuinely-new columns at the end, so the non-deterministic fan-out order (OECD/World Bank/IMF per-country columns) stops rewriting the whole file every run. Applied by the caller **before** the per-column metadata prefix rows are built (`fetch_macro_economic.save_hist_csv`, `fetch_hist`'s comp-hist assembly), so metadata stays aligned to the reordered data. Returns `data_cols` unchanged when there's no existing file to anchor to (first write). Paired with a canonical `float_format="%.8g"` in `_write_hist_payload` (kills last-ULP float-repr wobble) — together these collapsed the daily hist-CSV diff from ~100% of lines to only genuinely-changed cells. Pinned by `test_hist_stability.py` (in the `ci.yml` gate). |
 
-### 9.2 `fetch_data.py` (984 lines)
+### 9.2 `fetch_data.py` (997 lines)
 
 **Role:** Master orchestrator + both snapshot pipelines (simple + comp). After `main()` finishes, three module-level `try/except` blocks chain in `fetch_hist.run_comp_hist`, `fetch_macro_economic.run_phase_macro_economic`, and `compute_macro_market.run_phase_e` (see §3 Execution Flow).
 
@@ -887,9 +888,9 @@ The library has ~404 rows and 29 columns. It is the **single source of truth** f
 | `COMP_FCY_PER_USD` | `library_utils.py` | Indirect-quote currency set |
 | `SHEETS_LEGACY_TABS_TO_DELETE` | `library_utils.py` | Legacy tab titles swept on every run (the previous module-local `TABS_TO_DELETE` set was consolidated into `library_utils.py` during the Phase G audit) |
 
-### 9.3 `fetch_hist.py` (854 lines)
+### 9.3 `fetch_hist.py` (862 lines)
 
-**Role:** Comp-pipeline weekly history — `market_data_comp_hist` only. The macro history (`macro_economic_hist`) is now built by `fetch_macro_economic.py` (see §9.4); the `run_hist()` / `build_macro_hist_df` / `MACRO_HIST_START` plumbing that used to live here was retired with `fetch_macro_us_fred.py` in the Stage 2 unification.
+**Role:** Comp-pipeline weekly history — `market_data_comp_hist` only. The macro history (`macro_economic_hist`) is now built by `fetch_macro_economic.py` (see §9.4); the `run_hist()` / `build_macro_hist_df` / `MACRO_HIST_START` plumbing that used to live here was retired with `fetch_macro_us_fred.py` in the Stage 2 unification. **2026-07-18 (§2.C C11):** the comp-hist column assembly now pins its physical column order via `library_utils.stable_hist_column_order` before the metadata prefix rows are built, so it no longer rewrites the whole file on every run.
 
 #### Key Functions
 
@@ -924,7 +925,7 @@ The library has ~404 rows and 29 columns. It is the **single source of truth** f
 - **Columns** = instruments (local currency first, then USD)
 - **Metadata prefix rows** (in Sheets tabs, not in CSVs): ticker ID, variant, source, name, broad asset class, region, sub-category, currency, units, frequency — then column header row, then data
 
-### 9.4 `fetch_macro_economic.py` (~1,300 lines; §2.C C2, 2026-07-09)
+### 9.4 `fetch_macro_economic.py` (~1,408 lines; §2.C C2 dispatch 2026-07-09, §2.C C11 column-order fix 2026-07-18)
 
 **Role:** Phase ME — unified raw-macro coordinator. Replaces the four retired per-source coordinators (Phase A `fetch_macro_us_fred.py`, Phase C `fetch_macro_international.py`, Phase D Tier 2 `fetch_macro_dbnomics.py`, Phase D ifo `fetch_macro_ifo.py`) and produces one snapshot tab (`macro_economic`) plus one history tab (`macro_economic_hist`).
 
@@ -952,6 +953,7 @@ The module loads every indicator definition from the per-source CSVs at import t
 | `_history_for_indicator(...)` | Generic per-indicator history dispatch (handles fan-out vs single-country) |
 | `build_hist_df(indicators)` | Build the wide-form `macro_economic_hist` DataFrame on the weekly Friday spine from 1947 |
 | `_build_hist_metadata_rows(...)` | Construct the 15 metadata prefix rows above the data (Column ID / Series ID / Source / Indicator / Country / Country Name / Region / Category / Subcategory / Concept / cycle_timing / Units / Frequency / Last Updated) |
+| `save_hist_csv(df, provenance)` | Write `macro_economic_hist`. **2026-07-18 (§2.C C11):** pins the physical column order via `library_utils.stable_hist_column_order` before the metadata rows are built, so the non-deterministic fan-out column order no longer rewrites the whole file every run |
 | `push_snapshot_to_sheets(df)` / `push_hist_to_sheets(df, indicators)` | Sheets writers — both check `library_utils.SHEETS_PROTECTED_TABS` before writing |
 | `run_phase_macro_economic()` | **Entry point** — load every library, fetch snapshot + history for all sources, save CSVs, push to Sheets |
 
@@ -1414,7 +1416,7 @@ As of the 2026-04-26 supplemental refactor (commit `48c8c1c`) and the 2026-04-27
 
 #### C7 — calculators split into a `calculators/` package (2026-07-16)
 
-All 112 `_calc_*` functions moved out of the module (previously 2,679 lines) into per-region files under `calculators/`, star-imported back in: `calculators/us.py` (37 functions), `europe.py` (19, EU/DE/IT/FR), `uk.py` (9), `japan.py` (9), `asia.py` (12, AS/CN), `fx.py` (10), `monetary.py` (5, the M-series), `global_.py` (11, GL/GLOBAL/CA/AU) — plus `calculators/common.py` for the shared helpers (`_to_weekly_friday`, `_rolling_zscore`, `_get_col`, `_p`, `_log_ratio`, `_arith_diff`, `_sum_log_ratio`, `_yoy`, `_taylor_gap`) and the three z-score constants (`ZSCORE_WINDOW`, `ZSCORE_MIN_PERIODS`, `_ALIGN_FFILL_LIMIT`). `compute_macro_market.py` now imports these via `from calculators.common import (...)` plus eight `from calculators.<region> import *` star-imports, and keeps everything else unchanged in place: the eight thematic sub-dicts (`_US_CALCULATORS`, `_EU_CALCULATORS`, `_ASIA_REGIONAL_CALCULATORS`, `_PHASE_D_CALCULATORS`, `_INFLATION_CALCULATORS`, `_NOWCAST_CALCULATORS`, `_TAYLOR_CALCULATORS`, `_GLOBAL_CALCULATORS`) and their `_ALL_CALCULATORS` merge, `make_result`/regime assignment, the output builders, and `main()`. Pure code move, **no behaviour change** — proven by `calculators_parity_harness.py` + `test_calculators_parity.py`: a golden fingerprint (hash / EMPTY / `RAISED:<type>`) of all 112 calculator outputs over committed data + a fixed synthetic `supp`, frozen before the move and asserted identical after (108 of 112 hashed; the rest EMPTY/RAISED identically both times), stored in `test_fixtures/calculators_parity_golden.json`. Wired into the `ci.yml` offline gate.
+All 112 `_calc_*` functions moved out of the module (previously 2,679 lines) into per-region files under `calculators/`, star-imported back in: `calculators/us.py` (37 functions), `europe.py` (19, EU/DE/IT/FR), `uk.py` (9), `japan.py` (9), `asia.py` (12, AS/CN), `fx.py` (10), `monetary.py` (5, the M-series), `global_.py` (11, GL/GLOBAL/CA/AU) — plus `calculators/common.py` for the shared helpers (`_to_weekly_friday`, `_rolling_zscore`, `_get_col`, `_p`, `_log_ratio`, `_arith_diff`, `_sum_log_ratio`, `_yoy`, `_taylor_gap`) and the three z-score constants (`ZSCORE_WINDOW`, `ZSCORE_MIN_PERIODS`, `_ALIGN_FFILL_LIMIT`). `compute_macro_market.py` now imports these via `from calculators.common import (...)` plus eight `from calculators.<region> import *` star-imports, and keeps everything else unchanged in place: the eight thematic sub-dicts (`_US_CALCULATORS`, `_EU_CALCULATORS`, `_ASIA_REGIONAL_CALCULATORS`, `_PHASE_D_CALCULATORS`, `_INFLATION_CALCULATORS`, `_NOWCAST_CALCULATORS`, `_TAYLOR_CALCULATORS`, `_GLOBAL_CALCULATORS`) and their `_ALL_CALCULATORS` merge, `make_result`/regime assignment, the output builders, and `main()`. Pure code move, **no behaviour change** at the time of the split — originally proven by `calculators_parity_harness.py` + `test_calculators_parity.py` via a golden fingerprint (hash / EMPTY / `RAISED:<type>`) of all 112 calculator outputs over committed data + a fixed synthetic `supp`, frozen before the move and asserted identical after (108 of 112 hashed; the rest EMPTY/RAISED identically both times), stored in `test_fixtures/calculators_parity_golden.json`. **That golden-fixture version broke CI on `main` 2026-07-19**: the daily "Update Market Data" job rewrites `macro_economic_hist`/comp-hist every run, so new data produced different calculator outputs and the frozen fingerprint mismatched on the very first post-merge daily commit. `calculators_parity_harness.py` was rewritten **data-independent** (`fb56db8`): it still runs every one of the 112 calculators over the committed hist frames + the fixed synthetic `supp`, but no longer compares output values/hashes — it fails only on an import-class error (`NameError`/`ImportError`), i.e. a calc relocated into the wrong `calculators/` module that lost a helper reference. `test_fixtures/calculators_parity_golden.json` and the `test_fixtures/` directory were deleted. Wired into the `ci.yml` offline gate (`test_calculators_parity`).
 
 #### Indicator Families (112 total)
 
