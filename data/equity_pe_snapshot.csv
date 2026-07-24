@@ -58,3 +58,12 @@ asof_date,ticker,name,pe_ttm,pe_forward,source
 2026-07-23,QQQ,"Invesco QQQ Trust, Series 1",31.300108,,yfinance
 2026-07-23,SPY,State Street SPDR S&P 500 ETF T,26.88446,,yfinance
 2026-07-23,VGK,Vanguard FTSEEuropean ETF,18.42204,,yfinance
+2026-07-24,DIA,State Street SPDR Dow Jones Ind,24.393957,,yfinance
+2026-07-24,EEM,iShares MSCI Emerging Index Fun,16.647137,,yfinance
+2026-07-24,EFA,iShares MSCI EAFE ETF,18.665272,,yfinance
+2026-07-24,EWJ,iShares MSCI Japan Index Fund,18.175507,,yfinance
+2026-07-24,IWM,iShares Russell 2000 Index Fund,18.096659,,yfinance
+2026-07-24,MDY,State Street SPDR S&P MIDCAP 40,21.67273,,yfinance
+2026-07-24,QQQ,"Invesco QQQ Trust, Series 1",30.705925,,yfinance
+2026-07-24,SPY,State Street SPDR S&P 500 ETF T,26.552456,,yfinance
+2026-07-24,VGK,Vanguard FTSEEuropean ETF,18.161499,,yfinance
