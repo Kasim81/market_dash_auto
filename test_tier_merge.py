@@ -192,5 +192,141 @@ class DemotionReportingTest(unittest.TestCase):
         self.assertIn("+1 other tier-0", reason)
 
 
+class CadenceDegradationTest(unittest.TestCase):
+    """A coarser same-tier source taking over must not be silent.
+
+    Regression cover for the 2026-07-27 live incident: CHE_CPI_YOY swapped
+    from the monthly OECD/DB.nomics series to the World Bank annual series
+    (both tier 1), rewriting 3,678 of 4,153 history rows and moving the last
+    observation backwards — with no [FALLBACK] line, because the tier-only
+    detector saw no tier change.
+    """
+
+    def _che_rows(self, monthly_value):
+        return [
+            _row("DB.nomics", "CHE_CPI_YOY", monthly_value, "Percent Change YoY",
+                 "Monthly", "2026-05-31", 1, country="CHE"),
+            _row("World Bank", "CHE_CPI_YOY", 0.154,
+                 "% change year-on-year (annual average)", "Annual",
+                 "2025-12-31", 1, country="CHE"),
+        ]
+
+    def test_same_tier_cadence_drop_is_logged(self):
+        out, log = _dedupe_capturing(self._che_rows(None))   # monthly has no data
+        self.assertEqual(out[0]["Source"], "World Bank")
+        self.assertIn("[FALLBACK]", log)
+        self.assertIn("CADENCE DEGRADED", log)
+        self.assertIn("returned no data this run", log)
+
+    def test_healthy_finer_source_stays_silent(self):
+        out, log = _dedupe_capturing(self._che_rows(0.61))
+        self.assertEqual(out[0]["Source"], "DB.nomics")
+        self.assertNotIn("[FALLBACK]", log)
+
+    def test_stale_finer_candidate_names_staleness(self):
+        stale = (date.today() - timedelta(days=900)).isoformat()
+        rows = [
+            _row("DB.nomics", "X_CPI_YOY", 1.0, "% YoY", "Monthly", stale, 1),
+            _row("World Bank", "X_CPI_YOY", 2.0, "% YoY", "Annual",
+                 (date.today() - timedelta(days=20)).isoformat(), 1),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "World Bank")
+        self.assertIn("CADENCE DEGRADED", log)
+        self.assertIn("stale", log)
+
+    def test_winner_at_finest_cadence_is_not_an_event(self):
+        cands = [
+            {"has_data": True, "kind": "rate", "cad_rank": 2, "cad_days": 31,
+             "last": date.today(), "tier": 1, "rank": 2, "order": 0, "payload": {}},
+            {"has_data": True, "kind": "rate", "cad_rank": 4, "cad_days": 366,
+             "last": date.today(), "tier": 1, "rank": 2, "order": 1, "payload": {}},
+        ]
+        win = f._select_winner(cands)
+        self.assertEqual(win["cad_rank"], 2)
+        self.assertIsNone(f._demotion_event(cands, win))
+
+    def test_tier_demotion_still_takes_precedence(self):
+        """A real tier demotion keeps its own reason, not the cadence one."""
+        rows = [
+            _row("ONS", "X_RATE", None, "% YoY", "Monthly", "2026-05-31", 0),
+            _row("FRED", "X_RATE", 1.0, "% YoY", "Monthly", "2026-05-31", 1),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "FRED")
+        self.assertIn("[FALLBACK]", log)
+        self.assertNotIn("CADENCE DEGRADED", log)
+
+
+class ForecastDateTest(unittest.TestCase):
+    """A future-dated observation is a projection, not freshness.
+
+    Regression cover for the 2026-07-23 daily-audit finding: IMF DataMapper
+    publishes annual forecasts years ahead of the last actual, and those rows
+    were setting the group's "freshest" mark — pushing the real national
+    quarterly primaries past the 2x-cadence staleness gate so the forecast
+    won. `_eff_last` clamps future dates to today for every freshness
+    comparison.
+    """
+
+    def test_eff_last_clamps_future_only(self):
+        past = date.today() - timedelta(days=200)
+        future = date.today() + timedelta(days=2000)
+        self.assertEqual(f._eff_last(past), past)          # actuals untouched
+        self.assertEqual(f._eff_last(future), date.today())
+        self.assertIsNone(f._eff_last(None))
+
+    def test_annual_forecast_does_not_demote_quarterly_primary(self):
+        """The live AUS_GDP_GROWTH / ITA_GDP_GROWTH signature."""
+        actual = date.today() - timedelta(days=148)        # ~last quarter's print
+        forecast = date(date.today().year + 5, 12, 31)     # IMF projection
+        rows = [
+            _row("ABS", "AUS_GDP_GROWTH", 1.2, "% YoY", "Quarterly",
+                 actual.isoformat(), 0, country="AUS"),
+            _row("IMF", "AUS_GDP_GROWTH", 2.4, "% YoY", "Annual",
+                 forecast.isoformat(), 1, country="AUS"),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(len(out), 1)
+        # the national quarterly actual wins on cadence, not the projection
+        self.assertEqual(out[0]["Source"], "ABS")
+        self.assertNotIn("[FALLBACK]", log)
+
+    def test_genuinely_stale_primary_still_demoted(self):
+        """The clamp must not disarm the staleness gate for real observations."""
+        stale = date.today() - timedelta(days=900)
+        fresh = date.today() - timedelta(days=10)
+        rows = [
+            _row("ISTAT", "X_IND_PROD", 1.0, "% YoY", "Monthly",
+                 stale.isoformat(), 0),
+            _row("OECD", "X_IND_PROD", 1.5, "% YoY", "Monthly",
+                 fresh.isoformat(), 1),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["Source"], "OECD")
+        self.assertIn("[FALLBACK]", log)
+
+    def test_forecast_wins_when_it_is_the_only_candidate(self):
+        """Clamping affects ranking only — a lone forecast row still serves."""
+        forecast = date(date.today().year + 5, 12, 31)
+        cands = [{
+            "has_data": True, "kind": "rate", "cad_rank": 4, "cad_days": 366,
+            "last": forecast, "tier": 1, "rank": 2, "order": 0, "payload": {},
+        }]
+        self.assertIs(f._select_winner(cands), cands[0])
+
+    def test_two_forecasts_tiebreak_falls_to_tier(self):
+        """Both clamped to today -> freshness ties, so tier decides."""
+        forecast = date(date.today().year + 5, 12, 31)
+        cands = [
+            {"has_data": True, "kind": "rate", "cad_rank": 4, "cad_days": 366,
+             "last": forecast, "tier": 2, "rank": 2, "order": 0, "payload": {}},
+            {"has_data": True, "kind": "rate", "cad_rank": 4, "cad_days": 366,
+             "last": forecast, "tier": 0, "rank": 1, "order": 1, "payload": {}},
+        ]
+        self.assertEqual(f._select_winner(cands)["tier"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
