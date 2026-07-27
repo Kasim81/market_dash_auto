@@ -192,6 +192,79 @@ class DemotionReportingTest(unittest.TestCase):
         self.assertIn("+1 other tier-0", reason)
 
 
+class ExpectedWinnerTest(unittest.TestCase):
+    """§2.C C14 — `expected_winner` suppresses a by-design demotion.
+
+    `FRA_UNEMPLOYMENT` is the motivating case: INSEE publishes the ILO rate
+    quarterly only, so the monthly OECD row is *meant* to win the cadence-first
+    merge. The resulting [FALLBACK] pair was an audit issue no operator could
+    ever action.
+
+    Deliberately NOT keyed on `source_fallbacks.csv` `t0_*`: there `t0` means
+    the ORIGINAL primary in the historical chain, which for 12 of the 18
+    pre-existing rows is a frozen FRED series kept as a forcing-function alarm.
+    Keying on t0 would fire a new false demotion on all 12 daily.
+    """
+
+    def setUp(self):
+        f._EXPECTED_WINNERS = None          # force a re-read of the registry
+
+    def _fra(self, oecd_value):
+        return [
+            _row("INSEE", "FRA_UNEMPLOYMENT", 8.1, "Percent (SA)",
+                 "Quarterly", "2026-03-28", 0, country="FRA"),
+            _row("OECD", "FRA_UNEMPLOYMENT", oecd_value, "Percent (SA)",
+                 "Monthly", "2026-05-31", 1, country="FRA"),
+        ]
+
+    def test_registry_declares_fra_unemployment(self):
+        self.assertEqual(f._load_expected_winners().get("FRA_UNEMPLOYMENT"), "OECD")
+
+    def test_expected_winner_suppresses_the_line(self):
+        out, log = _dedupe_capturing(self._fra(8.2))
+        self.assertEqual(out[0]["Source"], "OECD")
+        self.assertNotIn("[FALLBACK]", log)
+
+    def test_alarm_returns_if_expected_winner_stops_winning(self):
+        """The suppression must be targeted, not blindness."""
+        rows = self._fra(None) + [
+            _row("Eurostat", "FRA_UNEMPLOYMENT", 8.3, "Percent (SA)",
+                 "Monthly", "2026-05-31", 2, country="FRA"),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "Eurostat")
+        self.assertIn("[FALLBACK]", log)
+
+    def test_column_without_expected_winner_unaffected(self):
+        rows = [_row("ONS", "X_RATE", None, "% YoY", "Monthly", "2026-05-31", 0),
+                _row("FRED", "X_RATE", 1.0, "% YoY", "Monthly", "2026-05-31", 1)]
+        out, log = _dedupe_capturing(rows)
+        self.assertIn("[FALLBACK]", log)
+
+    def test_source_label_match_is_punctuation_insensitive(self):
+        self.assertEqual(f._norm_src("DB.nomics"), f._norm_src("dbnomics"))
+        self.assertEqual(f._norm_src("IMF SDMX"), f._norm_src("imf-sdmx"))
+        self.assertNotEqual(f._norm_src("OECD"), f._norm_src("ONS"))
+
+    def test_t0_is_not_used_as_declared_primary(self):
+        """Guard the C14 design decision: a t0 that is not the live winner
+        (12 of 18 rows) must not produce a demotion event."""
+        import csv as _c
+        with open('data/source_fallbacks.csv', newline='', encoding='utf-8') as fh:
+            rows = list(_c.DictReader(fh))
+        # JPN_POLICY_RATE's t0 is FRED but BoJ serves — must stay quiet.
+        self.assertTrue(any(r['indicator_id'] == 'JPN_POLICY_RATE'
+                            and r['t0_source'] == 'fred' for r in rows))
+        out, log = _dedupe_capturing([
+            _row("FRED", "JPN_POLICY_RATE", 0.5, "Percent", "Monthly",
+                 "2026-06-30", 1),
+            _row("BoJ", "JPN_POLICY_RATE", 0.5, "Percent", "Daily",
+                 "2026-07-24", 0),
+        ])
+        self.assertEqual(out[0]["Source"], "BoJ")
+        self.assertNotIn("[FALLBACK]", log)
+
+
 class CadenceDegradationTest(unittest.TestCase):
     """A coarser same-tier source taking over must not be silent.
 

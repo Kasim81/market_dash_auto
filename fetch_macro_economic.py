@@ -608,6 +608,47 @@ def _demotion_event(cands: list[dict], win: dict) -> tuple[dict, str] | None:
     return prim, reason
 
 
+def _norm_src(s: str) -> str:
+    """Loose source-label comparison ('DB.nomics' == 'dbnomics')."""
+    return (s or "").lower().replace(".", "").replace(" ", "").replace("-", "")
+
+
+_EXPECTED_WINNERS: dict | None = None
+
+
+def _load_expected_winners() -> dict:
+    """`indicator_id -> expected_winner` from `data/source_fallbacks.csv` (§2.C C14).
+
+    Opt-in column naming the source the merge is *expected* to serve. When the
+    actual winner matches, the demotion is by design and `_log_demotion` stays
+    quiet; if that source ever stops winning, the `[FALLBACK]` line returns —
+    so this is a targeted suppression, not blindness.
+
+    Deliberately NOT keyed on the `t0_*` columns. `t0` there means the
+    *original* primary in the historical fallback chain, which for 12 of the
+    18 pre-existing rows is a now-frozen FRED series kept as a forcing-function
+    alarm (see each row's `notes`: "T0 frozen 2008-12-05; T1 wired ..."). Using
+    t0 as the declared primary would fire a new false demotion on every one of
+    those columns daily — strictly worse than the noise it set out to remove.
+    """
+    global _EXPECTED_WINNERS
+    if _EXPECTED_WINNERS is not None:
+        return _EXPECTED_WINNERS
+    out: dict = {}
+    try:
+        with open(os.path.join(_DATA_DIR, "source_fallbacks.csv"),
+                  newline="", encoding="utf-8") as fh:
+            for row in _csv.DictReader(fh):
+                exp = (row.get("expected_winner") or "").strip()
+                ind = (row.get("indicator_id") or "").strip()
+                if exp and ind:
+                    out[ind] = exp
+    except FileNotFoundError:
+        pass
+    _EXPECTED_WINNERS = out
+    return out
+
+
 def _log_demotion(col: str, cands: list[dict], win: dict,
                   describe, context: str = "") -> None:
     """Print the §2.C C1 [FALLBACK] line for a demoted declared primary.
@@ -616,9 +657,18 @@ def _log_demotion(col: str, cands: list[dict], win: dict,
     prefix is a stable contract — data_audit Section A scrapes pipeline.log
     for `[FALLBACK]` so a demotion is a reported audit issue on day one,
     not a silent six-month freeze (the JP/EU/CN_INFL1 bug class).
+
+    §2.C C14: a column whose `expected_winner` in `source_fallbacks.csv`
+    matches the actual winner is an accepted, documented arrangement (e.g.
+    `FRA_UNEMPLOYMENT` — INSEE publishes the ILO rate quarterly only, so the
+    monthly OECD row is *meant* to win); suppress the line rather than emit an
+    issue no operator can ever action.
     """
     event = _demotion_event(cands, win)
     if event is None:
+        return
+    expected = _load_expected_winners().get(col)
+    if expected and _norm_src(describe(win)[0]) == _norm_src(expected):
         return
     prim, reason = event
     p_src, p_sid, _ = describe(prim)
