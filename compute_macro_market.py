@@ -73,7 +73,8 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 
-from library_utils import write_hist_with_archive, load_hist_with_archive
+from library_utils import (write_hist_with_archive, load_hist_with_archive,
+                           stable_hist_column_order)
 
 # --- C7: calculators split into the calculators/ package ---
 from calculators.common import (
@@ -1459,7 +1460,20 @@ def run_phase_e():
     df_snapshot.to_csv(SNAPSHOT_CSV, index=False)
     print(f"  Saved {SNAPSHOT_CSV}")
 
-    write_hist_with_archive(df_hist.reset_index(), HIST_CSV)
+    # §2.C C11 — pin the physical column order to whatever the committed file
+    # already uses, appending only genuinely-new columns. The other two hist
+    # writers (fetch_macro_economic, fetch_hist) have done this since 2026-07-18;
+    # Phase E was relying on the calculator registry's insertion order being
+    # stable instead. That has held, so this is not a bug fix — it makes the
+    # invariant structural rather than incidental, and keeps all three hist
+    # writers on one rule.
+    df_hist_out = df_hist.reset_index()
+    df_hist_out = df_hist_out[
+        ["Date"] + stable_hist_column_order(
+            HIST_CSV, [c for c in df_hist_out.columns if c != "Date"],
+            date_col="Date")
+    ]
+    write_hist_with_archive(df_hist_out, HIST_CSV)
     print(f"  Saved {HIST_CSV}")
 
     # §3.14 — month-end-sampled hist for regime-AA's monthly seam test.
@@ -1469,7 +1483,14 @@ def run_phase_e():
     # consumes alongside the weekly Indicator Explorer feed.
     df_hist_monthly = df_hist.resample("ME").last()
     df_hist_monthly.index.name = "Date"
-    write_hist_with_archive(df_hist_monthly.reset_index(), MONTHLY_HIST_CSV)
+    df_hist_monthly_out = df_hist_monthly.reset_index()
+    df_hist_monthly_out = df_hist_monthly_out[
+        ["Date"] + stable_hist_column_order(
+            MONTHLY_HIST_CSV,
+            [c for c in df_hist_monthly_out.columns if c != "Date"],
+            date_col="Date")
+    ]
+    write_hist_with_archive(df_hist_monthly_out, MONTHLY_HIST_CSV)
     print(
         f"  Saved {MONTHLY_HIST_CSV}: {df_hist_monthly.shape[0]} month-end rows"
         f" × {df_hist_monthly.shape[1]} cols"
