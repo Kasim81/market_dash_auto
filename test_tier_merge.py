@@ -142,15 +142,21 @@ class DemotionReportingTest(unittest.TestCase):
         _, log = _dedupe_capturing(rows)
         self.assertNotIn("[FALLBACK]", log)
 
-    def test_finer_cadence_fallback_over_coarser_primary_logged(self):
-        # tier-0 quarterly primary vs fresh tier-1 monthly → cadence-first
-        # serves the aggregator; that IS a demotion event worth reporting.
+    def test_tier0_quarterly_primary_now_beats_tier1_monthly(self):
+        """Owner policy 2026-07-27: prefer the primary over an aggregator.
+
+        Previously cadence-first served the tier-1 monthly aggregator here and
+        emitted a demotion event. Under tier-first the tier-0 national primary
+        wins (quarterly still clears the cadence floor), so there is nothing to
+        demote. Where the aggregator's better frequency is genuinely wanted the
+        answer is to register it as its OWN series — see the
+        FRA_UNEMPLOYMENT / FRA_UNEMPLOYMENT_OECD split.
+        """
         rows = [_row("ABS", "X_CPI", 101.7, "Index", "Quarterly", "2026-Q1", 0),
                 _row("OECD", "X_CPI", 102.0, "Index", "Monthly", "2026-04", 1)]
         win, log = _dedupe_capturing(rows)
-        self.assertEqual(win[0]["Source"], "OECD")
-        self.assertIn("[FALLBACK]", log)
-        self.assertIn("finer-cadence", log)
+        self.assertEqual(win[0]["Source"], "ABS")
+        self.assertNotIn("[FALLBACK]", log)
 
     def test_definition_collision_demotion_names_the_collision(self):
         rows = [_row("ONS", "X_CPI", 105.0, "Index 2015=100", "Monthly", "2021-06", 0),
@@ -192,14 +198,15 @@ class DemotionReportingTest(unittest.TestCase):
         self.assertIn("+1 other tier-0", reason)
 
 
-class CadenceDegradationTest(unittest.TestCase):
-    """A coarser same-tier source taking over must not be silent.
+class CadenceFloorTest(unittest.TestCase):
+    """Annual never serves a column that registers a sub-annual source.
 
-    Regression cover for the 2026-07-27 live incident: CHE_CPI_YOY swapped
-    from the monthly OECD/DB.nomics series to the World Bank annual series
-    (both tier 1), rewriting 3,678 of 4,153 history rows and moving the last
-    observation backwards — with no [FALLBACK] line, because the tier-only
-    detector saw no tier change.
+    The 2026-07-27 live incident: `CHE_CPI_YOY` swapped from the monthly
+    OECD/DB.nomics series to the World Bank **annual** series (both tier 1),
+    rewriting 3,678 of 4,153 history rows and truncating the series start from
+    1956 to 1961. Under the owner policy ("annual data is of extremely limited
+    value"; floor of quarterly) the annual candidate is structurally
+    ineligible, so the swap cannot happen at all — no detector required.
     """
 
     def _che_rows(self, monthly_value):
@@ -211,29 +218,69 @@ class CadenceDegradationTest(unittest.TestCase):
                  "2025-12-31", 1, country="CHE"),
         ]
 
-    def test_same_tier_cadence_drop_is_logged(self):
-        out, log = _dedupe_capturing(self._che_rows(None))   # monthly has no data
-        self.assertEqual(out[0]["Source"], "World Bank")
-        self.assertIn("[FALLBACK]", log)
-        self.assertIn("CADENCE DEGRADED", log)
-        self.assertIn("returned no data this run", log)
+    def test_annual_cannot_take_over_from_a_silent_monthly(self):
+        """The exact live regression — the column holds instead of flipping."""
+        out, _ = _dedupe_capturing(self._che_rows(None))    # monthly has no data
+        self.assertEqual(out[0]["Source"], "DB.nomics")
+        self.assertNotEqual(out[0]["Source"], "World Bank")
 
-    def test_healthy_finer_source_stays_silent(self):
+    def test_healthy_finer_source_serves(self):
         out, log = _dedupe_capturing(self._che_rows(0.61))
         self.assertEqual(out[0]["Source"], "DB.nomics")
         self.assertNotIn("[FALLBACK]", log)
 
-    def test_stale_finer_candidate_names_staleness(self):
+    def test_annual_cannot_take_over_from_a_stale_monthly(self):
+        """Even 900d stale, the sub-annual source keeps the column."""
         stale = (date.today() - timedelta(days=900)).isoformat()
         rows = [
             _row("DB.nomics", "X_CPI_YOY", 1.0, "% YoY", "Monthly", stale, 1),
             _row("World Bank", "X_CPI_YOY", 2.0, "% YoY", "Annual",
                  (date.today() - timedelta(days=20)).isoformat(), 1),
         ]
-        out, log = _dedupe_capturing(rows)
+        out, _ = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "DB.nomics")
+
+    def test_annual_still_serves_when_it_is_the_only_source(self):
+        """The floor is relative: annual-only columns are unaffected."""
+        rows = [_row("World Bank", "IDN_CPI_YOY", 3.0, "% YoY", "Annual", "2024", 1)]
+        out, _ = _dedupe_capturing(rows)
         self.assertEqual(out[0]["Source"], "World Bank")
-        self.assertIn("CADENCE DEGRADED", log)
-        self.assertIn("stale", log)
+
+    def test_quarterly_clears_the_floor(self):
+        """Quarterly is the floor, not below it — it beats an annual sibling."""
+        rows = [_row("ABS", "AUS_GDP_GROWTH", 1.2, "% YoY", "Quarterly",
+                     "2026-Q1", 0, country="AUS"),
+                _row("IMF", "AUS_GDP_GROWTH", 2.4, "% YoY", "Annual",
+                     "2031-12-31", 1, country="AUS")]
+        out, _ = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "ABS")
+
+
+class TierFirstTest(unittest.TestCase):
+    """Primary beats aggregator; cadence is the tiebreak within a tier."""
+
+    def test_primary_wins_even_at_coarser_cadence(self):
+        rows = [_row("INSEE", "FRA_UNEMPLOYMENT", 8.1, "Percent (SA)",
+                     "Quarterly", "2026-03-28", 0, country="FRA"),
+                _row("OECD", "FRA_UNEMPLOYMENT", 8.2, "Percent (SA)",
+                     "Monthly", "2026-05-31", 1, country="FRA")]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "INSEE")
+        self.assertNotIn("[FALLBACK]", log)      # primary won — nothing demoted
+
+    def test_cadence_still_breaks_ties_within_a_tier(self):
+        rows = [_row("OECD", "X_CPI", 2.0, "% YoY", "Quarterly", "2026-Q1", 1),
+                _row("IMF SDMX", "X_CPI", 2.1, "% YoY", "Monthly", "2026-05", 1)]
+        out, _ = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "IMF SDMX")
+
+    def test_stale_primary_still_yields_to_fresher_fallback(self):
+        """Tier-first must not disarm the staleness gate."""
+        rows = [_row("BoJ", "X_RATE", 0.1, "Percent", "Monthly", "2025-04", 0),
+                _row("FRED", "X_RATE", 0.5, "Percent", "Monthly", "2026-04", 1)]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "FRED")
+        self.assertIn("[FALLBACK]", log)
 
     def test_winner_at_finest_cadence_is_not_an_event(self):
         cands = [

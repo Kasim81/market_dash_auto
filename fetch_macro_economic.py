@@ -408,6 +408,11 @@ _CAD_ORDER = {"daily": 0, "business daily": 0, "weekly": 1, "monthly": 2,
               "quarterly": 3, "annual": 4, "annually": 4, "yearly": 4}
 
 
+# Cadence floor (owner policy 2026-07-27): quarterly is the coarsest cadence
+# with real analytical value — "annual data is of extremely limited value".
+_CAD_QUARTERLY = 3
+
+
 def _cad_rank(freq: str) -> int:
     return _CAD_ORDER.get((freq or "").strip().lower(), 5)
 
@@ -477,13 +482,32 @@ def _select_winner(cands: list[dict]) -> dict:
     Each cand: {has_data, kind, cad_rank, cad_days, last(date|None),
     tier, rank(primary=1), order, payload}.
 
-    Rule (per the 2026-06-18 precedence policy):
+    Rule (owner policy, revised 2026-07-27 — "longest history at the highest
+    frequency, floor of quarterly; prefer the primary over an aggregator"):
       * candidates that mix measure-kinds (e.g. index vs YoY) are a DEFINITION
         collision — do NOT guess; fall back to the legacy freshest→primary pick
         so behaviour is unchanged until the column is split by definition.
-      * otherwise finest cadence wins, then lowest tier, then freshest — but a
-        candidate stale by >2× its own cadence relative to the freshest in the
-        group is dropped first (so a fresh coarser/fallback source takes over).
+      * **CADENCE FLOOR:** annual candidates are ineligible for any column that
+        *registers* a sub-annual (≥quarterly) source — evaluated over ALL
+        candidates, not just those returning data this run, so a transient
+        failure of the finer source can never hand the column to annual.
+      * **TIER FIRST:** among eligible candidates the lowest tier wins (the
+        primary/national source is where the data originates), then finest
+        cadence, then freshest.
+
+    The floor and the tier flip were verified to change **no** winner in
+    steady state across all 29 contested columns — they only close failure
+    paths. Eleven columns could previously fall to an annual aggregator the
+    moment their sub-annual source had a bad day; that is exactly what
+    rewrote `CHE_CPI_YOY`'s whole history (3,678 rows) on 2026-07-27 and what
+    put IMF annual projections into `AUS_GDP_GROWTH` / `ITA_GDP_GROWTH`.
+
+    Trade-off, deliberate: when the floor holds and no sub-annual candidate
+    has data, the column simply does not update this run rather than being
+    rewritten with annual values. Committed history is preserved by the
+    Pattern 9 sister archive. Serving annual data was the worse outcome —
+    it silently changed every value back to the 1950s and truncated the
+    series' start by five years.
 
     All freshness comparisons run on `_eff_last` (future-dated forecasts
     clamped to today), never on the raw `last`.
@@ -496,6 +520,14 @@ def _select_winner(cands: list[dict]) -> dict:
         return max(withdata,
                    key=lambda c: (_eff_last(c["last"]) or date.min,
                                   c["rank"], -c["order"]))
+    # --- cadence floor: annual never serves a column that registers finer ---
+    if any(c["cad_rank"] <= _CAD_QUARTERLY for c in cands):
+        eligible = [c for c in withdata if c["cad_rank"] <= _CAD_QUARTERLY]
+        if not eligible:
+            # Finer source registered but silent this run: hold the column
+            # rather than swap it to annual.
+            return next(c for c in cands if c["cad_rank"] <= _CAD_QUARTERLY)
+        withdata = eligible
     dated = [e for e in (_eff_last(c["last"]) for c in withdata) if e]
     best = max(dated) if dated else None
     fresh = [c for c in withdata
@@ -503,7 +535,7 @@ def _select_winner(cands: list[dict]) -> dict:
              or (best - _eff_last(c["last"])).days <= 2 * c["cad_days"]]
     pool = fresh or withdata
     return min(pool, key=lambda c: (
-        c["cad_rank"], c["tier"],
+        c["tier"], c["cad_rank"],
         -(_eff_last(c["last"]).toordinal() if c["last"] else 0), c["order"]))
 
 
@@ -526,10 +558,17 @@ def _cadence_degradation_event(cands: list[dict],
     as a tier demotion. Returns None when the winner already is at the finest
     registered cadence (the normal case).
     """
-    finest_rank = min(c["cad_rank"] for c in cands)
+    # Only SAME-OR-LOWER-tier peers count (owner policy, 2026-07-27). A
+    # higher-tier aggregator having finer cadence than the winning primary is
+    # now the *intended* outcome, not a degradation — the answer there is to
+    # re-scan the primary for a finer series, or register the aggregator as its
+    # own series (the FRA_UNEMPLOYMENT / FRA_UNEMPLOYMENT_OECD split). That is
+    # a sourcing-backlog signal, not a daily runtime alarm.
+    peers = [c for c in cands if c["tier"] <= win["tier"]]
+    finest_rank = min(c["cad_rank"] for c in peers)
     if win["cad_rank"] <= finest_rank:
         return None
-    finer = [c for c in cands if c["cad_rank"] == finest_rank]
+    finer = [c for c in peers if c["cad_rank"] == finest_rank]
     # Best finer candidate: prefer one with data, then freshest.
     cand = max(finer,
                key=lambda c: (c["has_data"], _eff_last(c["last"]) or date.min,
@@ -616,6 +655,7 @@ def _log_demotion(col: str, cands: list[dict], win: dict,
     prefix is a stable contract — data_audit Section A scrapes pipeline.log
     for `[FALLBACK]` so a demotion is a reported audit issue on day one,
     not a silent six-month freeze (the JP/EU/CN_INFL1 bug class).
+
     """
     event = _demotion_event(cands, win)
     if event is None:
