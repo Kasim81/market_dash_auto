@@ -192,6 +192,72 @@ class DemotionReportingTest(unittest.TestCase):
         self.assertIn("+1 other tier-0", reason)
 
 
+class CadenceDegradationTest(unittest.TestCase):
+    """A coarser same-tier source taking over must not be silent.
+
+    Regression cover for the 2026-07-27 live incident: CHE_CPI_YOY swapped
+    from the monthly OECD/DB.nomics series to the World Bank annual series
+    (both tier 1), rewriting 3,678 of 4,153 history rows and moving the last
+    observation backwards — with no [FALLBACK] line, because the tier-only
+    detector saw no tier change.
+    """
+
+    def _che_rows(self, monthly_value):
+        return [
+            _row("DB.nomics", "CHE_CPI_YOY", monthly_value, "Percent Change YoY",
+                 "Monthly", "2026-05-31", 1, country="CHE"),
+            _row("World Bank", "CHE_CPI_YOY", 0.154,
+                 "% change year-on-year (annual average)", "Annual",
+                 "2025-12-31", 1, country="CHE"),
+        ]
+
+    def test_same_tier_cadence_drop_is_logged(self):
+        out, log = _dedupe_capturing(self._che_rows(None))   # monthly has no data
+        self.assertEqual(out[0]["Source"], "World Bank")
+        self.assertIn("[FALLBACK]", log)
+        self.assertIn("CADENCE DEGRADED", log)
+        self.assertIn("returned no data this run", log)
+
+    def test_healthy_finer_source_stays_silent(self):
+        out, log = _dedupe_capturing(self._che_rows(0.61))
+        self.assertEqual(out[0]["Source"], "DB.nomics")
+        self.assertNotIn("[FALLBACK]", log)
+
+    def test_stale_finer_candidate_names_staleness(self):
+        stale = (date.today() - timedelta(days=900)).isoformat()
+        rows = [
+            _row("DB.nomics", "X_CPI_YOY", 1.0, "% YoY", "Monthly", stale, 1),
+            _row("World Bank", "X_CPI_YOY", 2.0, "% YoY", "Annual",
+                 (date.today() - timedelta(days=20)).isoformat(), 1),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "World Bank")
+        self.assertIn("CADENCE DEGRADED", log)
+        self.assertIn("stale", log)
+
+    def test_winner_at_finest_cadence_is_not_an_event(self):
+        cands = [
+            {"has_data": True, "kind": "rate", "cad_rank": 2, "cad_days": 31,
+             "last": date.today(), "tier": 1, "rank": 2, "order": 0, "payload": {}},
+            {"has_data": True, "kind": "rate", "cad_rank": 4, "cad_days": 366,
+             "last": date.today(), "tier": 1, "rank": 2, "order": 1, "payload": {}},
+        ]
+        win = f._select_winner(cands)
+        self.assertEqual(win["cad_rank"], 2)
+        self.assertIsNone(f._demotion_event(cands, win))
+
+    def test_tier_demotion_still_takes_precedence(self):
+        """A real tier demotion keeps its own reason, not the cadence one."""
+        rows = [
+            _row("ONS", "X_RATE", None, "% YoY", "Monthly", "2026-05-31", 0),
+            _row("FRED", "X_RATE", 1.0, "% YoY", "Monthly", "2026-05-31", 1),
+        ]
+        out, log = _dedupe_capturing(rows)
+        self.assertEqual(out[0]["Source"], "FRED")
+        self.assertIn("[FALLBACK]", log)
+        self.assertNotIn("CADENCE DEGRADED", log)
+
+
 class ForecastDateTest(unittest.TestCase):
     """A future-dated observation is a projection, not freshness.
 

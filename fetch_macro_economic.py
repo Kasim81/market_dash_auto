@@ -507,6 +507,54 @@ def _select_winner(cands: list[dict]) -> dict:
         -(_eff_last(c["last"]).toordinal() if c["last"] else 0), c["order"]))
 
 
+def _cadence_degradation_event(cands: list[dict],
+                               win: dict) -> tuple[dict, str] | None:
+    """Detect a same-tier cadence degradation in one (Country, Col) group.
+
+    `_demotion_event` only fires on a *tier* demotion, which left a whole
+    class of regression silent: when the finest-cadence candidate and the
+    serving one sit at the SAME tier, nothing was reported.
+
+    Observed live on 2026-07-27 — `CHE_CPI_YOY` swapped from the monthly
+    OECD/DB.nomics series to the World Bank **annual** series (both tier 1),
+    quietly rewriting 3,678 of 4,153 history rows with annual-average values
+    and moving the last observation *backwards* from 2026-05-31 to
+    2025-12-31. No `[FALLBACK]` line was emitted.
+
+    A coarser source serving while a finer one is registered means the column
+    silently changed definition and cadence, so report it on the same channel
+    as a tier demotion. Returns None when the winner already is at the finest
+    registered cadence (the normal case).
+    """
+    finest_rank = min(c["cad_rank"] for c in cands)
+    if win["cad_rank"] <= finest_rank:
+        return None
+    finer = [c for c in cands if c["cad_rank"] == finest_rank]
+    # Best finer candidate: prefer one with data, then freshest.
+    cand = max(finer,
+               key=lambda c: (c["has_data"], _eff_last(c["last"]) or date.min,
+                              -c["order"]))
+    if not cand["has_data"]:
+        reason = "finer-cadence candidate returned no data this run"
+    elif len({c["kind"] for c in cands if c["has_data"]}) > 1:
+        reason = ("finer-cadence candidate lost a definition collision "
+                  "(mixed measure-kinds) — legacy freshest pick")
+    else:
+        dated = [e for e in (_eff_last(c["last"]) for c in cands
+                             if c["has_data"]) if e]
+        freshest = max(dated) if dated else None
+        cand_last = _eff_last(cand["last"])
+        if (cand_last and freshest
+                and (freshest - cand_last).days > 2 * cand["cad_days"]):
+            reason = (f"finer-cadence candidate stale "
+                      f"{(date.today() - cand_last).days}d "
+                      f"(last obs {cand['last'].isoformat()}, group freshest "
+                      f"{freshest.isoformat()}, gate 2x{cand['cad_days']}d)")
+        else:
+            reason = "finer-cadence candidate lost at equal tier"
+    return cand, f"CADENCE DEGRADED — {reason}"
+
+
 def _demotion_event(cands: list[dict], win: dict) -> tuple[dict, str] | None:
     """Detect a declared-primary demotion in one (Country, Col) group (§2.C C1).
 
@@ -521,10 +569,15 @@ def _demotion_event(cands: list[dict], win: dict) -> tuple[dict, str] | None:
     _select_winner rules: no data, definition collision (legacy pick),
     staleness gate (>2x own cadence vs the group's freshest), or a
     finer-cadence fallback outranking a coarser primary.
+
+    When there is no *tier* demotion, a same-tier **cadence degradation** is
+    still reported (see `_cadence_degradation_event`) — a monthly source
+    dropping out and letting an annual sibling serve rewrites the column's
+    whole history, and tier-only detection was blind to it.
     """
     min_tier = min(c["tier"] for c in cands)
     if win["tier"] <= min_tier:
-        return None
+        return _cadence_degradation_event(cands, win)
     primaries = [c for c in cands if c["tier"] == min_tier]
     # Best primary: prefer one with data, then freshest.
     prim = max(primaries,
