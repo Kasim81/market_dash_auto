@@ -408,6 +408,11 @@ _CAD_ORDER = {"daily": 0, "business daily": 0, "weekly": 1, "monthly": 2,
               "quarterly": 3, "annual": 4, "annually": 4, "yearly": 4}
 
 
+# Cadence floor (owner policy 2026-07-27): quarterly is the coarsest cadence
+# with real analytical value — "annual data is of extremely limited value".
+_CAD_QUARTERLY = 3
+
+
 def _cad_rank(freq: str) -> int:
     return _CAD_ORDER.get((freq or "").strip().lower(), 5)
 
@@ -477,13 +482,32 @@ def _select_winner(cands: list[dict]) -> dict:
     Each cand: {has_data, kind, cad_rank, cad_days, last(date|None),
     tier, rank(primary=1), order, payload}.
 
-    Rule (per the 2026-06-18 precedence policy):
+    Rule (owner policy, revised 2026-07-27 — "longest history at the highest
+    frequency, floor of quarterly; prefer the primary over an aggregator"):
       * candidates that mix measure-kinds (e.g. index vs YoY) are a DEFINITION
         collision — do NOT guess; fall back to the legacy freshest→primary pick
         so behaviour is unchanged until the column is split by definition.
-      * otherwise finest cadence wins, then lowest tier, then freshest — but a
-        candidate stale by >2× its own cadence relative to the freshest in the
-        group is dropped first (so a fresh coarser/fallback source takes over).
+      * **CADENCE FLOOR:** annual candidates are ineligible for any column that
+        *registers* a sub-annual (≥quarterly) source — evaluated over ALL
+        candidates, not just those returning data this run, so a transient
+        failure of the finer source can never hand the column to annual.
+      * **TIER FIRST:** among eligible candidates the lowest tier wins (the
+        primary/national source is where the data originates), then finest
+        cadence, then freshest.
+
+    The floor and the tier flip were verified to change **no** winner in
+    steady state across all 29 contested columns — they only close failure
+    paths. Eleven columns could previously fall to an annual aggregator the
+    moment their sub-annual source had a bad day; that is exactly what
+    rewrote `CHE_CPI_YOY`'s whole history (3,678 rows) on 2026-07-27 and what
+    put IMF annual projections into `AUS_GDP_GROWTH` / `ITA_GDP_GROWTH`.
+
+    Trade-off, deliberate: when the floor holds and no sub-annual candidate
+    has data, the column simply does not update this run rather than being
+    rewritten with annual values. Committed history is preserved by the
+    Pattern 9 sister archive. Serving annual data was the worse outcome —
+    it silently changed every value back to the 1950s and truncated the
+    series' start by five years.
 
     All freshness comparisons run on `_eff_last` (future-dated forecasts
     clamped to today), never on the raw `last`.
@@ -496,6 +520,14 @@ def _select_winner(cands: list[dict]) -> dict:
         return max(withdata,
                    key=lambda c: (_eff_last(c["last"]) or date.min,
                                   c["rank"], -c["order"]))
+    # --- cadence floor: annual never serves a column that registers finer ---
+    if any(c["cad_rank"] <= _CAD_QUARTERLY for c in cands):
+        eligible = [c for c in withdata if c["cad_rank"] <= _CAD_QUARTERLY]
+        if not eligible:
+            # Finer source registered but silent this run: hold the column
+            # rather than swap it to annual.
+            return next(c for c in cands if c["cad_rank"] <= _CAD_QUARTERLY)
+        withdata = eligible
     dated = [e for e in (_eff_last(c["last"]) for c in withdata) if e]
     best = max(dated) if dated else None
     fresh = [c for c in withdata
@@ -503,7 +535,7 @@ def _select_winner(cands: list[dict]) -> dict:
              or (best - _eff_last(c["last"])).days <= 2 * c["cad_days"]]
     pool = fresh or withdata
     return min(pool, key=lambda c: (
-        c["cad_rank"], c["tier"],
+        c["tier"], c["cad_rank"],
         -(_eff_last(c["last"]).toordinal() if c["last"] else 0), c["order"]))
 
 
@@ -526,10 +558,17 @@ def _cadence_degradation_event(cands: list[dict],
     as a tier demotion. Returns None when the winner already is at the finest
     registered cadence (the normal case).
     """
-    finest_rank = min(c["cad_rank"] for c in cands)
+    # Only SAME-OR-LOWER-tier peers count (owner policy, 2026-07-27). A
+    # higher-tier aggregator having finer cadence than the winning primary is
+    # now the *intended* outcome, not a degradation — the answer there is to
+    # re-scan the primary for a finer series, or register the aggregator as its
+    # own series (the FRA_UNEMPLOYMENT / FRA_UNEMPLOYMENT_OECD split). That is
+    # a sourcing-backlog signal, not a daily runtime alarm.
+    peers = [c for c in cands if c["tier"] <= win["tier"]]
+    finest_rank = min(c["cad_rank"] for c in peers)
     if win["cad_rank"] <= finest_rank:
         return None
-    finer = [c for c in cands if c["cad_rank"] == finest_rank]
+    finer = [c for c in peers if c["cad_rank"] == finest_rank]
     # Best finer candidate: prefer one with data, then freshest.
     cand = max(finer,
                key=lambda c: (c["has_data"], _eff_last(c["last"]) or date.min,
@@ -608,47 +647,6 @@ def _demotion_event(cands: list[dict], win: dict) -> tuple[dict, str] | None:
     return prim, reason
 
 
-def _norm_src(s: str) -> str:
-    """Loose source-label comparison ('DB.nomics' == 'dbnomics')."""
-    return (s or "").lower().replace(".", "").replace(" ", "").replace("-", "")
-
-
-_EXPECTED_WINNERS: dict | None = None
-
-
-def _load_expected_winners() -> dict:
-    """`indicator_id -> expected_winner` from `data/source_fallbacks.csv` (§2.C C14).
-
-    Opt-in column naming the source the merge is *expected* to serve. When the
-    actual winner matches, the demotion is by design and `_log_demotion` stays
-    quiet; if that source ever stops winning, the `[FALLBACK]` line returns —
-    so this is a targeted suppression, not blindness.
-
-    Deliberately NOT keyed on the `t0_*` columns. `t0` there means the
-    *original* primary in the historical fallback chain, which for 12 of the
-    18 pre-existing rows is a now-frozen FRED series kept as a forcing-function
-    alarm (see each row's `notes`: "T0 frozen 2008-12-05; T1 wired ..."). Using
-    t0 as the declared primary would fire a new false demotion on every one of
-    those columns daily — strictly worse than the noise it set out to remove.
-    """
-    global _EXPECTED_WINNERS
-    if _EXPECTED_WINNERS is not None:
-        return _EXPECTED_WINNERS
-    out: dict = {}
-    try:
-        with open(os.path.join(_DATA_DIR, "source_fallbacks.csv"),
-                  newline="", encoding="utf-8") as fh:
-            for row in _csv.DictReader(fh):
-                exp = (row.get("expected_winner") or "").strip()
-                ind = (row.get("indicator_id") or "").strip()
-                if exp and ind:
-                    out[ind] = exp
-    except FileNotFoundError:
-        pass
-    _EXPECTED_WINNERS = out
-    return out
-
-
 def _log_demotion(col: str, cands: list[dict], win: dict,
                   describe, context: str = "") -> None:
     """Print the §2.C C1 [FALLBACK] line for a demoted declared primary.
@@ -658,17 +656,9 @@ def _log_demotion(col: str, cands: list[dict], win: dict,
     for `[FALLBACK]` so a demotion is a reported audit issue on day one,
     not a silent six-month freeze (the JP/EU/CN_INFL1 bug class).
 
-    §2.C C14: a column whose `expected_winner` in `source_fallbacks.csv`
-    matches the actual winner is an accepted, documented arrangement (e.g.
-    `FRA_UNEMPLOYMENT` — INSEE publishes the ILO rate quarterly only, so the
-    monthly OECD row is *meant* to win); suppress the line rather than emit an
-    issue no operator can ever action.
     """
     event = _demotion_event(cands, win)
     if event is None:
-        return
-    expected = _load_expected_winners().get(col)
-    if expected and _norm_src(describe(win)[0]) == _norm_src(expected):
         return
     prim, reason = event
     p_src, p_sid, _ = describe(prim)
