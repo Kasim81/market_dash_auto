@@ -15,6 +15,8 @@ import sys
 import unittest
 from datetime import date, timedelta
 
+import pandas as pd
+
 os.environ.setdefault("FRED_API_KEY", "x")
 os.environ.setdefault("SHEET_ID", "x")
 os.environ.setdefault("GOOGLE_CREDENTIALS_JSON", "{}")
@@ -377,3 +379,77 @@ class ForecastDateTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SeamValidationTest(unittest.TestCase):
+    """§2.C C16 seam validation, cased on the real Phase 0 survey findings.
+
+    The credentialed survey (run 30495180351) classified 34 contested pairs
+    against live data; these assert the gate reproduces its verdicts, so the
+    tolerances are pinned to observed behaviour rather than invented numbers.
+    """
+
+    @staticmethod
+    def _mk(start, n, freq, step=0.0, base=100.0):
+        idx = pd.period_range(start=start, periods=n, freq=freq).to_timestamp()
+        return pd.Series([base + i * step for i in range(n)], index=idx)
+
+    def test_period_normalisation_bridges_stamping_conventions(self):
+        """Month-END vs month-START must still overlap (the USA_UNEMPLOYMENT bug)."""
+        end = pd.Series(1.0, index=pd.date_range("2020-01-31", periods=40, freq="ME"))
+        start = pd.Series(1.0, index=pd.date_range("2020-01-01", periods=40, freq="MS"))
+        a = f._to_period_index(end, "Monthly")
+        b = f._to_period_index(start, "Monthly")
+        self.assertEqual(len(a.index.intersection(b.index)), 40)
+
+    def test_identical_rate_series_agree(self):
+        a = self._mk("2000-01", 60, "M", step=0.01, base=3.0)
+        ok, why, scale = f._seam_agreement(a, "Monthly", a.copy(), "Monthly", "rate")
+        self.assertTrue(ok, why)
+        self.assertEqual(scale, 1.0)
+
+    def test_rate_divergence_is_refused(self):
+        a = self._mk("2000-01", 60, "M", base=3.0)
+        b = a + 0.9                      # far beyond the 0.15pp tolerance
+        ok, why, _ = f._seam_agreement(a, "Monthly", b, "Monthly", "rate")
+        self.assertFalse(ok)
+        self.assertIn("max|diff|", why)
+
+    def test_index_pure_rebasing_is_accepted_and_rescaled(self):
+        """The USA_CPI_INDEX / USA_CORE_CPI_INDEX case (drift 0.0000)."""
+        a = self._mk("1990-01", 120, "M", step=0.3, base=100.0)
+        b = a * 1.25                     # different base year, constant ratio
+        ok, why, scale = f._seam_agreement(a, "Monthly", b, "Monthly", "index")
+        self.assertTrue(ok, why)
+        self.assertAlmostEqual(scale, 1.25, places=6)
+        self.assertIn("rebasing", why)
+
+    def test_index_drift_is_refused(self):
+        """The DEU_IND_PROD / JPN_CPI_INDEX class — base AND methodology differ."""
+        a = self._mk("1990-01", 120, "M", step=0.3, base=100.0)
+        b = a * pd.Series([1.0 + 0.001 * i for i in range(120)], index=a.index)
+        ok, why, _ = f._seam_agreement(a, "Monthly", b, "Monthly", "index")
+        self.assertFalse(ok)
+        self.assertIn("drifts", why)
+
+    def test_thin_overlap_is_refused(self):
+        a = self._mk("2020-01", 6, "M", base=2.0)
+        ok, why, _ = f._seam_agreement(a, "Monthly", a.copy(), "Monthly", "rate")
+        self.assertFalse(ok)
+        self.assertIn("overlap", why)
+
+    def test_disjoint_is_refused(self):
+        a = self._mk("2010-01", 60, "M", base=2.0)
+        b = self._mk("1980-01", 60, "M", base=2.0)
+        ok, why, _ = f._seam_agreement(a, "Monthly", b, "Monthly", "rate")
+        self.assertFalse(ok)
+        self.assertIn("no overlapping periods", why)
+
+    def test_cross_cadence_is_refused_pending_convention(self):
+        """9 CADENCE_DIFF pairs are blocked on a declared aggregation
+        convention — the gate must refuse rather than guess (C16.1)."""
+        m = self._mk("2000-01", 300, "M", base=2.0)
+        y = self._mk("2000", 25, "Y", base=2.0)
+        ok, why, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate")
+        self.assertFalse(ok)
+        self.assertIn("aggregation convention", why)
