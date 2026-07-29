@@ -707,7 +707,21 @@ Without that line a monthly aggregator would infill *between* a quarterly primar
 
 **⬜ 2 contested columns unclassified.** 36 contested but 34 pairs classified: two columns yielded only one candidate with data at fetch time despite the fan-out expansion marking them contested. Diagnose — most likely the fan-out country list does not actually include that ISO, i.e. the contested-detection over-counts. Cheap, and it affects the accuracy of every "contested columns: N" figure quoted elsewhere.
 
-**⬜ National CPI sourcing (7 columns) — reordered AHEAD of some engine work.** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
+**🟡 National CPI sourcing (7 columns) — 1 of 7 done. France landed 2026-07-30 as the first end-to-end proof of the C16 engine.**
+
+`FRA_CPI_YOY` now resolves the trilemma that motivated the whole track. Registered INSEE BDM idbank `011814632` (IPC-2025, COICOP2018=00 all items, MENAGES_IPC=ENSEMBLE, REF_AREA=FE, NATURE=GLISSEMENT_ANNUEL) at tier 0. Verified end-to-end against live data:
+
+| | before | after |
+|---|---|---|
+| provenance | DB.nomics relay of OECD COICOP2018 | **INSEE, national primary (tier 0)** |
+| history start | 1956 via the relay **or** 1997 via INSEE — not both | **1956-01**, head extended with 2,139 rows |
+| freshness | OECD 2026-04 | **INSEE 2026-06** (2 months fresher) |
+
+Seam validated at **0.0499pp over 352 months**; owner values provably untouched. Selected `011814632` over `011814635` ("y compris loyers imputés"). This is the first case where primary-first, longest-history and freshest are all satisfied simultaneously rather than traded off.
+
+**⬜ Remaining 6.** Registry-only through existing adapters: `CAN_CPI_YOY` (`statcan`), `DEU_CPI_YOY` (`bundesbank` — note its existing rows are HICP, so national VPI is a new series id), `ITA_CPI_YOY` (`istat`), `JPN_CPI_YOY` (`estat`, and this one feeds `JP_INFL1` so it is the only one with a calculator consumer). **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head.
+
+**⬜ Original scope note (retained):** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
 
 **⬜ A3 credentialed remainder (25 rows).** The freshness recalibration touched only rows verified live; BLS / e-Stat / BdF (key-gated), Eurostat (`ec.europa.eu` proxy-blocked locally) and Shiller (adapter probe returned an older tail than the pipeline serves — parse ambiguity, uninvestigated) were deliberately left flagged. **Now unblocked**: `source_survey.yml` proves the runner reaches all of them, so the same probe-then-calibrate method can run there.
 
