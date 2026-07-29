@@ -1,6 +1,6 @@
-## Daily audit — 2026-07-28 — **40 ISSUES** (1 fetch error, 39 stale series)
+## Daily audit — 2026-07-29 — **39 ISSUES** (1 fetch error, 38 stale series)
 
-_Run: 2026-07-28 04:15 UTC_
+_Run: 2026-07-29 04:22 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -19,47 +19,47 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1335d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1000d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 393d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 149d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 118d | 45d |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1336d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1001d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 394d | 120d\* |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 150d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-04-01 | 119d | 45d |
 
-**STALE** (34):
+**STALE** (33):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `USA_CPI_YOY` | World Bank | Annual | 2024-12-31 | 574d | 540d |
-| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 208d | 180d\* |
-| `CP` | FRED | Quarterly | 2026-01-01 | 208d | 180d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 150d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 150d | 120d\* |
-| `FRA_UNEMPLOYMENT` | INSEE | Quarterly | 2026-03-01 | 149d | 120d |
-| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 149d | 120d\* |
-| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 149d | 90d\* |
-| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 149d | 120d |
-| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 149d | 120d\* |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 119d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 119d | 90d\* |
-| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 119d | 90d\* |
-| `M2SL` | FRED | Monthly | 2026-05-01 | 88d | 75d\* |
-| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 88d | 45d |
-| `MICH` | FRED | Monthly | 2026-05-01 | 88d | 75d\* |
-| `UMCSENT` | FRED | Monthly | 2026-05-01 | 88d | 75d\* |
-| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 88d | 75d\* |
-| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 88d | 60d\* |
-| `JPN_HH_EXP` | e-Stat | Monthly | 2026-05-01 | 88d | 80d\* |
-| `FRA_LOAN_RATE_HOUSE` | Banque de France | Monthly | 2026-05-01 | 88d | 45d |
-| `FRA_LOAN_RATE_NFC` | Banque de France | Monthly | 2026-05-01 | 88d | 45d |
-| `EZ_PPI` | Eurostat | Monthly | 2026-05-01 | 88d | 75d\* |
-| `PERMIT` | FRED | Monthly | 2026-06-01 | 57d | 45d |
-| `USA_UNEMPLOYMENT` | BLS | Monthly | 2026-06-01 | 57d | 45d\* |
-| `USA_CPI_INDEX` | BLS | Monthly | 2026-06-01 | 57d | 45d\* |
-| `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-06-01 | 57d | 45d\* |
-| `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-06-01 | 57d | 45d |
-| `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-06-01 | 57d | 45d |
-| `FEDFUNDS` | FRED | Monthly | 2026-06-01 | 57d | 45d |
-| _… 4 more in `data_audit.txt`_ |  |  |  |  |  |
+| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 209d | 180d\* |
+| `CP` | FRED | Quarterly | 2026-01-01 | 209d | 180d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 151d | 90d\* |
+| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 151d | 120d\* |
+| `FRA_UNEMPLOYMENT` | INSEE | Quarterly | 2026-03-01 | 150d | 120d |
+| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 150d | 120d\* |
+| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 150d | 90d\* |
+| `FRA_GDP_INDEX` | INSEE | Quarterly | 2026-03-01 | 150d | 120d |
+| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 150d | 120d\* |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 120d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 120d | 90d\* |
+| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 120d | 90d\* |
+| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-05-01 | 89d | 45d |
+| `MICH` | FRED | Monthly | 2026-05-01 | 89d | 75d\* |
+| `UMCSENT` | FRED | Monthly | 2026-05-01 | 89d | 75d\* |
+| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 89d | 75d\* |
+| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 89d | 60d\* |
+| `JPN_HH_EXP` | e-Stat | Monthly | 2026-05-01 | 89d | 80d\* |
+| `FRA_LOAN_RATE_HOUSE` | Banque de France | Monthly | 2026-05-01 | 89d | 45d |
+| `FRA_LOAN_RATE_NFC` | Banque de France | Monthly | 2026-05-01 | 89d | 45d |
+| `EZ_PPI` | Eurostat | Monthly | 2026-05-01 | 89d | 75d\* |
+| `PERMIT` | FRED | Monthly | 2026-06-01 | 58d | 45d |
+| `USA_UNEMPLOYMENT` | BLS | Monthly | 2026-06-01 | 58d | 45d\* |
+| `USA_CPI_INDEX` | BLS | Monthly | 2026-06-01 | 58d | 45d\* |
+| `USA_CORE_CPI_INDEX` | BLS | Monthly | 2026-06-01 | 58d | 45d\* |
+| `MEDCPIM158SFRBCLE` | FRED | Monthly | 2026-06-01 | 58d | 45d |
+| `TRMMEANCPIM158SFRBCLE` | FRED | Monthly | 2026-06-01 | 58d | 45d |
+| `FEDFUNDS` | FRED | Monthly | 2026-06-01 | 58d | 45d |
+| `USA_AVG_HOURLY_EARN` | BLS | Monthly | 2026-06-01 | 58d | 45d\* |
+| `EU_ESI` | Eurostat | Monthly | 2026-06-01 | 58d | 45d |
+| _… 3 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
