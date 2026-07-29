@@ -514,7 +514,54 @@ def _to_period_index(s, freq: str):
     return out[~out.index.duplicated(keep="last")]
 
 
-def _seam_agreement(own, own_freq: str, ext, ext_freq: str, kind: str):
+_AGGREGATION_MAP: dict | None = None
+
+
+def _load_aggregation_map() -> dict:
+    """`(source, series_id) -> 'mean'|'end'|'sum'` from series_aggregation.csv.
+
+    Declares how a COARSER series relates to higher-frequency data, which is
+    what a cross-cadence seam needs in order to be comparable at all. It cannot
+    be inferred from the metadata the repo holds: coarsening a monthly series by
+    taking December and comparing it against an annual AVERAGE makes an
+    identical series look 2-6pp apart — the error that made the first Phase 0
+    pass misclassify all 8 `<C>_CPI_YOY` pairs as DIFFERENT.
+
+    Kept as a small central registry rather than a column on 30
+    `macro_library_*.csv` files because each source module builds its indicator
+    dict key-by-key, so a new column would need all 30 loaders changed.
+    """
+    global _AGGREGATION_MAP
+    if _AGGREGATION_MAP is not None:
+        return _AGGREGATION_MAP
+    out: dict = {}
+    try:
+        with open(os.path.join(_DATA_DIR, "series_aggregation.csv"),
+                  newline="", encoding="utf-8") as fh:
+            for row in _csv.DictReader(fh):
+                src = (row.get("source") or "").strip()
+                sid = (row.get("series_id") or "").strip()
+                agg = (row.get("aggregation") or "").strip().lower()
+                if src and sid and agg in ("mean", "end", "sum"):
+                    out[(src, sid)] = agg
+    except FileNotFoundError:
+        pass
+    _AGGREGATION_MAP = out
+    return out
+
+
+def _coarsen(s, target: str, how: str):
+    """Re-express a series on a coarser period basis under a named convention."""
+    g = s.groupby(s.index.asfreq(target, how="end"))
+    if how == "mean":
+        return g.mean()
+    if how == "sum":
+        return g.sum()
+    return g.last()
+
+
+def _seam_agreement(own, own_freq: str, ext, ext_freq: str, kind: str,
+                    agg: str | None = None):
     """Validate one seam. Returns (ok, reason, scale).
 
     `scale` is the factor to divide the contributor by before splicing — 1.0
@@ -532,11 +579,23 @@ def _seam_agreement(own, own_freq: str, ext, ext_freq: str, kind: str):
     b = _to_period_index(ext, ext_freq)
     if a.empty or b.empty:
         return False, "a side has no observations", 1.0
-    if _cad_rank(own_freq) != _cad_rank(ext_freq):
-        return False, ("cross-cadence seam needs a declared aggregation "
-                       "convention — refused pending C16.1"), 1.0
+    ra, rb = _cad_rank(own_freq), _cad_rank(ext_freq)
+    if ra != rb:
+        if agg is None:
+            return False, ("cross-cadence seam needs a declared aggregation "
+                           "convention (data/series_aggregation.csv)"), 1.0
+        coarse = max(ra, rb)
+        target = {0: "D", 1: "W", 2: "M", 3: "Q", 4: "Y"}.get(coarse, "M")
+        if ra != coarse:
+            a = _coarsen(a, target, agg)
+        else:
+            a.index = a.index.asfreq(target, how="end")
+        if rb != coarse:
+            b = _coarsen(b, target, agg)
+        else:
+            b.index = b.index.asfreq(target, how="end")
     ov = a.index.intersection(b.index)
-    need = _SEAM_MIN_OVERLAP.get(_cad_rank(own_freq), 24)
+    need = _SEAM_MIN_OVERLAP.get(max(ra, rb), 24)
     if len(ov) == 0:
         return False, "no overlapping periods — cannot validate the join", 1.0
     if len(ov) < need:
@@ -616,10 +675,16 @@ def _assemble_column(col_name: str, cands: list[dict], win_cand: dict,
             continue          # adds no uncovered period
 
         e_freq = c["payload"]["indic"].get("frequency", "")
+        # The convention belongs to whichever side is COARSER — it describes how
+        # that series relates to higher-frequency data.
+        coarser = (c if _cad_rank(e_freq) > _cad_rank(own_freq) else win_cand)
+        ci = coarser["payload"]["indic"]
+        agg = _load_aggregation_map().get(
+            (ci.get("source", ""), ci.get("source_id", "")))
         # Validate on RAW observations; fill from the spine-aligned series.
         ok, why, scale = _seam_agreement(
             win_cand["payload"].get("raw", own), own_freq,
-            c["payload"].get("raw", ext), e_freq, kind)
+            c["payload"].get("raw", ext), e_freq, kind, agg=agg)
         src, sid, _ = describe(c)
         if not ok:
             print(f"    [SPLICE] {col_name}: declined {src}/{sid} — {why}")

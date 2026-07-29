@@ -684,7 +684,20 @@ Without that line a monthly aggregator would infill *between* a quarterly primar
 
 **⬜ Phase 5 — audit reconciliation.** Flag declarations that no longer match reality; flag columns whose assembled map changed between runs (the signal a declaration is needed); extend `build_source_inventory.py`.
 
-**⬜ 9 `CADENCE_DIFF` pairs — need a declared aggregation convention.** Blocked on the §C16 convention field (average / end-of-period / sum per series); cannot be inferred from held metadata. Affected: `AUS_GDP_GROWTH`, `ITA_GDP_GROWTH`, `CHN_CPI_YOY`, `DEU_CPI_YOY`, `GBR_CPI_YOY`, `ITA_CPI_YOY`, `JPN_CPI_YOY`, `NLD_CPI_YOY`, `JPN_POLICY_RATE`. Note the survey already **discovered** the convention for three siblings — `CAN`/`CHE`/`FRA_CPI_YOY` read `end-of-period: DIFFERENT | mean: SAME_SERIES`, confirming World Bank annual CPI is an annual **average**. Apply the same test to these nine.
+**🟢 Aggregation convention — MECHANISM SHIPPED 2026-07-30; tolerance is an open decision.** `data/series_aggregation.csv` declares `(source, series_id) -> mean|end|sum`, read by `_load_aggregation_map()` and applied in `_seam_agreement` to coarsen the finer leg before comparison. Kept as a small central registry rather than a column on 30 `macro_library_*.csv` files because every source module builds its indicator dict key-by-key, so a new column would require all 30 loaders changed. Populated: World Bank `FP.CPI.TOTL.ZG` = `mean` (its units string already says "annual average"), IMF `NGDP_RPCH` = `mean` **PROVISIONAL**.
+
+**Measured effect on the 9 pairs (live data, `mean` convention).** The convention works — the "needs a convention" refusals are gone and CPI disagreements fell from **2–6pp to 0.18–1.76pp**. But most still exceed the 0.15pp same-cadence tolerance:
+
+| Pair | max\|diff\| under `mean` | Note |
+|---|---|---|
+| `JPN_CPI_YOY` | **0.1771pp** | marginal — just over |
+| `CHN_CPI_YOY` | **0.2754pp** | marginal — just over |
+| `GBR_CPI_YOY` | 1.1280pp | genuinely apart (ONS vs WB vintage/basket) |
+| `DEU_CPI_YOY` | 1.7608pp | genuinely apart |
+| `ITA_GDP_GROWTH` | **7.9665pp** | confirms the PROVISIONAL caution — IMF annual real GDP growth is **not** the mean of quarterly YoY. Treat as a genuine "record both" and consider removing the `NGDP_RPCH` row from the registry |
+| `CAN`/`CHE`/`FRA`/`NLD_CPI_YOY`, `AUS_GDP_GROWTH`, `JPN_POLICY_RATE` | — | **no seam attempted**: the monthly leg already starts earlier than the annual, so nothing is uncovered. Correct no-op |
+
+**⬜ OPEN DECISION — cross-cadence tolerance.** A cross-cadence seam compares two *different constructions* (mean-of-monthly-YoY vs YoY-of-annual-average-index). These differ by a Jensen-type term, so holding them to the same 0.15pp as a same-cadence pair is arguably too strict — but loosening it globally would weaken the same-cadence checks that are working. Proposal: a separate, looser `_SEAM_TOL_RATE_CROSS`. **Deliberately not implemented, and no number picked** — the candidates sit at 0.177 and 0.275, so any threshold chosen now would be tuned to admit exactly those two, which is not a principled basis. Needs either a first-principles bound on the construction error or a decision to accept those two columns as "record both". Left refused in the meantime, since a wrong splice is worse than no splice.
 
 **⬜ 2 contested columns unclassified.** 36 contested but 34 pairs classified: two columns yielded only one candidate with data at fetch time despite the fan-out expansion marking them contested. Diagnose — most likely the fan-out country list does not actually include that ISO, i.e. the contested-detection over-counts. Cheap, and it affects the accuracy of every "contested columns: N" figure quoted elsewhere.
 

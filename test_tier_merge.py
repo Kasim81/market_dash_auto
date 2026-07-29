@@ -561,3 +561,52 @@ class SegmentAssemblyTest(unittest.TestCase):
         self.assertEqual(len(segs), 1)
         self.assertAlmostEqual(segs[0]["scale"], 1.4, places=4)
         self.assertIn("rescaled", log)
+
+
+class AggregationConventionTest(unittest.TestCase):
+    """§2.C C16.1: a cross-cadence seam needs a declared aggregation convention."""
+
+    def setUp(self):
+        f._AGGREGATION_MAP = None
+
+    @staticmethod
+    def _monthly(years, base=2.0, amp=1.0):
+        idx = pd.period_range(end=pd.Timestamp("2025-12-01").to_period("M"),
+                              periods=years * 12, freq="M").to_timestamp()
+        # oscillates within each year so mean != December
+        return pd.Series([base + amp * ((i % 12) - 5.5) / 5.5 for i in range(len(idx))],
+                         index=idx)
+
+    def test_registry_loads(self):
+        m = f._load_aggregation_map()
+        self.assertEqual(m.get(("World Bank", "FP.CPI.TOTL.ZG")), "mean")
+
+    def test_cross_cadence_refused_without_a_convention(self):
+        m = self._monthly(30)
+        y = m.groupby(m.index.year).mean()
+        y.index = pd.to_datetime([f"{v}-12-01" for v in y.index])
+        ok, why, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate", agg=None)
+        self.assertFalse(ok)
+        self.assertIn("aggregation convention", why)
+
+    def test_mean_convention_matches_an_annual_average(self):
+        """The World Bank CPI case: annual value IS the mean of the monthlies."""
+        m = self._monthly(30)
+        y = m.groupby(m.index.year).mean()
+        y.index = pd.to_datetime([f"{v}-12-01" for v in y.index])
+        ok, why, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate", agg="mean")
+        self.assertTrue(ok, why)
+
+    def test_end_convention_rejects_an_annual_average(self):
+        """Using the wrong convention must refuse, not silently mis-join."""
+        m = self._monthly(30)
+        y = m.groupby(m.index.year).mean()
+        y.index = pd.to_datetime([f"{v}-12-01" for v in y.index])
+        ok, _, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate", agg="end")
+        self.assertFalse(ok)
+
+    def test_end_convention_matches_a_december_series(self):
+        m = self._monthly(30)
+        y = m[m.index.month == 12]
+        ok, why, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate", agg="end")
+        self.assertTrue(ok, why)
