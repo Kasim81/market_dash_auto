@@ -684,11 +684,48 @@ Without that line a monthly aggregator would infill *between* a quarterly primar
 
 **⬜ Phase 5 — audit reconciliation.** Flag declarations that no longer match reality; flag columns whose assembled map changed between runs (the signal a declaration is needed); extend `build_source_inventory.py`.
 
-**⬜ 9 `CADENCE_DIFF` pairs — need a declared aggregation convention.** Blocked on the §C16 convention field (average / end-of-period / sum per series); cannot be inferred from held metadata. Affected: `AUS_GDP_GROWTH`, `ITA_GDP_GROWTH`, `CHN_CPI_YOY`, `DEU_CPI_YOY`, `GBR_CPI_YOY`, `ITA_CPI_YOY`, `JPN_CPI_YOY`, `NLD_CPI_YOY`, `JPN_POLICY_RATE`. Note the survey already **discovered** the convention for three siblings — `CAN`/`CHE`/`FRA_CPI_YOY` read `end-of-period: DIFFERENT | mean: SAME_SERIES`, confirming World Bank annual CPI is an annual **average**. Apply the same test to these nine.
+**🟢 Aggregation convention — MECHANISM SHIPPED 2026-07-30; tolerance is an open decision.** `data/series_aggregation.csv` declares `(source, series_id) -> mean|end|sum`, read by `_load_aggregation_map()` and applied in `_seam_agreement` to coarsen the finer leg before comparison. Kept as a small central registry rather than a column on 30 `macro_library_*.csv` files because every source module builds its indicator dict key-by-key, so a new column would require all 30 loaders changed. Populated: World Bank `FP.CPI.TOTL.ZG` = `mean` (its units string already says "annual average"), IMF `NGDP_RPCH` = `mean` **PROVISIONAL**.
 
-**⬜ 2 contested columns unclassified.** 36 contested but 34 pairs classified: two columns yielded only one candidate with data at fetch time despite the fan-out expansion marking them contested. Diagnose — most likely the fan-out country list does not actually include that ISO, i.e. the contested-detection over-counts. Cheap, and it affects the accuracy of every "contested columns: N" figure quoted elsewhere.
+**Measured effect on the 9 pairs (live data, `mean` convention).** The convention works — the "needs a convention" refusals are gone and CPI disagreements fell from **2–6pp to 0.18–1.76pp**. But most still exceed the 0.15pp same-cadence tolerance:
 
-**⬜ National CPI sourcing (7 columns) — reordered AHEAD of some engine work.** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
+| Pair | max\|diff\| under `mean` | Note |
+|---|---|---|
+| `JPN_CPI_YOY` | **0.1771pp** | marginal — just over |
+| `CHN_CPI_YOY` | **0.2754pp** | marginal — just over |
+| `GBR_CPI_YOY` | 1.1280pp | genuinely apart (ONS vs WB vintage/basket) |
+| `DEU_CPI_YOY` | 1.7608pp | genuinely apart |
+| `ITA_GDP_GROWTH` | **7.9665pp** | confirms the PROVISIONAL caution — IMF annual real GDP growth is **not** the mean of quarterly YoY. Treat as a genuine "record both" and consider removing the `NGDP_RPCH` row from the registry |
+| `CAN`/`CHE`/`FRA`/`NLD_CPI_YOY`, `AUS_GDP_GROWTH`, `JPN_POLICY_RATE` | — | **no seam attempted**: the monthly leg already starts earlier than the annual, so nothing is uncovered. Correct no-op |
+
+**✅ DECIDED 2026-07-30 (owner) — mean-of-monthly-YoY and YoY-of-annual-average-index are DIFFERENT SERIES; record them separately.** No cross-cadence tolerance is needed, because no splice is wanted: the two constructions differ by a Jensen-type term and are not two views of one series. Actions taken:
+
+- **World Bank `FP.CPI.TOTL.ZG` renamed `CPI_YOY` → `CPI_YOY_ANNUAL`**, so it becomes its own series across all 11 fan-out countries instead of contesting `<ISO>_CPI_YOY`. **This recovers data that was being discarded**: under the C15 cadence floor the annual row was blocked on every country that has a monthly source, so its values never reached the history. Verified zero regression first — all 11 `<ISO>_CPI_YOY` are served by a monthly source (DB.nomics ×7, ONS, IMF SDMX), so no column loses its serving source.
+- **Both `data/series_aggregation.csv` entries removed.** The file and mechanism are retained, currently empty, for a future pair that genuinely *is* one construction at two cadences.
+- **`source_fallbacks.csv` `CHN_CPI_YOY` t0 repointed** from the renamed World Bank row to the IMF SDMX monthly series, which was already the serving source under the floor.
+
+**⬜ Follow-up — IMF `NGDP_RPCH` cannot be renamed the same way.** It is the **only** source for 10 of 12 `<ISO>_GDP_GROWTH` columns (CAN, CHN, FRA, DEU, JPN, NLD, CHE, GBR, USA, EA19), so a wholesale rename would strip them of any GDP-growth series. Only `AUS_GDP_GROWTH` (ABS quarterly) and `ITA_GDP_GROWTH` (ISTAT quarterly) are contested, and the measured divergence there is **7.97pp** — emphatically a different construction. To record those two separately, exclude AUS+ITA from the IMF fan-out and register a second IMF row restricted to them under a distinct column name (the `FRA_UNEMPLOYMENT_OECD` pattern). Low priority: under the cadence floor the annual row already loses to the quarterly national source on both, so nothing is served wrongly today — the only gain is retaining the IMF annual view for those two countries.
+
+**✅ 2 contested columns unclassified — ROOT-CAUSED AND FIXED 2026-07-30.** The survey reported 36 contested columns but classified only 34. Both stragglers (`CHE_GOVT_10Y`, `FRA_UNEMPLOYMENT`) were **phantoms**, not fetch gaps.
+
+Cause: `contested_columns()` read the fan-out country restriction from the **indicator dict**, but no source module carries it — the OECD dict exposes only `country: ''`, because each module builds its dict key-by-key from a fixed list of fields. The lookup therefore always resolved to "no restriction", which expanded every fan-out row across **all 14 countries**. That fabricated `CHE_GOVT_10Y` (OECD `GOVT_10Y` is **India-only**) and kept `FRA_UNEMPLOYMENT` looking contested after France had been split out into its own `UNEMPLOYMENT_OECD` series.
+
+Fixed by reading restrictions from the library CSVs (`oecd_countries` / `countries`) via a new `_fanout_restrictions()`. **The true contested count is 26, not 36** — so every "36 contested columns" figure quoted in earlier notes and in `source_overlap_survey.md` was inflated by ~38%. The 34 classified pairs are unaffected and remain valid; only the denominator was wrong.
+
+**🟡 National CPI sourcing (7 columns) — 1 of 7 done. France landed 2026-07-30 as the first end-to-end proof of the C16 engine.**
+
+`FRA_CPI_YOY` now resolves the trilemma that motivated the whole track. Registered INSEE BDM idbank `011814632` (IPC-2025, COICOP2018=00 all items, MENAGES_IPC=ENSEMBLE, REF_AREA=FE, NATURE=GLISSEMENT_ANNUEL) at tier 0. Verified end-to-end against live data:
+
+| | before | after |
+|---|---|---|
+| provenance | DB.nomics relay of OECD COICOP2018 | **INSEE, national primary (tier 0)** |
+| history start | 1956 via the relay **or** 1997 via INSEE — not both | **1956-01**, head extended with 2,139 rows |
+| freshness | OECD 2026-04 | **INSEE 2026-06** (2 months fresher) |
+
+Seam validated at **0.0499pp over 352 months**; owner values provably untouched. Selected `011814632` over `011814635` ("y compris loyers imputés"). This is the first case where primary-first, longest-history and freshest are all satisfied simultaneously rather than traded off.
+
+**⬜ Remaining 6.** Registry-only through existing adapters: `CAN_CPI_YOY` (`statcan`), `DEU_CPI_YOY` (`bundesbank` — note its existing rows are HICP, so national VPI is a new series id), `ITA_CPI_YOY` (`istat`), `JPN_CPI_YOY` (`estat`, and this one feeds `JP_INFL1` so it is the only one with a calculator consumer). **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head.
+
+**⬜ Original scope note (retained):** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
 
 **⬜ A3 credentialed remainder (25 rows).** The freshness recalibration touched only rows verified live; BLS / e-Stat / BdF (key-gated), Eurostat (`ec.europa.eu` proxy-blocked locally) and Shiller (adapter probe returned an older tail than the pipeline serves — parse ambiguity, uninvestigated) were deliberately left flagged. **Now unblocked**: `source_survey.yml` proves the runner reaches all of them, so the same probe-then-calibrate method can run there.
 

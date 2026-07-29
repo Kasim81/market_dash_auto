@@ -88,24 +88,59 @@ def coarsen(s: pd.Series, target: str, how: str) -> pd.Series:
     return g.last() if how == "end" else g.mean()
 
 
+def _data(name: str) -> str:
+    return os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "data", name)
+
+
+def _fanout_restrictions() -> dict:
+    """`series_id -> [ISO, ...]` country restrictions, read from the LIBRARY CSVs.
+
+    Must come from the CSV, not the indicator dict: source modules build their
+    indicator dicts key-by-key and none of them carries the fan-out country
+    list (the OECD dict exposes only `country: ''`). Reading it from the dict
+    silently yields "no restriction", which then expands to EVERY country and
+    invents contested columns that do not exist — it fabricated
+    `CHE_GOVT_10Y` (OECD `GOVT_10Y` is India-only) and kept
+    `FRA_UNEMPLOYMENT` looking contested after France was split out into its
+    own `UNEMPLOYMENT_OECD` series. That over-count inflated the headline
+    "contested columns" figure from 26 to 36.
+    """
+    import csv as _csv
+    out: dict = {}
+    for fn, key in (("macro_library_oecd.csv", "oecd_countries"),
+                    ("macro_library_worldbank.csv", "countries"),
+                    ("macro_library_imf.csv", "countries")):
+        try:
+            with open(_data(fn), newline="", encoding="utf-8") as fh:
+                for row in _csv.DictReader(fh):
+                    sid = (row.get("series_id") or "").strip()
+                    raw = (row.get(key) or "").replace("+", "|")
+                    isos = [x.strip() for x in raw.split("|") if x.strip()]
+                    if sid and isos:
+                        out[sid] = isos
+        except FileNotFoundError:
+            continue
+    return out
+
+
 def contested_columns(inds: list[dict]) -> set[str]:
     """Columns with >1 source, expanding fan-out rows to <ISO>_<col>."""
     import csv as _csv
-    path = os.path.join(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__))), "data", "macro_library_countries.csv")
-    with open(path, newline="", encoding="utf-8") as fh:
+    with open(_data("macro_library_countries.csv"), newline="", encoding="utf-8") as fh:
         isos = [(r.get("canonical") or r.get("code") or
                  list(r.values())[0] or "").strip()
                 for r in _csv.DictReader(fh)]
     isos = [i for i in isos if i]
+    restrict = _fanout_restrictions()
     cols: dict[str, set] = collections.defaultdict(set)
     for i in inds:
         c = i.get("col")
         if not c:
             continue
         if i.get("source") in FAN and not any(c.startswith(x + "_") for x in isos):
-            only = (i.get("countries") or i.get("oecd_countries") or "").replace("+", "|")
-            targets = [x.strip() for x in only.split("|") if x.strip()] or isos
+            sid = i.get("source_id") or i.get("series_id") or ""
+            targets = restrict.get(sid, isos)
             for iso in targets:
                 cols[f"{iso}_{c}"].add(i.get("source"))
         else:
