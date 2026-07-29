@@ -613,6 +613,49 @@ Eleven columns could previously fall to an annual aggregator on a single bad fet
 
 **§2.C sequencing (unified with §2.A):** operational first — **A10 + A11 ✅ done 2026-07-08** (PR #255, plus the C4/C5 structural openers), **A1 ✅** (CPI via the new IMF SDMX module; PPI accepted gap) and **A14 ✅** (bounded fill, PR #256) — next the bounded-fill follow-ups **A15 → A16** (each a small self-contained PR, start after the first post-merge daily run), plus **A12** (Eurostat mirror) and **A13** (e-Stat CPI slice-pinning) when an environment with `ec.europa.eu` egress / `ESTAT_APP_ID` is available — then the remaining structural track **C3 ✅ (batch 1 2026-07-08; batch 2 + engine extensions 2026-07-09; 7 documented exemptions) → C2 ✅ (PR #260) → C1 ✅ (2026-07-09: demotion logging + Section A surfacing + the tier-merge tests actually running under unittest)** → (C9/C10 anytime) → §5 multifreq. Core structural track is done, and **C6 ✅ + C8 ✅ (2026-07-09)** followed in the same session; the only §2.C items left are C9/C10 repo weight and the opportunistic-only C7/C13. Multifreq de-risking: C2 and C1 are effective prerequisites (one registry beats two 27-branch ladders for a migration touching every source path; precedence enforcement defines the correctness contract a multi-frequency merge must preserve), and C5's test gate is what lets a migration that size proceed in reviewable steps.
 
+**C16. Segment assembly ("splice") — spec, 2026-07-29.** Extends C15 from *pick one winner per column* to *assemble a column from several sources, each owning the periods no higher-priority source covers*. Motivated by the real shape of the data: a column's best coverage is often split across sources (a national primary that starts late, a discontinued national vintage, an aggregator with decades more history, a live source that continues past a stalled primary).
+
+**The model.** Rank eligible candidates by C15 priority. The highest-priority source owns every period it actually covers; each lower-priority source fills only periods **no higher-priority source covers at all** — head, tail, or middle. Every junction ("seam") is validated independently.
+
+**The distinction the design rests on.** Splicing fills gaps in *time coverage*, never gaps *between observations*.
+
+| Situation | Meaning | Action |
+|---|---|---|
+| **Coverage gap** — no higher-priority source has any data for that period | different eras | ✅ splice |
+| **Cadence competition** — both cover the period, one is finer | same era, different granularity | ❌ not a splice: C15 tier-first decides, or "record both" |
+
+Without that line a monthly aggregator would infill *between* a quarterly primary's prints, fabricating apparent frequency and mixing sources within a period.
+
+**Why tail-fill is allowed** (an earlier draft banned it): the `CHE_CPI_YOY` incident was a whole-column *flip* — the serving source changed for every date, rewriting 3,678 rows and moving the series start five years. Tail fill only touches periods the owner has **never** covered, the owner reclaims them when it publishes (a revision, not a flip), and churn is bounded to the trailing rows. The invariant that protects us is not "head only" but **a higher-priority source is never displaced where it has data** — which holds in both directions.
+
+**Seam gates** (ordered; any failure ⇒ that contributor does not fill, the gap stays open, logged — failure is *local* to the seam):
+
+| # | Gate | Rule |
+|---|---|---|
+| G1 | measure kind | must match (`rate`/`index`/`level`); never splice across kinds |
+| G2 | cadence floor | contributor ≥ quarterly (C15); annual never extends a sub-annual column — long-run annual belongs in its own series, the `_JST` pattern |
+| G3 | coverage | contributor must cover periods the owner does not |
+| G4 | overlap sufficiency | ≥ 24 monthly / 8 quarterly real overlapping observations |
+| G5 | agreement | rate: `max|A−B| ≤ 0.15pp`. index: ratio constant within 0.002 ⇒ pure rebasing, rescale to owner's base; drifting ⇒ **refuse**. level: `max|A/B−1| ≤ 0.005`, no rescaling (a constant ratio on a level series is a unit error to fix, not paper over) |
+| G6 | cadence change | contributor coarser than owner is allowed (both ≥ quarterly) but recorded — effective granularity changes across the seam |
+
+**Disjoint segments** (no overlap at all) are refused by default: without overlap the two cannot be shown to be the same concept, and the join would silently bridge a hole. Explicit operator override only.
+
+**Chaining** is supported (the real INSEE case: IPC-2025 ← IPC-2015 ← OECD), applied iteratively with **each seam validated** against the already-assembled series.
+
+**⚠️ Two implementation details that silently corrupt the comparison if missed — both found empirically in the Phase 0 survey, not by reasoning:**
+
+1. **Period normalisation.** Sources disagree on stamping convention — OECD stamps month-**END** (`1955-01-31`), BLS month-**START** (`2024-01-01`). Comparing raw timestamps finds **zero** overlap between them and reports a false `DISJOINT`. All comparisons must run on normalised observation *periods*. This was observed live on `USA_UNEMPLOYMENT`.
+2. **Aggregation convention.** Coarsening a monthly series to annual by taking December and comparing it against an annual **average** yields 2–6pp differences between series that are in fact identical — which is exactly what made the first survey pass report all 8 `<C>_CPI_YOY` pairs as `DIFFERENT` when `FRA_CPI_YOY` had already been measured at **0.0499pp** agreement. A cross-cadence seam therefore needs a **declared aggregation convention** (average / end-of-period / sum) per series; it cannot be inferred from the metadata the repo holds. The survey reports both conventions so the correct one is discoverable.
+
+**Declaration layer (preferred, not authoritative).** Explicit per-date-range primaries (`col, segment_start, segment_end, source, series_id, role`) override the inferred map. **Preferred**, per owner decision — sources keep improving, so pinning now would go stale as better feeds are wired. A candidate may displace a declared segment only if it is strictly better on the stated axes (longer / finer / more primary) **and** passes the seam-agreement test, **and** the change to a closed historical segment emits a loud `[SEGMENT CHANGE]` event. That keeps improvement possible while making a retroactive rewrite an announced, validated event rather than a silent one.
+
+**Provenance.** A genuinely multi-source column can no longer honestly carry a single `Source` row: proposal is owner's source suffixed `(+N spliced)`, a provenance record per segment (source, id, range, rescale factor), `Last Observation` from the assembled series, and `Frequency` the owner's with per-segment cadence recorded. This is the one real schema question; everything else fits existing structures.
+
+**Build order** (the assembly engine is identical whether the segment map is inferred or declared — declaration is only how the map is populated, so there is no big bang): (1) assembly engine + seam validation; (2) populate by rules; (3) declaration override layer, France as worked example; (4) audit reconciliation — flag declarations that no longer match reality, and columns whose assembled map changed between runs, which is precisely the signal a declaration is needed.
+
+**Phase 0 status (2026-07-29).** `scripts/source_overlap_survey.py` + `.github/workflows/source_survey.yml` land the diagnostic. The uncredentialed local pass classified 17 of 36 contested pairs and found the two bugs above; **18 FRED fetches failed on a dummy key**, leaving those columns unsurveyed, so the survey is wired as a runner-side diagnostic (the `ifo_probe.yml` pattern) to run with real secrets before engine work starts. Early credible findings from the same-cadence pairs: `AUS_UNEMPLOYMENT` / `CAN_UNEMPLOYMENT` / `USA_UNEMPLOYMENT` agree with their OECD relay to **max|diff| = 0.0000** (a bit-exact relay — strong evidence the splice concept is sound), `CAN_UNEMPLOYMENT` would gain **+21 years** from splicing, `GBR_UNEMPLOYMENT`'s national source is already the longer one (no action), and `FRA_IND_PROD` is correctly **refused** by the index-drift gate (ratio drift 0.027) ⇒ a genuine "record both".
+
 ### Repo file-hygiene — doc-deletion sweep (2026-07-14, PR #269 + #270)
 
 **Done this pass.** All 3 Section-A High-confidence deletes are now executed — retired seven superseded audit/handover files across the two PRs, each with its inbound references rewired to a surviving home (grep-verified zero dangling refs; `py_compile` + `test_tier_merge.py` green; no `data/*.csv` deleted — note-field edits only):
