@@ -656,6 +656,44 @@ Without that line a monthly aggregator would infill *between* a quarterly primar
 
 **Phase 0 status (2026-07-29).** `scripts/source_overlap_survey.py` + `.github/workflows/source_survey.yml` land the diagnostic. The uncredentialed local pass classified 17 of 36 contested pairs and found the two bugs above; **18 FRED fetches failed on a dummy key**, leaving those columns unsurveyed, so the survey is wired as a runner-side diagnostic (the `ifo_probe.yml` pattern) to run with real secrets before engine work starts. Early credible findings from the same-cadence pairs: `AUS_UNEMPLOYMENT` / `CAN_UNEMPLOYMENT` / `USA_UNEMPLOYMENT` agree with their OECD relay to **max|diff| = 0.0000** (a bit-exact relay — strong evidence the splice concept is sound), `CAN_UNEMPLOYMENT` would gain **+21 years** from splicing, `GBR_UNEMPLOYMENT`'s national source is already the longer one (no action), and `FRA_IND_PROD` is correctly **refused** by the index-drift gate (ratio drift 0.027) ⇒ a genuine "record both".
 
+**C16.1 Segment assembly — OUTSTANDING WORK REGISTER (opened 2026-07-29).** Phase 0 is done; everything below is open. Kept as an explicit checklist because this track spans several PRs and the findings are easy to lose.
+
+**✅ Phase 0 — overlap survey. Done 2026-07-29.** `scripts/source_overlap_survey.py` + `.github/workflows/source_survey.yml` (PR #285). Credentialed run 30495180351 completed in 90s: **34 of 36 pairs classified, 0 fetch errors, 0 no-data**. Report committed to `main` as `source_overlap_survey.md` (commit `39a5222`). The credentialed run **changed the conclusion** — the uncredentialed pass classified only 18 pairs with all 18 FRED columns invisible, and FRED turned out to hold four of the five biggest wins. Do not design off an uncredentialed pass.
+
+**⬜ Phase 1+2 — assembly engine + seam validation.** One PR (the engine is useless without validation). Acceptance test is now concrete real data rather than fixtures:
+
+*Must GAIN history (SAME_SERIES with coverage gain) — ~129 years total:*
+
+| Column | Owner (tier 0) | Extender | Gain | Overlap |
+|---|---|---|---|---|
+| `CAN_GOV_10Y` | BoC daily 2001-01→ | FRED 1955-01 | **+46 yrs** | 306 |
+| `GBR_BANK_RATE` | BoE 1975-01→2026-07 | FRED 1947-01 (frozen at 2017-01) | **+28 yrs** | 505 |
+| `NLD_DSL_10Y` | ECB 1986-04→ | FRED 1959-01 | **+27 yrs** | 483 |
+| `CAN_UNEMPLOYMENT` | StatCan 1976-01→ | OECD 1955-01 | **+21 yrs** | 606 |
+| `USA_UNEMPLOYMENT` | (t1 pair) | FRED 1948-01 vs OECD 1955-01 | +7 yrs | 857 |
+
+`GBR_BANK_RATE` is the canonical case for the whole design: FRED is **dead** as a current source (frozen 2017-01) yet holds 1947–1974 that BoE lacks, while BoE holds the live present. Winner-take-all must discard one of them.
+
+*Must stay REFUSED (11 `DIFFERENT` pairs) — regression cover in both directions:* `DEU_IND_PROD` (index drift 0.0665, r=1.1185), `GBR_CPI_INDEX` (0.0554), `JPN_CPI_INDEX` (0.0368, e-Stat 2020-base vs DB.nomics 2015-base), `JPN_IND_PROD` (0.0306, overlap only 75), `FRA_IND_PROD` (0.0271), plus rate-kind `CHN_POLICY_RATE`, `EA_HICP`, `FRA_BUS_CONF`, `GBR_UNEMPLOYMENT`, `ITA_UNEMPLOYMENT`, `JPN_POLICY_RATE`.
+
+*Must pass the rebase path (2 `SAME_REBASED`):* `USA_CPI_INDEX` / `USA_CORE_CPI_INDEX` — FRED vs BLS, drift **0.0000**, r **1.0000**.
+
+**⬜ Phase 3 — metadata & reporting.** `Source` as `owner (+N spliced)`; per-segment provenance record; `Last Observation` from the assembled series; `[SPLICE]` log line surfaced by `data_audit` Section A; decide `Frequency` for a mixed-cadence column. **The one genuine schema question in this track.**
+
+**⬜ Phase 4 — declaration layer (preferred, not authoritative).** Schema `col, segment_start, segment_end, source, series_id, role`. Displacement requires strictly-better **and** seam agreement; a closed-segment change emits `[SEGMENT CHANGE]`. Owner decision 2026-07-29: preferred rather than authoritative, because sources keep improving and pinning now would go stale as better feeds are wired.
+
+**⬜ Phase 5 — audit reconciliation.** Flag declarations that no longer match reality; flag columns whose assembled map changed between runs (the signal a declaration is needed); extend `build_source_inventory.py`.
+
+**⬜ 9 `CADENCE_DIFF` pairs — need a declared aggregation convention.** Blocked on the §C16 convention field (average / end-of-period / sum per series); cannot be inferred from held metadata. Affected: `AUS_GDP_GROWTH`, `ITA_GDP_GROWTH`, `CHN_CPI_YOY`, `DEU_CPI_YOY`, `GBR_CPI_YOY`, `ITA_CPI_YOY`, `JPN_CPI_YOY`, `NLD_CPI_YOY`, `JPN_POLICY_RATE`. Note the survey already **discovered** the convention for three siblings — `CAN`/`CHE`/`FRA_CPI_YOY` read `end-of-period: DIFFERENT | mean: SAME_SERIES`, confirming World Bank annual CPI is an annual **average**. Apply the same test to these nine.
+
+**⬜ 2 contested columns unclassified.** 36 contested but 34 pairs classified: two columns yielded only one candidate with data at fetch time despite the fan-out expansion marking them contested. Diagnose — most likely the fan-out country list does not actually include that ISO, i.e. the contested-detection over-counts. Cheap, and it affects the accuracy of every "contested columns: N" figure quoted elsewhere.
+
+**⬜ National CPI sourcing (7 columns) — reordered AHEAD of some engine work.** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
+
+**⬜ A3 credentialed remainder (25 rows).** The freshness recalibration touched only rows verified live; BLS / e-Stat / BdF (key-gated), Eurostat (`ec.europa.eu` proxy-blocked locally) and Shiller (adapter probe returned an older tail than the pipeline serves — parse ambiguity, uninvestigated) were deliberately left flagged. **Now unblocked**: `source_survey.yml` proves the runner reaches all of them, so the same probe-then-calibrate method can run there.
+
+**⬜ Cleanup when this track lands.** Delete `.github/workflows/source_survey.yml` and `source_overlap_survey.md` (same lifecycle as `ifo_probe.yml`), and retire this register.
+
 ### Repo file-hygiene — doc-deletion sweep (2026-07-14, PR #269 + #270)
 
 **Done this pass.** All 3 Section-A High-confidence deletes are now executed — retired seven superseded audit/handover files across the two PRs, each with its inbound references rewired to a surviving home (grep-verified zero dangling refs; `py_compile` + `test_tier_merge.py` green; no `data/*.csv` deleted — note-field edits only):

@@ -28,6 +28,7 @@ import re
 import time
 from datetime import date, datetime, timezone
 
+import numpy as np
 import pandas as pd
 
 from sources import countries as countries_src
@@ -474,6 +475,93 @@ def _eff_last(d):
     if d is None:
         return None
     return min(d, date.today())
+
+
+# ---- §2.C C16 segment assembly: seam validation + history extension ----
+#
+# A column's best coverage is often split across sources: a national primary
+# that starts late, a discontinued national vintage, an aggregator with decades
+# more history, or a dead mirror that nonetheless holds irreplaceable early
+# years. `GBR_BANK_RATE` is the canonical case — FRED is frozen at 2017-01 yet
+# carries 1947-1974 that the BoE feed lacks, while BoE holds the live present.
+# Winner-take-all must discard one of them.
+#
+# The invariant: a higher-priority source is NEVER displaced where it has data.
+# A contributor fills only periods the owner does not cover at all. That is what
+# separates this from the CHE_CPI_YOY class of bug, where the serving source
+# changed for *every* date and rewrote 3,678 rows of history.
+
+_SEAM_MIN_OVERLAP = {0: 60, 1: 40, 2: 24, 3: 8, 4: 3}   # by cad_rank
+_SEAM_TOL_RATE = 0.15        # percentage points
+_SEAM_TOL_LEVEL = 0.005      # relative
+_SEAM_TOL_DRIFT = 0.002      # index ratio spread => pure rebasing
+
+
+def _to_period_index(s, freq: str):
+    """Normalise a series index to observation periods for comparison.
+
+    Sources disagree on stamping convention — OECD stamps month-END
+    (1955-01-31) where BLS stamps month-START (2024-01-01). Comparing raw
+    timestamps finds ZERO overlap between them, which reads as "disjoint" and
+    silently blocks a valid seam (observed on USA_UNEMPLOYMENT in the Phase 0
+    survey). Every seam comparison must run on periods, never on timestamps.
+    """
+    per = {0: "D", 1: "W", 2: "M", 3: "Q", 4: "Y"}.get(_cad_rank(freq), "M")
+    out = s.dropna().sort_index()
+    if out.empty:
+        return out
+    out.index = pd.to_datetime(out.index).to_period(per)
+    return out[~out.index.duplicated(keep="last")]
+
+
+def _seam_agreement(own, own_freq: str, ext, ext_freq: str, kind: str):
+    """Validate one seam. Returns (ok, reason, scale).
+
+    `scale` is the factor to divide the contributor by before splicing — 1.0
+    except for an index pair that differs only by base year, where a constant
+    ratio proves a pure rebasing and is corrected rather than refused.
+
+    Cross-cadence seams are NOT validated here: they need a declared
+    aggregation convention (average / end-of-period / sum) that cannot be
+    inferred from the metadata the repo holds — coarsening a monthly series by
+    taking December and comparing it against an annual *average* produces
+    multi-point differences between identical series. Those are refused
+    pending the convention field (§2.C C16.1).
+    """
+    a = _to_period_index(own, own_freq)
+    b = _to_period_index(ext, ext_freq)
+    if a.empty or b.empty:
+        return False, "a side has no observations", 1.0
+    if _cad_rank(own_freq) != _cad_rank(ext_freq):
+        return False, ("cross-cadence seam needs a declared aggregation "
+                       "convention — refused pending C16.1"), 1.0
+    ov = a.index.intersection(b.index)
+    need = _SEAM_MIN_OVERLAP.get(_cad_rank(own_freq), 24)
+    if len(ov) == 0:
+        return False, "no overlapping periods — cannot validate the join", 1.0
+    if len(ov) < need:
+        return False, f"overlap {len(ov)} < {need} required", 1.0
+    x = a[ov].astype(float)
+    y = b[ov].astype(float)
+    if kind == "index":
+        ratio = (y / x).replace([np.inf, -np.inf], np.nan).dropna()
+        if ratio.empty or ratio.min() <= 0:
+            return False, "index ratio undefined over the overlap", 1.0
+        drift = ratio.max() / ratio.min() - 1
+        if drift > _SEAM_TOL_DRIFT:
+            return False, (f"index ratio drifts {drift:.4f} > {_SEAM_TOL_DRIFT} "
+                           "— different basket/methodology, not a rebasing"), 1.0
+        return True, f"pure rebasing (drift {drift:.4f})", float(ratio.median())
+    if kind == "rate":
+        d = (x - y).abs()
+        if d.max() > _SEAM_TOL_RATE:
+            return False, f"max|diff| {d.max():.4f} > {_SEAM_TOL_RATE}pp", 1.0
+        return True, f"agrees within {d.max():.4f}pp over {len(ov)}", 1.0
+    rel = (x / y - 1).abs().replace([np.inf, -np.inf], np.nan).dropna()
+    if rel.empty or rel.max() > _SEAM_TOL_LEVEL:
+        got = f"{rel.max():.5f}" if not rel.empty else "undefined"
+        return False, f"max|rel| {got} > {_SEAM_TOL_LEVEL}", 1.0
+    return True, f"agrees within {rel.max():.5f} rel over {len(ov)}", 1.0
 
 
 def _select_winner(cands: list[dict]) -> dict:
