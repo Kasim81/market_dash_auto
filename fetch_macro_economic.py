@@ -563,6 +563,93 @@ def _seam_agreement(own, own_freq: str, ext, ext_freq: str, kind: str):
         return False, f"max|rel| {got} > {_SEAM_TOL_LEVEL}", 1.0
     return True, f"agrees within {rel.max():.5f} rel over {len(ov)}", 1.0
 
+def _assemble_column(col_name: str, cands: list[dict], win_cand: dict,
+                     describe) -> tuple:
+    """Assemble one column from its candidates. Returns (series, segments).
+
+    The owner (`win_cand`, chosen by `_select_winner`) keeps every period it
+    covers. Each remaining candidate, in priority order, may fill only periods
+    **outside** the assembled coverage so far — head, tail, or both. That is the
+    invariant that separates this from the `CHE_CPI_YOY` bug class: a
+    higher-priority source is never displaced where it has data, so assembly
+    can only ever ADD history, never change a value already served.
+
+    Filling is gated by `_seam_agreement` per contributor; a refusal is local
+    (that contributor does not fill, the gap stays open, the reason is logged)
+    and never blocks other contributors.
+
+    Coverage is read off each candidate's spine-filled series: forward-fill
+    extends a series' tail but never its head, so `first_valid_index` is the
+    first real observation, and `last_valid_index` is the last real observation
+    plus that row's bounded-fill allowance — which is exactly the range the
+    column legitimately serves.
+    """
+    own = win_cand["payload"]["series"]
+    own_first, own_last = own.first_valid_index(), own.last_valid_index()
+    if own_first is None:
+        return own, []
+
+    kind = _measure_kind(win_cand["payload"]["indic"].get("units", ""))
+    own_freq = win_cand["payload"]["indic"].get("frequency", "")
+    # Reindex onto the union of every candidate's index so a contributor can
+    # write periods outside the owner's own range. In the live pipeline all
+    # candidates already share the weekly spine, so this is normally a no-op;
+    # it makes the function correct for any caller.
+    union = own.index
+    for c in cands:
+        union = union.union(c["payload"]["series"].index)
+    result = own.reindex(union)
+    lo, hi = own_first, own_last
+    segments: list[dict] = []
+
+    others = [c for c in cands if c is not win_cand and c["has_data"]]
+    others.sort(key=lambda c: (c["tier"], c["cad_rank"], c["order"]))
+
+    for c in others:
+        ext = c["payload"]["series"]
+        e_first, e_last = ext.first_valid_index(), ext.last_valid_index()
+        if e_first is None:
+            continue
+        head = ext.index[(ext.index < lo) & ext.notna()]
+        tail = ext.index[(ext.index > hi) & ext.notna()]
+        if len(head) == 0 and len(tail) == 0:
+            continue          # adds no uncovered period
+
+        e_freq = c["payload"]["indic"].get("frequency", "")
+        # Validate on RAW observations; fill from the spine-aligned series.
+        ok, why, scale = _seam_agreement(
+            win_cand["payload"].get("raw", own), own_freq,
+            c["payload"].get("raw", ext), e_freq, kind)
+        src, sid, _ = describe(c)
+        if not ok:
+            print(f"    [SPLICE] {col_name}: declined {src}/{sid} — {why}")
+            continue
+
+        contrib = ext / scale if scale and scale != 1.0 else ext
+        filled = 0
+        for idx in (head, tail):
+            if len(idx):
+                result.loc[idx] = contrib.loc[idx]
+                filled += len(idx)
+        if len(head):
+            lo = min(lo, head.min())
+        if len(tail):
+            hi = max(hi, tail.max())
+        segments.append({
+            "source": src, "series_id": sid, "scale": scale,
+            "range": (str(min(head.min() if len(head) else hi,
+                              tail.min() if len(tail) else lo).date()),
+                      str(max(head.max() if len(head) else lo,
+                              tail.max() if len(tail) else hi).date())),
+            "rows": filled, "reason": why,
+        })
+        rescale = f", rescaled /{scale:.6g}" if scale != 1.0 else ""
+        side = ("head" if len(head) else "") + ("+tail" if len(head) and len(tail)
+                                               else ("tail" if len(tail) else ""))
+        print(f"    [SPLICE] {col_name}: extended {side} from {src}/{sid} "
+              f"(+{filled} rows{rescale}) — {why}")
+    return result, segments
+
 
 def _select_winner(cands: list[dict]) -> dict:
     """Pick the winning candidate for one (Country, Col) group.
@@ -1382,7 +1469,14 @@ def build_hist_df(
                 "tier":      int(indic.get("tier", 0) or 0),
                 "rank":      _source_rank(indic["source"]),
                 "order":     len(cand_lists[col_name]),
-                "payload":   {"indic": indic, "series": combined,
+                # `raw` is the unfilled source series: seam validation (§C16)
+                # must compare real observations. Reading a spine-filled series
+                # back as periods yields a LAGGED series (forward-fill carries a
+                # stale value across the period boundary), and two differently
+                # lagged series show several points of spurious disagreement —
+                # measured at 5.2pp on CAN_UNEMPLOYMENT, which actually agrees
+                # to 0.0000pp on raw observations.
+                "payload":   {"indic": indic, "series": combined, "raw": nonnull,
                               "last": new_last, "fill_limit": fill_limit},
             })
 
@@ -1398,16 +1492,33 @@ def build_hist_df(
                        c["payload"]["indic"].get("frequency", "")),
         )
         win = win_cand["payload"]
-        columns[col_name] = win["series"]
+        _describe = (lambda c: (c["payload"]["indic"].get("source", "?"),
+                                c["payload"]["indic"].get("source_id", "?"),
+                                c["payload"]["indic"].get("frequency", "")))
+        # §2.C C16: the owner keeps every period it covers; other candidates
+        # may fill only periods it does not cover at all, each gated by
+        # _seam_agreement. Assembly can only ADD history.
+        assembled, segments = _assemble_column(col_name, cands, win_cand, _describe)
+        columns[col_name] = assembled
         # Copy so the shared indicator dict isn't mutated; _last_obs feeds
         # the "Last Observation" metadata row and _fill_limit_days feeds the
         # sister-archive trailing-bound enforcement in save_hist_csv.
-        provenance[col_name] = {
+        prov = {
             **win["indic"],
             "_last_obs": (win["last"].date().isoformat()
                           if pd.notna(win["last"]) else ""),
             "_fill_limit_days": win["fill_limit"],
         }
+        if segments:
+            # Owner keeps ownership of the metadata (definition, tail,
+            # freshness); the spliced contributors are recorded alongside it.
+            prov["_segments"] = segments
+            prov["source"] = f"{win['indic'].get('source','?')} (+{len(segments)} spliced)"
+            extra = "; ".join(f"{s['source']}/{s['series_id']} "
+                              f"{s['range'][0]}..{s['range'][1]}" for s in segments)
+            prov["notes"] = ((win["indic"].get("notes", "") or "").rstrip() +
+                             f" [SPLICED: {extra}]").strip()
+        provenance[col_name] = prov
         if len(cands) > 1:
             others = ", ".join(sorted({c["payload"]["indic"]["source"] for c in cands}
                                       - {win["indic"]["source"]}))

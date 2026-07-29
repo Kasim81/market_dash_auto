@@ -453,3 +453,111 @@ class SeamValidationTest(unittest.TestCase):
         ok, why, _ = f._seam_agreement(m, "Monthly", y, "Annual", "rate")
         self.assertFalse(ok)
         self.assertIn("aggregation convention", why)
+
+
+class SegmentAssemblyTest(unittest.TestCase):
+    """§2.C C16 assembly: contributors fill only uncovered periods.
+
+    Series are anchored to END near today: a synthetic owner whose data stops
+    decades ago is correctly demoted by the staleness gate, which would test
+    the wrong thing.
+    """
+
+    END = pd.Timestamp.today().to_period("M")
+
+    @classmethod
+    def _cand(cls, source, years, tier, order, units="Percent",
+              base=5.0, step=0.0, end_offset=0, freq="Monthly"):
+        """A monthly series of `years` years ending `end_offset` months back."""
+        end = cls.END - end_offset
+        n = years * 12
+        idx = pd.period_range(end=end, periods=n, freq="M").to_timestamp()
+        # Value is a function of the DATE, not of position: two sources of the
+        # same series must agree at the same date, which is what makes a
+        # constant ratio (pure rebasing) detectable.
+        epoch = pd.Timestamp("1950-01-01")
+        months = [(d.year - epoch.year) * 12 + (d.month - epoch.month) for d in idx]
+        raw = pd.Series([base + m * step for m in months], index=idx)
+        return {"has_data": True, "kind": f._measure_kind(units),
+                "cad_rank": f._cad_rank(freq), "cad_days": f._cad_days(freq),
+                "last": idx.max().date(), "tier": tier, "rank": 2, "order": order,
+                "payload": {"indic": {"source": source, "source_id": f"{source}_ID",
+                                      "frequency": freq, "units": units},
+                            "series": raw, "raw": raw,
+                            "last": idx.max(), "fill_limit": 90}}
+
+    @staticmethod
+    def _describe(c):
+        i = c["payload"]["indic"]
+        return i["source"], i["source_id"], i["frequency"]
+
+    def _run(self, cands):
+        win = f._select_winner(cands)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            s, segs = f._assemble_column("X_TEST", cands, win, self._describe)
+        return win, s, segs, buf.getvalue()
+
+    def test_head_extension(self):
+        """The CAN_UNEMPLOYMENT shape: tier-0 primary starts later."""
+        own = self._cand("StatCan", 50, 0, 0)
+        ext = self._cand("OECD", 71, 1, 1)
+        win, s, segs, log = self._run([own, ext])
+        self.assertEqual(win["payload"]["indic"]["source"], "StatCan")
+        self.assertEqual(len(segs), 1)
+        self.assertLess(s.first_valid_index(), own["payload"]["series"].first_valid_index())
+        self.assertIn("extended head", log)
+
+    def test_tail_extension(self):
+        """Owner still fresh enough to own, contributor reaches further."""
+        own = self._cand("BoE", 50, 0, 0, end_offset=1)
+        ext = self._cand("FRED", 50, 1, 1, end_offset=0)
+        win, s, segs, log = self._run([own, ext])
+        self.assertEqual(win["payload"]["indic"]["source"], "BoE")
+        self.assertEqual(len(segs), 1)
+        self.assertGreater(s.last_valid_index(),
+                           own["payload"]["series"].last_valid_index())
+        self.assertIn("tail", log)
+
+    def test_both_ends(self):
+        own = self._cand("ONS", 30, 0, 0, end_offset=1)
+        ext = self._cand("FRED", 65, 1, 1, end_offset=0)
+        _, s, segs, log = self._run([own, ext])
+        self.assertEqual(len(segs), 1)
+        self.assertIn("head+tail", log)
+
+    def test_owner_values_are_never_displaced(self):
+        """The core invariant — assembly only ADDS."""
+        own = self._cand("ONS", 30, 0, 0, base=5.0)
+        ext = self._cand("FRED", 65, 1, 1, base=5.0)
+        _, s, _, _ = self._run([own, ext])
+        o = own["payload"]["series"]
+        pd.testing.assert_series_equal(s.loc[o.index], o, check_names=False)
+
+    def test_refused_seam_leaves_the_gap_open(self):
+        own = self._cand("ONS", 30, 0, 0, base=5.0)
+        ext = self._cand("OECD", 65, 1, 1, base=9.9)      # 4.9pp apart
+        _, s, segs, log = self._run([own, ext])
+        self.assertEqual(segs, [])
+        self.assertEqual(s.first_valid_index(),
+                         own["payload"]["series"].first_valid_index())
+        self.assertIn("declined", log)
+
+    def test_no_uncovered_period_is_a_no_op(self):
+        own = self._cand("ABS", 48, 0, 0)
+        ext = self._cand("OECD", 48, 1, 1)
+        _, s, segs, log = self._run([own, ext])
+        self.assertEqual(segs, [])
+        self.assertNotIn("[SPLICE]", log)
+
+    def test_index_rebasing_is_rescaled_into_the_owner_base(self):
+        own = self._cand("BLS", 20, 0, 0, units="Index 2015=100",
+                         base=100.0, step=0.3)
+        ext = self._cand("FRED", 60, 1, 1, units="Index 2015=100",
+                         base=100.0, step=0.3)
+        ext["payload"]["raw"] = ext["payload"]["raw"] * 1.4
+        ext["payload"]["series"] = ext["payload"]["series"] * 1.4
+        _, s, segs, log = self._run([own, ext])
+        self.assertEqual(len(segs), 1)
+        self.assertAlmostEqual(segs[0]["scale"], 1.4, places=4)
+        self.assertIn("rescaled", log)
