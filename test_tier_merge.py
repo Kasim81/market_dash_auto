@@ -578,8 +578,18 @@ class AggregationConventionTest(unittest.TestCase):
                          index=idx)
 
     def test_registry_loads(self):
+        """The registry parses and is currently EMPTY by design.
+
+        Both original entries were removed on 2026-07-30: the owner decided the
+        YoY-of-annual-average construction is genuinely a different series from
+        the mean of monthly YoY prints, so those pairs are recorded separately
+        rather than spliced. The mechanism is retained for a future pair that is
+        genuinely the same construction at two cadences.
+        """
         m = f._load_aggregation_map()
-        self.assertEqual(m.get(("World Bank", "FP.CPI.TOTL.ZG")), "mean")
+        self.assertIsInstance(m, dict)
+        self.assertNotIn(("World Bank", "FP.CPI.TOTL.ZG"), m)
+        self.assertTrue(all(v in ("mean", "end", "sum") for v in m.values()))
 
     def test_cross_cadence_refused_without_a_convention(self):
         m = self._monthly(30)
