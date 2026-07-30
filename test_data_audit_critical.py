@@ -139,3 +139,40 @@ class RealRepoNoFalseTriggerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GetColCheckNotVacuousTest(unittest.TestCase):
+    """`_check_missing_get_col_columns` must actually be checking something.
+
+    Regression cover for a two-week silent failure: the check scanned only
+    `compute_macro_market.py` for `_get_col` literals, but C7 (2026-07-16)
+    moved all 112 `_calc_*` functions into the `calculators/` package. From
+    that date the scanned file held ZERO literals while the package held 102,
+    so the check built an empty reference set, could never report anything,
+    and printed "0 issues". It went unnoticed until JPN_CORE_CPI_YOY silently
+    vanished from the 2026-07-30 run and JP_INFL1 degraded to headline-only
+    while still printing a plausible value.
+
+    Same failure mode as the C1 finding where test_tier_merge was collected as
+    0 tests. A guard with nothing to check is broken, not passing.
+    """
+
+    def test_scans_the_calculators_package(self):
+        import re
+        import pathlib
+        root = pathlib.Path(__file__).parent
+        pkg = sorted((root / "calculators").glob("*.py"))
+        self.assertTrue(pkg, "calculators/ package is missing")
+        code = "\n".join(p.read_text() for p in pkg)
+        refs = set(re.findall(r'_get_col\(\s*\w+\s*,\s*"([A-Z][A-Z0-9_]*)"', code))
+        self.assertGreater(len(refs), 50,
+                           "calculators/ should hold the bulk of the _get_col "
+                           "references; if this drops the check may be blind again")
+
+    def test_check_finds_references_and_is_not_vacuous(self):
+        """The check must never silently validate an empty set."""
+        out = da._check_missing_get_col_columns()
+        self.assertFalse(
+            any("ZERO _get_col references" in o for o in out),
+            "the check reported it found no references at all — it is scanning "
+            "the wrong files and is not validating anything")
