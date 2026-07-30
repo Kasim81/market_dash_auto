@@ -703,6 +703,34 @@ Without that line a monthly aggregator would infill *between* a quarterly primar
 - **Both `data/series_aggregation.csv` entries removed.** The file and mechanism are retained, currently empty, for a future pair that genuinely *is* one construction at two cadences.
 - **`source_fallbacks.csv` `CHN_CPI_YOY` t0 repointed** from the renamed World Bank row to the IMF SDMX monthly series, which was already the serving source under the floor.
 
+**✅ First production run of the engine — 2026-07-30 04:16 UTC (`425b3b1`), 4 of 5 candidates spliced.** `GBR_BANK_RATE` → `BoE (+1 spliced)` from **1947-01** (+28y), `NLD_DSL_10Y` → `ECB (+1 spliced)` from **1959-01** (+27y), `CAN_UNEMPLOYMENT` → `StatCan (+1 spliced)` from **1955-02** (+21y), `FRA_CPI_YOY` → `INSEE (+1 spliced)` from **1956-02** with last obs 2026-06. `GBR_BANK_RATE` is the canonical case working in production: a **dead** FRED mirror (frozen 2017-01) supplying 1947–1974 under a live BoE owner. Run health: 0 `[FALLBACK]` lines, no unexpected column losses, and the full-file diff was the expected one-time reformat. Audit 39 → 49 issues, fully explained by the 12 new annual `_CPI_YOY_ANNUAL` columns being annual-lagged.
+
+**✅ `CAN_GOV_10Y` — the one that did not fire. Diagnosed and fixed 2026-07-30.** It is **cross-cadence** (BoC **daily** tier 0 vs FRED **monthly** tier 1), so the seam was refused pending an aggregation convention. FRED's monthly yield is a monthly **average** of the daily series — the survey measured `mean` at max|diff| **0.0350** (mean 0.0002, SAME_SERIES) against `end-of-period` at 0.4332 (DIFFERENT). Added `FRED,IRLTLT01CAM156N,mean` to `data/series_aggregation.csv`; the path verified locally (head extended +2,400 rows back to 1955-01). **This is genuinely one construction at two cadences, and therefore not in conflict with the owner's CPI decision** — there the two constructions (YoY-of-annual-average vs mean-of-monthly-YoY) genuinely differ and are recorded separately. Real-data confirmation comes on the next daily run.
+
+**🔴 `_check_missing_get_col_columns()` was VACUOUS for two weeks — fixed 2026-07-30. The most serious finding of this run.** It scanned only `compute_macro_market.py` for `_get_col` literals, but **C7 (2026-07-16) moved all 112 `_calc_*` functions into `calculators/`**. From that date the scanned file held **zero** literals while the package held **102**, so the check built an empty reference set, could never report anything, and printed "0 issues" every day. Any calculator input could vanish undetected.
+
+It surfaced only because `JPN_CORE_CPI_YOY` silently disappeared from the 2026-07-30 hist (source is healthy — 844 obs to 2026-04 — so a transient fetch loss) and `_calc_JP_INFL1`, which documents "falls back to headline-only if core is absent", degraded from a headline+core blend to headline-only while still printing a plausible **1.267**. Section B reported 0 issues throughout.
+
+**This is the same failure mode as the C1 finding** where `test_tier_merge` was collected as 0 tests: a guard that survives a refactor in form but not in function, and reports success. Fixed by scanning `compute_macro_market.py` **and** `calculators/*.py`, and by making an empty reference set a **hard reported error** — a guard with nothing to check is broken, not passing. On the fixed check the first thing it reported was the real `JPN_CORE_CPI_YOY` gap. Regression cover in `test_data_audit_critical.GetColCheckNotVacuousTest`.
+
+**✅ Audited the other static checks for the same C7 blindness — done 2026-07-30. Only the one check was affected, and the reason is worth recording.**
+
+C7 moved the `_calc_*` function **bodies** into `calculators/` but kept the `_ALL_CALCULATORS` **dispatch registry** (`"ID": _calc_X`) in `compute_macro_market.py`. So:
+
+| Check | Reads | Verdict |
+|---|---|---|
+| `_check_missing_get_col_columns` | `_get_col(...)` calls inside function **bodies** | **was blind** — bodies moved |
+| `_check_missing_calculators` | `"ID": _calc_X` **registry** entries | **healthy** — finds 112/112 |
+| `_check_duplicate_indicator_ids` | CSV only | immune |
+| `_check_missing_explorer_indicators` | CSV ↔ hist | immune |
+| `_check_orphan_country_codes` | CSV only | immune |
+
+**The generalisable rule: only checks that scan function bodies can be blinded by a code move.** Registry-scanning and CSV-comparing checks cannot, because a refactor that relocates code leaves their input intact.
+
+Both code-scanning checks now carry a **non-vacuity guard** — an empty reference set is a hard reported error, not a pass. `_check_missing_calculators` got one even though it is currently healthy, because a future move of the registry itself would silently empty it the same way. Pinned by `test_data_audit_critical`: non-vacuity for both code-scanning checks, plus a test asserting the three CSV-only checks do **not** start scanning code without gaining a guard.
+
+**⬜ Follow-up — `JPN_CORE_CPI_YOY` transient loss.** The column returned no data on 2026-07-30 with no fetch error reported. DB.nomics has a known outage pattern (hence the Pattern 10 circuit breaker). Now that the check is fixed the recurrence will be reported; if it repeats, investigate the DB.nomics OECD COICOP2018 leg specifically.
+
 **⬜ Follow-up — IMF `NGDP_RPCH` cannot be renamed the same way.** It is the **only** source for 10 of 12 `<ISO>_GDP_GROWTH` columns (CAN, CHN, FRA, DEU, JPN, NLD, CHE, GBR, USA, EA19), so a wholesale rename would strip them of any GDP-growth series. Only `AUS_GDP_GROWTH` (ABS quarterly) and `ITA_GDP_GROWTH` (ISTAT quarterly) are contested, and the measured divergence there is **7.97pp** — emphatically a different construction. To record those two separately, exclude AUS+ITA from the IMF fan-out and register a second IMF row restricted to them under a distinct column name (the `FRA_UNEMPLOYMENT_OECD` pattern). Low priority: under the cadence floor the annual row already loses to the quarterly national source on both, so nothing is served wrongly today — the only gain is retaining the IMF annual view for those two countries.
 
 **✅ 2 contested columns unclassified — ROOT-CAUSED AND FIXED 2026-07-30.** The survey reported 36 contested columns but classified only 34. Both stragglers (`CHE_GOVT_10Y`, `FRA_UNEMPLOYMENT`) were **phantoms**, not fetch gaps.

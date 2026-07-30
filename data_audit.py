@@ -557,6 +557,17 @@ def _check_missing_calculators() -> list[str]:
     # are mixed-case (e.g. EU_Cr1, US_Cr2) so we allow [A-Za-z0-9_].
     import re
     registered = set(re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"\s*:\s*_calc_', code))
+    if not registered:
+        # Non-vacuity guard. This check survived C7 (2026-07-16) only because
+        # that refactor moved the _calc_* function BODIES into calculators/ but
+        # kept the `"ID": _calc_X` dispatch registry here. A future move of the
+        # registry itself would silently empty this set and the check would
+        # report "0 issues" forever — which is exactly how
+        # _check_missing_get_col_columns went blind for two weeks. A guard with
+        # nothing to check is broken, not passing.
+        return ["_check_missing_calculators found ZERO calculator dispatch "
+                "entries — the _ALL_CALCULATORS registry has moved and this "
+                "check is no longer validating anything"]
 
     missing = sorted(ind_ids - registered)
     return [f"indicator {ind_id!r} declared in CSV but no calculator dispatch found"
@@ -604,8 +615,8 @@ def _check_missing_explorer_indicators() -> list[str]:
 
 
 def _check_missing_get_col_columns() -> list[str]:
-    """Every `_get_col(mu, "X")` / `_get_col(mu_or_dbn, "X")` literal in
-    compute_macro_market.py must resolve to a column id that exists in
+    """Every `_get_col(mu, "X")` / `_get_col(mu_or_dbn, "X")` literal in the
+    calculator layer must resolve to a column id that exists in
     macro_economic_hist.csv.
 
     Exception: columns in KNOWN_MISSING_COLUMNS are documented permanent
@@ -613,15 +624,36 @@ def _check_missing_get_col_columns() -> list[str]:
     calculator reference so they wire automatically the day a source
     appears. Suppressing them stops chronic false-positive churn while
     keeping any *new* drift visible.
+
+    Scans `compute_macro_market.py` **and `calculators/*.py`**. Originally it
+    read only `compute_macro_market.py`, but C7 (2026-07-16) moved all 112
+    `_calc_*` functions into the `calculators/` package — so from that date the
+    file it scanned held **zero** `_get_col` literals while the package held
+    102. The check therefore built an empty reference set and could never
+    report anything, printing "0 issues" for two weeks. It went unnoticed until
+    `JPN_CORE_CPI_YOY` silently vanished from a run on 2026-07-30 and
+    `JP_INFL1` degraded to headline-only while still printing a plausible
+    1.267. Same failure mode as the C1 finding where `test_tier_merge` was
+    collected as 0 tests: a guard that survives a refactor in form but not in
+    function, and reports success. Raising a hard error when no references are
+    found is what stops that recurring — a guard with nothing to check is
+    broken, not passing.
     """
-    code_path = ROOT / "compute_macro_market.py"
     hist_path = DATA / "macro_economic_hist.csv"
-    if not (code_path.exists() and hist_path.exists()):
+    if not hist_path.exists():
         return []
 
-    code = code_path.read_text()
     import re
+    sources = [ROOT / "compute_macro_market.py"]
+    sources += sorted((ROOT / "calculators").glob("*.py"))
+    code = "\n".join(p.read_text() for p in sources if p.exists())
+    if not code:
+        return []
     referenced = set(re.findall(r'_get_col\(\s*\w+\s*,\s*"([A-Z][A-Z0-9_]*)"', code))
+    if not referenced:
+        return ["_check_missing_get_col_columns found ZERO _get_col references — "
+                "the check is scanning the wrong files and is not actually "
+                "validating anything (see the C7 regression in its docstring)"]
 
     # Read column ids from row 1 of the unified hist (Column ID metadata row)
     with hist_path.open(newline="") as f:
@@ -630,7 +662,7 @@ def _check_missing_get_col_columns() -> list[str]:
 
     missing = sorted(referenced - hist_cols - KNOWN_MISSING_COLUMNS)
     return [
-        f"_get_col(...,{col!r}) referenced in compute_macro_market.py but column "
+        f"_get_col(...,{col!r}) referenced in the calculator layer but column "
         f"absent from macro_economic_hist.csv"
         for col in missing
     ]
