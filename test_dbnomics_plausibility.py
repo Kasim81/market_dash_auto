@@ -82,11 +82,15 @@ class LibraryBandTest(unittest.TestCase):
             self.assertTrue(lo <= real <= hi, f"{real} wrongly outside band")
 
     def test_rows_without_band_are_none(self):
-        lib = {r["col"]: r for r in dbn.load_library()}
-        # A non-diffusion DB.nomics row should carry no band.
-        row = lib["DEU_CPI_YOY"]
-        self.assertIsNone(row["plausible_min"])
-        self.assertIsNone(row["plausible_max"])
+        # Non-diffusion DB.nomics rows should carry no band. Asserted over the
+        # whole registry rather than one named column: this test previously
+        # pinned DEU_CPI_YOY and broke when that mislabelled row was renamed
+        # to DEU_HICP_YOY, which tells us nothing about the band loader.
+        non_diffusion = [r for r in dbn.load_library() if not r["col"].startswith("ISM_")]
+        self.assertTrue(non_diffusion, "no non-diffusion DB.nomics rows found — test is vacuous")
+        for row in non_diffusion:
+            self.assertIsNone(row["plausible_min"], row["col"])
+            self.assertIsNone(row["plausible_max"], row["col"])
 
 
 class AuditSectionEWiringTest(unittest.TestCase):
