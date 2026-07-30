@@ -46,4 +46,5 @@ jobs:
             test_equity_pe \
             test_calculators_parity \
             test_hist_stability \
-            test_plausibility
+            test_plausibility \
+            test_source_probe
