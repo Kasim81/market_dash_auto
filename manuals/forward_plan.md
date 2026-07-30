@@ -713,7 +713,21 @@ It surfaced only because `JPN_CORE_CPI_YOY` silently disappeared from the 2026-0
 
 **This is the same failure mode as the C1 finding** where `test_tier_merge` was collected as 0 tests: a guard that survives a refactor in form but not in function, and reports success. Fixed by scanning `compute_macro_market.py` **and** `calculators/*.py`, and by making an empty reference set a **hard reported error** — a guard with nothing to check is broken, not passing. On the fixed check the first thing it reported was the real `JPN_CORE_CPI_YOY` gap. Regression cover in `test_data_audit_critical.GetColCheckNotVacuousTest`.
 
-**⬜ Follow-up — audit the other static checks for the same C7 blindness.** `_check_missing_calculators`, `_check_duplicate_indicator_ids` and `_check_missing_explorer_indicators` also predate C7 and may read paths or module attributes that moved. Worth one pass confirming each is non-vacuous, ideally with the same "found nothing to check" assertion.
+**✅ Audited the other static checks for the same C7 blindness — done 2026-07-30. Only the one check was affected, and the reason is worth recording.**
+
+C7 moved the `_calc_*` function **bodies** into `calculators/` but kept the `_ALL_CALCULATORS` **dispatch registry** (`"ID": _calc_X`) in `compute_macro_market.py`. So:
+
+| Check | Reads | Verdict |
+|---|---|---|
+| `_check_missing_get_col_columns` | `_get_col(...)` calls inside function **bodies** | **was blind** — bodies moved |
+| `_check_missing_calculators` | `"ID": _calc_X` **registry** entries | **healthy** — finds 112/112 |
+| `_check_duplicate_indicator_ids` | CSV only | immune |
+| `_check_missing_explorer_indicators` | CSV ↔ hist | immune |
+| `_check_orphan_country_codes` | CSV only | immune |
+
+**The generalisable rule: only checks that scan function bodies can be blinded by a code move.** Registry-scanning and CSV-comparing checks cannot, because a refactor that relocates code leaves their input intact.
+
+Both code-scanning checks now carry a **non-vacuity guard** — an empty reference set is a hard reported error, not a pass. `_check_missing_calculators` got one even though it is currently healthy, because a future move of the registry itself would silently empty it the same way. Pinned by `test_data_audit_critical`: non-vacuity for both code-scanning checks, plus a test asserting the three CSV-only checks do **not** start scanning code without gaining a guard.
 
 **⬜ Follow-up — `JPN_CORE_CPI_YOY` transient loss.** The column returned no data on 2026-07-30 with no fetch error reported. DB.nomics has a known outage pattern (hence the Pattern 10 circuit breaker). Now that the check is fixed the recurrence will be reported; if it repeats, investigate the DB.nomics OECD COICOP2018 leg specifically.
 

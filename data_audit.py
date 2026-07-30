@@ -557,6 +557,17 @@ def _check_missing_calculators() -> list[str]:
     # are mixed-case (e.g. EU_Cr1, US_Cr2) so we allow [A-Za-z0-9_].
     import re
     registered = set(re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"\s*:\s*_calc_', code))
+    if not registered:
+        # Non-vacuity guard. This check survived C7 (2026-07-16) only because
+        # that refactor moved the _calc_* function BODIES into calculators/ but
+        # kept the `"ID": _calc_X` dispatch registry here. A future move of the
+        # registry itself would silently empty this set and the check would
+        # report "0 issues" forever — which is exactly how
+        # _check_missing_get_col_columns went blind for two weeks. A guard with
+        # nothing to check is broken, not passing.
+        return ["_check_missing_calculators found ZERO calculator dispatch "
+                "entries — the _ALL_CALCULATORS registry has moved and this "
+                "check is no longer validating anything"]
 
     missing = sorted(ind_ids - registered)
     return [f"indicator {ind_id!r} declared in CSV but no calculator dispatch found"
