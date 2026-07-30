@@ -788,7 +788,27 @@ The `DATA_TYPE` wildcard is the substantive detail. ISTAT's "all bases" flow spl
 
 Seam against the relay: **0.0498pp over 352 months** (mean 0.0214pp) — the same half-a-rounding-unit signature as Canada, ISTAT publishing 1 dp against the relay's full precision. The relay stays tier 1 and extends the head **1956-01 → 1996-12, +41 years**.
 
-**⬜ Remaining 3.** Registry-only through an existing adapter: `JPN_CPI_YOY` (`estat`, and this one feeds `JP_INFL1` so it is the only one with a calculator consumer). **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head. The two cases since France each added a step:
+**🟢 Remaining 3 are all runner-gated — `source_probe` built 2026-07-30 to unblock them.** Attempting Japan surfaced that every remaining country is blocked on *where the code runs*, not on design:
+
+| column | blocker |
+|---|---|
+| `JPN_CPI_YOY` | `ESTAT_APP_ID` absent from the dev sandbox |
+| `CHE_CPI_YOY` | Swiss FSO — `www.pxweb.bfs.admin.ch` / `dam-api.bfs.admin.ch` **403 at CONNECT** under the sandbox network policy |
+| `NLD_CPI_YOY` | CBS Netherlands — `opendata.cbs.nl` / `odata4.cbs.nl` **403 at CONNECT** |
+
+The Swiss and Dutch cases are the harder ones: those two need *new source modules*, and the sandbox cannot even reach the APIs to learn their shape, let alone verify a module against them.
+
+`scripts/source_probe.py` + `.github/workflows/source_probe.yml` is the general instrument for this, replacing the one-throwaway-workflow-per-question pattern that produced `ifo_probe.yml` and `source_survey.yml`. Three modes, JSON spec via `workflow_dispatch`:
+
+- **`fetch`** — by `col` (every registered row serving it, across all libraries) or by `source`+`series_id` for an unregistered candidate. Reports obs / span / last / **decimal places** — that last one is what independently confirmed the CAN and ITA 1-dp findings.
+- **`compare`** — seam statistics plus the verdict from the pipeline's **own `_seam_agreement`**, so a probe result and a production splice decision cannot disagree. Validated locally: it reproduces the hand-run Italy figures exactly (0.0498pp over 352, PASS).
+- **`http`** — raw GET against an **allowlisted** host, for exploring an API with no adapter yet. Allowlisted rather than open because that job carries every repository secret in its environment.
+
+It commits nothing — results reach us via the job log and a 30-day artifact — so unlike its two predecessors there is no result file to clean up and no reason to delete it once a given question is answered.
+
+**The probe caught a bug in itself on its first run, and it is the house bug class.** To fetch an unregistered series id through a source's real handler it clones a registered row and overrides `source_id`. Cloning a DB.nomics row inherited that row's ISM plausibility band `[15, 99]`, which **silently dropped 761 of 844 CPI observations** and reported the 83 survivors as though they were the series. A guard intact in form but not in function, reporting success. Fixed by clearing row-specific fields on clone (`_TEMPLATE_DROP`), and pinned by `test_source_probe.py` (14 tests, in the `ci.yml` offline gate — now 227) including a non-vacuity test that fails if no DB.nomics row carries a band any more.
+
+**⬜ Next, once `source_probe.yml` is on the default branch** (`workflow_dispatch` requires it there): dispatch `{"mode":"fetch","col":"JPN_CPI_YOY"}` plus an e-Stat candidate probe for the CPI YoY slice of statsDataId `0003427113`, and `{"mode":"http",...}` against the Swiss FSO and CBS catalogues to learn their shape before writing either module. The same instrument covers the **A3 credentialed remainder** below. **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head. The two cases since France each added a step:
 
 - **Germany:** check what the incumbent's series id actually *measures* before treating a disagreement as a refusal.
 - **Canada:** check that the national primary publishes the *rate* at all, not just the index — and don't trust this register's own "registry-only through `<adapter>`" guess, which was wrong for Canada.

@@ -1,0 +1,70 @@
+name: Source probe (diagnostic)
+# General runner-side probe for data-layer questions the dev sandbox cannot
+# answer. Two things make the runner necessary rather than convenient:
+#
+#   * API keys — ESTAT_APP_ID / BLS_API_KEY / BDF_API_KEY are not in the dev
+#     sandbox, so any e-Stat / BLS / BdF verification fails there;
+#   * network policy — the sandbox 403s bfs.admin.ch, cbs.nl and ec.europa.eu
+#     at CONNECT, so the Swiss FSO and CBS Netherlands sources (forward_plan
+#     §2.C C16.1) cannot even be explored locally, let alone verified.
+#
+# This replaces the one-throwaway-workflow-per-question pattern that produced
+# ifo_probe.yml and source_survey.yml. It commits nothing: results go to the
+# job log and an artifact, so there is no result file to clean up and no
+# reason to delete the workflow once a given probe is answered.
+#
+# Usage: dispatch with a JSON spec. One object or a list of them.
+#
+#   {"mode":"fetch","col":"JPN_CPI_YOY"}
+#   {"mode":"fetch","source":"e-Stat","series_id":"0003427113?cdTab=1&..."}
+#   {"mode":"compare","a":{"source":"ISTAT","series_id":"..."},
+#                     "b":{"col":"ITA_CPI_YOY"},"units":"Percent"}
+#   {"mode":"http","url":"https://odata4.cbs.nl/CBS/83131NED"}
+#
+# See scripts/source_probe.py for the full mode reference. `http` is
+# host-allowlisted on purpose — this job carries repository secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: 'JSON probe spec (object or list) — see scripts/source_probe.py'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run probe
+        env:
+          PROBE_SPEC: ${{ inputs.spec }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
+          BDF_API_KEY: ${{ secrets.BDF_API_KEY }}
+          INSEE_API_KEY: ${{ secrets.INSEE_API_KEY }}
+          NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
+          BRIGHTDATA_API_KEY: ${{ secrets.BRIGHTDATA_API_KEY }}
+          BRIGHTDATA_ZONE: ${{ secrets.BRIGHTDATA_ZONE }}
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: python scripts/source_probe.py
+      - name: Upload result as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-probe-result
+          path: source_probe_result.txt
+          retention-days: 30

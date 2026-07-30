@@ -36,3 +36,8 @@ docs/indicator_explorer_mkt.js
 
 # §2.C C10: pipeline.log uploaded as a workflow artifact, not committed
 pipeline.log
+
+# scripts/source_probe.py output — the probe result reaches us via the job log
+# and a workflow artifact, never a commit (that is the point of replacing the
+# ifo_probe.yml / source_survey.yml commit-then-delete pattern).
+source_probe_result.txt
