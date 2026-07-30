@@ -739,7 +739,7 @@ Cause: `contested_columns()` read the fan-out country restriction from the **ind
 
 Fixed by reading restrictions from the library CSVs (`oecd_countries` / `countries`) via a new `_fanout_restrictions()`. **The true contested count is 26, not 36** — so every "36 contested columns" figure quoted in earlier notes and in `source_overlap_survey.md` was inflated by ~38%. The 34 classified pairs are unaffected and remain valid; only the denominator was wrong.
 
-**🟡 National CPI sourcing (7 columns) — 1 of 7 done. France landed 2026-07-30 as the first end-to-end proof of the C16 engine.**
+**🟡 National CPI sourcing (7 columns) — 2 of 7 done. France landed 2026-07-30 as the first end-to-end proof of the C16 engine; Germany followed the same day and turned up a mislabelled column.**
 
 `FRA_CPI_YOY` now resolves the trilemma that motivated the whole track. Registered INSEE BDM idbank `011814632` (IPC-2025, COICOP2018=00 all items, MENAGES_IPC=ENSEMBLE, REF_AREA=FE, NATURE=GLISSEMENT_ANNUEL) at tier 0. Verified end-to-end against live data:
 
@@ -751,7 +751,20 @@ Fixed by reading restrictions from the library CSVs (`oecd_countries` / `countri
 
 Seam validated at **0.0499pp over 352 months**; owner values provably untouched. Selected `011814632` over `011814635` ("y compris loyers imputés"). This is the first case where primary-first, longest-history and freshest are all satisfied simultaneously rather than traded off.
 
-**⬜ Remaining 6.** Registry-only through existing adapters: `CAN_CPI_YOY` (`statcan`), `DEU_CPI_YOY` (`bundesbank` — note its existing rows are HICP, so national VPI is a new series id), `ITA_CPI_YOY` (`istat`), `JPN_CPI_YOY` (`estat`, and this one feeds `JP_INFL1` so it is the only one with a calculator consumer). **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head.
+**✅ Germany landed 2026-07-30 — and `DEU_CPI_YOY` was carrying HICP, not national CPI.** Registered Bundesbank `BBDP1/M.DE.N.VPI.C.A00000.VGJ.LV` (national Verbraucherpreisindex, all items, year-on-year) at tier 0: **925 obs, 1949-06 → 2026-06**, i.e. **47.5 years longer** than the incumbent.
+
+The comparison against the incumbent initially read as a refusal (`DIFFER — max|diff| 2.8000pp`), which was the finding rather than a problem. The incumbent series id says why: `OECD/DSD_PRICES_COICOP2018@DF_PRICES_C2018_ALL/DEU.M.`**`HICP`**`.CPI.PA._T.N.GY`. Probing both ways settled it:
+
+| comparison | verdict |
+|---|---|
+| incumbent `DEU_CPI_YOY` vs Bundesbank **HICP** | **MATCH — 0.0000pp over 341 months** |
+| incumbent `DEU_CPI_YOY` vs Bundesbank **VPI** (national CPI) | DIFFER — max\|diff\| **2.8000pp** |
+
+So `DEU_CPI_YOY` was a mislabelled exact duplicate of `DEU_HICP_YOY`, and Germany had **no** national CPI series at all. Two registry edits, no code: (a) new tier-0 Bundesbank `DEU_CPI_YOY` row on the VPI key; (b) the mislabelled DB.nomics row's `col` repointed `DEU_CPI_YOY` → `DEU_HICP_YOY`, where it becomes a tier-1 relay that also starts ~1 year earlier than the Bundesbank HICP row (1996-12 vs 1998-01) and can extend that head under C16. Contained because `grep` found **no calculator consumers** of `DEU_CPI_YOY`. Collateral: `test_dbnomics_plausibility.LibraryBandTest.test_rows_without_band_are_none` pinned the literal `DEU_CPI_YOY` and broke on the rename; rewritten to assert over every non-`ISM_` row with a non-vacuity guard, since the column's *name* was never what that test was about.
+
+**Worth generalising:** an exact 0.0000pp match between two nominally different columns is the signature of a mislabelled registry row, and it is invisible to every existing check — the duplicate agrees perfectly, so no plausibility band, freshness gate or seam test fires. Candidate audit addition: flag any two served columns whose overlapping values are identical.
+
+**⬜ Remaining 5.** Registry-only through existing adapters: `CAN_CPI_YOY` (`statcan`), `ITA_CPI_YOY` (`istat`), `JPN_CPI_YOY` (`estat`, and this one feeds `JP_INFL1` so it is the only one with a calculator consumer). **New modules needed: Swiss FSO (`CHE_CPI_YOY`) and CBS Netherlands (`NLD_CPI_YOY`).** Apply the France method: find the national all-items YoY series, verify live through the adapter, check the overlap against the incumbent, and let the engine extend the head. Germany adds a step to that method: **check what the incumbent's series id actually measures before treating a disagreement as a refusal.**
 
 **⬜ Original scope note (retained):** For 7 of 8 `<C>_CPI_YOY` columns the sub-annual source is *itself* an aggregator (DB.nomics mirroring OECD COICOP2018) with **no national source registered at all** — CHE, DEU, FRA, ITA, JPN, CAN, NLD are taken third-hand, which the primary-first rule (C15) says we should not be doing. 5 have an existing adapter (registry-only work: `statcan`, `bundesbank`, `insee`, `istat`, `estat`); **2 need new modules — Swiss FSO and CBS Netherlands.** France is already scoped: INSEE IPC-2025 idbank `011814632` (all-items, all households, France entière) verified live through `sources/insee.py`, 354 obs 1997-01 → 2026-06; it agrees with the incumbent OECD relay to **0.0499pp over 352 months**, and INSEE is 2 months fresher, but OECD reaches back to 1956-01 vs INSEE's 1997 — so France is itself a splice case, and INSEE's own older base-year flow (`001768578`, IPC-2015) only reaches 1991-01 and is discontinued at 2019-12.
 
