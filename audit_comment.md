@@ -1,8 +1,16 @@
-## Daily audit — 2026-07-30 — **49 ISSUES** (48 stale series, 1 static-check failure)
+## Daily audit — 2026-07-30 — **49 ISSUES** (1 fetch error, 48 stale series)
 
-_Run: 2026-07-30 09:38 UTC_
+_Run: 2026-07-30 04:15 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
+
+<details><summary>Fetch errors</summary>
+
+
+**other_warnings** (1):
+- `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
+
+</details>
 
 <details><summary>Stale series</summary>
 
@@ -90,14 +98,6 @@ Full report attached as `data_audit.txt` in today's commit.
 | `AUS_GDP_JST` | JST | 2020-12-31 | 2026-12-31 |
 | `AUS_EQUITY_TR_JST` | JST | 2020-12-31 | 2026-12-31 |
 | _… 9 more in `data_audit.txt`_ |  |  |  |
-
-</details>
-
-<details><summary>Static-check failures</summary>
-
-
-**missing_columns** (1):
-- _get_col(...,'JPN_CORE_CPI_YOY') referenced in the calculator layer but column absent from macro_economic_hist.csv
 
 </details>
 
