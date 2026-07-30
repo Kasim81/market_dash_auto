@@ -1,10 +1,10 @@
 === Data audit @ 2026-07-30 ===
 
---- Section A: Fetch outcomes (1 issues) ---
-  OTHER_WARNINGS      [ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)
-
---- Section B: Static checks (0 issues) ---
+--- Section A: Fetch outcomes (0 issues) ---
   (none)
+
+--- Section B: Static checks (1 issues) ---
+  MISSING_COLUMNS             _get_col(...,'JPN_CORE_CPI_YOY') referenced in the calculator layer but column absent from macro_economic_hist.csv
 
 --- Section C: Value-change staleness (FRESH 269  STALE 43  EXPIRED 5  ANCHORS 39  OVERDUE-ANCHORS 0) ---
   EXPIRED (5):

@@ -331,14 +331,16 @@ def section_a_fetch_outcomes() -> dict:
     a real concern and it's reported.
 
     Returns dict with four sorted/ordered lists:
-      yfinance_dead, fred_persistent_errors, fallback_demotions, other_warnings
+      yfinance_dead, fred_persistent_errors, fallback_demotions,
+      sister_rescues, other_warnings
     """
     import re
 
     log_path = ROOT / "pipeline.log"
     if not log_path.exists():
         return {"yfinance_dead": [], "fred_persistent_errors": [],
-                "fallback_demotions": [], "other_warnings": []}
+                "fallback_demotions": [], "sister_rescues": [],
+                "other_warnings": []}
 
     text = log_path.read_text()
 
@@ -376,6 +378,19 @@ def section_a_fetch_outcomes() -> dict:
         if line not in fallback_demotions:
             fallback_demotions.append(line)
 
+    # ---------- Vanished-column rescues (2026-07-30) ----------
+    # `[sister-rescue]` means a column present in the committed hist was absent
+    # from this run's write and its history was archived rather than lost. It is
+    # always worth reporting: the rescue prevents data loss but the *cause* is a
+    # failed fetch, and Section F's CRITICAL gate cannot see it (one column of
+    # ~350 is 0.3%, far under the 10% shrink tolerance). This is how
+    # JPN_CORE_CPI_YOY lost 844 observations on 2026-07-30 with nothing firing.
+    sister_rescues: list[str] = []
+    for m in re.finditer(r'\[sister-rescue\][^\n]*', text):
+        line = m.group(0).strip()
+        if line not in sister_rescues:
+            sister_rescues.append(line)
+
     # ---------- Other source warnings (informational) ----------
     other_warnings: list[str] = []
     # ECB / DBnomics / OECD per-source notable lines
@@ -396,6 +411,7 @@ def section_a_fetch_outcomes() -> dict:
         "yfinance_dead": yfinance_dead,
         "fred_persistent_errors": fred_persistent_errors,
         "fallback_demotions": fallback_demotions,
+        "sister_rescues": sister_rescues,
         "other_warnings": other_warnings,
     }
 
@@ -466,7 +482,128 @@ def section_b_static_checks() -> dict:
         "missing_explorer_indicators": _check_missing_explorer_indicators(),
         "registry_drift":         _check_registry_drift(),
         "unadjusted_splits":      _check_unadjusted_splits(),
+        "duplicate_columns":      _check_duplicate_served_columns(),
     }
+
+
+# Two served columns must agree over at least this many shared periods before
+# identical values mean anything. Below it, coincidence is plausible (two
+# policy rates both held at 0.25, say).
+_DUP_MIN_OVERLAP = 24
+# "Identical" means identical, not merely close. A float tolerance rather than
+# an economic one is the whole point: two genuinely different series do not
+# agree to 15 significant figures for two years, so this has essentially no
+# false-positive rate — and a mislabelled registry row produces an exact match
+# because it is literally the same numbers.
+_DUP_TOL = 1e-9
+
+_ACCEPTED_DUPES_CSV = DATA / "accepted_duplicate_columns.csv"
+
+
+def _load_accepted_duplicates() -> set[frozenset]:
+    """Deliberate duplicate pairs, from data/accepted_duplicate_columns.csv.
+
+    Order-insensitive: a pair registered as (a, b) also matches (b, a).
+    """
+    out: set[frozenset] = set()
+    if not _ACCEPTED_DUPES_CSV.exists():
+        return out
+    with _ACCEPTED_DUPES_CSV.open(newline="") as f:
+        for row in csv.DictReader(f):
+            a = (row.get("col_a") or "").strip()
+            b = (row.get("col_b") or "").strip()
+            if a and b:
+                out.add(frozenset((a, b)))
+    return out
+
+
+def _check_duplicate_served_columns() -> list[str]:
+    """Flag pairs of served columns whose overlapping values are IDENTICAL.
+
+    Motivation (forward_plan §2.C C16.1, 2026-07-30): `DEU_CPI_YOY` was found
+    to be carrying HICP rather than the German national CPI — an exact
+    duplicate of `DEU_HICP_YOY`, agreeing to 0.0000pp over 341 months. **No
+    existing check could see it.** That is the point: because the duplicate
+    agrees perfectly it passes every guard we have — plausibility bands are
+    satisfied, freshness is fine, the seam test would pass, and the merge has
+    nothing to reconcile. A mislabelled registry row is invisible precisely
+    *because* the data is impeccable. The only visible signature is the
+    coincidence itself.
+
+    Two columns holding the same numbers is not automatically a bug — the same
+    published series legitimately arrives by two routes (see
+    `data/accepted_duplicate_columns.csv`). What it always means is that the
+    two are **not independent**, so their agreement can never be evidence
+    either is right. Accepted pairs are registered in that CSV with the reason;
+    everything else is reported.
+
+    Warning channel only — never CRITICAL. Consolidating a duplicate is a
+    judgement about what the dashboard should serve, not a data-integrity
+    emergency.
+    """
+    try:
+        import numpy as np
+        import pandas as pd
+    except ImportError:                      # pragma: no cover
+        return []
+
+    accepted = _load_accepted_duplicates()
+    issues: list[str] = []
+
+    for name in ("macro_economic_hist.csv", "macro_market_hist.csv"):
+        path = DATA / name
+        if not path.exists():
+            continue
+        with path.open(newline="") as f:
+            rows = list(csv.reader(f))
+        meta_rows, _ = _split_meta_and_data(rows)
+        if not meta_rows:
+            continue
+        header = rows[0]
+        meta = {r[0]: r for r in meta_rows}
+
+        def describe(col: str) -> str:
+            ci = header.index(col)
+            bits = []
+            for lab in ("Source", "Series ID"):
+                r = meta.get(lab)
+                if r and ci < len(r) and r[ci].strip():
+                    bits.append(r[ci].strip())
+            return "/".join(bits) or "?"
+
+        df = pd.read_csv(path, skiprows=list(range(1, len(meta_rows) + 1)),
+                         low_memory=False)
+        df = df.set_index(df.columns[0])
+        cols = list(df.columns)
+        M = df.apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+        if M.shape[1] < 2:
+            continue
+        valid = ~np.isnan(M)
+
+        # Vectorised column-vs-rest sweep: one pass per column against every
+        # later column at once. ~360 columns x ~4,200 rows measured at 1.8s,
+        # which is affordable in a daily audit that already reads these files.
+        for i in range(M.shape[1]):
+            a, va = M[:, i], valid[:, i]
+            if va.sum() < _DUP_MIN_OVERLAP:
+                continue
+            both = valid[:, i + 1:] & va[:, None]
+            cnt = both.sum(axis=0)
+            worst = np.abs(np.where(both, M[:, i + 1:] - a[:, None], 0.0)).max(axis=0)
+            for j in np.where((cnt >= _DUP_MIN_OVERLAP) & (worst <= _DUP_TOL))[0]:
+                ca, cb = cols[i], cols[i + 1 + j]
+                if frozenset((ca, cb)) in accepted:
+                    continue
+                issues.append(
+                    f"{name}: {ca} ({describe(ca)}) and {cb} ({describe(cb)}) are "
+                    f"IDENTICAL over {int(cnt[j])} shared periods — one may be a "
+                    f"mislabelled registry row (the DEU_CPI_YOY/DEU_HICP_YOY case). "
+                    f"If deliberate, register the pair in "
+                    f"data/accepted_duplicate_columns.csv with the reason; either "
+                    f"way the two are not independent, so their agreement is not "
+                    f"evidence for either."
+                )
+    return sorted(issues)
 
 
 def _check_orphan_country_codes() -> list[str]:

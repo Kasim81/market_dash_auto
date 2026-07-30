@@ -205,3 +205,116 @@ class GetColCheckNotVacuousTest(unittest.TestCase):
             src = inspect.getsource(getattr(da, name))
             self.assertNotIn("compute_macro_market.py", src,
                              f"{name} now scans code and needs a non-vacuity guard")
+
+
+class DuplicateColumnCheckTest(unittest.TestCase):
+    """Section B duplicate-column check (forward_plan §2.C C16.1).
+
+    Exists because DEU_CPI_YOY was found carrying HICP — an exact duplicate of
+    DEU_HICP_YOY, agreeing to 0.0000pp over 341 months — and NO existing check
+    could see it. A mislabelled registry row is invisible to plausibility
+    bands, freshness gates and the seam test precisely because its data is
+    impeccable; the only visible signature is the coincidence itself.
+    """
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="audit_dupe_test_"))
+        self._old_root, self._old_data = da.ROOT, da.DATA
+        self._old_csv = da._ACCEPTED_DUPES_CSV
+        da.ROOT, da.DATA = self.tmp, self.tmp / "data"
+        da.DATA.mkdir(parents=True, exist_ok=True)
+        da._ACCEPTED_DUPES_CSV = da.DATA / "accepted_duplicate_columns.csv"
+
+    def tearDown(self):
+        da.ROOT, da.DATA = self._old_root, self._old_data
+        da._ACCEPTED_DUPES_CSV = self._old_csv
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write_hist(self, cols: dict, n=60):
+        """Minimal hist mirroring the real layout.
+
+        Row 0 is `Column ID` — that row, not the `Date` header row, is what
+        pandas reads as the column names; the `Date` row is what
+        _split_meta_and_data locates to find where metadata ends. Getting this
+        wrong is how the first draft of these tests compared columns named
+        `ID_DGS10`.
+        """
+        names = list(cols)
+        rows = [
+            ["Column ID"] + names,
+            ["Series ID"] + [f"ID_{c}" for c in names],
+            ["Source"] + ["TestSrc"] * len(names),
+            ["Indicator"] + names,
+            ["Date"] + names,
+        ]
+        for i in range(n):
+            rows.append([f"2020-{(i % 12) + 1:02d}-{(i // 12) + 1:02d}"]
+                        + [cols[c][i] for c in names])
+        _write_csv(da.DATA / "macro_economic_hist.csv", rows)
+
+    def test_catches_an_exact_duplicate(self):
+        vals = [f"{2.0 + i * 0.01:.6f}" for i in range(60)]
+        other = [f"{5.0 + i * 0.03:.6f}" for i in range(60)]
+        self._write_hist({"DEU_CPI_YOY": vals, "DEU_HICP_YOY": list(vals),
+                          "DEU_UNRELATED": other})
+        out = da._check_duplicate_served_columns()
+        self.assertEqual(len(out), 1, out)
+        self.assertIn("DEU_CPI_YOY", out[0])
+        self.assertIn("DEU_HICP_YOY", out[0])
+        self.assertNotIn("DEU_UNRELATED", out[0])
+
+    def test_near_duplicates_are_not_flagged(self):
+        """1-dp rounding of the same series (the CAN/ITA case) is NOT a dupe.
+
+        Those are two legitimate views of one series at different precision —
+        exactly what C16 splicing is for. Only bit-exact equality is reported.
+        """
+        vals = [f"{2.0 + i * 0.01:.6f}" for i in range(60)]
+        rounded = [f"{round(float(v), 1):.6f}" for v in vals]
+        self._write_hist({"ITA_CPI_YOY": vals, "ITA_CPI_YOY_RELAY": rounded})
+        self.assertEqual(da._check_duplicate_served_columns(), [])
+
+    def test_short_overlap_is_not_flagged(self):
+        """Below _DUP_MIN_OVERLAP, identical values can be coincidence."""
+        n = da._DUP_MIN_OVERLAP - 1
+        vals = ["0.250000"] * n
+        self._write_hist({"A_RATE": vals, "B_RATE": list(vals)}, n=n)
+        self.assertEqual(da._check_duplicate_served_columns(), [])
+
+    def test_accepted_pair_is_suppressed_in_either_order(self):
+        vals = [f"{3.0 + i * 0.02:.6f}" for i in range(60)]
+        self._write_hist({"DGS10": vals, "USA_UST_10YR": list(vals)})
+        self.assertEqual(len(da._check_duplicate_served_columns()), 1)
+        # registered in the reverse order to the hist's column order
+        _write_csv(da._ACCEPTED_DUPES_CSV,
+                   [["col_a", "col_b", "reason"],
+                    ["USA_UST_10YR", "DGS10", "same Treasury series, two routes"]])
+        self.assertEqual(da._check_duplicate_served_columns(), [])
+
+    def test_real_repo_allowlist_is_not_vacuous(self):
+        """The shipped allowlist must suppress pairs that genuinely exist.
+
+        If the two Treasury pairs ever stop being identical, this fails and
+        tells us the allowlist entries are now dead weight — the same
+        non-vacuity discipline applied to the code-scanning checks.
+        """
+        da.ROOT, da.DATA = self._old_root, self._old_data
+        da._ACCEPTED_DUPES_CSV = self._old_csv
+        accepted = da._load_accepted_duplicates()
+        self.assertTrue(accepted, "accepted_duplicate_columns.csv is empty")
+        orig = da._load_accepted_duplicates
+        da._load_accepted_duplicates = lambda: set()
+        try:
+            unfiltered = da._check_duplicate_served_columns()
+        finally:
+            da._load_accepted_duplicates = orig
+        self.assertTrue(
+            unfiltered,
+            "with the allowlist bypassed the check found nothing in the real "
+            "repo, so every allowlist entry is stale and the check is only "
+            "passing because it has nothing to look at")
+        self.assertEqual(
+            da._check_duplicate_served_columns(), [],
+            "the real repo has an unregistered duplicate pair — either it is a "
+            "mislabelled row to fix, or it belongs in "
+            "data/accepted_duplicate_columns.csv")

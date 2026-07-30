@@ -253,5 +253,143 @@ class HistArchiveTest(unittest.TestCase):
             _sister_path("data/foo.csv")
 
 
+class VanishedColumnRescueTest(unittest.TestCase):
+    """A column that fails to fetch must not lose its committed history.
+
+    Found 2026-07-30: `JPN_CORE_CPI_YOY` lost 844 observations back to 1956-01
+    when a single DB.nomics fetch failed (and again on 2026-07-19). Rule 1 of
+    the sister archive could never see it — `shared_cols` is keyed off the
+    incoming write's columns, so a column absent from this run is not "shared"
+    and nothing archived it. The sister held only the 13 recent rows it had
+    picked up by forward extension, so JP_INFL1 silently computed on 13
+    observations instead of 844.
+
+    Preserving already-committed observations is not fabrication: the rows are
+    exactly what the previous run verified.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.path = os.path.join(self.tmpdir, "v_hist.csv")
+        self.sister = _sister_path(self.path)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @staticmethod
+    def _prefix(cols):
+        # Realistic metadata block: no row may be labelled "Date" — that label
+        # marks the DATA header, and a metadata row using it makes
+        # sniff_hist_prefix_rows stop early (how the first draft of this test
+        # produced an "Unnamed: 3" column).
+        return [["Column ID"] + cols,
+                ["Series ID"] + ["id_" + c for c in cols],
+                ["Source"] + ["src_" + c for c in cols]]
+
+    def _dates(self, n=6):
+        return pd.date_range("2026-01-02", periods=n, freq="W-FRI")
+
+    def test_vanished_column_history_is_archived(self):
+        d = self._dates()
+        full = pd.DataFrame({"Date": d, "A": range(6), "B": range(10, 16)})
+        write_hist_with_archive(full, self.path, prefix_rows=self._prefix(["A", "B"]))
+        partial = pd.DataFrame({"Date": d, "A": range(6)})
+        write_hist_with_archive(partial, self.path, prefix_rows=self._prefix(["A"]))
+
+        # Live legitimately reflects only what was fetched.
+        live = pd.read_csv(self.path, skiprows=3)
+        self.assertNotIn("B", live.columns)
+
+        # The union must still serve B's full committed history.
+        u = load_hist_with_archive(self.path, skiprows="auto")
+        self.assertIn("B", u.columns)
+        self.assertEqual(u["B"].dropna().tolist(), list(range(10, 16)))
+
+    def test_rescue_is_idempotent_across_repeated_absences(self):
+        d = self._dates()
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6), "B": range(10, 16)}),
+            self.path, prefix_rows=self._prefix(["A", "B"]))
+        partial = pd.DataFrame({"Date": d, "A": range(6)})
+        for _ in range(3):
+            write_hist_with_archive(partial, self.path, prefix_rows=self._prefix(["A"]))
+        u = load_hist_with_archive(self.path, skiprows="auto")
+        self.assertEqual(u["B"].dropna().tolist(), list(range(10, 16)))
+
+    def test_sister_metadata_stays_aligned_with_its_own_columns(self):
+        """The sister's metadata block must describe the sister's columns.
+
+        Before the fix, prefix_rows was built for the LIVE column set while
+        pd.concat grew the data block, and the extra columns landed at interior
+        positions — so every metadata cell after the first divergence described
+        the wrong column. Measured on the committed macro_economic_hist_x.csv:
+        a 357-cell metadata block against a 375-cell data header, only 13 of
+        356 positions still matching.
+        """
+        import csv
+        d = self._dates()
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6), "B": range(10, 16),
+                          "C": range(20, 26)}),
+            self.path, prefix_rows=self._prefix(["A", "B", "C"]))
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6), "C": range(20, 26)}),
+            self.path, prefix_rows=self._prefix(["A", "C"]))
+
+        with open(self.sister, newline="") as fh:
+            rows = list(csv.reader(fh))
+        hi = next(i for i, r in enumerate(rows) if r and r[0].strip() == "Date")
+        colid = rows[0][1:]
+        header = rows[hi][1:]
+        self.assertEqual(colid, header,
+                         "sister Column ID row does not match its data header")
+        for r in rows[:hi]:
+            self.assertEqual(len(r), len(rows[hi]),
+                             f"metadata row {r[0]!r} width != data header width")
+
+    def test_sister_only_column_metadata_is_carried_forward(self):
+        """Metadata for a rescued column survives later writes.
+
+        The live prefix no longer mentions it, so the only place its Series ID
+        and Source can come from is the previous sister — and only when that
+        block is provably aligned. Without this, a rescued column keeps its
+        data but loses its provenance on the very next run.
+        """
+        import csv
+        d = self._dates()
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6), "B": range(10, 16)}),
+            self.path, prefix_rows=self._prefix(["A", "B"]))
+        partial = pd.DataFrame({"Date": d, "A": range(6)})
+        for _ in range(3):
+            write_hist_with_archive(partial, self.path, prefix_rows=self._prefix(["A"]))
+
+        with open(self.sister, newline="") as fh:
+            rows = list(csv.reader(fh))
+        hi = next(i for i, r in enumerate(rows) if r and r[0].strip() == "Date")
+        colid = rows[0][1:]
+        bi = colid.index("B") + 1
+        meta = {r[0].strip(): r[bi] for r in rows[:hi]}
+        self.assertEqual(meta["Series ID"], "id_B")
+        self.assertEqual(meta["Source"], "src_B")
+
+    def test_a_genuinely_empty_column_is_not_rescued(self):
+        """Nothing to preserve means nothing to archive — no phantom columns."""
+        import csv
+        d = self._dates()
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6), "B": [None] * 6}),
+            self.path, prefix_rows=self._prefix(["A", "B"]))
+        write_hist_with_archive(
+            pd.DataFrame({"Date": d, "A": range(6)}),
+            self.path, prefix_rows=self._prefix(["A"]))
+        with open(self.sister, newline="") as fh:
+            rows = list(csv.reader(fh))
+        hi = next(i for i, r in enumerate(rows) if r and r[0].strip() == "Date")
+        self.assertEqual(rows[0][1:], rows[hi][1:])
+        u = load_hist_with_archive(self.path, skiprows="auto")
+        self.assertTrue("B" not in u.columns or u["B"].dropna().empty)
+
+
 if __name__ == "__main__":
     unittest.main()
