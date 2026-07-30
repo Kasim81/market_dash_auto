@@ -613,7 +613,85 @@ def _append_archive_rows(sister_path, new_archive_df, prefix_rows, date_col,
         if cleared_total:
             print(f"  [sister-bound] total fabricated cells cleared: {cleared_total}")
 
+    prefix_rows, combined = _align_sister_prefix(prefix_rows, combined, date_col,
+                                                 sister_path)
     _write_hist_payload(sister_path, combined, prefix_rows, date_col)
+
+
+def _align_sister_prefix(prefix_rows, combined, date_col, sister_path):
+    """Make the sister's metadata block describe the sister's OWN columns.
+
+    The bug this fixes (2026-07-30): `prefix_rows` is built by the caller for
+    the **live** column set, while the sister legitimately holds more columns
+    (anything live has dropped). `pd.concat` unions columns, so the data block
+    grew while the metadata block did not — and because the extra columns land
+    at *interior* positions, every metadata cell after the first divergence
+    described the wrong column. Measured on the committed
+    `macro_economic_hist_x.csv`: a 357-cell metadata block against a 375-cell
+    data header, with only **13 of 356** positions still matching.
+
+    It was latent rather than active — `load_hist_with_archive` sniffs the
+    prefix and reads the *data* header for names, so the union was always
+    correctly labelled — but a committed file whose metadata contradicts its
+    data is a trap, and it did mislead: reading the sister's `Column ID` row
+    said `JPN_CORE_CPI_YOY` was absent when its data was present.
+
+    Resolution: order the data as [live columns, in prefix order] + [sister-only
+    columns, stably sorted], then extend every metadata row to match. For the
+    sister-only columns the honest metadata is the column id itself plus blanks
+    — except where the *existing* sister's own metadata block is provably
+    aligned (its `Column ID` row equals its data header), in which case its
+    values are carried forward rather than discarded.
+    """
+    if not prefix_rows:
+        return prefix_rows, combined
+
+    prefix_cols = [c for c in prefix_rows[0][1:]]
+    known = [c for c in prefix_cols if c in combined.columns]
+    extra = sorted(c for c in combined.columns
+                   if c != date_col and c not in prefix_cols)
+    if not extra:
+        return prefix_rows, combined[[date_col] + known]
+
+    # Recover metadata for sister-only columns from the existing sister, but
+    # only when that block can be trusted to be aligned.
+    carried: dict[str, dict[str, str]] = {}
+    if _hp_os.path.exists(sister_path):
+        import csv as _csv
+        try:
+            with open(sister_path, "r", encoding="utf-8", newline="") as f:
+                raw = list(_csv.reader(f))
+            hi = sniff_hist_prefix_rows(sister_path, date_col)
+            if hi:
+                old_meta = raw[:hi]
+                old_hdr = raw[hi][1:]
+                colid = next((r[1:] for r in old_meta
+                              if r and r[0].strip() == "Column ID"), None)
+                if colid is not None and colid == old_hdr:
+                    for r in old_meta:
+                        label = r[0].strip()
+                        for i, name in enumerate(colid):
+                            if name in extra and i + 1 < len(r):
+                                carried.setdefault(name, {})[label] = r[i + 1]
+        except OSError:
+            pass
+
+    new_prefix = []
+    for row in prefix_rows:
+        label = row[0].strip()
+        # Keep only the cells for columns that survive into the sister, in the
+        # same order the data block will use.
+        idx = {c: i + 1 for i, c in enumerate(prefix_cols)}
+        kept = [row[idx[c]] if idx[c] < len(row) else "" for c in known]
+        added = []
+        for c in extra:
+            if label == "Column ID":
+                added.append(c)
+            else:
+                added.append(carried.get(c, {}).get(label, ""))
+        new_prefix.append([row[0]] + kept + added)
+
+    return new_prefix, combined[[date_col] + known + extra]
 
 
 def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date",
@@ -688,8 +766,32 @@ def write_hist_with_archive(df, path, prefix_rows=None, date_col="Date",
                     mask = (old_df[date_col] < new_min) & old_df[col].notna()
                     archive_row_idx.update(old_df.index[mask].tolist())
 
+            # Rule 1b — VANISHED COLUMNS (2026-07-30). A column present in the
+            # committed live file but absent from this run's write is the most
+            # extreme form of the shrinkage this sister exists to absorb, yet
+            # the loop above could never see it: `shared_cols` is keyed off
+            # `new_df.columns`, so a column that failed to fetch is not
+            # "shared" and nothing archives it. `JPN_CORE_CPI_YOY` lost 844
+            # observations back to 1956-01 that way on 2026-07-30 (and again on
+            # 2026-07-19) after a single DB.nomics fetch failure — the sister
+            # held only the 13 recent rows it had accumulated by forward
+            # extension, so JP_INFL1 silently computed on 13 observations
+            # instead of 844. Preserving already-committed real observations is
+            # not fabrication: no value is invented, the rows are exactly what
+            # the previous run verified.
+            vanished = [c for c in old_df.columns
+                        if c != date_col and c not in new_df.columns]
+            for col in vanished:
+                mask = old_df[col].notna()
+                n = int(mask.sum())
+                if n:
+                    archive_row_idx.update(old_df.index[mask].tolist())
+                    print(f"  [sister-rescue] {col}: absent from this write — "
+                          f"archived {n} committed observation(s)")
+
             if archive_row_idx:
-                archive_df = old_df.loc[sorted(archive_row_idx)].copy()
+                keep = [date_col] + [c for c in old_df.columns if c != date_col]
+                archive_df = old_df.loc[sorted(archive_row_idx), keep].copy()
 
     # Rule 2 — forward extension: union shrinkage archive (if any) with the
     # incoming new_df, then append to sister. Dedup-by-date in
