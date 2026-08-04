@@ -1,6 +1,6 @@
-## Daily audit — 2026-08-03 — **59 ISSUES** (1 fetch error, 58 stale series)
+## Daily audit — 2026-08-04 — **54 ISSUES** (1 fetch error, 53 stale series)
 
-_Run: 2026-08-03 04:41 UTC_
+_Run: 2026-08-04 04:25 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -19,49 +19,49 @@ Full report attached as `data_audit.txt` in today's commit.
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1341d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1006d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 399d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 155d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-05-01 | 94d | 45d |
-| `FRA_LOAN_RATE_HOUSE` | Banque de France | Monthly | 2026-05-01 | 94d | 45d |
-| `FRA_LOAN_RATE_NFC` | Banque de France | Monthly | 2026-05-01 | 94d | 45d |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1342d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1007d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 400d | 120d\* |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 156d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-05-01 | 95d | 45d |
+| `FRA_LOAN_RATE_HOUSE` | Banque de France | Monthly | 2026-05-01 | 95d | 45d |
+| `FRA_LOAN_RATE_NFC` | Banque de France | Monthly | 2026-05-01 | 95d | 45d |
 
-**STALE** (51):
+**STALE** (46):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `USA_CPI_YOY_ANNUAL` | World Bank | Annual | 2024-12-31 | 580d | 540d |
-| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 214d | 180d\* |
-| `CP` | FRED | Quarterly | 2026-01-01 | 214d | 180d\* |
-| `CHE_IND_PROD` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `DEU_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `JPN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `ITA_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `CHE_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `NLD_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `CAN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 214d | 210d\* |
-| `JP_TANKAN1` | BoJ | Quarterly | 2026-02-01 | 183d | 180d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 156d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 156d | 120d\* |
-| `DEU_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 155d | 150d\* |
-| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 155d | 120d\* |
-| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 155d | 90d\* |
-| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 155d | 120d\* |
-| `NLD_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 155d | 150d\* |
-| `FRA_UNEMPLOYMENT` | INSEE | Quarterly | 2026-03-01 | 155d | 120d |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 125d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 125d | 90d\* |
-| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 125d | 90d\* |
-| `DRTSCILM` | FRED | Quarterly | 2026-04-01 | 124d | 120d |
-| `DRTSCIS` | FRED | Quarterly | 2026-04-01 | 124d | 120d |
-| `DRTSCLCC` | FRED | Quarterly | 2026-04-01 | 124d | 120d |
-| `STDSOTHCONS` | FRED | Quarterly | 2026-04-01 | 124d | 120d |
-| `SUBLPDRCSN` | FRED | Quarterly | 2026-04-01 | 124d | 120d |
-| `JPN_CORE_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 95d | 90d\* |
-| `JPN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 95d | 90d\* |
-| `CAN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 95d | 90d\* |
-| _… 21 more in `data_audit.txt`_ |  |  |  |  |  |
+| `USA_CPI_YOY_ANNUAL` | World Bank | Annual | 2024-12-31 | 581d | 540d |
+| `ULCNFB` | FRED | Quarterly | 2026-01-01 | 215d | 180d\* |
+| `CP` | FRED | Quarterly | 2026-01-01 | 215d | 180d\* |
+| `CHE_IND_PROD` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `DEU_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `JPN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `ITA_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `CHE_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `NLD_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `CAN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 215d | 210d\* |
+| `JP_TANKAN1` | BoJ | Quarterly | 2026-02-01 | 184d | 180d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 157d | 90d\* |
+| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 157d | 120d\* |
+| `DEU_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 156d | 150d\* |
+| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 156d | 120d\* |
+| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 156d | 90d\* |
+| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-03-01 | 156d | 120d\* |
+| `NLD_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 156d | 150d\* |
+| `FRA_UNEMPLOYMENT` | INSEE | Quarterly | 2026-03-01 | 156d | 120d |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 126d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 126d | 90d\* |
+| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 126d | 90d\* |
+| `JPN_CORE_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 96d | 90d\* |
+| `JPN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 96d | 90d\* |
+| `CAN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 96d | 90d\* |
+| `ITA_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 96d | 90d\* |
+| `JTSJOL` | FRED | Monthly | 2026-05-01 | 95d | 90d\* |
+| `CHN_CON_CONF` | FRED | Monthly | 2026-05-01 | 95d | 90d\* |
+| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 95d | 75d\* |
+| `JPN_MACH_ORDERS` | e-Stat | Monthly | 2026-05-01 | 95d | 60d\* |
+| _… 16 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
