@@ -1,70 +1,69 @@
-## Daily audit — 2026-08-19 — **98 ISSUES** (3 fetch errors, 95 stale series)
+## Daily audit — 2026-08-20 — **94 ISSUES** (3 fetch errors, 91 stale series)
 
-_Run: 2026-08-19 02:29 UTC_
+_Run: 2026-08-20 02:29 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
 <details><summary>Fetch errors</summary>
 
 
-**yfinance_dead** (1):
+**yfinance_dead** (2):
+- `HYXU`
 - `^SP500-40`
 
-**other_warnings** (2):
+**other_warnings** (1):
 - `[ECB] EU_I1 spread unavailable — EU_Cr1 will return n/a (corp-yield source unwired; see forward_plan.md §1 Known Data Gaps)`
-- `[ECB] AAA euro govt yield: 5610 obs`
 
 </details>
 
 <details><summary>Stale series</summary>
 
 
-**EXPIRED** (6):
+**EXPIRED** (5):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1357d | 45d |
-| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1022d | 45d |
-| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 415d | 120d\* |
-| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 171d | 60d\* |
-| `CMRMTSPL` | FRED | Monthly | 2026-05-01 | 110d | 45d |
-| `EZ_CISS` | ECB | Daily | 2026-08-04 | 15d | 7d\* |
+| `CHN_PPI` | FRED | Monthly | 2022-12-01 | 1358d | 45d |
+| `CHN_IND_PROD` | FRED | Monthly | 2023-11-01 | 1023d | 45d |
+| `CHN_POLICY_RATE` | DB.nomics | Monthly | 2025-06-30 | 416d | 120d\* |
+| `JPN_IND_PROD` | e-Stat | Monthly | 2026-03-01 | 172d | 60d\* |
+| `CMRMTSPL` | FRED | Monthly | 2026-05-01 | 111d | 45d |
 
-**STALE** (89):
+**STALE** (86):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
-| `USA_CPI_YOY_ANNUAL` | World Bank | Annual | 2024-12-31 | 596d | 540d |
-| `CP` | FRED | Quarterly | 2026-01-01 | 230d | 180d\* |
-| `CHE_IND_PROD` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `DEU_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `JPN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `ITA_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `CHE_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `NLD_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `CAN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 230d | 210d\* |
-| `JP_TANKAN1` | BoJ | Quarterly | 2026-02-01 | 199d | 180d\* |
-| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 172d | 90d\* |
-| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 172d | 120d\* |
-| `DEU_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 171d | 150d\* |
-| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 171d | 120d\* |
-| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 171d | 90d\* |
-| `NLD_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 171d | 150d\* |
-| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 141d | 90d\* |
-| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 141d | 90d\* |
-| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 141d | 90d\* |
-| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-04-01 | 140d | 120d\* |
-| `JPN_CORE_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 111d | 90d\* |
-| `JPN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 111d | 90d\* |
-| `CAN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 111d | 90d\* |
-| `ITA_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 111d | 90d\* |
-| `CHN_CON_CONF` | FRED | Monthly | 2026-05-01 | 110d | 90d\* |
-| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 110d | 75d\* |
-| `M2SL` | FRED | Monthly | 2026-06-01 | 79d | 75d\* |
-| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-06-01 | 79d | 45d |
-| `MICH` | FRED | Monthly | 2026-06-01 | 79d | 75d\* |
-| `UMCSENT` | FRED | Monthly | 2026-06-01 | 79d | 75d\* |
-| _… 59 more in `data_audit.txt`_ |  |  |  |  |  |
+| `USA_CPI_YOY_ANNUAL` | World Bank | Annual | 2024-12-31 | 597d | 540d |
+| `CP` | FRED | Quarterly | 2026-01-01 | 231d | 180d\* |
+| `CHE_IND_PROD` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `DEU_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `JPN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `ITA_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `CHE_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `NLD_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `CAN_GDP_INDEX` | IMF SDMX | Quarterly | 2026-01-01 | 231d | 210d\* |
+| `JP_TANKAN1` | BoJ | Quarterly | 2026-02-01 | 200d | 180d\* |
+| `GBR_RATE_3M` | OECD | Monthly | 2026-02-28 | 173d | 90d\* |
+| `CHN_M2` | DB.nomics | Monthly | 2026-02-28 | 173d | 120d\* |
+| `DEU_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 172d | 150d\* |
+| `AUS_GDP_GROWTH` | ABS | Quarterly | 2026-03-01 | 172d | 120d\* |
+| `ITA_GDP_GROWTH` | ISTAT | Quarterly | 2026-03-01 | 172d | 90d\* |
+| `NLD_IND_PROD` | IMF SDMX | Monthly | 2026-03-01 | 172d | 150d\* |
+| `USA_SP500_DIV_SHILLER` | Shiller | Monthly | 2026-03-31 | 142d | 90d\* |
+| `USA_SP500_EPS_SHILLER` | Shiller | Monthly | 2026-03-31 | 142d | 90d\* |
+| `USA_SP500_PE` | Shiller | Monthly | 2026-03-31 | 142d | 90d\* |
+| `EZ_BUILD_PERMITS` | Eurostat | Monthly | 2026-04-01 | 141d | 120d\* |
+| `JPN_CORE_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 112d | 90d\* |
+| `JPN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 112d | 90d\* |
+| `CAN_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 112d | 90d\* |
+| `ITA_CPI_YOY` | DB.nomics | Monthly | 2026-04-30 | 112d | 90d\* |
+| `CHN_CON_CONF` | FRED | Monthly | 2026-05-01 | 111d | 90d\* |
+| `CHN_BUS_CONF` | FRED | Monthly | 2026-05-01 | 111d | 75d\* |
+| `M2SL` | FRED | Monthly | 2026-06-01 | 80d | 75d\* |
+| `PCETRIM12M159SFRBDAL` | FRED | Monthly | 2026-06-01 | 80d | 45d |
+| `MICH` | FRED | Monthly | 2026-06-01 | 80d | 75d\* |
+| `UMCSENT` | FRED | Monthly | 2026-06-01 | 80d | 75d\* |
+| _… 56 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 
@@ -118,4 +117,4 @@ Full report attached as `data_audit.txt` in today's commit.
 </details>
 
 
-_audit_writeback: 1 ticker(s) on active dead-list streak (threshold 14d); none flipped this run._
+_audit_writeback: 2 ticker(s) on active dead-list streak (threshold 14d); none flipped this run._
