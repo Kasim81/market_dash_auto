@@ -1,3 +1,4 @@
 ticker,first_seen_dead,last_seen_dead,consecutive_fail_days
-HYXU,2026-08-24,2026-08-30,7
-IFRB.L,2026-08-24,2026-08-30,7
+HYXU,2026-08-24,2026-08-31,8
+IFRB.L,2026-08-24,2026-08-31,8
+^KS200,2026-08-31,2026-08-31,1
