@@ -1050,32 +1050,54 @@ def _guarded_dbnomics_obs(indic: dict, doc: dict) -> list[tuple[str, float]]:
 def _maybe_ism_fallback(
     indic: dict, obs: list[tuple[str, float]]
 ) -> list[tuple[str, float]]:
-    """For an ISM column, replace/append the current month from ISM's official
-    release when it is newer than the last DB.nomics observation. No-op for
-    non-ISM columns or when the release fetch is unavailable (no Bright Data
-    credentials, discovery/parse miss) — the series is returned unchanged."""
+    """For an ISM column, overlay every official ISM release point the pipeline
+    has on record onto the DB.nomics mirror. No-op for non-ISM columns.
+
+    CP-05 (2026-09-08). This used to splice only the *single* current month and
+    only when it was newer than the mirror's last observation. Two things went
+    wrong with that:
+
+      * ``build_hist_df`` rebuilds each column from source every run, so last
+        month's scraped point was discarded on the next run. The column ended up
+        as [mirror, ..., <hole>, one recent point]. ``_to_weekly_friday`` then
+        forward-filled a flat run across the hole, the 156-week rolling sigma
+        collapsed to ~1.0, and ISM Manufacturing printed z = +5.9 on a genuine
+        54.6 reading.
+      * "newer than the mirror" skipped release points for months the mirror
+        *had* covered but the plausibility guard had dropped (the ISM headline
+        mirror published ~10 on a 0-100 index for 2025-09..2025-12), leaving
+        those months permanently empty.
+
+    So: record today's release point in the store, then overlay the full store.
+    The official release wins any month it covers; the mirror keeps the rest.
+    """
+    if indic["col"] not in ism_src.COL_KIND:
+        return obs
+
     fresh = ism_src.latest_value_for_col(indic["col"])
-    if fresh is None:
+    if fresh is not None:
+        f_period, f_val = fresh
+        ism_src.record_release_point(
+            indic["col"], f_period, f_val,
+            release=(ism_src.fetch_latest(ism_src.COL_KIND[indic["col"]]) or {}).get("url", ""),
+        )
+
+    stored = ism_src.history_for_col(indic["col"])
+    if not stored:
         return obs
-    f_period, f_val = fresh
-    f_date = dbn_src.parse_period_to_date(f_period)
-    if f_date is None:
-        return obs
-    f_ym = f_date.strftime("%Y-%m")
-    # Drop any mirror obs from the same month — the official value wins.
+
+    release_months = {p for p, _ in stored}
     kept = [
         (p, v) for (p, v) in obs
-        if (dbn_src.parse_period_to_date(p) or datetime.min).strftime("%Y-%m") != f_ym
+        if (dbn_src.parse_period_to_date(p) or datetime.min).strftime("%Y-%m")
+        not in release_months
     ]
-    last_date = dbn_src.parse_period_to_date(kept[-1][0]) if kept else None
-    if last_date is not None and f_date <= last_date:
-        # Official release is not newer than the mirror — leave obs untouched.
-        return obs
-    spliced = kept + [(f_period, f_val)]
+    spliced = kept + list(stored)
     spliced.sort(key=lambda pv: dbn_src.parse_period_to_date(pv[0]) or datetime.min)
     print(
-        f"    [ISM fallback] {indic['col']}: using official release point "
-        f"{f_period}={f_val} (last DB.nomics obs: "
+        f"    [ISM fallback] {indic['col']}: overlaid {len(stored)} official "
+        f"release point(s) ({stored[0][0]}..{stored[-1][0]}) on "
+        f"{len(obs)} DB.nomics obs (last mirror obs: "
         f"{obs[-1][0] if obs else 'none'})",
         flush=True,
     )
