@@ -581,7 +581,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Macro Indicator Explorer</title>
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="https://cdn.plot.ly/plotly-4.1.0.min.js" charset="utf-8"></script>
 <style>
 /* ── reset & base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -853,6 +853,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:4px 10px;border-radius:5px;border:1px solid #30363d;
   background:transparent;color:#8b949e;font-size:11px;cursor:pointer
 }
+#chart-type-controls{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+  font-size:9px;color:#484f58;white-space:nowrap
+}
+#chart-type{
+  font-size:11px;background:#0d1117;color:#c9d1d9;
+  border:1px solid #30363d;border-radius:4px;padding:3px 6px;
+  cursor:pointer;outline:none
+}
 #norm-controls{
   display:flex;align-items:center;gap:6px;flex-shrink:0;
   font-size:9px;color:#484f58;white-space:nowrap
@@ -930,13 +939,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 #legend-panel-inner{ display:flex;flex-direction:column;gap:0 }
 /* inline regime strip inside legend */
 .inline-strip-row{
-  display:flex;align-items:center;
+  position:relative;min-height:16px;
   background:#0d1117;padding:2px 0;
   border-top:1px solid #21262d
 }
 .inline-strip-row .strip-label{color:#484f58}
-.inline-strip-row .strip-canvas-wrap{flex:1;position:relative;overflow:hidden}
+.inline-strip-row .strip-canvas-wrap{
+  position:absolute;left:0;right:0;top:2px;overflow:hidden
+}
 .inline-strip-row .strip-canvas{display:block;width:100%;height:12px}
+.inline-strip-fwd{min-height:12px}
 .inline-strip-fwd .strip-canvas{height:8px}
 .inline-strip-fwd .strip-label{font-style:italic}
 .legend-row{
@@ -1016,7 +1028,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 /* ── regime strip (standalone wrap — now unused, strips are inline in legend) ── */
 #regime-strip-wrap{ display:none !important }
 .strip-row{
-  display:flex;align-items:center;margin-bottom:2px
+  position:relative;min-height:18px;margin-bottom:2px
 }
 .strip-close-btn{
   width:14px;height:14px;flex-shrink:0;
@@ -1028,10 +1040,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .strip-label{
   font-size:9px;color:#8b949e;white-space:nowrap;
   font-family:"SFMono-Regular",Consolas,monospace;
-  width:60px;text-align:right;padding-right:6px;flex-shrink:0
+  flex:1;min-width:0;text-align:right;padding-right:6px;
+  overflow:hidden;text-overflow:ellipsis
 }
-.strip-canvas-wrap{flex:1;position:relative;overflow:hidden}
+/* The controls sit in the chart's own left margin — the strip has nothing to
+   show there — and drawStripCanvas() sizes them to that margin, so they never
+   cover data and the canvas is free to span the whole plot area. */
+.strip-controls{
+  position:absolute;left:0;top:0;bottom:0;z-index:2;
+  display:flex;align-items:center;overflow:hidden;
+  background:#0d1117;pointer-events:auto
+}
+.strip-canvas-wrap{position:absolute;left:0;right:0;top:0;overflow:hidden}
 .strip-canvas{display:block;width:100%;height:14px}
+.strip-fwd{min-height:13px}
 .strip-fwd .strip-canvas{height:9px}
 .strip-fwd .strip-label{color:#484f58;font-style:italic}
 #regime-color-key{
@@ -1119,6 +1141,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
         <button class="font-btn" data-target="legend" data-delta="1">+</button>
       </div>
     </div>
+    <div id="chart-type-controls">
+      <label>Chart</label>
+      <select id="chart-type" title="Chart type">
+        <option value="line" selected>Normal line chart</option>
+        <option value="logline">Log line chart</option>
+      </select>
+    </div>
     <div id="norm-controls">
       <label>Rebase</label>
       <div id="norm-mode">
@@ -1188,6 +1217,7 @@ const STATE = {
   viewMode: 'region',                  // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
   cycleFilter: new Set(['L','C','G']), // which L/C/G letters are visible (§2.5)
   countryFilter: '',                   // '' = all countries, else one country/region tag (§2.5)
+  chartType: 'line',                   // 'line' | 'logline' — y-axis scale
   normalise: {mode: 'off', base: 100}, // 'off' | 'cumpct' | 'base' — see normaliseSeries()
 };
 
@@ -2226,7 +2256,9 @@ function updateLegendPanel(){
           const cv = document.createElement('canvas');
           cv.className = 'strip-canvas';
           cwrap.appendChild(cv);
-          srow.append(closeB, lbl, cwrap);
+          const ctrls = el('div','strip-controls');
+          ctrls.append(closeB, lbl);
+          srow.append(cwrap, ctrls);
           inner.appendChild(srow);
           INLINE_STRIPS.push({canvas: cv, dates: filtDates, values});
         };
@@ -2257,14 +2289,24 @@ function updateLegendPanel(){
 // is only known once buildTrace has seen its values for the current window.
 // The badge element already exists in every legend row, so toggling it costs
 // no layout and cannot disturb the chart margin.
-function updateNormBadges(){
+function updateSeriesBadges(){
   document.querySelectorAll('#legend-panel-inner .legend-row').forEach(row => {
     const s = STATE.active[+row.dataset.idx];
     const b = row.querySelector('.leg-warn');
     if(!b) return;
-    const skipped = s && s._norm && s._norm.active && !s._norm.ok;
-    b.hidden = !skipped;
-    if(skipped) b.title = s._norm.reason;
+    let text = '', title = '';
+    if(s && s._norm && s._norm.active && !s._norm.ok){
+      text  = 'not rebased';
+      title = s._norm.reason;
+    } else if(s && s._logDrop){
+      const {n, total} = s._logDrop;
+      text  = n === total ? 'not on log' : n + ' pts hidden';
+      title = n === total
+        ? 'every point in range is zero or negative, so nothing can be drawn on a log axis'
+        : n + ' of ' + total + ' points are zero or negative and cannot be drawn on a log axis';
+    }
+    b.hidden = !text;
+    if(text){ b.textContent = text; b.title = title; }
   });
 }
 
@@ -2389,6 +2431,19 @@ function normaliseSeries(values){
   return {active:true, ok:true, base, values:out, reason:''};
 }
 
+// Which axis slot a series actually renders on, once the rebase has had its
+// say.  Rebased series own L1, because that is the axis the rebase titles.  A
+// series the rebase could not handle keeps its own slot, except that L1 is no
+// longer available to it — plotting a z-score against an axis labelled
+// "Index (first point in range = 100)" would be a straight unit mismatch — so
+// it is displaced to R1.  s.axis is never written to, so switching the rebase
+// off puts everything back where the user left it.
+function effectiveAxis(s){
+  if(s._norm && s._norm.ok) return 'left';
+  if(STATE.normalise.mode !== 'off' && s.axis === 'left') return 'right';
+  return s.axis;
+}
+
 function normAxisTitle(){
   return STATE.normalise.mode === 'cumpct'
     ? 'Cumulative % change from first point in range'
@@ -2414,9 +2469,22 @@ function buildTrace(s){
   // share y1 and the per-series axis choice is parked (s.axis is left alone,
   // so switching the rebase off restores the user's layout exactly).
   const norm  = normaliseSeries(d.values);
-  s._norm     = norm;                       // read back by updateNormBadges()
+  s._norm     = norm;                       // read back by updateSeriesBadges()
   const plotY = norm.ok ? norm.values : d.values;
-  const yaxis = norm.ok ? 'y' : (AXIS_MAP[s.axis] || 'y');
+  const yaxis = AXIS_MAP[effectiveAxis(s)] || 'y';
+
+  // A log axis can only show positive values; Plotly drops the rest silently.
+  // Count them here so the legend and status bar can say so out loud.
+  if(STATE.chartType === 'logline'){
+    let bad = 0, tot = 0;
+    for(const v of plotY){
+      if(v === null || !isFinite(v)) continue;
+      tot++; if(v <= 0) bad++;
+    }
+    s._logDrop = bad ? {n: bad, total: tot} : null;
+  } else {
+    s._logDrop = null;
+  }
 
   // customdata: [raw, zscore, regime, fwd_regime] for macro; [value] otherwise
   let customdata, hovertemplate;
@@ -2481,14 +2549,38 @@ function updateChartMargin(){
   if(!div || !div.data || !panel) return;
   const lh      = (panel.style.display !== 'none') ? panel.getBoundingClientRect().height : 0;
   const ownAxis = STATE.active.filter(s => !(s._norm && s._norm.ok));
-  const hasL2   = ownAxis.some(s => s.axis === 'left2');
-  const hasR2   = ownAxis.some(s => s.axis === 'right2');
-  const hasR    = ownAxis.some(s => s.axis === 'right');
+  const hasL2   = ownAxis.some(s => effectiveAxis(s) === 'left2');
+  const hasR2   = ownAxis.some(s => effectiveAxis(s) === 'right2');
+  const hasR    = ownAxis.some(s => effectiveAxis(s) === 'right');
   Plotly.relayout(div, {
     'margin.b': lh + 44,
     'margin.l': hasL2 ? 110 : 60,
     'margin.r': hasR2 ? 110 : (hasR ? 70 : 20),
   });
+}
+
+// ── Plotly config — built once, then reused ───────────────────────────
+// The object identity matters.  On Plotly 4.x, handing Plotly.react a fresh
+// modeBarButtonsToAdd array on every call makes it rebuild the modebar each
+// render, and the render then never settles: it spins inside axis tick-label
+// drawing and locks the tab.  2.32.0 tolerated a new config object per render;
+// 4.1.0 does not.  Building it once keeps the identity stable.
+let CHART_CONFIG = null;
+function chartConfig(){
+  if(!CHART_CONFIG){
+    CHART_CONFIG = {
+      responsive:   true,
+      displaylogo:  false,
+      modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d','toImage'],
+      modeBarButtonsToAdd: [{
+        name:  'Download as PNG',
+        title: 'Download as PNG',
+        icon:  Plotly.Icons.camera,
+        click: () => downloadFullSnapshot(),
+      }],
+    };
+  }
+  return CHART_CONFIG;
 }
 
 // ── main render function ──────────────────────────────────────────────
@@ -2512,10 +2604,11 @@ function renderChart(){
   const normOn    = STATE.normalise.mode !== 'off';
   const rebased   = STATE.active.filter(s => s._norm && s._norm.ok);
   const ownAxis   = STATE.active.filter(s => !(s._norm && s._norm.ok));
-  const hasLeft   = rebased.length > 0 || ownAxis.some(s => s.axis === 'left');
-  const hasRight  = ownAxis.some(s => s.axis === 'right');
-  const hasLeft2  = ownAxis.some(s => s.axis === 'left2');
-  const hasRight2 = ownAxis.some(s => s.axis === 'right2');
+  const onSlot    = slot => ownAxis.filter(s => effectiveAxis(s) === slot);
+  const hasLeft   = rebased.length > 0 || onSlot('left').length > 0;
+  const hasRight  = onSlot('right').length > 0;
+  const hasLeft2  = onSlot('left2').length > 0;
+  const hasRight2 = onSlot('right2').length > 0;
 
   // axis titles: friendly name (ID) for each series
   const axisLabel = s => {
@@ -2523,12 +2616,11 @@ function renderChart(){
     const metric   = (s.source === 'macro_market' && s.metric === 'zscore') ? ' z-score' : '';
     return `${friendly}${metric} (${s.id})`;
   };
-  const leftLabels   = rebased.length
-                       ? [normAxisTitle()]
-                       : ownAxis.filter(s => s.axis === 'left').map(axisLabel).slice(0,2);
-  const rightLabels  = ownAxis.filter(s => s.axis === 'right').map(axisLabel).slice(0,2);
-  const left2Labels  = ownAxis.filter(s => s.axis === 'left2').map(axisLabel).slice(0,2);
-  const right2Labels = ownAxis.filter(s => s.axis === 'right2').map(axisLabel).slice(0,2);
+  const leftLabels   = rebased.length ? [normAxisTitle()]
+                                      : onSlot('left').map(axisLabel).slice(0,2);
+  const rightLabels  = onSlot('right').map(axisLabel).slice(0,2);
+  const left2Labels  = onSlot('left2').map(axisLabel).slice(0,2);
+  const right2Labels = onSlot('right2').map(axisLabel).slice(0,2);
 
   // dynamic margins & domain: separate L1/L2 and R1/R2 so tick labels don't overlap
   const mL = hasLeft2  ? 110 : 60;
@@ -2537,8 +2629,13 @@ function renderChart(){
   const domainL = hasLeft2  ? 0.10 : 0;
   const domainR = hasRight2 ? 0.90 : 1;
 
-  const l1Series    = ownAxis.filter(s => s.axis === 'left');
-  const l1AllZScore = !normOn && rebased.length === 0 && l1Series.length > 0 &&
+  // v3.0.0 removed the `titlefont` attribute in favour of title.font
+  const axisTitleFont = {color:'#8b949e', size:STATE.fontSize.axisTitle};
+  const isLog = STATE.chartType === 'logline';
+  const yType = isLog ? 'log' : 'linear';
+
+  const l1Series    = onSlot('left');
+  const l1AllZScore = !isLog && !normOn && rebased.length === 0 && l1Series.length > 0 &&
                       l1Series.every(s => s.source === 'macro_market' && s.metric === 'zscore');
 
   // legend height measured synchronously (forces layout flush before Plotly.react)
@@ -2561,41 +2658,41 @@ function renderChart(){
     // yaxis / yaxis2 are always visible=true so overlay axes (yaxis3/4) have a
     // stable reference frame. Visual elements are hidden when no series use them.
     yaxis:{
-      title: hasLeft ? leftLabels.join(' / ') : '',
+      title: {text: hasLeft ? leftLabels.join(' / ') : '', font: axisTitleFont},
+      type: yType,
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
-      zeroline:hasLeft, zerolinecolor:'#484f58', zerolinewidth:1,
-      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
+      zeroline: hasLeft && !isLog, zerolinecolor:'#484f58', zerolinewidth:1,
       showticklabels: hasLeft, showline: hasLeft,
       showgrid: hasLeft,   // grid from L1 only when it has data
       visible: true,
     },
     yaxis2:{
-      title: hasRight ? rightLabels.join(' / ') : '',
+      title: {text: hasRight ? rightLabels.join(' / ') : '', font: axisTitleFont},
+      type: yType, tickmode: 'auto',
       overlaying:'y', side:'right',
       gridcolor:'#21262d', linecolor:'#30363d',
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       showgrid:false, showticklabels: hasRight, showline: hasRight,
-      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       visible: true,
     },
     yaxis3:{
-      title: hasLeft2 ? left2Labels.join(' / ') : '',
+      title: {text: hasLeft2 ? left2Labels.join(' / ') : '', font: axisTitleFont},
+      type: yType, tickmode: 'auto',
       overlaying:'y', side:'left', anchor:'free', position:0,
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       // show gridlines from L2 only when L1 has no series
       showgrid: hasLeft2 && !hasLeft,
       gridcolor:'#21262d',
       showticklabels: hasLeft2, showline: hasLeft2,
-      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       zeroline:false, visible: true,
     },
     yaxis4:{
-      title: hasRight2 ? right2Labels.join(' / ') : '',
+      title: {text: hasRight2 ? right2Labels.join(' / ') : '', font: axisTitleFont},
+      type: yType, tickmode: 'auto',
       overlaying:'y', side:'right', anchor:'free', position:1,
       tickfont:{color:'#8b949e', size:STATE.fontSize.tick},
       showgrid:false, showticklabels: hasRight2, showline: hasRight2,
-      titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       zeroline:false, visible: true,
     },
     // The ±1/±2 bands are z-score furniture.  Drawing them whenever anything
@@ -2607,16 +2704,7 @@ function renderChart(){
     dragmode:'zoom',
   };
 
-  const config = {
-    responsive:   true,
-    displaylogo:  false,
-    modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d','toImage'],
-    modeBarButtonsToAdd: [{
-      name: 'Download as PNG',
-      icon: Plotly.Icons.camera,
-      click: () => downloadFullSnapshot(),
-    }],
-  };
+  const config = chartConfig();
 
   // yaxis2/3/4 all declare overlaying:'y', but Plotly only instantiates an
   // axis that a trace actually references.  With nothing on L1 that reference
@@ -2646,11 +2734,36 @@ function renderChart(){
   const normBit = !normOn ? ''
     : ` · rebased: ${STATE.normalise.mode === 'cumpct' ? 'cumulative %' : 'base ' + STATE.normalise.base}`
       + (skipped.length ? ` (${skipped.length} not rebased: ${skipped.map(s => s.id).join(', ')})` : '');
-  setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}${normBit}`);
-  updateNormBadges();
+  const logHidden = STATE.active.filter(s => s._logDrop);
+  const logBit = !isLog ? '' : ' · log scale'
+    + (logHidden.length
+        ? ` (${logHidden.reduce((a,s) => a + s._logDrop.n, 0)} non-positive points hidden: `
+          + `${logHidden.map(s => s.id).join(', ')})`
+        : '');
+  setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}${logBit}${normBit}`);
+  updateSeriesBadges();
 }
 
-// ── Full snapshot (title + chart + legend + regime strips) ────────────
+// ── Full snapshot (title + chart + regime strips + legend) ────────────
+// Regime strips are DOM canvases in the legend panel, not part of the Plotly
+// div, so Plotly.toImage never sees them.  They have to be composited in
+// separately or they are simply missing from the export.
+const STRIP_SNAP_GAP = 3;   // css px between stacked strips in the snapshot
+
+function collectSnapshotStrips(){
+  return [...document.querySelectorAll('.inline-strip-row, .strip-row')]
+    .filter(row => row.offsetParent !== null)
+    .map(row => {
+      const cv = row.querySelector('.strip-canvas');
+      if(!cv || !cv.width) return null;
+      const lbl = row.querySelector('.strip-label');
+      return {canvas: cv, h: cv.offsetHeight || 12,
+              label: lbl ? lbl.textContent : '',
+              color: lbl ? (lbl.style.color || '#8b949e') : '#8b949e'};
+    })
+    .filter(Boolean);
+}
+
 function downloadFullSnapshot(){
   const scale = 2;
   const chartDiv = document.getElementById('plotly-chart');
@@ -2685,8 +2798,24 @@ function downloadFullSnapshot(){
         // plot image
         ctx.drawImage(plotImg, 0, titleH);
 
-        // legend
+        // regime strips — drawn directly under the plot at the same width, so
+        // they stay in register with the x axis
         let yOff = titleH + plotImg.height;
+        const strips = collectSnapshotStrips();
+        if(strips.length){
+          yOff += 4 * scale;
+          ctx.font = `${9 * scale}px "SFMono-Regular", Consolas, monospace`;
+          ctx.textBaseline = 'middle';
+          strips.forEach(({canvas: cv, h, label, color}) => {
+            const drawnH = h * scale;
+            ctx.drawImage(cv, 0, yOff, W, drawnH);
+            ctx.fillStyle = color;
+            ctx.fillText(label, 6 * scale, yOff + drawnH / 2);
+            yOff += drawnH + STRIP_SNAP_GAP * scale;
+          });
+        }
+
+        // legend
         const active = STATE.active;
         if(active.length){
           ctx.font = `${11 * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif`;
@@ -2740,7 +2869,9 @@ function buildLegendHeight(){
 }
 
 function buildStripHeight(){
-  return 0; // strips are overlay canvases, captured via the plot image
+  const strips = collectSnapshotStrips();
+  if(!strips.length) return 0;
+  return strips.reduce((a, s) => a + s.h + STRIP_SNAP_GAP, 0) + 4;
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -2860,6 +2991,13 @@ function drawStripCanvas(canvas, dates, labels, geo){
   const stripPlotW = geo.plotW;
   if(stripPlotW <= 0) return;
 
+  // Park the close button + label in the chart's left margin so they never sit
+  // over painted regime bands.  The canvas now spans the whole row, so there is
+  // no clipped sliver at the left edge either.
+  const row  = canvas.closest('.inline-strip-row, .strip-row');
+  const cbox = row ? row.querySelector('.strip-controls') : null;
+  if(cbox) cbox.style.width = Math.max(0, xPlot0) + 'px';
+
   dates.forEach((d, i) => {
     const frac0 = dateToFrac(d, geo);
     const frac1 = i < dates.length - 1 ? dateToFrac(dates[i+1], geo) : 1.0;
@@ -2968,7 +3106,9 @@ function renderStrips(){
       const cv    = document.createElement('canvas');
       cv.className = 'strip-canvas';
       wrap2.appendChild(cv);
-      row.append(closeR, lbl, wrap2);
+      const ctrlsR = el('div','strip-controls');
+      ctrlsR.append(closeR, lbl);
+      row.append(wrap2, ctrlsR);
       inner.appendChild(row);
       // defer drawing until layout is settled
       requestAnimationFrame(() => drawStripCanvas(cv, filtDates, regimes, geo));
@@ -2990,7 +3130,9 @@ function renderStrips(){
       const cv2   = document.createElement('canvas');
       cv2.className = 'strip-canvas';
       wrap3.appendChild(cv2);
-      row2.append(closeF, lbl2, wrap3);
+      const ctrlsF = el('div','strip-controls');
+      ctrlsF.append(closeF, lbl2);
+      row2.append(wrap3, ctrlsF);
       inner.appendChild(row2);
       requestAnimationFrame(() => drawStripCanvas(cv2, filtDates, fwds, geo));
     }
@@ -3018,6 +3160,12 @@ document.getElementById('font-controls').addEventListener('click', e => {
   document.querySelectorAll('.legend-row-id').forEach(el => el.style.fontSize = STATE.fontSize.legend + 'px');
   document.querySelectorAll('.legend-row-name').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 1) + 'px');
   document.querySelectorAll('.legend-row-formula').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 2) + 'px');
+  if(STATE.active.length) renderChart();
+});
+
+// ── Chart type ─────────────────────────────────────────────────────────────
+document.getElementById('chart-type').addEventListener('change', e => {
+  STATE.chartType = e.target.value;
   if(STATE.active.length) renderChart();
 });
 
