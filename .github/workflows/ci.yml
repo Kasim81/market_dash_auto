@@ -47,4 +47,5 @@ jobs:
             test_calculators_parity \
             test_hist_stability \
             test_plausibility \
-            test_ism_zscore_guard
+            test_ism_zscore_guard \
+            test_source_probe
