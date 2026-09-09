@@ -853,6 +853,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:4px 10px;border-radius:5px;border:1px solid #30363d;
   background:transparent;color:#8b949e;font-size:11px;cursor:pointer
 }
+#norm-controls{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+  font-size:9px;color:#484f58;white-space:nowrap
+}
+#norm-mode{
+  display:flex;border:1px solid #30363d;border-radius:4px;overflow:hidden
+}
+#norm-mode button{
+  font-size:9px;padding:3px 8px;background:transparent;
+  border:none;color:#8b949e;cursor:pointer;line-height:1.4
+}
+#norm-mode button.active{background:#388bfd;color:#f0f6fc}
+#norm-base{
+  width:66px;padding:3px 6px;border-radius:4px;border:1px solid #30363d;
+  background:#0d1117;color:#c9d1d9;font-size:11px;outline:none
+}
+#norm-base:disabled{opacity:.35;cursor:not-allowed}
+.leg-axis button:disabled{opacity:.3;cursor:not-allowed}
+.leg-warn{
+  font-size:9px;color:#e3b341;border:1px solid #6b5320;border-radius:3px;
+  padding:1px 5px;flex-shrink:0;line-height:1.4;cursor:help;white-space:nowrap
+}
 #btn-clear:hover{border-color:#f85149;color:#f85149}
 /* ── font size controls ── */
 #font-controls{
@@ -1097,6 +1119,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
         <button class="font-btn" data-target="legend" data-delta="1">+</button>
       </div>
     </div>
+    <div id="norm-controls">
+      <label>Rebase</label>
+      <div id="norm-mode">
+        <button class="norm-btn active" data-mode="off"
+                title="Plot each series in its own units">Off</button>
+        <button class="norm-btn" data-mode="cumpct"
+                title="Plot each series as % change from its first point in the visible date range">Cumulative %</button>
+        <button class="norm-btn" data-mode="base"
+                title="Rescale each series so its first point in the visible date range equals the base value">Base</button>
+      </div>
+      <input id="norm-base" type="number" value="100" min="0.000001" step="any"
+             title="Base value — the first point of every series in the visible range is set to this" disabled>
+    </div>
     <button id="btn-clear">Clear all</button>
   </div>
   <div id="chart-wrap">
@@ -1120,7 +1155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     <div id="regime-strip-inner"></div>
     <div id="regime-color-key"></div>
   </div>
-  <div id="statusbar" id="statusbar">Ready</div>
+  <div id="statusbar">Ready</div>
 </div>
 
 </div><!-- #app -->
@@ -1153,6 +1188,7 @@ const STATE = {
   viewMode: 'region',                  // 'region' | 'concept' — sidebar view-mode toggle (§2.5)
   cycleFilter: new Set(['L','C','G']), // which L/C/G letters are visible (§2.5)
   countryFilter: '',                   // '' = all countries, else one country/region tag (§2.5)
+  normalise: {mode: 'off', base: 100}, // 'off' | 'cumpct' | 'base' — see normaliseSeries()
 };
 
 // ── concept ordering for the §2.5 By-Concept sidebar view ────────────────
@@ -2063,6 +2099,11 @@ function updateLegendPanel(){
       btn.title = {left:'Left axis (L1)',left2:'Left axis 2 (L2)',
                    right:'Right axis (R1)',right2:'Right axis 2 (R2)'}[val];
       if(s.axis === val) btn.classList.add('active');
+      if(STATE.normalise.mode !== 'off'){
+        btn.disabled = true;
+        btn.title = 'Axis choice is parked while a rebase is active — '
+                  + 'rebased series share one axis. Your selection is kept.';
+      }
       btn.addEventListener('click', () => {
         s.axis = val;
         axisToggle.querySelectorAll('button').forEach(b =>
@@ -2146,10 +2187,14 @@ function updateLegendPanel(){
       stripBtns.append(rBtn, fBtn);
     }
 
+    // ── rebase warning badge (filled in by updateNormBadges) ──────
+    const warnEl = el('span','leg-warn','not rebased');
+    warnEl.hidden = true;
+
     // ── assemble row ──────────────────────────────────────────────
     row.append(colorBtn, idEl, infoWrap);
     if(metricToggle) row.appendChild(metricToggle);
-    row.append(axisToggle, styleEl, widthWrap);
+    row.append(axisToggle, styleEl, widthWrap, warnEl);
     if(stripBtns) row.appendChild(stripBtns);
     row.appendChild(delBtn);
     inner.appendChild(row);
@@ -2204,6 +2249,22 @@ function updateLegendPanel(){
     if(document.getElementById('plotly-chart').data){
       updateChartMargin();
     }
+  });
+}
+
+// ── rebase badges ──────────────────────────────────────────────────────────
+// Called at the end of renderChart, because whether a series could be rebased
+// is only known once buildTrace has seen its values for the current window.
+// The badge element already exists in every legend row, so toggling it costs
+// no layout and cannot disturb the chart margin.
+function updateNormBadges(){
+  document.querySelectorAll('#legend-panel-inner .legend-row').forEach(row => {
+    const s = STATE.active[+row.dataset.idx];
+    const b = row.querySelector('.leg-warn');
+    if(!b) return;
+    const skipped = s && s._norm && s._norm.active && !s._norm.ok;
+    b.hidden = !skipped;
+    if(skipped) b.title = s._norm.reason;
   });
 }
 
@@ -2285,15 +2346,77 @@ function getSeriesData(s){
   return {dates:fd, values:fv, raw:fr, zscore:fz, regime:freg, fwd_regime:ffwd};
 }
 
+// ── rebasing (normalisation) ──────────────────────────────────────────
+// Rescales a series so several series of different magnitudes can be read on
+// one axis.  The base point is the first non-null value inside the current
+// date-range filter, so the date controls double as the rebase-date control.
+//
+// Two modes:
+//   cumpct  →  (v / base - 1) * 100      % change from the base point
+//   base    →  (v / base) * STATE.normalise.base   index, base point = x
+//
+// Both are ratios to the base, so they are only meaningful for a series that
+// keeps one sign across the window.  A z-score, a spread, or anything that
+// crosses zero produces a division blow-up or a sign flip that reads as a
+// real move, so those are left in their own units and flagged in the legend
+// rather than silently mangled.
+const NORM_EPS = 1e-9;
+
+function normaliseSeries(values){
+  const mode = STATE.normalise.mode;
+  if(mode === 'off') return {active:false, ok:false, reason:'', base:null, values:null};
+
+  let base = null;
+  for(const v of values){ if(v !== null && isFinite(v)){ base = v; break; } }
+  if(base === null)
+    return {active:true, ok:false, base:null, values:null,
+            reason:'no data in the selected date range'};
+  if(Math.abs(base) < NORM_EPS)
+    return {active:true, ok:false, base, values:null,
+            reason:'first value in range is zero — cannot rebase to it'};
+
+  const sign = base > 0 ? 1 : -1;
+  for(const v of values){
+    if(v === null || !isFinite(v)) continue;
+    if(v * sign <= 0)
+      return {active:true, ok:false, base, values:null,
+              reason:'series crosses zero — a ratio to the base point is not meaningful'};
+  }
+
+  const target = STATE.normalise.base;
+  const out = values.map(v => (v === null || !isFinite(v)) ? null
+              : (mode === 'cumpct' ? (v / base - 1) * 100 : (v / base) * target));
+  return {active:true, ok:true, base, values:out, reason:''};
+}
+
+function normAxisTitle(){
+  return STATE.normalise.mode === 'cumpct'
+    ? 'Cumulative % change from first point in range'
+    : 'Index (first point in range = ' + STATE.normalise.base + ')';
+}
+
+function normHoverRow(){
+  return STATE.normalise.mode === 'cumpct'
+    ? 'Rebased: %{y:.2f}%<br>'
+    : 'Rebased: %{y:.2f}<br>';
+}
+
 // ── build a single Plotly trace ───────────────────────────────────────
 function buildTrace(s){
   const d = getSeriesData(s);
-  if(!d || !d.dates.length) return null;
+  if(!d || !d.dates.length){ s._norm = null; return null; }
 
   const isMacro   = s.source === 'macro_market';
   const AXIS_MAP  = {left:'y', right:'y2', left2:'y3', right2:'y4'};
-  const yaxis     = AXIS_MAP[s.axis] || 'y';
   const dashStyle = DASH_MAP[s.style] || 'solid';
+
+  // Rebasing puts every series in the same units, so while it is on they all
+  // share y1 and the per-series axis choice is parked (s.axis is left alone,
+  // so switching the rebase off restores the user's layout exactly).
+  const norm  = normaliseSeries(d.values);
+  s._norm     = norm;                       // read back by updateNormBadges()
+  const plotY = norm.ok ? norm.values : d.values;
+  const yaxis = norm.ok ? 'y' : (AXIS_MAP[s.axis] || 'y');
 
   // customdata: [raw, zscore, regime, fwd_regime] for macro; [value] otherwise
   let customdata, hovertemplate;
@@ -2301,6 +2424,7 @@ function buildTrace(s){
     customdata = d.dates.map((_,i) => [d.raw[i], d.zscore[i], d.regime[i], d.fwd_regime[i]]);
     hovertemplate =
       '<b>' + s.id + '</b><br>' +
+      (norm.ok ? normHoverRow() : '') +
       'Raw: %{customdata[0]}<br>' +
       'Z-Score: %{customdata[1]:.3f}<br>' +
       'Regime: %{customdata[2]}<br>' +
@@ -2310,13 +2434,15 @@ function buildTrace(s){
     customdata = d.values.map(v => [v]);
     hovertemplate =
       '<b>' + s.id + '</b><br>' +
-      '%{x}<br>Value: %{customdata[0]:.4f}' +
+      '%{x}<br>' +
+      (norm.ok ? normHoverRow() : '') +
+      'Value: %{customdata[0]:.4f}' +
       '<extra></extra>';
   }
 
   return {
     x:            d.dates,
-    y:            d.values,
+    y:            plotY,
     name:         s.id,
     type:         'scatter',
     mode:         'lines',
@@ -2354,9 +2480,10 @@ function updateChartMargin(){
   const div   = document.getElementById('plotly-chart');
   if(!div || !div.data || !panel) return;
   const lh      = (panel.style.display !== 'none') ? panel.getBoundingClientRect().height : 0;
-  const hasL2   = STATE.active.some(s => s.axis === 'left2');
-  const hasR2   = STATE.active.some(s => s.axis === 'right2');
-  const hasR    = STATE.active.some(s => s.axis === 'right');
+  const ownAxis = STATE.active.filter(s => !(s._norm && s._norm.ok));
+  const hasL2   = ownAxis.some(s => s.axis === 'left2');
+  const hasR2   = ownAxis.some(s => s.axis === 'right2');
+  const hasR    = ownAxis.some(s => s.axis === 'right');
   Plotly.relayout(div, {
     'margin.b': lh + 44,
     'margin.l': hasL2 ? 110 : 60,
@@ -2380,10 +2507,15 @@ function renderChart(){
     setStatus('No data in selected date range', 'error'); return;
   }
 
-  const hasLeft   = STATE.active.some(s => s.axis === 'left');
-  const hasRight  = STATE.active.some(s => s.axis === 'right');
-  const hasLeft2  = STATE.active.some(s => s.axis === 'left2');
-  const hasRight2 = STATE.active.some(s => s.axis === 'right2');
+  // A rebased chart is single-unit, so it collapses onto L1.  Series the
+  // rebase could not handle (see normaliseSeries) keep their own axis slot.
+  const normOn    = STATE.normalise.mode !== 'off';
+  const rebased   = STATE.active.filter(s => s._norm && s._norm.ok);
+  const ownAxis   = STATE.active.filter(s => !(s._norm && s._norm.ok));
+  const hasLeft   = rebased.length > 0 || ownAxis.some(s => s.axis === 'left');
+  const hasRight  = ownAxis.some(s => s.axis === 'right');
+  const hasLeft2  = ownAxis.some(s => s.axis === 'left2');
+  const hasRight2 = ownAxis.some(s => s.axis === 'right2');
 
   // axis titles: friendly name (ID) for each series
   const axisLabel = s => {
@@ -2391,10 +2523,12 @@ function renderChart(){
     const metric   = (s.source === 'macro_market' && s.metric === 'zscore') ? ' z-score' : '';
     return `${friendly}${metric} (${s.id})`;
   };
-  const leftLabels   = STATE.active.filter(s => s.axis === 'left').map(axisLabel).slice(0,2);
-  const rightLabels  = STATE.active.filter(s => s.axis === 'right').map(axisLabel).slice(0,2);
-  const left2Labels  = STATE.active.filter(s => s.axis === 'left2').map(axisLabel).slice(0,2);
-  const right2Labels = STATE.active.filter(s => s.axis === 'right2').map(axisLabel).slice(0,2);
+  const leftLabels   = rebased.length
+                       ? [normAxisTitle()]
+                       : ownAxis.filter(s => s.axis === 'left').map(axisLabel).slice(0,2);
+  const rightLabels  = ownAxis.filter(s => s.axis === 'right').map(axisLabel).slice(0,2);
+  const left2Labels  = ownAxis.filter(s => s.axis === 'left2').map(axisLabel).slice(0,2);
+  const right2Labels = ownAxis.filter(s => s.axis === 'right2').map(axisLabel).slice(0,2);
 
   // dynamic margins & domain: separate L1/L2 and R1/R2 so tick labels don't overlap
   const mL = hasLeft2  ? 110 : 60;
@@ -2402,6 +2536,10 @@ function renderChart(){
   // xaxis.domain pushes the plot area inward; outer axes sit in the freed space
   const domainL = hasLeft2  ? 0.10 : 0;
   const domainR = hasRight2 ? 0.90 : 1;
+
+  const l1Series    = ownAxis.filter(s => s.axis === 'left');
+  const l1AllZScore = !normOn && rebased.length === 0 && l1Series.length > 0 &&
+                      l1Series.every(s => s.source === 'macro_market' && s.metric === 'zscore');
 
   // legend height measured synchronously (forces layout flush before Plotly.react)
   const legendH = (()=>{ const p=document.getElementById('legend-panel'); return (p && p.style.display!=='none') ? (p.offsetHeight||0) : 0; })();
@@ -2460,7 +2598,11 @@ function renderChart(){
       titlefont:{color:'#8b949e', size:STATE.fontSize.axisTitle},
       zeroline:false, visible: true,
     },
-    shapes: hasLeft ? zRefShapes() : [],
+    // The ±1/±2 bands are z-score furniture.  Drawing them whenever anything
+    // sits on L1 pulls that axis out to at least [-2, 2], which flattens any
+    // series whose own range is smaller (a price under 2, a ratio, a yield in
+    // percent).  Only draw them when L1 is entirely z-scores.
+    shapes: l1AllZScore ? zRefShapes() : [],
     modebar:{bgcolor:'transparent', color:'#484f58', activecolor:'#58a6ff'},
     dragmode:'zoom',
   };
@@ -2476,6 +2618,15 @@ function renderChart(){
     }],
   };
 
+  // yaxis2/3/4 all declare overlaying:'y', but Plotly only instantiates an
+  // axis that a trace actually references.  With nothing on L1 that reference
+  // dangles and each overlay quietly becomes its own subplot.  An empty
+  // placeholder trace keeps y1 alive so the overlays stay overlays.
+  if(!traces.some(t => (t.yaxis || 'y') === 'y')){
+    traces.push({x:[], y:[], type:'scatter', mode:'lines', yaxis:'y',
+                 hoverinfo:'skip', showlegend:false});
+  }
+
   placeholder.style.display = 'none';
   chartDiv.style.display     = 'block';
 
@@ -2488,9 +2639,15 @@ function renderChart(){
     })
     .catch(err => setStatus('Chart error: ' + err.message, 'error'));
 
-  const n = traces.length;
-  const pts = traces.reduce((s,t) => s + (t.x ? t.x.length : 0), 0);
-  setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}`);
+  const real = traces.filter(t => t.name);
+  const n     = real.length;
+  const pts   = real.reduce((s,t) => s + (t.x ? t.x.length : 0), 0);
+  const skipped = STATE.active.filter(s => s._norm && s._norm.active && !s._norm.ok);
+  const normBit = !normOn ? ''
+    : ` · rebased: ${STATE.normalise.mode === 'cumpct' ? 'cumulative %' : 'base ' + STATE.normalise.base}`
+      + (skipped.length ? ` (${skipped.length} not rebased: ${skipped.map(s => s.id).join(', ')})` : '');
+  setStatus(`${n} series · ${pts.toLocaleString()} data points · range ${STATE.dateFrom||'all'} → ${STATE.dateTo||'all'}${normBit}`);
+  updateNormBadges();
 }
 
 // ── Full snapshot (title + chart + legend + regime strips) ────────────
@@ -2653,11 +2810,19 @@ function getXGeometry(){
   const fl  = div._fullLayout;
   const xa  = fl.xaxis;
   if(!xa || !xa.range) return null;
+  // _offset / _length are the true pixel bounds of the plot area.  margin.l
+  // and margin.r are not: xaxis.domain is inset to [0.10, 0.90] whenever L2 or
+  // R2 is in use, so margin-based maths put the strips ~106px out of register
+  // with the chart at a 1600px viewport.
+  const left  = (xa._offset != null) ? xa._offset : fl.margin.l;
+  const plotW = (xa._length != null) ? xa._length
+                                     : (fl.width - fl.margin.l - fl.margin.r);
   return {
     t0:    new Date(xa.range[0]).getTime(),
     t1:    new Date(xa.range[1]).getTime(),
-    left:  fl.margin.l,
-    right: fl.margin.r,
+    left,
+    plotW,
+    right: fl.width - left - plotW,
     totalW: fl.width,
   };
 }
@@ -2669,7 +2834,6 @@ function dateToFrac(dateStr, geo){
 
 // ── draw one strip canvas ─────────────────────────────────────────────
 function drawStripCanvas(canvas, dates, labels, geo){
-  const plotW = geo.totalW - geo.left - geo.right;
   const dpr   = window.devicePixelRatio || 1;
   const cssW  = canvas.parentElement.clientWidth;
   const cssH  = canvas.offsetHeight || 14;
@@ -2682,27 +2846,36 @@ function drawStripCanvas(canvas, dates, labels, geo){
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, cssW, cssH);
 
-  // The strip spans the full cssW; the plot area starts at geo.left px
-  // from the left of the Plotly chart div, which is the same left offset
-  // we need to apply to the strip canvas.
-  const stripPlotW = cssW - geo.left - geo.right;
+  // Align the strip to the plot area in absolute screen coordinates.  The
+  // canvas is not flush with the chart div — every strip row puts a close
+  // button and a label in front of it (~81px at the current CSS) — so the
+  // plot-area offset has to be measured against the canvas itself.  Applying
+  // geo.left directly, as this did before, pushed the strip that far right.
+  const chartDiv = document.getElementById('plotly-chart');
+  if(!chartDiv) return;
+  const gr = chartDiv.getBoundingClientRect();
+  const cr = canvas.getBoundingClientRect();
+  if(!cr.width) return;
+  const xPlot0     = (gr.left + geo.left) - cr.left;   // plot-area left, in canvas px
+  const stripPlotW = geo.plotW;
   if(stripPlotW <= 0) return;
 
   dates.forEach((d, i) => {
     const frac0 = dateToFrac(d, geo);
     const frac1 = i < dates.length - 1 ? dateToFrac(dates[i+1], geo) : 1.0;
     if(frac1 < 0 || frac0 > 1) return;
-    const x0 = geo.left + Math.max(0, frac0) * stripPlotW;
-    const x1 = geo.left + Math.min(1, frac1) * stripPlotW;
+    const x0 = xPlot0 + Math.max(0, frac0) * stripPlotW;
+    const x1 = xPlot0 + Math.min(1, frac1) * stripPlotW;
     if(x1 <= x0) return;
     ctx.fillStyle = regimeColor(labels[i]);
     ctx.fillRect(x0, 0, x1 - x0, cssH);
   });
 
-  // faint border between plot area and margins
+  // mask anything that landed outside the plot area
+  const xPlot1 = xPlot0 + stripPlotW;
   ctx.fillStyle = '#0d1117';
-  ctx.fillRect(0,        0, geo.left,      cssH);
-  ctx.fillRect(cssW - geo.right, 0, geo.right, cssH);
+  if(xPlot0 > 0)    ctx.fillRect(0, 0, xPlot0, cssH);
+  if(xPlot1 < cssW) ctx.fillRect(xPlot1, 0, cssW - xPlot1, cssH);
 }
 
 // ── build or update the color key ────────────────────────────────────
@@ -2846,6 +3019,34 @@ document.getElementById('font-controls').addEventListener('click', e => {
   document.querySelectorAll('.legend-row-name').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 1) + 'px');
   document.querySelectorAll('.legend-row-formula').forEach(el => el.style.fontSize = (STATE.fontSize.legend - 2) + 'px');
   if(STATE.active.length) renderChart();
+});
+
+// ── Rebase controls ────────────────────────────────────────────────────────
+function applyNormalise(){
+  const baseInput = document.getElementById('norm-base');
+  baseInput.disabled = STATE.normalise.mode !== 'base';
+  document.querySelectorAll('#norm-mode .norm-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === STATE.normalise.mode));
+  updateLegendPanel();   // rebuilds rows so the axis buttons pick up disabled
+  if(STATE.active.length) renderChart();
+}
+
+document.getElementById('norm-mode').addEventListener('click', e => {
+  const btn = e.target.closest('.norm-btn');
+  if(!btn || btn.dataset.mode === STATE.normalise.mode) return;
+  STATE.normalise.mode = btn.dataset.mode;
+  applyNormalise();
+});
+
+document.getElementById('norm-base').addEventListener('change', e => {
+  const v = parseFloat(e.target.value);
+  if(!isFinite(v) || v === 0){
+    e.target.value = STATE.normalise.base;   // reject, keep the last good value
+    setStatus('Base must be a non-zero number', 'error');
+    return;
+  }
+  STATE.normalise.base = v;
+  if(STATE.normalise.mode === 'base') applyNormalise();
 });
 
 // ── Detail toggle ──────────────────────────────────────────────────────────
