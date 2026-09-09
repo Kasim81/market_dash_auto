@@ -198,7 +198,7 @@ market_dash_auto/
 │   └── equity_pe_snapshot.csv         # OUTPUT — daily P/E history for the major-index ETF set, one row per (asof_date, ticker), upserted by fetch_pe.py (§3.3, 2026-07-16)
 │
 ├── docs/                          # Indicator Explorer generator
-│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (2,932 lines)
+│   ├── build_html.py                  # Generates indicator_explorer.html from CSV + hist (3,134 lines)
 │   ├── indicator_explorer.html        # OUTPUT — interactive chart/regime viewer (§2.C C9: gitignored, → GitHub Pages)
 │   └── indicator_explorer_mkt.js      # OUTPUT — embedded market data JSON (§2.C C9: gitignored, → GitHub Pages)
 │
@@ -1532,7 +1532,7 @@ Each indicator goes through:
 | `_GLOBAL_CALCULATORS` | dict | **NEW 2026-07-15 (§2.B B15).** `GL_MONPOL1` Global Monetary Policy Tracker (from `calculators.global_`) |
 | `_ALL_CALCULATORS` | dict | Merged union of all eight of the above dicts |
 
-### 9.7 `docs/build_html.py` (2,932 lines)
+### 9.7 `docs/build_html.py` (3,134 lines)
 
 **Role:** Generates the Indicator Explorer — an interactive HTML page for visualising macro-market indicators with regime strips, z-score overlays, and a 3-section sidebar. Reads the freshly-written CSVs at the end of each pipeline run.
 
@@ -1578,9 +1578,61 @@ Step 4 is the most overlooked: PR #152 (the 6 inflation composites) merged at 13
 - **4-colour regime palette:** positive (green), negative (red), amber (gold), neutral (grey) — each maps a set of regime labels.
 - **Forward regime display:** `fwd_regime` shown as a coloured badge alongside current regime.
 - **Custom PNG snapshot:** Camera button composites chart title, Plotly chart image, legend entries, and regime colour key onto a single canvas.
+- **Rebase toggle (2026-09-09):** Off / Cumulative % / Base *x* in the toolbar, rebasing every plotted series to a common start point so series of different magnitudes read on one axis. See §9.7.1.
 - **Cycle-timing badges:** L/C/G badges next to every indicator in both Macro Market Indicators and Economic Data sections (colour: blue=Leading, amber=Coincident, pink=Lagging — matches the source-doc shading from `manuals/Macro Market Indicators Reference.docx`).
 - **Filter pipeline:** unified `applySidebarFilters()` evaluates four filters per item — search, market-data variant, L/C/G chips, country dropdown — and runs section-collapse logic so empty groups hide. Country dropdown is auto-populated from `MAIN_DATA.countries` (the registry, per §0 of forward_plan.md).
 - **Inline L/C/G legend** beneath the cycle-filter chips: `L = Leading · C = Coincident · G = Lagging`.
+
+#### 9.7.1 Charting layer
+
+Everything the explorer draws goes through **Plotly.js 2.32.0**, pulled from `https://cdn.plot.ly/plotly-2.32.0.min.js` by the one `<script>` tag in `HTML_TEMPLATE`. It is the only charting library in the repo — there is no matplotlib, mplfinance, D3 or Chart.js anywhere in the tree. Licence is **MIT** (npm registry metadata for `plotly.js`), so it carries no attribution obligation, no commercial tier and no per-seat cost.
+
+**Why Plotly and not something else** (evaluated 2026-09-09, no change made):
+
+| Candidate | Licence | Why it is not used here |
+|---|---|---|
+| **plotly.js** (current) | MIT | Only candidate that does four independent y-axes, `hovermode: 'x unified'` and `toImage` PNG export, which the explorer all depends on |
+| mplfinance | BSD-style (matplotlib licence agreement) | Static renderer. Needs a live Python process at view time, so it cannot produce a file for GitHub Pages. Last release `0.12.10b0`, 2 Aug 2023 |
+| lightweight-charts (TradingView, JS) | Apache-2.0 | Better at candlesticks on canvas, but has no four-axis overlay, no unified multi-series hover and no image export. `attributionLogo` defaults to `true` and the licence requires a visible link to tradingview.com |
+| lightweight-charts-python | MIT (wrapper) | Targets Jupyter / PyQt / wxPython / Streamlit — all live Python runtimes, none of which emit a static page. Latest 2.1 (28 Sep 2024) wraps a JS library now on 5.2.1 |
+| lightningchart (Python) | Proprietary EULA, no licence field on PyPI | Free "Data Scientist" tier is personal-use with a 7-day trial of premium features; distributing the page needs the paid per-seat "Software Developer" licence. Fails the free-only constraint |
+
+**Performance is not the reason to move.** Worst case per chart is a handful of series at up to ~4,000 daily observations, so low tens of thousands of points — comfortably inside SVG territory. If that ever changes, `scattergl` (WebGL) exists in the pinned version and is a one-word change to `type`. The 31.5 MB daily payload is a serialisation problem in the payload builders, not a renderer problem; no charting library would shift it.
+
+**The pin is two majors stale.** Latest plotly.js is 4.1.0 (8 Sep 2026); the 3.0.0 changelog notes the CDN `latest` bundles are no longer updated, so the 2.x line receives no fixes. Migration surface is small: 3.0.0 dropped string `title` and the `titlefont` attribute, and the explorer uses `titlefont` 4 times and string axis titles 4 times, all inside the one `layout` object in `renderChart()`. It uses no `transforms`, no `Plotly.plot`, no jQuery events and none of the removed trace types. The full bundle is 3.5 MB minified and carries 3D, maps, finance, statistical and polar traces the explorer never touches; a partial bundle would cut that.
+
+**Rendering engine** (`renderChart()`, STEP 3 of the embedded JS):
+
+- One `scatter` trace per active series, `mode: 'lines'`, `connectgaps: false`. No other trace type is used.
+- **Four y-axis slots**, exposed in the legend as L1 / L2 / R1 / R2 and mapped `{left:'y', left2:'y3', right:'y2', right2:'y4'}`. `y2`/`y3`/`y4` are `overlaying: 'y'`; `y3`/`y4` are `anchor:'free'` at `position` 0 and 1, with `xaxis.domain` inset to `[0.10, 0.90]` to free the space for their tick labels.
+- Per-series hovertemplate under `hovermode: 'x unified'`. Macro-market series carry `[raw, zscore, regime, fwd_regime]` in `customdata`; everything else carries `[value]`.
+- Regime strips are **not** a Plotly feature. They are `<canvas>` elements drawn by `drawStripCanvas()`, aligned to the chart by reading Plotly's pixel geometry through `getXGeometry()` and redrawn on every `plotly_relayout`.
+- The PNG button is a custom modebar entry that composites title + `Plotly.toImage` output + legend + regime colour key onto one canvas.
+
+**Rebase toggle (2026-09-09).** Toolbar control `#norm-controls` with three modes, held in `STATE.normalise = {mode, base}`:
+
+| Mode | Transform | Axis title |
+|---|---|---|
+| `off` | none — each series in its own units | per-series labels, as before |
+| `cumpct` | `(v / base − 1) × 100` | `Cumulative % change from first point in range` |
+| `base` | `(v / base) × x`, `x` typed into `#norm-base` | `Index (first point in range = x)` |
+
+The base point is the **first non-null value inside the current date-range filter**, so the From/To controls double as the rebase-date control. Both modes are ratios to that base, so `normaliseSeries()` refuses any series whose base is zero or whose window changes sign — a z-score, a spread, a policy-stance gap. Refused series keep their own units and axis slot, show a `not rebased` badge in the legend row carrying the reason as its tooltip, and are named in the status bar. While a rebase is active every rebased trace is forced onto `y` and the L1/L2/R1/R2 buttons are disabled; `s.axis` is left untouched, so switching back to `off` restores the previous layout exactly.
+
+Note that rebasing equalises the *starting point*, not the *range*. Four series with similar total returns become directly comparable; one series with an extreme return still compresses the others on a linear axis (measured: MERVAL at +4,420% against EWW at ~+30% leaves the latter 13px tall in a 604px plot). A log-scale toggle is the conventional companion for that case and is not implemented.
+
+**Axis defects fixed 2026-09-09** (all reproduced in headless Chromium against the built page, then re-verified):
+
+1. **z-score bands leaked onto every L1 series.** `shapes` was `hasLeft ? zRefShapes() : []`, so the ±1/±2 reference lines were drawn whenever *anything* sat on L1. Being `yref:'y'`, they pulled that axis out to at least `[-2, 2]`. Sugar No. 11 (`SB=F_Local`, range 0.133–0.278) on L1 rendered inside an axis of `[-2.003, 2.003]` — 3.6% of the plot height, visually a flat line. Now gated on `l1AllZScore`: the bands are drawn only when every L1 series is a macro-market series in `zscore` mode. Same series now fills 90% of its axis.
+2. **Regime strips misaligned whenever L2 or R2 was in use.** `getXGeometry()` returned `fl.margin.l` / `fl.margin.r` as the plot bounds, which ignore `xaxis.domain`. With the domain inset to `[0.10, 0.90]` the strips sat 106px left of the chart and were 212px too wide at a 1600px viewport. `getXGeometry()` now returns `xaxis._offset` / `xaxis._length`, and `drawStripCanvas()` aligns against the canvas's own screen position rather than assuming it is flush with the chart div. Painted extent now matches the plot area to 0px in both layouts.
+3. **The overlay base axis vanished when L1 was empty.** Plotly only instantiates an axis a trace references, so with nothing on L1 the `overlaying: 'y'` on `y2`/`y3`/`y4` dangled and each overlay silently became its own subplot (`_subplots.cartesian` came back as `["xy3","xy4"]` instead of overlays on `xy`). It rendered correctly by coincidence — all four axes share domain `[0,1]` — but nothing guaranteed that. `renderChart()` now pushes an empty placeholder trace onto `y` when no real trace uses it.
+4. Duplicate `id="statusbar"` attribute on the same `<div>`.
+
+**Known limitations, not fixed:**
+
+- **The four axis slots are slots, not scales.** Two series of different magnitudes on the same slot still means the smaller one collapses onto the axis floor — measured at 0.0px of pixel height for `^SP500-201020_Local` (431–1037) sharing R2 with `^MERV_Local` (74k–3.35M). This is the dominant "my ticker disappeared" failure mode and the rebase toggle is the answer to it, not more axes.
+- **The strip's left edge is clipped by ~21px** in the default layout. Each strip row puts a close button and a 60px label ahead of the canvas (~81px), while the chart's left margin is only 60px, so the canvas does not extend far enough left to cover the whole plot area. Nothing painted is out of place; the leftmost sliver is simply absent. With L2 or R2 active the margin grows to 110px and the clip disappears.
+- **`buildStripHeight()` returns 0** with a comment saying strips are "captured via the plot image". They are not: the strips are DOM canvases in the legend panel and `Plotly.toImage` renders only the Plotly div, so regime strips do not appear in the PNG snapshot.
 
 #### Output Files
 
