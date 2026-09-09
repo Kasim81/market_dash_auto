@@ -25,6 +25,7 @@ Offline and deterministic — no network, no Bright Data credentials.
 """
 
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -212,6 +213,45 @@ class TestShippedStoreIntegrity(unittest.TestCase):
             for month, val in months.items():
                 self.assertTrue(lo <= val <= hi,
                                 f"{col} {month}={val} outside [{lo}, {hi}]")
+
+
+class TestReleaseStoreIsPersisted(unittest.TestCase):
+    """Layer 2, the deployment half: the store only works if the daily job
+    commits it.
+
+    `record_release_point` writes to the runner's working copy. The daily
+    workflow stages an explicit allowlist of paths rather than `git add -A`, so
+    a file missing from that list is written every run and thrown away every
+    run. The sister archives had exactly this bug until 2026-07-08 and it went
+    unnoticed for months, because the happy path is silent — the only symptom
+    is history that never accumulates.
+
+    For this store the symptom would be CP-05 coming back: months between the
+    last committed row and the current release quietly missing, sigma
+    collapsing, and a real print scoring six sigma.
+    """
+
+    WORKFLOW = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            ".github", "workflows", "update_data.yml")
+
+    def test_daily_job_stages_the_release_store(self):
+        with open(self.WORKFLOW, encoding="utf-8") as fh:
+            wf = fh.read()
+        staged = re.findall(r"git add -f (\S+)", wf)
+        self.assertIn("data/ism_release_history.csv", staged,
+                      "the daily job must stage data/ism_release_history.csv, "
+                      "or every newly scraped ISM release point is discarded "
+                      "when the runner is torn down")
+
+    def test_store_is_not_gitignored(self):
+        """A staged-but-ignored file still needs -f; belt and braces."""
+        gitignore = os.path.join(os.path.dirname(self.WORKFLOW), "..", "..", ".gitignore")
+        gitignore = os.path.normpath(gitignore)
+        if not os.path.exists(gitignore):
+            self.skipTest("no .gitignore")
+        with open(gitignore, encoding="utf-8") as fh:
+            patterns = [ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")]
+        self.assertNotIn("data/ism_release_history.csv", patterns)
 
 
 class TestZScoreSanityGuard(unittest.TestCase):
