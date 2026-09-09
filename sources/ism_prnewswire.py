@@ -33,11 +33,23 @@ The release URL carries an unpredictable numeric id, so it can't be
 constructed — it is discovered from ISM's PR Newswire newsroom listing, which
 lists releases newest-first:
     https://www.prnewswire.com/news/institute-for-supply-management/
+
+Release-point store (CP-05)
+---------------------------
+A newsroom fetch only ever exposes the *current* month, and ``build_hist_df``
+rebuilds every column from source on each run — so a point scraped in July was
+thrown away in August, and the ISM columns carried one recent observation
+floating above a months-wide hole. ``data/ism_release_history.csv`` is the
+append-only store that fixes that: every release point ever parsed is kept,
+and the whole store (not just today's point) is spliced onto the DB.nomics
+mirror. See ``load_release_history`` / ``record_release_point``.
 """
 
 from __future__ import annotations
 
+import csv
 import html as _htmllib
+import pathlib
 import re
 from datetime import datetime, timedelta
 
@@ -295,17 +307,18 @@ def fetch_latest(kind: str = "manufacturing") -> dict | None:
 
 
 # Which report kind each ISM column comes from.
-_COL_KIND: dict[str, str] = {
+COL_KIND: dict[str, str] = {
     **{c: "manufacturing" for c in MANUFACTURING_COL_MAP.values()},
     **{c: "services" for c in SERVICES_COL_MAP.values()},
 }
+_COL_KIND = COL_KIND  # back-compat alias
 
 
 def latest_value_for_col(col: str) -> tuple[str, float] | None:
     """(period_end_date, value) for one ISM column from the latest release,
     or None. Convenience wrapper the fetch layer uses to splice a fresh point
     onto a stale/guarded DB.nomics series."""
-    kind = _COL_KIND.get(col)
+    kind = COL_KIND.get(col)
     if kind is None:
         return None
     report = fetch_latest(kind)
@@ -315,3 +328,111 @@ def latest_value_for_col(col: str) -> tuple[str, float] | None:
     if val is None:
         return None
     return report["period"], val
+
+
+# ---------------------------------------------------------------------------
+# RELEASE-POINT STORE (CP-05)
+# ---------------------------------------------------------------------------
+# Append-only record of every ISM release observation the pipeline has parsed.
+# Keyed on (col, period) with period as the DB.nomics-style "YYYY-MM" month, so
+# a re-scrape of the same month overwrites rather than duplicating.
+#
+# Licensing: this holds the same headline/sub-index values the pipeline already
+# maintains internally for its own indicators — it is not a republication of
+# ISM's report. Keep that boundary in mind before widening what is stored.
+
+_STORE_CSV = (
+    pathlib.Path(__file__).parent.parent / "data" / "ism_release_history.csv"
+)
+_STORE_FIELDS = ["col", "period", "value", "release"]
+
+
+def _month_key(period: str) -> str | None:
+    """Normalise any accepted period spelling to 'YYYY-MM'."""
+    p = str(period).strip()
+    if re.fullmatch(r"\d{4}-\d{2}", p):
+        return p
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p):
+        return p[:7]
+    return None
+
+
+def load_release_history(path: pathlib.Path | str | None = None) -> dict[str, dict[str, float]]:
+    """Read the store as ``{col: {"YYYY-MM": value}}``.
+
+    A missing or unreadable store is not an error — it yields ``{}`` and the
+    caller falls back to mirror-only behaviour.
+    """
+    p = pathlib.Path(path) if path is not None else _STORE_CSV
+    out: dict[str, dict[str, float]] = {}
+    try:
+        with p.open(newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                col = (row.get("col") or "").strip()
+                month = _month_key(row.get("period") or "")
+                if not col or month is None:
+                    continue
+                try:
+                    out.setdefault(col, {})[month] = float(row["value"])
+                except (TypeError, ValueError, KeyError):
+                    continue
+    except FileNotFoundError:
+        return {}
+    except OSError as exc:
+        print(f"  [{_TAG}] release store unreadable ({exc}) — mirror only", flush=True)
+        return {}
+    return out
+
+
+def record_release_point(
+    col: str, period: str, value: float, release: str = "",
+    path: pathlib.Path | str | None = None,
+) -> bool:
+    """Persist one release observation. Returns True when the store changed.
+
+    Re-recording a month with the same value is a no-op, so the daily job does
+    not rewrite the file 30 times a month.
+    """
+    p = pathlib.Path(path) if path is not None else _STORE_CSV
+    month = _month_key(period)
+    if month is None:
+        return False
+    rows: list[dict[str, str]] = []
+    try:
+        with p.open(newline="", encoding="utf-8") as fh:
+            rows = [dict(r) for r in csv.DictReader(fh)]
+    except FileNotFoundError:
+        rows = []
+    except OSError as exc:
+        print(f"  [{_TAG}] cannot read release store ({exc}) — not recording", flush=True)
+        return False
+
+    new = {"col": col, "period": month, "value": f"{float(value):g}", "release": release}
+    for r in rows:
+        if r.get("col") == col and _month_key(r.get("period") or "") == month:
+            if r.get("value") == new["value"]:
+                return False
+            r.update(new)
+            break
+    else:
+        rows.append(new)
+
+    rows.sort(key=lambda r: (r.get("col", ""), r.get("period", "")))
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=_STORE_FIELDS, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(rows)
+    except OSError as exc:
+        print(f"  [{_TAG}] cannot write release store ({exc})", flush=True)
+        return False
+    print(f"  [{_TAG}] recorded {col} {month}={new['value']}", flush=True)
+    return True
+
+
+def history_for_col(col: str, path: pathlib.Path | str | None = None) -> list[tuple[str, float]]:
+    """Every stored release point for `col`, oldest first, as (period, value)
+    with period in 'YYYY-MM' form — the shape the DB.nomics splice expects."""
+    months = load_release_history(path).get(col, {})
+    return [(m, months[m]) for m in sorted(months)]

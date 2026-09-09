@@ -81,6 +81,7 @@ from calculators.common import (
     _to_weekly_friday, _rolling_zscore, _get_col, _p, _log_ratio,
     _arith_diff, _sum_log_ratio, _yoy, _taylor_gap,
     ZSCORE_WINDOW, ZSCORE_MIN_PERIODS, _ALIGN_FFILL_LIMIT,
+    _WEEKLY_FFILL_LIMIT,
 )
 from calculators.us import *        # noqa: F401,F403
 from calculators.europe import *    # noqa: F401,F403
@@ -1217,6 +1218,70 @@ def compute_all_indicators(cp, mu, mi, supp, dbn=None) -> dict:
 # OUTPUT BUILDERS
 # ===========================================================================
 
+# ---------------------------------------------------------------------------
+# Z-SCORE SANITY GUARD (CP-05)
+# ---------------------------------------------------------------------------
+# A 156-week rolling z beyond this is not a market signal, it is a data fault.
+# The trigger was ISM Manufacturing printing z = +5.9 (13-week peak 5.75) in
+# September 2026: the DB.nomics mirror had died, the calculator forward-filled a
+# flat run across the hole, and the collapsed sigma turned a genuine 54.6
+# diffusion reading into the lead signal of the weekly article.
+#
+# ±4 is deliberately loose. Over 2020-2026 the only weekly macro z-scores that
+# legitimately reach 4 are the COVID dislocations; anything past it on a
+# survey/diffusion series means a scale, splice or window fault. The guard warns
+# and tags the row — it never silently drops or clips the value, because a real
+# 4-sigma reading is exactly what the dashboard exists to show.
+Z_SANITY_ABS_MAX = 4.0
+
+
+def zscore_sanity_warnings(snapshot: pd.DataFrame,
+                           limit: float = Z_SANITY_ABS_MAX) -> list[dict]:
+    """Rows whose current z or 13-week peak |z| exceeds `limit`.
+
+    Returns one dict per offending indicator: {id, zscore, zscore_peak_abs_13w,
+    raw, last_date, reason}. An empty list means nothing tripped the guard.
+    Pure — callers decide whether to log, fail, or annotate.
+    """
+    out: list[dict] = []
+    if snapshot is None or snapshot.empty:
+        return out
+    for _, row in snapshot.iterrows():
+        z = pd.to_numeric(row.get("zscore"), errors="coerce")
+        pk = pd.to_numeric(row.get("zscore_peak_abs_13w"), errors="coerce")
+        breaches = []
+        if pd.notna(z) and abs(z) > limit:
+            breaches.append(f"|z|={abs(z):.2f}")
+        if pd.notna(pk) and abs(pk) > limit:
+            breaches.append(f"13w peak |z|={abs(pk):.2f}")
+        if not breaches:
+            continue
+        out.append({
+            "id":                  row.get("id", ""),
+            "zscore":              float(z) if pd.notna(z) else None,
+            "zscore_peak_abs_13w": float(pk) if pd.notna(pk) else None,
+            "raw":                 row.get("raw", ""),
+            "last_date":           row.get("last_date", ""),
+            "reason":              " and ".join(breaches) + f" exceeds ±{limit:g}",
+        })
+    return out
+
+
+def log_zscore_sanity(snapshot: pd.DataFrame,
+                      limit: float = Z_SANITY_ABS_MAX) -> list[dict]:
+    """Print the sanity-guard breaches to the pipeline log and return them."""
+    breaches = zscore_sanity_warnings(snapshot, limit)
+    if not breaches:
+        print(f"  [z-guard] no indicator exceeds ±{limit:g} sigma")
+        return breaches
+    print(f"  [z-guard] {len(breaches)} indicator(s) beyond ±{limit:g} sigma "
+          f"— treat as a data fault until proven otherwise:")
+    for b in breaches:
+        print(f"    [z-guard] {b['id']}: {b['reason']} "
+              f"(raw={b['raw']}, last={b['last_date']})")
+    return breaches
+
+
 def _zscore_trend_classification(z_now, z_1w, z_4w, z_13w, z_peak_abs_13w):
     """
     Classify the z-score trajectory into one of:
@@ -1451,6 +1516,10 @@ def run_phase_e():
 
     print(f"  Snapshot: {df_snapshot.shape[0]} indicators")
     print(f"  History : {df_hist.shape[0]} weekly rows × {df_hist.shape[1]} cols")
+
+    # CP-05 guard: an implausible z is a data fault, not a signal. Warn loudly
+    # in pipeline.log rather than letting it lead the weekly article.
+    log_zscore_sanity(df_snapshot)
 
     # ------------------------------------------------------------------
     # 5. Save to CSV

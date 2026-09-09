@@ -12,7 +12,15 @@ ZSCORE_WINDOW = 156
 ZSCORE_MIN_PERIODS = 52
 _ALIGN_FFILL_LIMIT = 13
 
-def _to_weekly_friday(series: pd.Series) -> pd.Series:
+# Interior forward-fill cap for the weekly resample, in weekly rows (~a
+# quarter). Same bound as _ALIGN_FFILL_LIMIT and the hist writer's trailing
+# fill, for the same reason: bridging a gap wider than the series' own
+# publication cadence fabricates data. See _to_weekly_friday.
+_WEEKLY_FFILL_LIMIT = 13
+
+
+def _to_weekly_friday(series: pd.Series,
+                      ffill_limit: int | None = _WEEKLY_FFILL_LIMIT) -> pd.Series:
     """
     Resample an arbitrary-frequency series to weekly Friday close.
     Uses last observation in the week then forward-fills gaps (for monthly data).
@@ -21,15 +29,24 @@ def _to_weekly_friday(series: pd.Series) -> pd.Series:
     value*: the unified hist leaves NaN beyond each column's bounded-fill
     window (2026-07-08 bounded-fill change), and resampling over those
     trailing NaNs then ffilling would re-fabricate the very currency the
-    writer bound removed. Interior gaps (weeks between monthly prints)
-    still fill as before.
+    writer bound removed.
+
+    Interior gaps fill only up to `ffill_limit` weekly rows (CP-05,
+    2026-09-08). Dropping the NaNs above also erases *interior* holes, so an
+    unbounded ffill silently manufactured a flat run across them — when the
+    DB.nomics ISM mirror died the ISM Manufacturing column got ~40 fabricated
+    weeks at a constant 48.7, which crushed the 156-week rolling sigma to 1.04
+    and made a genuine 54.6 print score z = +5.9. Thirteen weeks bridges any
+    monthly or quarterly publication gap; anything wider is a real hole and
+    should read as NaN. Pass ffill_limit=None for the old unbounded behaviour.
     """
     if series.empty:
         return series
     series = series.dropna()
     if series.empty:
         return series
-    return series.resample("W-FRI").last().ffill()
+    resampled = series.resample("W-FRI").last()
+    return resampled.ffill() if ffill_limit is None else resampled.ffill(limit=ffill_limit)
 
 
 def _rolling_zscore(series: pd.Series) -> pd.Series:
@@ -158,4 +175,5 @@ __all__ = [
     'ZSCORE_WINDOW',
     'ZSCORE_MIN_PERIODS',
     '_ALIGN_FFILL_LIMIT',
+    '_WEEKLY_FFILL_LIMIT',
 ]
