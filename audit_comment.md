@@ -1,6 +1,6 @@
-## Daily audit — 2026-09-09 — **72 ISSUES** (3 fetch errors, 67 stale series, 2 static-check failures)
+## Daily audit — 2026-09-09 — **71 ISSUES** (3 fetch errors, 66 stale series, 2 static-check failures)
 
-_Run: 2026-09-09 05:38 UTC_
+_Run: 2026-09-09 18:05 UTC_
 
 Full report attached as `data_audit.txt` in today's commit.
 
@@ -32,7 +32,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `CMRMTSPL` | FRED | Monthly | 2026-06-01 | 100d | 45d |
 | `FRA_LOAN_RATE_NFC` | Banque de France | Monthly | 2026-06-01 | 100d | 45d |
 
-**STALE** (59):
+**STALE** (58):
 
 | Series | Source | Frequency | Last obs | Age | Tolerance |
 |---|---|---|---|---|---|
@@ -66,7 +66,7 @@ Full report attached as `data_audit.txt` in today's commit.
 | `GBR_GILT_10Y` | FRED | Monthly | 2026-06-01 | 100d | 75d\* |
 | `DEU_BUS_CONF` | FRED | Monthly | 2026-06-01 | 100d | 75d\* |
 | `GBR_BUS_CONF` | FRED | Monthly | 2026-06-01 | 100d | 75d\* |
-| _… 29 more in `data_audit.txt`_ |  |  |  |  |  |
+| _… 28 more in `data_audit.txt`_ |  |  |  |  |  |
 
 </details>
 

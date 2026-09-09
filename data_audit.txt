@@ -9,7 +9,7 @@
   UNADJUSTED_SPLITS           BTC-USD: 62975.6 → 78335.2 (1.244x) at 2026-08-21, matches clean split ratio + new level held within ±15% over the next 2 weeks — possible unadjusted split; add a data/manual_splits.csv row and run scripts/backadjust_hist_splits.py
   UNADJUSTED_SPLITS           ETH-USD: 1880.65 → 2515.28 (1.337x) at 2026-08-21, matches clean split ratio + new level held within ±15% over the next 2 weeks — possible unadjusted split; add a data/manual_splits.csv row and run scripts/backadjust_hist_splits.py
 
---- Section C: Value-change staleness (FRESH 251  STALE 59  EXPIRED 8  ANCHORS 39  OVERDUE-ANCHORS 0) ---
+--- Section C: Value-change staleness (FRESH 252  STALE 58  EXPIRED 8  ANCHORS 39  OVERDUE-ANCHORS 0) ---
   EXPIRED (8):
     Monthly     CHN_PPI                           src=FRED         series=CHNPIEATI01GYM            last_obs=2022-12-01  age=1378d     tolerance=45d
     Monthly     CHN_IND_PROD                      src=FRED         series=CHNPRINTO01IXPYM          last_obs=2023-11-01  age=1043d     tolerance=45d
@@ -19,7 +19,7 @@
     Quarterly   ITA_GDP_GROWTH                    src=ISTAT        series=163_156/Q.IT.B1GQ_B_W2_S1.G1.Y.  last_obs=2026-03-01  age=192d      tolerance=90d*
     Monthly     CMRMTSPL                          src=FRED         series=CMRMTSPL                  last_obs=2026-06-01  age=100d      tolerance=45d
     Monthly     FRA_LOAN_RATE_NFC                 src=Banque de France  series=observations|series_key='MIR1.M.FR.B.A20.A.R.A.2240U6.EUR.N'  last_obs=2026-06-01  age=100d      tolerance=45d
-  STALE (59):
+  STALE (58):
     Annual      USA_CPI_YOY_ANNUAL                src=World Bank   series=FP.CPI.TOTL.ZG            last_obs=2024-12-31  age=617d      tolerance=540d
     Quarterly   CHE_IND_PROD                      src=IMF SDMX     series=IMF.STA,PI/CHE.IND.SA_IX.Q  last_obs=2026-01-01  age=251d      tolerance=210d*
     Quarterly   DEU_GDP_INDEX                     src=IMF SDMX     series=IMF.STA,QNEA/DEU.B1GQ.Q.SA.XDC.Q  last_obs=2026-01-01  age=251d      tolerance=210d*
@@ -68,7 +68,6 @@
     Monthly     NLD_EQUITY_MEI                    src=FRED         series=SPASTT01NLM661N           last_obs=2026-06-01  age=100d      tolerance=75d*
     Monthly     CHE_EQUITY_MEI                    src=FRED         series=SPASTT01CHM661N           last_obs=2026-06-01  age=100d      tolerance=75d*
     Monthly     JPN_MACH_ORDERS                   src=e-Stat       series=0003355222?cdCat01=160&cdCat02=100  last_obs=2026-06-01  age=100d      tolerance=60d*
-    Monthly     FRA_IND_PROD                      src=INSEE        series=SERIES_BDM/010768261      last_obs=2026-06-01  age=100d      tolerance=90d*
     Monthly     PERMIT                            src=FRED         series=PERMIT                    last_obs=2026-07-01  age=70d       tolerance=45d
     Monthly     USA_CPI_INDEX                     src=BLS          series=CUSR0000SA0               last_obs=2026-07-01  age=70d       tolerance=45d*
     Monthly     USA_CORE_CPI_INDEX                src=BLS          series=CUSR0000SA0L1E            last_obs=2026-07-01  age=70d       tolerance=45d*

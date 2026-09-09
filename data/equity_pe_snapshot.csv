@@ -458,12 +458,12 @@ asof_date,ticker,name,pe_ttm,pe_forward,source
 2026-09-08,QQQ,"Invesco QQQ Trust, Series 1",29.303808,,yfinance
 2026-09-08,SPY,State Street SPDR S&P 500 ETF T,24.884598,,yfinance
 2026-09-08,VGK,Vanguard FTSEEuropean ETF,17.898455,,yfinance
-2026-09-09,DIA,State Street SPDR Dow Jones Ind,21.440546,,yfinance
-2026-09-09,EEM,iShares MSCI Emerging Index Fun,14.642242,,yfinance
-2026-09-09,EFA,iShares MSCI EAFE ETF,18.719015,,yfinance
-2026-09-09,EWJ,iShares MSCI Japan Index Fund,19.520325,,yfinance
-2026-09-09,IWM,iShares Russell 2000 Index Fund,17.347597,,yfinance
-2026-09-09,MDY,State Street SPDR S&P MIDCAP 40,21.269283,,yfinance
-2026-09-09,QQQ,"Invesco QQQ Trust, Series 1",29.27935,,yfinance
-2026-09-09,SPY,State Street SPDR S&P 500 ETF T,24.747929,,yfinance
-2026-09-09,VGK,Vanguard FTSEEuropean ETF,17.79115,,yfinance
+2026-09-09,DIA,State Street SPDR Dow Jones Ind,21.310204,,yfinance
+2026-09-09,EEM,iShares MSCI Emerging Index Fun,14.601823,,yfinance
+2026-09-09,EFA,iShares MSCI EAFE ETF,18.542698,,yfinance
+2026-09-09,EWJ,iShares MSCI Japan Index Fund,19.370872,,yfinance
+2026-09-09,IWM,iShares Russell 2000 Index Fund,17.13507,,yfinance
+2026-09-09,MDY,State Street SPDR S&P MIDCAP 40,21.065866,,yfinance
+2026-09-09,QQQ,"Invesco QQQ Trust, Series 1",29.21006,,yfinance
+2026-09-09,SPY,State Street SPDR S&P 500 ETF T,24.655684,,yfinance
+2026-09-09,VGK,Vanguard FTSEEuropean ETF,17.630192,,yfinance
