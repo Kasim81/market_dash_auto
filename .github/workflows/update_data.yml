@@ -286,6 +286,14 @@ jobs:
         # by the source module on cache miss / edition turnover, kept on disk
         # so daily runs start hot.
         [ -f data/istat_edition_cache.csv ] && git add -f data/istat_edition_cache.csv || true
+        # sources/ism_prnewswire.py release-point store (CP-05). The newsroom
+        # only ever exposes the CURRENT month and build_hist_df rebuilds every
+        # column from source, so this file IS the ISM history for any month the
+        # DB.nomics mirror never delivered. If it is not staged, each month's
+        # scraped point dies with the runner and the months between the last
+        # committed row and today re-open as the hole that produced the +5.9
+        # sigma print. Same failure the sister archives had until 2026-07-08.
+        [ -f data/ism_release_history.csv ] && git add -f data/ism_release_history.csv || true
         # Retired in Stage 2 commit 13 — removals get committed on next run:
         [ -f data/macro_us.csv ] && git rm -f data/macro_us.csv || true
         [ -f data/macro_us_hist.csv ] && git rm -f data/macro_us_hist.csv || true
