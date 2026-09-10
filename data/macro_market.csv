@@ -23,7 +23,7 @@ EU_Cr2,Europe,Credit,Credit / Spreads,HY Spread,HY Spread - EUR,2026-09-04,2.66,
 UK_R2,UK,Rates,Inflation,Breakevens,Breakeven - Proxy (return) - GBP,2026-09-04,0.123279,-0.8038,-0.921,-1.1401,-0.9164,1.1561,fading,neutral,stable,log(iShares UK Inflation-Linked Gilt ETF (INXG.L) / iShares UK Gilt ETF (IGLT.L))
 UK_Cr1,UK,Credit,Credit / Spreads,IG Spread,UK credit conditions,2026-09-04,-2.080139,1.516,1.6219,1.4432,1.5009,1.6219,stable,credit-appetite,stable,iShares Core GBP Corporate Bond UCITS ETF / ICE BofA UK Gilt Index
 EU_G4,Europe,Equity,Equity,Regional Leadership,EUR vs European cyclicals,2026-09-04,0.426963,-0.3313,-0.1735,-0.5256,-0.8511,1.5633,fading,neutral,stable,Composite of EUR/USD and STOXX Europe 600 Industrials / STOXX Europe 600 Utilities
-AS_CN_G3,Asia,Equity Factor,Equity,Size,China size / domestic cycle,2026-09-11,-0.012639,0.9054,0.5808,0.9769,1.1446,2.2194,stable,neutral,stable,CSI 500 / CSI 300
+AS_CN_G3,Asia,Equity Factor,Equity,Size,China size / domestic cycle,2026-09-11,-0.010182,0.9279,0.5808,0.9769,1.1446,2.2194,stable,neutral,stable,CSI 500 / CSI 300
 AS_CN_G2,Asia,Equity,Equity,Regional Leadership,China vs global DM,2026-09-04,0.960233,2.1513,1.9852,1.7528,2.1393,2.3102,stable,China-outperform,stable,Shanghai Composite / MSCI World proxy via iShares MSCI World ETF
 AS_IN_G1,Asia,Equity Factor,Equity,Size,India domestic growth breadth,2026-09-04,2.930174,-1.8379,-1.7541,-1.8957,-1.0476,1.9701,stable,large-cap-safety,stable,Nifty Midcap 150 / Nifty 50 and Nifty Smallcap 250 / Nifty 50
 AS_CN_R1,Asia,Rates,Rates / Yields,Cross-Country Spread,China rates vs US,,,,,,,,,Insufficient Data,n/a,"China 10Y Govt Bond Yield (IRLTLT01CNM156N, FRED) minus US 10Y Treasury Yield (DGS10, FRED)"
